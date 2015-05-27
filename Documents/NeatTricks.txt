@@ -18,22 +18,25 @@ Through the use of table metamethods, particularly '__memoize' (this was made on
 
 The '__memoize' metamethod in this instance is really only an abstraction of the following code
 
-	## performs the memorization and disables reassignment (technically its \x -> let fib[x]: fn(x) with '__memoize')
+	## performs the memorization (technically its \x -> let fib[x]: fn(x) with '__memoize')
 	__newindex: \x -> let self[x]: fib[x - 1] + fib[x - 2]
+	## disables reassignment by "forgetting" values
+	__index: \x -> self[x]
 
-The key "trick" here is the override of the '__newindex' method (the '__allowAssign' prevents reassignment).
-Every time the fib table is accessed with a new index (ie. a previously uncalculated argument), the '__newindex'
-Method is invoked. It is in this method that the actual association of the index to the fibonacci number is performed.
-But since the method also indexes the table to get its results, the "trick" is performed repeatedly until it comes to
-An already calculated value, ie. "Memorization". Note that it is not required for functions to memoize their results
-For them to take advantage/abuse of this metamethod "trick".
+The key "trick" here is the override of the '__newindex' method. Every time fib is accessed with a new index
+(ie. a previously uncalculated argument), the '__newindex' method is invoked. It is in this method that the
+Actual association of the index to the fibonacci number is performed. But since the method also relies upon
+Table indexing to get its results, the entire sequence is calculated at most O(n), assuming no prior calculations.
+Thus the results of the calculation are memorized almost automatically.
 
 Tables as Functions
 
-In fact, by taking advantage of another metamethod, the entire process of "memorizing" the fibonacci numbers can be totally
-Abstracted from the end user. This metamethod is '__call' which defines the semantics of () on the table object.
-In the case of the above fibonacci example, the change is thus.
+But note that the process mentioned above does not necessarily entail memorization of function values.
+In fact, the syntax that the above entails is slightly, although not entirely, different from the syntax
+For function calls, which the system emulates, instead sharing a resemblance to the syntax for table
+Access, which the system is. But this syntactical dichtonomy is not a necessary part of the whole process
+In fact, by taking advantage of another metamethod, the entire system can be totally abstracted so that
+It uses the same syntax as functions, thus preserving the mental link between appearance and action.
+The specific method is '__call' which defines the semantics of () on the table object.
 
 fib: [1, 1, __memoize: \x -> fib(n - 1) + fib(n - 2), __call(x): \x -> fib[x]]
-
-The change (in this instance) is really only stylistic in nature, but it does serve to unify, and reduce the confusion between, the styles.

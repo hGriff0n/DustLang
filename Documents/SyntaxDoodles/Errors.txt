@@ -1,0 +1,21 @@
+
+## error testing (move to a different file)
+z: [3]
+for x in [1..20]
+	throw error("This is an error")		## syntax for throwing errors
+	z: z + x				## This isn't an error anymore !!!
+catch \e -> print(e)
+
+z: nil
+print("error testing")
+try
+	z: [3] + 5
+catch \e					## catches and ignores any errors
+print(z)					## outputs [3, 5]
+
+try
+	z: 5
+catch \e ->
+	print(e)
+	terminate()
+print(z)					## outputs 5 as the value of z was changed in the try scope

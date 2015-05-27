@@ -13,14 +13,13 @@ euler.1 := \x -> sum([3, 6..x] & [5, 10..x])
 def euler.1(x)
 	sum: 0
 	for i in [3..x]
-		if [i mod 3, i mod 5].has(0)		## ^ 0
+		if [i mod 3, i mod 5] ^ 0
 			sum: sum + i					## sum :+ i
 	return sum
 
 ## Set Comprehension
-euler.1 := \x -> [\i | i in [3..x], [i % 3, i % 5].has(0)].sum()
-## euler.1 := \x -> [\i | i in [3..x], [i % 3, i % 5] ^ 0].sum()
-## euler.1 := \x -> [\i | i in [3..x], i.mod(3, 5).has(0)].reduce(\x,s -> s + x)  I don't know about the i.mod call returning a table if given multiple inputs ???
+euler.1 := \x -> [\i | i in [3..x], [i % 3, i % 5] ^ 0].sum()
+## euler.1 := \x -> [\i | i in [3..x], i.mod(3, 5) ^ 0].reduce(\x,s -> s + x)  I don't know about the i.mod call returning a table if given multiple inputs ???
 
 
 ## Problem 2: Sum of the even fibonacci numbers below 4000000 (4613732)
@@ -28,7 +27,7 @@ def euler.2(x)
 	sum, fib: 2, [0, 2, 8]
 	while fib.3 < x
 		sum: sum + fib.3									## sum :+ fib.3
-		fib.1, fib.2, fib.3: fib.2, fib.3, 4*fib.2 + fib.1	## fib.0, fib.1, fib.2: fib.1, fib.2, 4 * fib.1 + fib.0
+		fib.1, fib.2, fib.3: fib.2, fib.3, 4*fib.2 + fib.1	## fib.0, fib.1, fib.2: fib.1, fib.2, 4 * fib.1 + fib.0  (If 0 indexed)
 		## fib: [fib.2, fib.3, 4*fib.2 + fib.1]				## fib: [fib.1, fib.2, 4*fib.1 + fib.0]
 	return sum
 
@@ -38,15 +37,7 @@ factor: \x -> [\i | i in [2..x.sqrt + 1], x % i = 0]
 
 def euler.3(x)
 	factors: factor x
-	return fst([\i | i in factors.reverse(), factor(i).size() = 0])
-	## return fst([\i | i in reverse factors, !(factor(i))])		## [] = false
-
-###
-def euler.3(x)
-	factors: factor x
-	return take(1, [\i | i in reverse factors, !take(1, factor i)])		## more efficient but needs lazy evaluation
-###
-
+	return fst([\i | i in factors.reverse(), !(factor(i))])				## there might be ways to speed this up, such as take(1, ...) instead of fst
 
 ## Problem 4: Largest palindrome product of two 3-digit numbers (906609)
 euler.4: \ -> max([\i,j -> i * j | i in [999..111], j in [999..111], str(i * j).isPalindrome()])
