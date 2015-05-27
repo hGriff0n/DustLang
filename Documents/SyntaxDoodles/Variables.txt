@@ -43,12 +43,22 @@ x: 5					##
 x: 4					## The syntax clashes with constant declarations (but the type of constants isn't exactly flexible anyways)
 x: "Hello"				## Throws a type error, "Hello" cannot be converted to an integer
 
-Compound Assignment operators
+Compound Assignment operators (Of the form <assignment><operator>, ie. :+, :-, :*)
 x: 1					## Only add if it is possible to lex and parse correctly
 for y in [1..5]
 	x :+ 1				## x: x + 1
 
-Variable Type Testing (the rightmost type is where the type name goes in actual code)
-	var <- type					## the question is whether this version is viable or not (keep same syntax as Static Typing and Function Type Checking)
-	type(var) = "type"			## this capability will be kept regardless (but there are problems with inheritance)
-	is?(var, type)				## from dust_test (deprecated) logic programming section (no problems with inheritance)
+	Question: Would := be a viable compound operator
+		x := z would read x: x = z
+		Currently := is an assignment operator
+		But the entire reasoning behind this was that ':' looked odd when the variable was a table field
+			It still looks slightly odd, but I feel that that absurdity has passed once I've gotten used to the syntax
+
+	Question: Would :=+ be valid syntax
+		If I am to keep the rule general, yes
+		However this doesn't look as nice
+
+Variable Type Testing (testing against Int as an example)
+	var <- Int					## the question is whether this version is viable or not (same syntax as Static Typing and Function Type Checking)
+	type(var) = "Int"			## this capability will be kept regardless (but there are problems with inheritance)
+	is?(var, Int)				## from dust_test(deprecated) logic programming section (no problems with inheritance)

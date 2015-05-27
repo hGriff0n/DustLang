@@ -1,0 +1,37 @@
+
+LCS(i, j) is the length of the longest common subsequence of sequences X[0..i] and Y[0..j]
+If we allow 0 to indicate the null sequence then L[0, j] = 0 and L[i, 0] = 0				## done
+Then L[i,j]: x[i] = y[j] and L[i-1, j-1] + 1 or max(L[i-1,j], L[i, j-1])
+
+## Longest Common Subsequence implemented in [i][j] syntax
+LCS: [													## The core idea is that LCS[i] should always go through __index
+	let 0: [ __newindex: \ -> 0 ],						## The memorization of results happens in the table that is stored at LCS[i]
+	__index: \n -> self[n],
+	## __call: \i,j -> self[i][j]
+]
+
+def LCS.newrow(seq1, seq2, idx)							## This process can probably be simplified
+	[
+		let i: idx,
+		let xi: seq1[idx],
+		let y: seq2,
+		__memoize: \j ->
+			j = 0 and 0 or xi = y[j] and LCS[i - 1][j - 1] + 1 or max(LCS[i - 1][j], LCS[i][j - 1])
+	]
+
+def LCS.init(x, y)
+	self.removeIf(\k -> k != 0 and !ismetamethod(k))
+	for i in enumerate(x)									## This process can probably be simplified
+		self[#self]: self.newrow(x, y, i)					## relying on #self = size(self)	
+	self.__newindex: \ -> self[0]
+
+## Longest Common Subsequence implemented in [i, j] syntax
+LCS: [
+	__memoize: \[i,j] ->	## here(V) 'self' is implicit but here(V) self must be used  (just a temporary change)
+		[i, j] ^ 0 and 0 or str1[i] = str2[j] and self[i-1, j-1] + 1 or max(self[i-1, j], self[i, j-1])
+]
+
+def LCS.init(str1, str2)
+	self.removeIf(\k -> !ismetamethod(k))		## deletes previous iterations
+	set(self, "str1", str1)
+	set(self, "str2", str2)
