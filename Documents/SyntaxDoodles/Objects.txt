@@ -1,0 +1,33 @@
+type Foo [			## defines a new type with member variables
+	attr: 5			## note the similarity to table syntax
+]					## that's because types are basically preset tables (needs more explanation, how do the presets work)
+
+def Foo.new(x)		## define the function for creating new "Foo"s
+	attr: x			## implicit "self"/"this"
+
+def Foo.tostring()	## define the conversion to string (this how I do it)
+	attr
+
+
+## possibilities for type inheritance
+type Bar inherits Foo [
+	width: 3,
+	height: 4	## should height: width (height equals weight by default) be possible ??? (global question about table initialization order)
+]
+
+-or-
+
+type Bar [
+	width: 3,
+	height: 4
+] + Foo			## inherits Foo members & methods (retroactive ???)
+				## fairly easy to handle access rules, if name's not defined in Bar, call Foo.name(this, ...)
+
+-or-
+
+type Bar [
+	width: 3,
+	height: 4
+] ++ Foo		## Have '++' be a special syntax ??? (I don't like the idea of special syntax, but the '++' feels better)
+
+## Way to make Java's interfaces possible ???

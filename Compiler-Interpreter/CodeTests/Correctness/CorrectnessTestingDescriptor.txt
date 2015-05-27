@@ -1,0 +1,14 @@
+These tests are designed to ensure
+	1) That the parser ignores comments
+	2) That the parser generates useful data
+	3) That the interpreter can use the parsed data
+	4) That the interpreter produces correct output
+	5) That the interpreter follows correct paths
+
+Included in this filter
+	1) Semantically correct files
+	2) Files with ambiguous results
+	3) Files with multiple execution paths
+	4) Syntactically "tricky" files
+
+// More ???

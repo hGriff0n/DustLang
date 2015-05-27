@@ -1,0 +1,228 @@
+Table Variables
+	Style
+		[(key:) value, ...]
+	SubTypes
+		Arrays
+			Table with only a contiguous subset of integers as keys 
+			Default mode of variable assignment
+				ie. if a key is not specified it is assumed to be the next available integer
+		Sets
+			Table with only numeric keys
+
+## Tables signified with '[]'
+r: [1, 2, 3, 4, 5]
+l: [2, 4, 6, 8, 10]
+w: [[1, top: 2], 3, 4, 5]
+g: [hello: 3, 4, 2, bye: 1]
+
+## Tables are, by default, 1-indexed
+So in the above example, r.1 = 1 and not 2
+
+## Why
+Well, 0 based indexing is really only natural to programmers with experience in C and C like languages
+The original idea was for this language to be interpreted, so performance was not a particular concern
+Table iteration is accomplished with 'for all' type loops, so specific indices are not important
+Tables can contain keys of any value, so 1 based indexing is only an assumption for standard functions/libraries
+This behavior, moreover, can "possibly" be modified in-language by redefining global functions/metamethods
+
+## Table access is performed through '.'
+## Table keys circumvent the global rule for variable names (currently)
+## The dot syntax is only applicable for string keys (easy implementation and removes ambiguities ie. r.1 = r[1] or r["1"])
+## -OR- Have numeric strings automatically converted to ints when used to index 
+r.1		## r[1]
+g.hello
+w.1.top := 3
+w.1.top: 3
+
+## It should be possible to restrict the type of keys that a table will support
+## This will allow globals to be "table" values as in Lua and the language spec to be consistent
+## But there still are some problems. (Do I want 0 to always be 0 ???)
+
+Set Comprehension Syntax (In order of current preference. Only 1 will be valid syntax)
+mult: [\x,y -> * | x in l, y in r, true]		## custom (currying syntax notwithstanding)
+mult: [\x,y -> * | in l, in r, true]			## possible alternate (the 'x in' part's not really necessary if I have arguments to the lambda)
+mult: [\ -> x*y | x in l, y in r, true]			## possilbe elision (if captures are implemented) (then what would [\x | x in l] become ???)
+mult: [x * y | x in l, y in r, true]			## haskell derived
+mult: [x * y for x in l, y in r if true]		## python
+
+
+Table/Set operations
+	Currently it is valid to perform an operation of Table + Int. In these cases the non-table type is
+		Implicitly converted to a Table whose sole element is the non-table value.
+	Currently they are not all that well defined either
+
+	Addition (+)								## Appends the elements from one table to the other
+		I don't think this is entirely possible to implement in Dust (aside from calling a function)
+	Subtraction (-)								## Removes all elements of one table from the other
+		Need to decide whether [2,2] - [2] should give [2] or []
+		\l, r -> [\x | x in l, !r.has(x)]			## Technically this is wrong.	eg. [2, 2] - [2] will give [] but should give [2] (or should it (see python) ???)
+	Union (&)									## Takes the union of two tables
+		\l,r -> l + (r - l)
+	Intersection (^)							## Takes the intersection of two tables
+		\l,r -> l - (l - r) ## if op-([2,2],[2]) gives [2] and not []
+		## otherwise op^: \l,r -> [\x | x in l, r.has(x)].flatten
+
+Set Ranges
+	[1..10] is equivalent to [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]		## Range syntax: [<start>(,second)..(stop)(, lambda)]
+	[1,3..10] is equivalent to [1, 3, 5, 7, 9]						## Custom range increments can be inferred by stating the second value
+	[1..] is equivalent to [1, 2, 3, 4, 5, ....]					## Ranges can be infinite (iff lazy evaluation is implemented)
+	[10..1] is equivalent to [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]		## Sign increments can be inferred automatically
+	[1..25, \x -> x^2] gives [1, 4, 9, 16, 25]						## Algorithmic steps can be specified by a function (that does what ???)
+
+Pattern Matching (Or should this go into functions ???)
+	def add([x, y, _])
+		x + y
+
+	Takes a table as an argument and associates the items at index 1 with 'x'
+	And index 2 with 'y', etc. If the pattern has more arguments than the passed table
+	The extra arguments are assigned nil. If the table has more items than the pattern arguments
+	The leftover items are collected in the last variable. Note, x + y + _ = the passed table
+
+	Could this be sugar for ???
+		def add(t <- Table)
+			(\x,y -> x + y)(*t)		## *t = "explode" the table
+
+	What about collecting leftovers in a variable ???
+		def add([x, *y])		## explicit
+			x + y <- Table and add(y) or y
+
+		def add([x, y])			## implicit
+			x + y <- Table and add(y) or y
+
+
+Metamethods (another term ???)
+	Metamethods are simply specific functions that the compiler/interpreter expects to be defined
+	For specific types in order to perform certain behaviors. For example, table.key will call the
+	Tables's '__index' metamethod to perform the actual behavior. This allows program performance
+	To be easily and infinitely modifiable, much like in Lua. It may be beneficial to also include
+	Several functions that themselves modify metamethods, such as the '__memoize' function below.
+
+	factorial: [						## This memorization table for the computation of factorials
+		0: 1,							## However through metamethods, it also doubles as the function itself
+		__memoize: \x ->				## This defines the memoization function
+			if x < 0, return nil		## But it also modifies the table (See NeatTricks.txt)
+			x *	factorial[x - 1],
+		__call: \x -> factorial[x]		## Validates 'factorial(4)' syntax. Only syntactical sugar in the long run
+	]
+
+	Should metamethods tend to be prefixed with something, should they all be prefixed with something, or should it be entirely optional
+	__call, __memoize, __index, __newindex
+	op+, op-, op&, op^, op<, op>, etc.
+
+	How to refer to the table			## can this be generalized to all table functions
+		self/this keyword
+
+Interaction between tables and constant-ness (Metamethods and 'let' syntax)
+	Problem 1: Have a table where values/fields can be added but not changed (see NeatTricks memoize example)
+		Solution 1: 'let' fields						## Generalization of the constant declarization rules (they're not exactly defined though)
+			const_table: [ let x: 5	]					## Field specific solution
+
+			## For a more generalized (ie. table-wide) example
+			const_table: [
+				__index: \x -> const_table[x],					## Valid function and use of metamethods (disallows reassignments)
+				__newindex: \x,y -> y and (let self[x]: y)		## Generalization of Solution 1
+			]
+
+			## Can possibly extract some details of the specifics to some outside function/factory
+			## Or to a table "bit-flag" such as '__allowReassign' that can enable the above methods (have a better name though)
+
+		Solution 2: Define let syntax as such			## Ambiguous
+			let const_table: []							## Or make it as a solution to Problem 3
+
+	Problem 2: Have a fixed table with mutable values (ie. values can be changed but not added)
+		Solution: Disable/redefine the __newindex metamethod
+			fixed_table: [
+				__newindex: \ -> nil					## fixed by proxy
+				__newindex: noAssign					## __newindex: nil (ie. is nil(x, y) valid syntax/semantics ???)
+			]
+
+			## Can possibly extract some details of the specifics to some outside function/factory
+			## Or to a table "bit-flag" such as '__allowAssign' that can enable the above methods (have a better name though)
+
+	Problem 3: Have a fixed table with constant values
+		Solution 1: Define let syntax as such			## Ambiguous
+			let immutable_table: []						## I'm currently leaning towards this solution (Completeness, Singule Solution)
+
+		Solution 2: Combine the solutions to Problems 1 and 2
+
+	Note: I have to define let syntax as a solution to one of the problems,
+		Even though I don't need such syntax for the tables themselves.
+		This is to ensure correctness and viability of the language, namely
+		The constant declaration syntax. (This problem comes around to affect
+		The solutions created above). The question is, What is the semantic
+		Meaning of 'let x: []'?. This question is important because it is
+		A common and possibly useful construct of the language syntax, as
+		Evident in P1 S1. Therefore if 'let x: []' is to not have a valid 
+		Meaning must entail the enforcement of a confusing and arbitrary rule.
+		By giving a semantical meaning to the construct, it maintains programmer
+		Freedom and possibly eases the implementation of future features/details.
+
+What about multi-dimensional tables (ie. matrices) ???
+	## This would allow the "memoization" trick to be trully useful without any extra classes/trouble
+	Should 'battleship[c,6]' be acceptable or should 'battleship[c][6]' be the only allowed syntax
+	The first style dovetails nicely with the ability to easily implement memorization tables as
+		matrices are often used in "memorization" problems, especially if types can't be combined easily (c,6 => c6)
+		Otherwise something like 'battleship[tile(c, 6)]' would have to be used (pollution).
+
+What about defining multiple lambdas inside a table if one or more are multi-lined
+	Try to make it so that a multi-lined lambda only needs the default table seperator to
+		be defined inline. Consider alternate syntax or restrictions if it is no possible
+
+	test: [
+		hello: \x ->
+			if x <- String
+				print("Hello " + x),				## hopefully this comma (and the indentation difference) is enough
+		goodbye: \ -> print "Goodbye",
+		op+: \x -> "Your name is " + x
+	]
+
+Table functions
+	has(table, value)
+	size(table)				## or go Lua and have a size operator (op#)
+	pair(table, ...)		## creates a table of tables so that pair(t, tb).i = [t.i, tb.i]
+	entries(table)			## similar to python.enumerate. maybe change the name
+	flatten/smooth(table)	## Removes nesting in a list
+
+	def type([]).reduce(t <- Table, fn <- Function, init)
+		sum: init or fst(t)				## invalid if init (fst(t) is never operated on)
+		for x in tail(t)				## for x in init and t or tail(t)
+			sum: fn(x, sum)
+		sum
+
+	type([]).map: \t,fn -> [\x -> fn(x) | x in t]
+
+	type([]).sum: \t -> t.reduce(\x, s -> x + s)
+	type([]).entries: \t -> t.pair(t.keys, t.values)		## Might change the naming. Also, t.1 gives the key as opposed to t.key 
+
+Translating tables into collection of objects and vice versa
+	I like *t for doing this, however that could clashe with the multiplying operator, op*
+
+	def quick(sel)
+		sel <- Table and quick(*sel) or sel		## type(sel) = "table"
+	def quick(sel, *list)
+		mid: [sel]
+		high: low: []
+		for item in list
+			switch item <=> sel
+				high + item, if 1
+				low + item, if -1
+				mid + item, otherwise
+		[quick(low), mid, quick(high)].flatten()
+
+	def quick([sel, *list])				## overloading not needed with pattern matching
+		if !list return sel
+		mid: [sel]
+		high: low: []
+		for item in list
+			switch item <=> sel	
+				high + item, if 1
+				low + item, if -1
+				mid + item
+		[quick(low), mid, quick(high)].flatten()
+
+Have a syntax/ability to perform python-like slices???
+	Python code: arr[:n]	get the first n items
+				 arr[i:i+n] get the first n items starting at i
+				 arr[i:n]	get the subarray from i to n (not actually python syntax)
+
+## repl.it

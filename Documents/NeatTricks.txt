@@ -1,0 +1,39 @@
+"Easy" function memorization
+
+The naive implementaton of the fibonacci algorithm is that of its mathematical definition, ie.
+
+	fib: \n -> [0, 1] ^ n and 1 or (fib(n - 1) + fib(n - 2))
+
+However, this implementation is on the order of O(2^n). This causes fibonacci to often be used
+As an entry point to the computational strategy of memorization. In other languages the process
+Would be similar to (although this slightly optimizes the code by initializing the table)
+
+	fibonacci: [1, 1]
+	fib: \n -> fibonacci[n] or (fib(n - 1) + fib(n - 2))
+
+However, in dust, this process can be further compacted (particularly to reduce variable pollution)
+Through the use of table metamethods, particularly '__memoize' (this was made on the spot and subject to change).
+
+	fib: [1, 1, __memoize: \x -> fib[n-1] + fib[n - 2]]			## freaks out at fib[-1]
+
+The '__memoize' metamethod in this instance is really only an abstraction of the following code
+
+	## performs the memorization and disables reassignment (technically its \x -> let fib[x]: fn(x) with '__memoize')
+	__newindex: \x -> let self[x]: fib[x - 1] + fib[x - 2]
+
+The key "trick" here is the override of the '__newindex' method (the '__allowAssign' prevents reassignment).
+Every time the fib table is accessed with a new index (ie. a previously uncalculated argument), the '__newindex'
+Method is invoked. It is in this method that the actual association of the index to the fibonacci number is performed.
+But since the method also indexes the table to get its results, the "trick" is performed repeatedly until it comes to
+An already calculated value, ie. "Memorization". Note that it is not required for functions to memoize their results
+For them to take advantage/abuse of this metamethod "trick".
+
+Tables as Functions
+
+In fact, by taking advantage of another metamethod, the entire process of "memorizing" the fibonacci numbers can be totally
+Abstracted from the end user. This metamethod is '__call' which defines the semantics of () on the table object.
+In the case of the above fibonacci example, the change is thus.
+
+fib: [1, 1, __memoize: \x -> fib(n - 1) + fib(n - 2), __call(x): \x -> fib[x]]
+
+The change (in this instance) is really only stylistic in nature, but it does serve to unify, and reduce the confusion between, the styles.
