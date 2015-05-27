@@ -1,0 +1,6 @@
+@program "Hello World"
+@version 0.1.7
+
+## Outputs "Hello World!"
+
+print("Hello World!")		## May be subject to change as the function syntax changes
