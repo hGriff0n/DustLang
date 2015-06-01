@@ -36,12 +36,6 @@ print pythagorean.a			<- sqrt c^2 - b^2
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!OOP style
-!!proto (?)	-	metatables, error handling, data descriptors ???
-		!!define behavior for nil ???
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!logic programming & type constraints
 !!logic functions establish a relationship unless they end with a '?', in which case, they check if that relationship exists

@@ -183,13 +183,7 @@ Table of Contents
 			The for loop while execute once for every value in the table (at loop start or at loop end)
 			For a general, from 1 to 10 loop, use ranges (ie. for <var> in <range> <expr>)
 		1.5.3. if-then-else statements
-			The pattern for an if statement is 'if <expr> then <block>'
-			The block is evaluated only if the expression is true
-			The pattern for an if-else statement is 'if <expr> then <block1> else <block2>'
-			Block1 is evaluated if the expr is true, Block2 is evaluated otherwise
-			The pattern for an if-elseif statement is 'if <expr> then <block1> elsif <expr2> then <block2>'
-			Block1 if expr is true, block2 if expr2 is true
-			## This syntax is subject to be changed
+
 		1.5.4. while loop
 			The pattern for a while loop is 'while <expr> do <block>'
 			The loop executes while the expression is true

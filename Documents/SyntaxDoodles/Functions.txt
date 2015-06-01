@@ -32,60 +32,103 @@ Type Checking
 	Errors are only thrown when a type-undefined system operation is performed	## For now
 
 	## For fully defined
-	Implicit type checking (Duck Typing)
-	Explicit type checking
+	At the core, Dust uses and encourages Duck Typing (ie. if it has the method it is allowable)
+	In practice, and without the presence of code analysers, the ability to actually error is left
+	To the point where the "offending" function is called (Though that is useful in its own way). 
 
 	## explicit type checking ???
 	def abs(x <- Number)		## The same syntax as Static Typing
 		return x, if x >= 0
 		return -x, if x < 0
 		## throw error
-	
-Function Overloading
-	## Currently function overloading is impossible
+
+Function Argument Passing
+	def add(x, y) declares the function add expects two arguments which it will refer to as x and y internally
+	If add is called with one argument
+		Assuming no version of add has been defined that expects 1 argument
+		x is assigned to be the value of the argument and y is assigned nil
+		But what about a version with no arguments ???
+	If add is called with 3 arguments
+		Assuming no version of add has been defined that expects 3 arguments
+		The third value is dropped from calculations, x is assigned to be the first arg and y the second
+		But what about a version with 4 arguments ???
+	All function arguments are implicitly constant (or some offshoot of this)
+		Ie. they can't be modified inside the function			## But this is a very advantageous syntax to use
+		This will be edited over and over during the language design
+		At the very least, any changes to function args inside the function do not propogate outside the function
+			Unless the changed args are returned and then immediately used to reassign	
+			
+Function Overloading		## Assuming the above syntax is valid
+	About defining functions with differing number of arugments
+		Currently if a function expects 3 arguments and I give it 2, the third is assigned to nil
+		Similarly if I give it 4, the 4th argument is dropped
+		So then how will overloading the number of arguments work
+
+	About overloading functions with different types
+
+	Concerning the proposed pattern matching
+		ie. def add(4, 2) 42 returns 42 iff add(4,2) is called
 
 Type Functions	## How will this work
 	## eg. [].size()			This might be problematic in the case of overloading
 	I'm thinking a solution of the forms x.f(y) = f(x, y) (See C++17 proposal N4474) and everything is an object
 
 Closures
+	
 
 Currying
-	add2: \x -> 2 +		## Equivalent to above examples
-	add2: \x => 2 +		## Special currying syntax ???
+	add2: \x -> + 2		## Equivalent to above examples
+	add2: \x => + 2		## Special currying syntax ???
 
 Pattern Matching
-	def add([x, y,])		## would this only catch a table with size of 2 or 
-		x + y
+	def add([x, y,])		## would this only catch a table with size of 2 or would it accept a table of size 3
+		x + y				## What about another table of size three (which function would be dispatched)
 
-	add [3, 5]		=> 8
-	add 3, 5		=> Error: Method 'add' undefined for arguments of type 'Int, Int'	## More consistent reasoning, but might be advantageous to allow otherwise
-	add [3], [5]	=> Error: Method 'add' undefined for arguments of type 'Table, Table'
-	add [[3], [5]]	=> [3, 5] ## Depends on whether '+' can add two tables
-	add [3, 5, 8]	=> 8
-	add 3, [5]		=> Error: Method 'add' undefined for arguments of type 'Int, Table' ## Should Int + Table = Table or Int ++ Table = Table
+	ie. def add[x, y, z,]
+		x + y + z
 
 	## As opposed to ...
 	def add(x, y)
 		x + y
 
-	add [3, 5]		=> Error: method 'add' undefined for arguments of type 'Table'
-	add 3, 5		=> 8
-	add [3], [5]	=> [3, 5]
-	add [[3], [5]]	=> Error: method 'add' undefined for arguments of type 'Table'
-	add [3, 5, 8]	=> Error: method 'add' undefined for arguments of type 'Table'
-	add 3, [5]		=> [3, 5]
-
 	## What about pure "haskell" pattern matching ???
 	def add(4, 2)					## I feel like this would be costly to implement
 		42							## The syntax is spot on though
 
-	## assuming the previous two definitions are valid
-	add [4, 2]		=> 8
-	add [4], 2		=> [3, 5]
-	add 4, 2		=> 42			## The above pattern matched function is called
-	add 2, 4		=> 6
+Named arguments
+	The usage of name arguments is currently disallowed in dust
+		One, My ideas for syntax aren't exactly nice or semantically simple
+		Two, There's not a large need for the feature in the first place
+		Three, The interaction with some other features, particularly argument rules, is concerning
+
+	Though if it'd be implemented (some point in the future)
+		add(x: 3, y: 5)		## Assignment syntax. Possibly tricky to implement
 
 Functions as objects (ala Scala) ???
+	Could functions be implemented as tables ???	## Especially in relation to overloading and pattern matching
+		Lambdas would have to remain system defined, much like ints and tables (though wouldn't ints have some method table ???)
+		What would this give me
 
-Named arguments
+
+	Try to translate to tables
+		def quick(sel <- Table)
+			quick(*sel)
+
+		def quick(sel)
+			sel
+	
+		def quick(sel, *list)
+			mid: [sel]
+			high: low: []
+			for item in list
+				(switch item <=> sel			## works similar to Java's compareTo
+					high, if 1
+					low, if -1
+					mid, otherwise) + item
+			[quick(low), mid, quick(high)].flatten()
+
+		quick: [
+			__call: \*args -> __dispatch(args)(*args),
+			__dispatch: \args ->
+				
+		]

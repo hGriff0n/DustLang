@@ -76,6 +76,7 @@ Set Ranges
 	[1..] is equivalent to [1, 2, 3, 4, 5, ....]					## Ranges can be infinite (iff lazy evaluation is implemented)
 	[10..1] is equivalent to [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]		## Sign increments can be inferred automatically
 	[1..25, \x -> x^2] gives [1, 4, 9, 16, 25]						## Algorithmic steps can be specified by a function (that does what ???)
+	## what about open interval ranges? ie. [1..10) = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 
 Pattern Matching (Or should this go into functions ???)
 	def add([x, y])
@@ -189,7 +190,7 @@ What about defining multiple lambdas inside a table if one or more are multi-lin
 
 Table functions
 	size(table)				## or go Lua and have a size operator (op#)
-	pair(table, ...)		## creates a table of tables so that pair(t, tb).i = [t.i, tb.i]
+	pair(table, ...)		## creates a table of tables so that pair(t, tb).i = [t.i, tb.i] (zip?)
 	entries(table)			## similar to python.enumerate. maybe change the name
 	flatten/smooth(table)	## Removes nesting in a list
 

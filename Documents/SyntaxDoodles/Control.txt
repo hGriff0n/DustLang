@@ -1,0 +1,77 @@
+def doubleSmallNumber(x)
+	x > 100 and x or 2*x
+
+def doubleSmallNumber(x)
+	if x > 100
+		x
+	else
+		2*x
+
+def doubleSmallNumber(x)
+	if x > 100 then
+		x
+	else
+		2*x
+
+def doubleSmallNumber(x > 100) x
+def doubleSmallNumber(x) * 2
+
+def doubleSmallNumber(x)
+	if x > 100
+		return x
+	2 * x
+	
+def doubleSmallNumber(x)
+	if x > 100 then
+		return x
+	2 * x
+	
+def doubleSmallNumber(x)
+	if x > 100:
+		return x
+	2 * x
+
+	
+def greet(hour)
+	"Good " + ([0..9] ^ hour and "Morning" or [10..19] ^ hour and "Day" or "Evening")
+	
+def greet(hour)
+	if [0..9] ^ hour
+		"Good Morning"
+	elseif [10..19] ^ hour
+		"Good Day"
+	else
+		"Good Evening"
+
+def greet(hour)
+	if [0..9] ^ hour then
+		"Good Morning"
+	elseif [10..19] ^ hour then
+		"Good Day"
+	else
+		"Good Evening"
+
+def greet(hour ^ [0..9]) "Good Morning"
+def greet(hour ^ [10..19]) "Good Day"
+def greet(hour) "Good Evening"
+
+def greet(hour)
+	if hour ^ [0..9]
+		return "Good Morning"
+	if hour ^ [10..19]
+		return "Good Day"
+	"Good Evening"
+	
+def greet(hour)
+	if hour ^ [0..9] then
+		return "Good Morning"
+	if hour ^ [10..19] then
+		return "Good Day"
+	"Good Evening"
+	
+def greet(hour)
+	if hour ^ [0..9]:
+		return "Good Morning"
+	if hour ^ [10..19]:
+		return "Good Day"
+	"Good Evening"

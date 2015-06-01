@@ -37,6 +37,7 @@ x, y: give23			## x = 2, y = 3    -or-
 Static Typing ???  (Keep the syntax the same as Function Type Checking)
 let x <- Int			## Primary Syntax
 let x of Int			## Alt Syntax 1
+let x :: Int			## Haskell. Philosophically we are "assigning" x to be an Int
 ## Any ideas for other alternates ???
 
 x: 5					## 
@@ -58,7 +59,8 @@ for y in [1..5]
 		If I am to keep the rule general, yes
 		However this doesn't look as nice
 
-Variable Type Testing (testing against Int as an example)
-	var <- Int					## the question is whether this version is viable or not (same syntax as Static Typing and Function Type Checking)
+Variable Type Testing (testing against Int as an example) (keep the syntax of Static Typing and Function Type Checking and this the same)
+	var <- Int					## the question is whether this version is viable or not
+	var :: Int						## Haskell
 	type(var) = "Int"			## this capability will be kept regardless (but there are problems with inheritance)
 	is?(var, Int)				## from dust_test(deprecated) logic programming section (no problems with inheritance)
