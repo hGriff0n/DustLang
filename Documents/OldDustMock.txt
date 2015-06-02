@@ -1,0 +1,278 @@
+The text in this file was taken from an old notebook that I had written various ramblings about dust in.
+This notebook was created during the early stages of dust development. Therefore much of the syntax
+Is wildly different from the current standard and the syntax often changes from line to line.
+
+
+Functions are vararg by default
+	Can define specific arguments in the declaration
+	Can also specify a max/min number of arguments
+
+Everything is an object (Except literals ?)
+Function syntax can be used to call member functions (and get/set members ?)
+Overarching inheritance tree/Easy creation of singletons
+Garbage collection, Easy change of performance for all objects
+Easily moddable, Fast, understandable, and small
+
+Types/Variable structures
+	Array/Table: <variable> = {values}
+		Dynamic size and typing
+
+Multiple Assignment: <variables> = <values>
+	String left-right parsing, leftover variables nil
+
+Dynamic Typing
+	Hard/Soft locking: int myInt = 5.23; print myInt => 5
+		hard locked variables cannot change type when assigned a new value
+
+Functions: def <name>(<args>)
+		   <var> = function <body> end
+	Default argument values declared using arg=val syntax
+	Types can also be locked in the declaration
+	Varargs are assigned to "arg" table by default
+	Calling: foo <args> or foo(<args>)		// Using scoping to override
+	Tail-Recursive compliant
+
+Classes: class foo ??? private={<vars>} <functions> end
+	Default values are declared along with the variable name
+	Metas:	create - table that holds the order for initializing vars in constructor
+			get/set | new - new private variable with given name and value
+	functions and variables can be added/changed during execution
+	could have member functions require an obj of the "enclosing" type (as in Lua)
+		ie. foo.add(foo, int) <= foo:add(int)
+	Could "class" be a function that returns a table ???
+
+Include ruby's splat operator
+	Similar functionality to ruby but can be used anywhere in functions
+		ie. def foo(a, *b, c) a, b, c end
+				foo(1, 2, 3, 4, 5) => 1, {2, 3, 4}, 5
+				foo(1, 2) => 1, nil, 2
+
+Inheritance: class Foo <- clone Parent	-or-	class foo << Parent
+	Inherited functions/variables are overriden by defining in the child
+
+Types: type foo _private={<vars>} <interface> meta={<funcs>}
+
+Control: for, ranged for, while, repeat
+	for <var>:(begin),(end),(increment)
+	for <var> in <structure>
+		<var> is referential
+		<var> + 1 refers to the item after <var> in the structure
+	while <condition> <body> end
+	repeat <condition> <body> end
+	if <condition> then <body> else <...> end
+
+Comments
+	?!!! <Comment> !!!?
+	All comments are multiline (dust does not recognize most whitespace (aside from spaces), could theoretically be written on 1 line)
+
+proxy keyword
+	proxy <name> = <block> (or proxy <name> <block>)
+	Appearances of <name> in code is replace by the block (similar to C macros)
+
+":" symbol
+	x := foo is equivalent to x = foo(x)
+	x :is (5 or 3) => x is 5 or x is 3
+
+"->" symbol
+	x -> foo is equivalent to foo(x())		// if x is an int or similar, then x() = x
+
+RegEx support
+	Use a syntax similar to lua
+	"(<Var>)" replace <Var> with the value of <Var> (scoping applies)
+	"(_1)" replace with a passed arg (similar to C++'s system)
+		Have ability to change "(_1)" with a "(<Var>)"
+
+Member function chains
+	<var>(<fn1>, <fn2>) => <var>.<fn1> <var>.<fn2>
+
+Boolean Operations
+	false: nil or false
+	true: not false
+	and, or, <, >, >=, <=
+	isa/nota: have the same types
+	isl/notl: Have same values (if converted to the other type, are the values equal)
+	is/not: isa and isl/nota or notl
+
+Omni sign: "<=>"
+
+Function arg operations
+	Apply some operation to the passed value and use it as the argument
+
+EXAMPLE
+	def quicksort(*list, sort, args = nil) do
+		if list.size > 1 then
+			mid, high, low = {list[1]}, {}, {}
+			for item in list[2..]
+				switch sort(item, mid[1])
+					do low:add(item) if 0
+					do high:add(item) if 1
+					do mid:add(item) if 2
+				end
+			end
+			return {quicksort(low), *mid, *quicksort(high)}
+		end
+		return list
+	end
+
+	def foo(x) do
+		proxy true x
+		return x > 5		?!!! returns x iff x > 5 !!!?
+	end
+
+
+Seperating commands
+	Keyword/syntax driven
+		Possible to write an entire program on one line
+	Keywords must be surrounded by whitespace
+	Split program into chunks based on keywords, execute from there
+	How to recognize variables
+
+Scoping
+	local assumed		?!!! ::<var> looks up <var> in globals
+		global keyword
+		variables created in functions/loops/etc are assumed to be local to their execution level
+	local first
+		local variables can have the same name as variables in different execution levels
+		when a variable is referenced, the value from the closed execution level is used
+		have a way to subvert this (if only in API Interface)
+
+Comments
+	!!(!+) <comment> (!+)!!
+		THe !+ differentiates nested comments
+	Multilines
+		Necessary since a dust program can be written on 1 line
+
+def size(txt) |[indexable]|
+	ret 1 + size txt[2..]
+end
+
+def size(txt) ||char|| as 1
+
+Characteristics
+	Duck Typing
+		Constrained Dynamic Typing
+			Functions/etc. determine what operations are performed on a variable
+			Will only accept types which have those operations defined for them
+	Pattern Matching
+		Functions can be defined to have specific performance when given specific values
+		The correct overload is called based on the arguments
+			ie. def size(<string>) do 1 + size(string[2..]) end
+				def size(<char>) do 1 end
+	Currying
+	Lazy Evaluation
+		[..] an array with all numbers, is a valid construct and won't crash the interpreter
+		Variables can be declared and assigned but are not initialized until used through a member/outside function
+	Object-Oriented
+		Can be supported through an extension of core features (functions, closures, and tables)
+		key functions/keywords: class/object, clones, impersonates/uses, new
+			class/object: takes a table and returns a function to be used to create the class
+			clones: copies the passed class into the current one
+			impersonates/uses: imports the function names specified by the interface
+			new: creates a new value of the passed class
+	Type System
+		largely dynamic and inferred
+		types can be statically locked and unlocked at will
+			locked typing can be inferred at assignment/lock
+	Interpreted
+		But can undergo an "optimization" step beforehand
+	Functional
+		Possible to implement everything with functions (and macros)
+		May also be possible to implement functions with macros
+	Boolean returns
+		True and False are special variables
+		Automatically returned and expected by boolean functions and structures
+		True and False can be scoped to other values and used as such
+	Types
+		Can create new types with special values
+		Can be used to restrict value types and function returns
+
+Implementation
+	Macros/Pragmas
+		Make use of the base api through functions calls
+		API functions are indicated by the '#' prefix
+		Used to implement all language keyword/operators
+	Parsing
+		By default can only recognize pragmas and comments
+		Gradually recognizes more labels/symbols as pragmas are loaded/run
+			IDE's come with a default label package
+		Use a trie for variable storage?
+		Only allow ansi chars for variable names
+
+Syntax
+	Function restrictions
+		||class restrictions|[type restrictions](value restrictions)|
+		priority levels: value <- type <- class
+		restrictions are applied to arguments from left to right
+			Use a double comma to skip an arg
+
+	1) def factorial(x) |[multip:add]|
+	2) def abs(x) ||Number|(<0)|
+
+OOP
+	types
+		collections of functions/proto-members
+		roles - easier function type checking, [extending classes]
+		collections of functions, declared or defined
+		an object is a type if it implements all type funcs
+	class:
+		collections of functions with state
+		all variables are private, functions are public
+		class variables are referenced with a '&' before the variable name
+		static variables are referenced with a '@' before the name
+		functions can be assigned to class/static variables
+		created by calling "class" with any arguments
+			special function, create, which initializes class state
+	message passing
+
+Regex
+	string interpolation
+		form a string with #(<var>) in it
+	string search
+		same syntax as lua (replace % with #)
+
+Algebraic Expressions
+	3x is equivalent to 3 * x
+	Possibly have "expression classes" that support math operations
+		so (3x)' = 3
+
+Macros
+#label var
+	#create in #scape curr, #parse last
+	#asssign #ref last, #parse next
+#end
+#parse default, var
+#parse add, var, 1
+
+#proxy addKey ...
+	#parse add ...
+#end
+
+#label !!
+	#parse match !
+	#parse plus 2
+#end
+#addKey !!, 0
+
+Code examples
+	def abs(x) => Number(<0) as -x
+	def abs(x) => Number as x
+	def abs(x) as error
+
+	def factorial(x) => Number(>0) as x * factorial x - 1
+	def factorial(0) as 1
+	def factorial(x) as error
+
+	f = 5x^2 + 3x + 2
+	f.integ 0,2
+	f.area 0, t->g
+
+	object foo(x, y)
+		def new
+			@number += 1
+			x, y
+		def total as x + y
+		def setx as replace x
+		def sety as replace y
+		def delete
+			@number -= 1
+		@number = 0
