@@ -8,11 +8,20 @@ def Foo.new(x)		## define the function for creating new "Foo"s
 def Foo.tostring()	## define the conversion to string (this how I do it)
 	attr
 
+def Foo.increment(y)
+	attr :+ y
+
+Message Passing		## I don't quite know what this is, but this seems like an nice syntax
+	x: new Foo(3)
+	x increment, 3		## equivalent to x.increment 3
+	increment x, 3		## since new Foo calls Foo.new ???
+
+
 ## type, object, or class for declaration keyword
 	## changing it from type would allow me to implement the logic section from dust_test(deprecated)
 	## that "type" syntax would dovetail rather nicely with the idea to have Java-like interfaces / C++ concepts
 	## what about having "haskell-like" types as well (maybe have type and interface/concept keywords)
-	## type describes the implementation/ordering of the data, interface/concept the functions
+	## type describes the implementation/ordering of the data, interface/concept the functions ???
 
 
 ## possibilities for type inheritance
