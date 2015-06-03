@@ -75,3 +75,18 @@ def greet(hour)
 	if hour ^ [10..19]:
 		return "Good Day"
 	"Good Evening"
+
+
+Scoping
+	To assign a variable from an enclosing scope		## currently access will return the first non-nil value
+		@x: 3
+		$x: 3
+	@x refers to the variable 'x' from the enclosing scope
+		Or @x refers to the variable 'x' in the nearest scope where x is defined
+		@@x refers to the enclosing scope of the enclosing scope
+			Basically "stacking" enclosing lookups
+		Behavior if the current scope is the global scope (ie. there is no enclosing scope)
+			1) Throw an error
+			2) Silently fail (ie. @x = x)
+		Could I have special syntax for "searching" lookup ??
+			ie. @..x will return the value of x in nearest scoped that x is defined in (this is unnecessary if the second definition is taken)

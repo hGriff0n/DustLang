@@ -190,44 +190,45 @@ What about defining multiple lambdas inside a table if one or more are multi-lin
 
 Table functions
 	size(table)				## or go Lua and have a size operator (op#)
-	pair(table, ...)		## creates a table of tables so that pair(t, tb).i = [t.i, tb.i] (zip?)
+	zip(table, ...)			## creates a table of tables so that zip(t, tb).i = [t.i, tb.i]
 	entries(table)			## similar to python.enumerate. maybe change the name
 	flatten/smooth(table)	## Removes nesting in a list
 
 	def type([]).reduce(t <- Table, fn <- Function, sum)
 		if !sum sum, t: fst(t), tail(t)						## but isn't my current rules that the arguments are constant
-		for x in t sum: fn(x, sum)
+		for x in t @sum: fn(x, sum)
 		sum													## is this line necessary or would the function return sum regardless??
 
 	type([]).has: \t,v -> t ^ v
 	type([]).map: \t,fn -> [\x -> fn(x) | x in t]			## currently type([]) returns a string
 	type([]).sum: \t -> t.reduce(\x, s -> x + s)
-	type([]).entries: \t -> t.pair(t.keys, t.values)		## Might change the naming. Also, t.1 gives the key as opposed to t.key 
+	type([]).entries: \t -> t.zip(t.keys, t.values)			## Might change the naming. Also, t.1 gives the key as opposed to t.key 
 
 Translating tables into collection of objects and vice versa
 	I like *t for doing this, however that could clashe with the multiplying operator, op*
 
 	def quick(sel)
 		sel <- Table and quick(*sel) or sel		## type(sel) = "table"
+
 	def quick(sel, *list)
 		mid: [sel]
 		high: low: []
 		for item in list
 			switch item <=> sel			## works similar to Java's compareTo
-				high + item, if 1
-				low + item, if -1
-				mid + item, otherwise
+				@high :+ item, if 1
+				@low :+ item, if -1
+				@mid :+ item, otherwise
 		[quick(low), mid, quick(high)].flatten()
 
-	def quick([sel, *list])				## overloading not needed with pattern matching (only accepts tables)
+	def quick([sel, *list])				## overloading not needed with pattern matching (only accepts tables though)
 		if !list return sel
 		mid: [sel]						## how about 'mid, high: [sel], low: []'
 		high: low: []					## the question is about evalutation order (does low: get evaluated before high:)
 		for item in list
 			switch item <=> sel			## the omni-sign is not valid syntax yet
-				high + item, if 1
-				low + item, if -1
-				mid + item
+				@high :+ item, if 1
+				@low :+ item, if -1
+				@mid :+ item
 		[quick(low), mid, quick(high)].flatten()
 
 Have a syntax/ability to perform python-like slices???

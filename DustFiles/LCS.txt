@@ -21,17 +21,17 @@ def LCS.newrow(seq1, seq2, idx)							## This process can probably be simplified
 
 def LCS.init(x, y)
 	self.removeIf(\k -> k != 0 and !ismetamethod(k))
-	for i in enumerate(x)									## This process can probably be simplified
-		self[#self]: self.newrow(x, y, i)					## relying on #self = size(self)	
+	for i in [1..size(x)]									## This process can probably be simplified
+		self[#self]: self.newrow(x, y, i)					## relying on #self = size(self) and self[#self - 1] = lst(self)
 	self.__newindex: \ -> self[0]
 
 ## Longest Common Subsequence implemented in [i, j] syntax
 LCS: [
 	__memoize: \[i,j] ->	## here(V) 'self' is implicit but here(V) self must be used  (just a temporary change)
-		[i, j] ^ 0 and 0 or str1[i] = str2[j] and self[i-1, j-1] + 1 or max(self[i-1, j], self[i, j-1])
+		[i, j] ^ 0 and 0 or str1[i] = str2[j] and self[i-1, j-1] + 1 or max(LCS[i-1, j], self[i, j-1])
 ]
 
 def LCS.init(str1, str2)
-	self.removeIf(\k -> !ismetamethod(k))		## deletes previous iterations
+	self.removeIf(\k,v -> !ismetamethod(k, v))		## removes everything but the defined metamethods (ie. previous iterations)
 	set(self, "str1", str1)
 	set(self, "str2", str2)
