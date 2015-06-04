@@ -12,9 +12,27 @@ def Foo.increment(y)
 	attr :+ y
 
 Message Passing		## I don't quite know what this is, but this seems like an nice syntax
-	x: new Foo(3)
-	x increment, 3		## equivalent to x.increment 3
-	increment x, 3		## since new Foo calls Foo.new ???
+	x: new Foo(3)			## should probably rearrange to Foo.new or Foo(), but many are familiar with this syntax
+							## This could possibly help with implementing currying
+							## ie. \i,j -> * turns into {i op* j} or something like that (would it be possible to have something like {(nil) op* i j})
+
+	x.increment(2)			## Standard syntax
+	{x increment 2}			## In Object-C, this would read [x increment: 2]
+	(x increment 2)
+	($x increment 2)		## would I need the parenthesis here
+	(x increment <- 2)
+	(x <- increment 2)
+	(x increment | 2)
+	(x | increment 2)
+
+	General syntax appears to be
+		<signifier><variable> <method> "<args>" " " <signifer>
+		(<variable> <signifier> <method> "<args>" ", ")
+
+	Questions
+		How should message passing nil/nothing be defined (ie. what does { increment x 2} produce)
+			Wouldn't the message passing just translate to @<variable>.<method>(<args>) ??
+			So then passing nothing would directly translate to @.<method>(<args>)	(ie. calls the method as defined in the scope)
 
 
 ## type, object, or class for declaration keyword
@@ -46,3 +64,6 @@ type Bar [
 ] ++ Foo		## Have '++' be a special syntax ??? (I don't like the idea of special syntax, but the '++' feels better)
 
 ## Way to make Java's interfaces possible ???
+
+Extensible objects
+	Can member functions be added to an object after declaration and definition (can objects accrue methods as the program executes)

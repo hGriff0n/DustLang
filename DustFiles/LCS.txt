@@ -1,7 +1,12 @@
 
-LCS(i, j) is the length of the longest common subsequence of sequences X[0..i] and Y[0..j]
-If we allow 0 to indicate the null sequence then L[0, j] = 0 and L[i, 0] = 0				## done
-Then L[i,j]: x[i] = y[j] and L[i-1, j-1] + 1 or max(L[i-1,j], L[i, j-1])
+## LCS(i, j) is the length of the longest common subsequence of sequences X[0..i] and Y[0..j]
+## If we allow 0 to indicate the null sequence then L[0, j] = 0 and L[i, 0] = 0				## done
+## Then L[i,j]: x[i] = y[j] and L[i-1, j-1] + 1 or max(L[i-1,j], L[i, j-1])
+
+## This file is regarding the implementation in two possible syntaxes, [i][j] and [i, j]
+## [i][j] is well defined within the specification as being two table lookups
+## [i, j] currently holds no syntactical definition aside from creating a table with i and j as elements (but not for table access)
+## In both cases, the syntax is being used to find the LCS between the first i characters of X and the first j characters of Y
 
 ## Longest Common Subsequence implemented in [i][j] syntax
 LCS: [													## The core idea is that LCS[i] should always go through __index
@@ -25,6 +30,8 @@ def LCS.init(x, y)
 		self[#self]: self.newrow(x, y, i)					## relying on #self = size(self) and self[#self - 1] = lst(self)
 	self.__newindex: \ -> self[0]
 
+## print(LCS[2][4])
+
 ## Longest Common Subsequence implemented in [i, j] syntax
 LCS: [
 	__memoize: \[i,j] ->	## here(V) 'self' is implicit but here(V) self must be used  (just a temporary change)
@@ -35,3 +42,5 @@ def LCS.init(str1, str2)
 	self.removeIf(\k,v -> !ismetamethod(k, v))		## removes everything but the defined metamethods (ie. previous iterations)
 	set(self, "str1", str1)
 	set(self, "str2", str2)
+
+## print(LCS[2,4])

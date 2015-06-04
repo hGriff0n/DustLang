@@ -64,3 +64,10 @@ Variable Type Testing (testing against Int as an example) (keep the syntax of St
 	var :: Int						## Haskell
 	type(var) = "Int"			## this capability will be kept regardless (but there are problems with inheritance)
 	is?(var, Int)				## from dust_test(deprecated) logic programming section (no problems with inheritance)
+
+"Calling" variables
+	Assuming x is not a function
+	What is the semantical value of "x()"
+		
+	Assuming x is nil
+		

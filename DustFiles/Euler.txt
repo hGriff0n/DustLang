@@ -1,7 +1,7 @@
 euler: []
 
 ## Problem 1: Sum of all multiples of 3 or 5 below 1000 (233168)
-@note "Ensure that x is one less than the number given when calling"
+##Note "Ensure that x is one less than the number given when calling"
 ## Functional Filtering
 euler.1: \x -> sum(filter([3..x], \i -> [i % 3, i % 5] ^ 0))
 

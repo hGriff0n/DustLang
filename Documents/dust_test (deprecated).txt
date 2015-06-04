@@ -1,15 +1,3 @@
-This file was originally created back in the early days when #Dust# was nothing more
-Than a passing interest to me, a series of doodles of interesting syntax that while
-Readable and aesthetically pleasing, were ultimately inconsistent and incomplete.
-But while working on the actual language specification, much was changed from what
-Was originally included within this document. During this process, I deleted everything
-That was no longer relevant or valid from this file. I may be able to recover some of my
-Original ideas from notes I have stashed around, but ultimately I fear that much has
-Been lost. This process has occurred to all files while I waited for a specification
-That I felt was complete and implementable. However, I have come to realize that no
-Specification is really complete and that there is much value into my initial ramblings
-And doodles. So now I finally move to Github as I morn my short-sightedness.
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!symbolic programming
 say numbers * x = bigger in scale
