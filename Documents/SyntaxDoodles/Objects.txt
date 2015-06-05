@@ -1,15 +1,28 @@
-type Foo [			## defines a new type with member variables
-	attr: 5			## note the similarity to table syntax
-]					## that's because types are basically preset tables (needs more explanation, how do the presets work)
 
-def Foo.new(x)		## define the function for creating new "Foo"s
-	attr: x			## implicit "self"/"this"
 
-def Foo.tostring()	## define the conversion to string (this how I do it)
-	attr
+Type Declaration
+	type <type> <table>			## Typename may have to be capitalized (currently undecided)
 
-def Foo.increment(y)
-	attr :+ y
+	type Foo [			## defines a new type with member variables
+		attr: 5
+	]
+
+Type Methods
+	Methods can be declared either as lambdas inside the type declaration or as functions outside (prepend with type name, much like tables)
+		Distinction between "static" and "instance" methods (possibilities)
+			Have all functions defined as methods to be instance
+			Have all inline methods as static and all outside as instance
+			Have special syntax/keywords to specify (similar to Objective-C)
+			Have the first argument to be implicitly the object (similar to Lua)
+
+	def Foo.new(foo, x)		## define the function for creating new "Foo"s
+		foo.attr: x
+
+	def Foo.new(x)
+		attr: x				## implicit self
+
+	def Foo.increment(foo, y)
+		foo.attr :+ y
 
 Message Passing		## I don't quite know what this is, but this seems like an nice syntax
 	x: new Foo(3)			## should probably rearrange to Foo.new or Foo(), but many are familiar with this syntax
@@ -27,6 +40,7 @@ Message Passing		## I don't quite know what this is, but this seems like an nice
 
 	General syntax appears to be
 		<signifier><variable> <method> "<args>" " " <signifer>
+			ie. ( x increment 2 )
 		(<variable> <signifier> <method> "<args>" ", ")
 
 	Questions
@@ -34,36 +48,45 @@ Message Passing		## I don't quite know what this is, but this seems like an nice
 			Wouldn't the message passing just translate to @<variable>.<method>(<args>) ??
 			So then passing nothing would directly translate to @.<method>(<args>)	(ie. calls the method as defined in the scope)
 
+Dust OOP
+	Interface of supported functions
+		I don't know if this is going to be feasible to implement
+			Maybe with Message Passing, otherwise not without the Type Functions proposal
+		interface Foo x
+			has_method? x <method> ...
 
-## type, object, or class for declaration keyword
-	## changing it from type would allow me to implement the logic section from dust_test(deprecated)
-	## that "type" syntax would dovetail rather nicely with the idea to have Java-like interfaces / C++ concepts
-	## what about having "haskell-like" types as well (maybe have type and interface/concept keywords)
-	## type describes the implementation/ordering of the data, interface/concept the functions ???
+	Combination of Interface and Implementation
+		type Foo [ x: 3 ]
 
+Inheritence syntax
+	<type> ++ <type_list>
 
-## possibilities for type inheritance
-type Bar inherits Foo [
-	width: 3,
-	height: 4	## should height: width (height equals weight by default) be possible ??? (global question about table initialization order)
-]
+	type Bar [
+		width: 3,
+		height: 4
+	] ++ Foo
 
--or-
+	Currently the ++ is a special syntax for types
+		Could I make so that ++ performs some function on tables in general (depends on the implementation of type inheritance)
+			Setting up metatables?
+		Otherwise I'll seriously consider using + instead
+			I don't think it'd quite as succintly express the same semantics however
 
-type Bar [
-	width: 3,
-	height: 4
-] + Foo			## inherits Foo members & methods (retroactive ???)
-				## fairly easy to handle access rules, if name's not defined in Bar, call Foo.name(this, ...)
+Interfaces (If I ever implement them)
+	Interfaces check if a given object has a series of functions defined for its type either as members or possibly free functions
+		Don't know about the feasibility (free functions/etc.)
 
--or-
+	What's the use ???
+		Duck Type checking at the function call line
+			But this kinda defeats the purpose of duck typing
 
-type Bar [
-	width: 3,
-	height: 4
-] ++ Foo		## Have '++' be a special syntax ??? (I don't like the idea of special syntax, but the '++' feels better)
-
-## Way to make Java's interfaces possible ???
+	Taking advantage of the "logic" syntax in dust(deprecated)'
+		interface Printable x					## ie. x is a Printable iff x has a print method
+			has_method? x, print
+	Alternate
+		interface Printable x					## this is a skin of a function call
+			!(nil ^ [ x.print ])				## if any of the methods are undefined for x (ie. nil) then the interface "test" fails
+	Concept system ???
 
 Extensible objects
 	Can member functions be added to an object after declaration and definition (can objects accrue methods as the program executes)

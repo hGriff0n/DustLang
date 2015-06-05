@@ -7,10 +7,10 @@ Function Declaration
 	def abs(x <- Number)								## Might end up changing the syntax to use {} instead of ()
 		x > 0 and x or -x
 
-Function Calling
-	<name>(<value> ', ')			## The exact syntax mirrors the "def" line of the declaration syntax
-	<name> <values>					## Might remove as an option/require '()' for no aguments	(ie. what does "x: abs" mean)						
-	abs(4)	-or-	abs 4
+Function Calling				
+	abs(4)	-or-	abs 4						## Mirrors the syntax of function declaration (ie. if decl uses (), so do calling)
+	Might enforce () to call a function with no arguments
+		Not sure about the "No ()" syntax otherwise (what does 'x: abs' mean)
 
 Lambdas (Anonymous functions)
 	Syntax
@@ -63,7 +63,7 @@ Type Checking
 	An error is only thrown at the instance where a type mismatch occurs (through functions/system/etc.)
 
 	Explicit type checking			## Uses the same syntax as Static Typing
-		def abs(x <- Number)
+		def abs(x <- Number)	-or-	def abs(x :: Number)
 		This will cause a type mismatch error iff abs is called with a variable whose type is not Number (assuming an overload on the type doesn't exist)
 		This syntax cannot be used to specify the types of the values the function returns
 
@@ -142,6 +142,15 @@ Table functions
 				Functions defined in tables first look to the tables fields
 				Ie. the table is the function's defining scope
 		The other options will still be legal syntax (aside from 'x.' (scoping/redefinition/etc.))
+
+Function default values
+	Default values can be given to any arguments in a dust function by simply assigning a value in the declaration
+	The arg takes on the default value if a nil/no value is passed to the function in the arg's position (or the value is passed)
+		Unlike in C/C++, default values do not have to follow a right->left ordering and instead may be declared/used at any point in the function
+
+	def add(x: 2, y: 3) x + y
+	add(nil ,2) = 4						## it might be possible to write add(,2)
+	add(3) = 6
 
 ## Once these are finished, see if there is anything else that needs/could be defined here (and do so)
 ## Once that is finished, start to write a more detailed section in the Provisional Language Manual
@@ -256,7 +265,7 @@ Functions as objects (ala Scala) ??? (Incomplete)
 					mid, otherwise) + item
 			[*quick(low), *mid, *quick(high)],
 		__newindex: \-> nil,								## disable table functions
-		__index: \-> nil
+		__index: \-> nil									## but doesn't this implementation require access table indices ???
 	]
 
 	## quicksort table implementation using dispatch method for overloading with 

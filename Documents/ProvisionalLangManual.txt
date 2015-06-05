@@ -1,7 +1,7 @@
 ## For final release, rely more on sentences and paragraphs
 
 Dust Language Manual
-version 0.1.7
+version 0.1.9
 
 ## Versioning rules
 ## [milestone versioning].[minor versioning].[change versioning]
@@ -128,7 +128,8 @@ Table of Contents
 		1.1.2. Lookup Rules
 			If a variable name is referenced in any scope, a nil value should be returned as last resort (but what if I assign to nil in the scope ???)
 			The access should first be performed in the current scope and then in any parent scopes until a non-nil value or the global scope is reached
-			Variables are automatically declared in the current scope (useful to have the possibility to go up a few scopes though) 
+			Variables are automatically declared in the current scope (useful to have the possibility to go up a few scopes though)
+				Have '@' syntax for forcing a level lookup ???
 		1.1.3. Implementation
 			It should eventually be possible to implement the lookup and variable presence rules entirely using tables and metamethods (another term ???)
 			However for now, 

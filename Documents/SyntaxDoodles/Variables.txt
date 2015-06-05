@@ -1,73 +1,65 @@
-Variable ssignment
-	Style
-		x: 5
-	General feel
-		Clean and concise assignment Syntax
-		Intuitive syntax for non-array table keys
-		Inconsistent feel when combined with 'let' and tables
-	Consistency
-		':' means always means assignment
-		Assignment always entails ':'
-	Flexibility
-		Allows simple use of '=' for equality
-	Cons
-		No "good" way to have '+=' type operators
-	Alternatives
-		x = 5
-		x := 5
-		x <- 5
-		5 -> x
-
-let x: [4, y: 3]
-z: [2, 3]
-y: (x: 5) + 4			## Error: Reassignment of constant variable 'x'
-y: (z: 5) + 4			## Valid: Variable 'z' is not marked constant
-y: \ -> (x: 5) + 4			## Valid: Variable 'x' is in scope 'y' (lambda function)		Syntax will change
-
-x, y: 3, 4				## Equivalent x: 3; y: 4
 
 
-## EXAMPLE 3.2.4.
-def give23
-	2, 3
+Assignment
+	let? <var>: <value>				## appending let to the beginning of the assignment makes the variable "constant"
+	let? <var_list>: <val_list>
+		<var_list> = <id>(, <id>)*
+		<val_list> = <expr>(, <expr>)*
 
-x, y: give23			## x = 2, y = 3    -or-
-						## x = give23, y = nil		ie. Function Evaluation vs. Duplication
+	An assignment will evaluate to the value assigned to the variable
+		Other possibilities: The old value of the variable
 
-Static Typing ???  (Keep the syntax the same as Function Type Checking)
-let x <- Int			## Primary Syntax
-let x of Int			## Alt Syntax 1
-let x :: Int			## Haskell. Philosophically we are "assigning" x to be an Int
-## Any ideas for other alternates ???
+	let x: [4, y: 3]
+	z: [2, 3]
+	y: (x: 5) + 4			## Error: Reassignment of constant variable 'x'
+	y: (z: 5) + 4			## Valid: Variable 'z' is not marked constant
+	y: \ -> x: 5 + 4		## Valid: Variable 'x' is in scope 'y' (lambda function)		Syntax will change
 
-x: 5					## 
-x: 4					## The syntax clashes with constant declarations (but the type of constants isn't exactly flexible anyways)
-x: "Hello"				## Throws a type error, "Hello" cannot be converted to an integer
+	Compound Assignment
+		let? <var>:<op> <value> = let? <var>: <var> <op> <value>
+		Note := is now a compound boolean assignment (was previously an alternate assignment syntax)
+		
+		x: 1
+		for _ in [1..5] x :+ 1
 
-Compound Assignment operators (Of the form <assignment><operator>, ie. :+, :-, :*)
-x: 1					## Only add if it is possible to lex and parse correctly
-for y in [1..5]
-	x :+ 1				## x: x + 1
+Multiple Assignment
+	let? <var_list>: <expr_list>			## a list of object is a comma seperated sequence of object (see table)
+	This construct is similar to performing a whole series of assignments
+		Appending let to the multiple assignment is like appending let to each of these assignments
+			Ie. every varable in the expression will be marked constant
+		The list of values are evaluated (ie. reduced) before the list of vars
+			x: 5
+			x, y: 3, x		## x = 3, y = 5 (y = 3 if values evaluated with vars)
 
-	Question: Would := be a viable compound operator
-		x := z would read x: x = z
-		Currently := is an assignment operator
-		But the entire reasoning behind this was that ':' looked odd when the variable was a table field
-			It still looks slightly odd, but I feel that that absurdity has passed once I've gotten used to the syntax
+	The whole expression will evaluate to the result of the last assignment performed
+	
+	x, y: 3, 4				## Equivalent x: 3; y: 4
+	def give23() 2, 3
+	x, y: give23()			## x = 2, y = 3
 
-	Question: Would :=+ be valid syntax
-		If I am to keep the rule general, yes
-		However this doesn't look as nice
+Type Checking
+	Static Typing					## Be sure to adjust Function Type Checking/Type Testing with any syntax 
+		let x <- Int		## Current favorite
+		let x of Int		## Alt 1
+		let x :: Int		## Haskell. Philosophically we are "assigning" x to be an Int
 
-Variable Type Testing (testing against Int as an example) (keep the syntax of Static Typing and Function Type Checking and this the same)
-	var <- Int					## the question is whether this version is viable or not
-	var :: Int						## Haskell
-	type(var) = "Int"			## this capability will be kept regardless (but there are problems with inheritance)
-	is?(var, Int)				## from dust_test(deprecated) logic programming section (no problems with inheritance)
+		x: 5					## The syntax unfortunately apropriates the constant syntax (but the types of constants aren't exactly flexible anyways)
+		x: 4					## This could incite some degree of confusion among readers and coders
+		x: "Hello"				## Throws a type error, "Hello" cannot be converted to an integer
+
+	Type Testing
+		var <- Int					## Viable or not
+		var :: Int					## Haskell
+		typename(var) = "Int"		## This capability will be kept (though it has problems with inheritance)
+		type(var) = Int				## This is used in Tables to define type methods (ie. type([]).x: 3)
+		is? var, Int				## dust(deprecated) logic section (not problems with inheritance)
+
+Variable versus Type Identifiers
+	Force type identifiers to begin with a capital and variables to begin with a lowercase ???
 
 "Calling" variables
-	Assuming x is not a function
+	Assuming x is not a function (ie. x: 5)
 	What is the semantical value of "x()"
-		
+		error or 5
 	Assuming x is nil
-		
+		Is nil special in this regard

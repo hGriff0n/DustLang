@@ -1,0 +1,12 @@
+How capabilities should the dust program API provide to programmers (from a c++ perspective for now)
+
+Run and load dust files / strings of dust code
+	loadFile/loadString vs. run
+
+If we're just developing an interpreter for C++, that's really all I need
+	See work on autoLua
+	Want to set the variable 'ksjdbf' to 3
+		dust.run("ksjdbf: 3");
+
+	Want to then get the value of 'ksjdbf'
+		int ksjdbf = dust.run("ksjdbf");			// possibly (it might be advantageous to provide another syntax)

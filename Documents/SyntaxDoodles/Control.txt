@@ -1,81 +1,85 @@
-def doubleSmallNumber(x)
-	x > 100 and x or 2*x
+if-else-elseif 
+	Testing the syntax for if-else-elseif branches in multiline, oneline, and noline variants
+		Testing "no keyword", "if - then", "do-block"
 
-def doubleSmallNumber(x)
-	if x > 100
-		x
-	else
-		2*x
+	def twoLineIf(x)
+		if x < 50
+			print("x is smaller than 50")
+			return x * 2
+		elseif x < 100
+			print("x is smaller than 100")
+			return x
+		else
+			print("x is a big number")
+			return x / 2
 
-def doubleSmallNumber(x)
-	if x > 100 then
-		x
-	else
-		2*x
+	def twoLineIf(x)
+		if x < 50 then
+			print("x is smaller than 50")
+			return x * 2
+		elseif x < 100 then
+			print("x is smaller than 100")
+			return x
+		else
+			print("x is a big number")
+			return x / 2
+			
+	def twoLineIf(x)
+		if x < 50 do
+			print("x is smaller than 50")
+			return x * 2
+		elseif x < 100 do
+			print("x is smaller than 100")
+			return x
+		else do
+			print("x is a big number")
+			return x / 2
+		
+			
+	def oneLineIf(x)
+		if x < 50
+			print("x is smaller than 50") and x * 2
+		elseif x < 100
+			print("x is smaller than 100") and x
+		else
+			print("x is a big number") and x / 2
+			
+	def oneLineIf(x)
+		if x < 50 then
+			print("x is smaller than 50") and x * 2
+		elseif x < 100 then
+			print("x is smaller than 100") and x
+		else
+			print("x is a big number") and x / 2
+			
+	def oneLineIf(x)
+		if x < 50 do
+			print("x is smaller than 50") and x * 2
+		elseif x < 100 do
+			print("x is smaller than 100") and x
+		else do
+			print("x is a big number") and x / 2
 
-def doubleSmallNumber(x > 100) x
-def doubleSmallNumber(x) * 2
 
-def doubleSmallNumber(x)
-	if x > 100
-		return x
-	2 * x
-	
-def doubleSmallNumber(x)
-	if x > 100 then
-		return x
-	2 * x
-	
-def doubleSmallNumber(x)
-	if x > 100:
-		return x
-	2 * x
+	def noLineIf(x)
+		if x < 50 print("x is smaller than 50")
+		elseif x < 100 print("x is smaller than 100")
+		else print("x is a big number")
+		
+	def noLineIf(x)
+		if x < 50 then print("x is smaller than 50")
+		elseif x < 100 then print("x is smaller than 100")
+		else print("x is a big number")
+		
+	def noLineIf(x)
+		if x < 50 do print("x is smaller than 50")
+		elseif x < 100 do print("x is smaller than 100")
+		else do print("x is a big number")
 
-	
-def greet(hour)
-	"Good " + ([0..9] ^ hour and "Morning" or [10..19] ^ hour and "Day" or "Evening")
-	
-def greet(hour)
-	if [0..9] ^ hour
-		"Good Morning"
-	elseif [10..19] ^ hour
-		"Good Day"
-	else
-		"Good Evening"
-
-def greet(hour)
-	if [0..9] ^ hour then
-		"Good Morning"
-	elseif [10..19] ^ hour then
-		"Good Day"
-	else
-		"Good Evening"
-
-def greet(hour ^ [0..9]) "Good Morning"
-def greet(hour ^ [10..19]) "Good Day"
-def greet(hour) "Good Evening"
-
-def greet(hour)
-	if hour ^ [0..9]
-		return "Good Morning"
-	if hour ^ [10..19]
-		return "Good Day"
-	"Good Evening"
-	
-def greet(hour)
-	if hour ^ [0..9] then
-		return "Good Morning"
-	if hour ^ [10..19] then
-		return "Good Day"
-	"Good Evening"
-	
-def greet(hour)
-	if hour ^ [0..9]:
-		return "Good Morning"
-	if hour ^ [10..19]:
-		return "Good Day"
-	"Good Evening"
-
+	def noLineIf(x)
+		if (x < 50) print("x is smaller than 50")
+		elseif (x < 100) print("x is smaller than 100")
+		else print("x is a big number")
 
 Scoping
 	To assign a variable from an enclosing scope		## currently access will return the first non-nil value
@@ -90,3 +94,14 @@ Scoping
 			2) Silently fail (ie. @x = x)
 		Could I have special syntax for "searching" lookup ??
 			ie. @..x will return the value of x in nearest scoped that x is defined in (this is unnecessary if the second definition is taken)
+
+"do-block" syntax (possibility?)
+	do
+		x: 5
+		print(x)		## 5
+	print(x)			## nil
+
+	This is a "nice" syntax for creating blocks of code without the presence of control structures et al
+
+Statement seperator
+	Should I have a ';' like character to seperate statements in a single line ???

@@ -1,0 +1,23 @@
+This list doesn't seriously consider whitespace other than spaces (except for <block>)
+
+<#_list> = <#>', <#>'*
+
+<arg> = <id>': <expr>'? '<- <type>'?
+<lambda> = \<arg_list>? -> '<expr>|<block>'?				## <expr>|<block>|<curry>
+<function> = def <id>(<arg_list>?) '<expr>|<block>'
+<call> = <var>(<expr_list>?)								## <var>'(<expr_list>?)| <expr_list>'
+
+<object> = type <type> <table>? <inheritance>?
+<inheritance> = ++ <type_list>
+
+<assign> = let? <var_list> ?<assign_op> <expr_list>
+<assign_op> = :<op>?
+
+<table> = [ <entry_list>? ]
+<entry> = let? <var>: <expr>								## <assignment> ???
+
+<typecheck> = <var> <- <type>
+
+<expr> = .*
+<var> = <id>'\.<var>'*
+<block> = '\t'<expr>|<block>''+

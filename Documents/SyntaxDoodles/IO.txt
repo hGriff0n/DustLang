@@ -7,12 +7,27 @@ Console
 
 		x: read \x => int?		// or alternately readIf, readNext, readAll
 
-	Note: io.print = print, io.read = read		// or have io.std.out => io.print = io.writer io.std.out
 	Note: print and read are mutable, io.print and io.read are not
 
-File/Custom Console				// Creation of objects, etc.
-	x: io.reader "file"/"console object", [accessors]
-	x: io.writer "file"/"console object", [accessors]
+Output
+	io.print(x)
+	print(x	)							## formatting ???
+
+	io.writer							## default class that handles output
+		print = io.writer(io.std.out)	## print is just an instance of the class on the standard output
+
+Input
+	x: io.read							## I'm thinking to have the reading performed through regexes
+	x: read io.digit					## This line performs a read using the digit regex
+	print(x + 5)						## The question then becomes, should x be implictly converted to an int or should the conversion be explicit
+
+	io.reader							## default class that handles input
+		read = io.reader(io.std.in)		## read is just an instance of the class on the standard input
+
+File
+	To create variables that read/write data from files, just initialize an io.reader/io.writer class with the file name (and any accessors)
+		fin: io.reader "file", [accessors]
+		fout: io.writer "file", [accessors]
 
 Logging
 	io.log ""

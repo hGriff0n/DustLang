@@ -1,22 +1,15 @@
 euler: []
 
+## Note Ensure that x is one less than the number given when calling
 ## Problem 1: Sum of all multiples of 3 or 5 below 1000 (233168)
-##Note "Ensure that x is one less than the number given when calling"
-## Functional Filtering
+
 euler.1: \x -> sum(filter([3..x], \i -> [i % 3, i % 5] ^ 0))
-
-## Declarative Combining
 euler.1: \x -> sum([3, 6..x] & [5, 10..x])
-
-## Iterative Summation
 def euler.1(x)
 	sum: 0
 	for i in [3..x]
-		if [i mod 3, i mod 5] ^ 0
-			@sum:+ i
+		@sum:+ [i mod 3, i mod 5] ^ 0 and i or 0
 	return sum
-
-## Set Comprehension
 euler.1: \x -> [\i | i in [3..x], [i % 3, i % 5 ^ 0]].sum()
 ## euler.1: \x -> [\i | i in [3..x], i.mod(3, 5) ^ 0].reduce(\x,s -> s + x)  I don't know about the i.mod call returning a table if given multiple inputs ???
 
