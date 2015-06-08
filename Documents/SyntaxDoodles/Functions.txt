@@ -7,10 +7,18 @@ Function Declaration
 	def abs(x <- Number)								## Might end up changing the syntax to use {} instead of ()
 		x > 0 and x or -x
 
+														## I don't know about the consistency/conceptual
+	def abs[x <- Number]								## This has some interesting implications (conceptually, implementation, etc.)
+		x > 0 and x or -x								## It's the pattern matching syntax (unifies implementation).
+														## A possible way to work towards implementing [i, j] syntax 
+														## This syntax would imply abs[4] to call (but I still like '()' syntax for that)
+														## But then what's the syntax for pattern matching ('()' syntax? Splat also works)
+
 Function Calling				
 	abs(4)	-or-	abs 4						## Mirrors the syntax of function declaration (ie. if decl uses (), so do calling)
 	Might enforce () to call a function with no arguments
 		Not sure about the "No ()" syntax otherwise (what does 'x: abs' mean)
+
 
 Lambdas (Anonymous functions)
 	Syntax
@@ -33,7 +41,7 @@ Lambdas (Anonymous functions)
 			It should be largely trivial to add in parentheses if I need to afterwards
 
 		Use message passing (the syntax/idea isn't nailed yet)
-			Then just turn the lambda body into message passing syntax
+			Then just turn the lambda body into message passing syntax ???
 			Translate: ( op+ 2, x)	( op* i, j)		(2 op+ x)		( max x, y)		( max ( double x, y))
 
 		All things considered, the the translations should probably replace the original function in memory
@@ -63,7 +71,7 @@ Type Checking
 	An error is only thrown at the instance where a type mismatch occurs (through functions/system/etc.)
 
 	Explicit type checking			## Uses the same syntax as Static Typing
-		def abs(x <- Number)	-or-	def abs(x :: Number)
+		def abs(x <- Number)
 		This will cause a type mismatch error iff abs is called with a variable whose type is not Number (assuming an overload on the type doesn't exist)
 		This syntax cannot be used to specify the types of the values the function returns
 
@@ -71,12 +79,10 @@ Function Argument Passing
 	def add(x, y) declares the function 'add' that expects two arguments
 		The two arguments are referred to as 'x' and 'y' internally
 
-	If add is called with one argument
-		Assuming no version of add has been defined that expects 1 argument
+	If add is called with less arguments							## Note these are purposely ignoring overloading
 		x is assigned to be the value of the argument and y is assigned nil
 
-	If add is called with 3 arguments
-		Assuming no version of add has been defined that expects 3 arguments
+	If add is called with more arguments
 		The third value is dropped from calculations, x is assigned to be the first arg and y the second
 
 	All function arguments are unique references					## This will be changed repeatedly during language development
@@ -89,13 +95,13 @@ Function Argument Passing
 			Much the same reasoning behind Haskell's functional nature
 
 		Implementation
-			It may be beneficial to allow such procedure to simplify the implementation and reduce memory usage
+			It may be beneficial to allow such procedures to simplify the implementation and reduce memory usage
 
 Pattern Matching (only works if function overloading is valid)
 	def add([x, y,])		## This table will only match a table of two elements or less (x/y are assigned to nil in this case)
 		x + y
 
-	ie. def add[x, y, z,]	## This pattern only matches a table of three elements
+	ie. def add[x, y, z,]	## This pattern only matches a table of three elements (this is a proposed function syntax)
 		x + y + z
 
 	def add([x, y, *z])		## This pattern matches a table of 3+ elements. In practice, it will only match a table of 4+ elements due to the previous delcaration
@@ -110,47 +116,137 @@ Named arguments
 			Just have the function take a single table as argument (all function values are dervied from there)
 		Might be easy to implement if the functions are tables proposal is accepted (though probably tricky)
 			add(y: 3, x: 5)		## Same as assignment syntax
+	This might be implemented if the proposed function syntax is accepted
+		The proposed syntax would merge functions calling and tables (the above workaround)
 
-Type Functions	(Ie. C++17 proposal N4474)
-	Regarding code of the form x.f(y) or f(x, y) where the typed form is not defined but the non-typed form is
-		Ie. if x.f(y) is defined and f(x, y) isn't, then will calling f(x, y) give the same results as x.f(y)
-
-	In regards to dust, this proposal is currently deprecated
-		In regards to the given example, function overloading allows this statement to be trivial to fix
-			def f(x, y) x.f(y)
-
-		If objects are extensible (not yet a feature), then the reverse will also be trivial to fix
-			def x.f(y) f(x, y)
-
-		There is also a possible message syntax that might perform similar features
-			But this will be in a simpler and more consistent semantical framework
-			The vast intricacies of dispatching to the correct function is just too complicated
-				Moreover this runs into problems in distinguishing between type functions and table functions (allow this would only be temporary)
-
-	Can also make it so that everything is an object (ala Ruby)
-		Although this doesn't solve the lookup problem, it does resolve potential ambiguities in regards to literals, etc.
-		
 Table functions
 	x: [
 		y: 3,
 		f: \z -> y + z
 	]
 
-	Should 'y' have to be preceded by 'self.'/'x.' or should scoping lookup start with the table
-		I think the later will be preferred, if not for its simplicity (in code, not implementation)
-			It's just a question of scoping rules
-				Functions defined in tables first look to the tables fields
-				Ie. the table is the function's defining scope
-		The other options will still be legal syntax (aside from 'x.' (scoping/redefinition/etc.))
+	Scoping of variables begins with the table
+		It is possible to force this lookup with 'self.'
+		It is also possible to use the table's name
+			However this is not guaranteed to give the desired results
 
 Function default values
 	Default values can be given to any arguments in a dust function by simply assigning a value in the declaration
-	The arg takes on the default value if a nil/no value is passed to the function in the arg's position (or the value is passed)
+	The arg takes on the default value if a nil or no value is passed to the function in the arg's position (or the value is passed)
 		Unlike in C/C++, default values do not have to follow a right->left ordering and instead may be declared/used at any point in the function
 
-	def add(x: 2, y: 3) x + y
+	def add(x: 2, y: 3) x + y			## def add2(y) add(nil, y)
 	add(nil ,2) = 4						## it might be possible to write add(,2)
 	add(3) = 6
+
+	This could run into some problems with function overloading
+
+## This entire section is based on the assumption that '[]', and the implied correlation with tables/pattern matching, is not the syntax for functions
+Function Overloading
+	Function Overloading is a valid and correct semantic construct within the dust language specification
+		It is permissable to not allow overloading during early stages of implementation
+			But it must be implemented by version x.y.z
+		This might change if it becomes to difficult/expensive to implement
+		
+	Definitions (for the sake of simplicity in describing this set)
+		When referring to the function call, N
+		When referring to a function, F# where F0 is the original function, F1 the first overload, etc.
+		When referring to the types of the arguments, #_Types
+		When referring to the number of arguments of a function/call, #_Args
+
+	About defining functions with differing number of arugments (All work done on the assumption that F0, F1, F2 are generic)
+		The semantics of calling a function with N_Args < F0_Args or F0_Args <= N_Args are well defined (assigning to nil/dropping extra)
+
+		The minimal difference between the expected and given number of arguments
+			The chosen overload should have the smallest difference to what is given (F#_Args - N_Args -> 0)
+			In the case that two overloads have the same difference, the overload with less args should be chosen
+				Calling a function with more args than expected involves dropping the extra values
+				Calling a function with less args than expected involves assigning to nil
+				A function will always be correct in the first case as it is the expected case
+				A function may be correct in the second case (it's not good practice but it's possible)
+					It's also possible that the "extra" args are "optional" and therefore the function is well defined in their absence
+				Therefore it is better to assume the first than the second
+
+		Also possible to accept the largest overload where F#_ARGS <= N_ARGS
+			One simple method for chosing the correct overload
+			Runs by the same reasoning as above
+
+	About overloading functions with different types (This is probably the most important)
+		The Longest Contiguous Subsequence forms the basis of dust overloading
+			Say F0_Types: [String, Int], F1_Types: [String, Table, Int]
+				Matches N_Type to F_Type in order (if N_Type.1 = F_Type.1 then LCS(F, N).1 = N_Type.1)
+					Type will match if equal or inherited
+					But if N_Type.1 != F_Type.1 then LCS(F, N) = [] regardless of whether N_Type.2 = F_Type.2
+
+				All possible values of LCS
+					LCS(F0, N) is [], [String], or [String, Int]
+					LCS(F1, N) is [], [String], [String, Table], or [String, Table, Int]
+					LCS(F, N) is [LCS(F0, N), LCS(F1, N), ...]			## The set of LCS for all overloads of F
+
+				Say N_Types: [String, Int]
+					Then LCS(N, F0) = [String, Int], LCS(N, F1) = [String]
+
+			For a function to be a valid dispatch for N, the LCS must completely span F_Types or N_Types
+				size(LCS(N, F)) = size(N_Args) if size(F_Args) >= size(N_Args)				## In this case F is the selected function (not a set of functions)
+				size(LCS(N, F)) = size(F_Args) if size(F_Args) < size(N_Args)
+
+			The correct overload is the one with the largest LCS
+				Say LCS(N, F0) = LCS(N, F1)
+					In this case, F0 and F1 are conceptually generic (in relation to N and each other)
+					Therefore the correct overload would be selected based on the number of arguments
+
+		Inheritance Types
+			Cannot match a parent type to a child type
+			Lookup should prefer dispatching on the type as defined
+				However I don't think you can eliminate overloads based on this (see second example)
+			Say F0_Types: [Foo, String], F1_Types: [Bar, String], and F2_Types: [Foo, Int] where Bar inherits from Foo
+				If N_Types = [Bar, String] then LCS(F, N) = [[Foo, String], [Bar, String], [Foo]]		## F1 is dispatched
+				IF N_Types = [Bar, Int] then LCS(F, N) = [[Foo], [Bar], [Foo, Int]]						## F2
+				If N_Types = [Foo, String] then LCS(F, N) = [[Foo, String], [], [Foo]]					## F0
+
+		Nil and nil
+			F0_Types: Nil is a possible way to represent a purely generic overload
+			A generic overload will always be a possible dispatch for the resolution process
+				Lowest priority (only selected if a more precise overload cannot be found)
+			Note that nil is a possible value for any type
+				It could also be possible for all objects to be children of Nil (so this is a natural step of the type system)
+
+		Dispatch Failure
+			No overload for N_Types can be found (conceptually similar to pattern matching, maybe implementationally too)
+				I must throw an error in this case (but what error)
+					"F is not defined for N_Types"
+					"Non-exhaustive overload for F (N_Types)"
+
+	Pattern Matching
+		Assuming that functions contain dispatch tables laying out a tree of what types the function is defined for
+		It could be possible to store the matches (the values the function is defined on) in those tables
+			The rest can wait til implementation
+
+	Could overload resolution be a case of pattern matching
+		If the '[]' syntax is adopted for all definitions
+			Then that's what overloading is
+			However that could make the process of using pattern matching more complicated/confusing
+
+	About declaring an overload where F3_Types = F0_Types
+		This is a redefinition (it's syntactically and semantically valid unlike C++)
+			F3 will replace F0 in dispatch/memory/etc.
+		What about def sel(x <- Table) and def sel([x, *y])
+			Any list that would match one, would match the other
+				The two definitions are functionally equivalent
+				I'm just not sure how to implement it though
+			I think the end goal would be to have the second as a redefinition
+				It is the more precise version after all
+
+	Implementation
+		C++ uses name_mangling to solve overloads
+			foo(int x) is internall foo_int(int x)
+
+		Could use a cascading system
+			foo_dispatch: [ String: [ Int, Table: [ Int ] ] ]
+				corresponds to functions of [String, Int], [String, Int, Table]
+			lookup is just a case of reducing the number of possible outcomes
+				Go through all first levels and compare to first arg type (allows inheritance to be considered)
+				Repeat
 
 ## Once these are finished, see if there is anything else that needs/could be defined here (and do so)
 ## Once that is finished, start to write a more detailed section in the Provisional Language Manual
@@ -159,62 +255,6 @@ Function default values
 ####################################
 		Incomplete Features
 ####################################
-
-Function Overloading		## Assuming the above syntax is valid
-	Function Overloading is a valid and correct semantic construct within the dust language specification
-		It is permissable to not allow overloading during early stages of implementation
-			But it must be implemented by version x.y.z
-		
-	Definitions (for the sake of simplicity in describing this set)
-		When referring to a function, F# where F0 is the original function, F1 the first overload, etc.
-		When referring to the number of arguments of a function, F#_ARGS
-		When referring to the number of arguments of a call, N_ARGS
-		When referring to the types of the arguments, F#_TYPES
-		When referring to the types of the arguments of a call, N_TYPES
-
-	About defining functions with differing number of arugments (Assuming the types of the arguments don't matter)
-		The semantics of calling a function with N_ARGS < F0_ARGS or F0_ARGS < N_ARGS is well defined
-
-		What if a overload is defined so that F1_ARGS < F0_ARGS
-			Given that the original situation is well defined (ie. it is assumed that the orginal function could handle N_ARGS < F0_ARGS)
-			Any call to the function that has F1_ARGS < N_ARGS should call the F0 overload (for the sake of precision)
-			By the same assumption and reasoning, N_ARGS < F1_ARGS should call the F1 overload
-
-		What if an overload is defined so that F0_ARGS < F2_ARGS
-			By the previously mentioned assumption, if N_ARGS < F2_ARGS then F2 should be called
-			Since F0_ARGS < F2_ARGS, N_ARGS > F2_ARGS should result in F2 being called (usurps the position of F0 in the previous section)
-
-		All these rules combine so that the dispatch will resolve to ...
-			F1 iff N_ARGS <= F1_ARGS
-			F0 iff N_ARGS > F1_ARGS and N_ARGS <= F0_ARGS
-			F2 otherwise
-
-		The process will be, naturally, composable
-
-	About overloading functions with different types (This is probably the most important)
-		In the case where F0_ARGS = F1_ARGS
-			The correct dispatch is the function whose F_TYPES is the closest subtype of N_TYPES (Int is a subtype of Int in this regard)
-
-		In the case where F0_ARGS != F1_ARGS (ie. F0_TYPES = [String, String], F1_TYPES = [String], N_TYPES = [String, Int])
-			## TODO
-
-		In the case where N_TYPES is not reducible to F0_TYPES (ie. F0_Types = [String], N_TYPES = [IO])
-			This is a dispatch failure (probably the only instance where it can occurr)
-				Must throw an error (but what error)
-					F0 is not defined for arguments N_TYPES
-					Non-exhaustive overloads for F0 (N_TYPES)
-
-	About declaring an overload where F3_ARGS = F0_ARGS and F3_TYPES = F0_TYPES
-		My current assumption is that this would be function redefinition (ie. F0: F3)
-			The question is then should this be legal (I think it is in the language's nature for it to be so)
-			How then should this redefinition be performed (by replacement, etc.)
-
-	Concerning the proposed pattern matching
-		ie. def add(4, 2) 42 returns 42 iff add(4,2) is called
-		But what is the difference between def sel(x <- Table) and def sel([x, *y])
-			Any list that would match the one, would match the other
-				See the above section ??? (ie the second would replace the first)
-					That second would give the more precise behavior
 
 Closures (Incomplete, Unnecessary for beginning implementation)
 	What is a closure?		## Going by the wikipedia example
@@ -233,7 +273,8 @@ Closures (Incomplete, Unnecessary for beginning implementation)
 			@f: \y -> + x
 		print(f(3))					## Is this invalid, undefined, or 6
 
-	For now, have variable values be "collected" at function initialization
+	Closure by value
+		Basically, the value of the variable at the time of function initialization is "spliced" into the function
 		So in the edge case above, the value of x does not change
 
 	Closures would just involve the creating scope being linked to the functions scope

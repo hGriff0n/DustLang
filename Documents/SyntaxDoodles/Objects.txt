@@ -24,6 +24,10 @@ Type Methods
 	def Foo.increment(foo, y)
 		foo.attr :+ y
 
+Way to implement '__newindex' behavior
+	see "ruby"
+
+	## I'm currently leaning towards deprecating this section (once I've figured out how to implement currying)
 Message Passing		## I don't quite know what this is, but this seems like an nice syntax
 	x: new Foo(3)			## should probably rearrange to Foo.new or Foo(), but many are familiar with this syntax
 							## This could possibly help with implementing currying
@@ -60,6 +64,7 @@ Dust OOP
 
 Inheritence syntax
 	<type> ++ <type_list>
+		This does mean that dust supports multiple inheritance (I feel its consistent with the internal model however, I also come from C++)
 
 	type Bar [
 		width: 3,
@@ -90,3 +95,13 @@ Interfaces (If I ever implement them)
 
 Extensible objects
 	Can member functions be added to an object after declaration and definition (can objects accrue methods as the program executes)
+
+Everything's an object (ala Ruby) ???
+
+Convertible Types
+	"" + 5 = "5"		## Int is automatically converted to a string
+	System defined convertability
+		Probably the simpler option
+	User defined convertability (I like this more)
+		def <type>.<type>()
+			ie. Int.String() defines the conversion from Int to String

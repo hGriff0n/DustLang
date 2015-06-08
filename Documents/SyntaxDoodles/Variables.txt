@@ -17,13 +17,14 @@ Assignment
 
 	Compound Assignment
 		let? <var>:<op> <value> = let? <var>: <var> <op> <value>
+			ie. x:+ 5 = x: x + 5
 		Note := is now a compound boolean assignment (was previously an alternate assignment syntax)
 		
 		x: 1
 		for _ in [1..5] x :+ 1
 
 Multiple Assignment
-	let? <var_list>: <expr_list>			## a list of object is a comma seperated sequence of object (see table)
+	let? <var_list>: <expr_list>
 	This construct is similar to performing a whole series of assignments
 		Appending let to the multiple assignment is like appending let to each of these assignments
 			Ie. every varable in the expression will be marked constant
@@ -38,21 +39,18 @@ Multiple Assignment
 	x, y: give23()			## x = 2, y = 3
 
 Type Checking
-	Static Typing					## Be sure to adjust Function Type Checking/Type Testing with any syntax 
-		let x <- Int		## Current favorite
-		let x of Int		## Alt 1
-		let x :: Int		## Haskell. Philosophically we are "assigning" x to be an Int
+	Static Typing				## Be sure to adjust Function Type Checking/Type Testing with any syntax 
+		let x <- Int			## let x: Int is not the syntax because it is useful to restrict a variable's type while also assigning a value (function declarations)
 
 		x: 5					## The syntax unfortunately apropriates the constant syntax (but the types of constants aren't exactly flexible anyways)
 		x: 4					## This could incite some degree of confusion among readers and coders
 		x: "Hello"				## Throws a type error, "Hello" cannot be converted to an integer
 
 	Type Testing
-		var <- Int					## Viable or not
-		var :: Int					## Haskell
+		var <- Int					## Type Declaring syntax
 		typename(var) = "Int"		## This capability will be kept (though it has problems with inheritance)
 		type(var) = Int				## This is used in Tables to define type methods (ie. type([]).x: 3)
-		is? var, Int				## dust(deprecated) logic section (not problems with inheritance)
+		is? var, Int				## dust(deprecated) logic section (no problems with inheritance)
 
 Variable versus Type Identifiers
 	Force type identifiers to begin with a capital and variables to begin with a lowercase ???
@@ -60,6 +58,9 @@ Variable versus Type Identifiers
 "Calling" variables
 	Assuming x is not a function (ie. x: 5)
 	What is the semantical value of "x()"
-		error or 5
+		Should it be error or 5
+			I want to lean towards 5 (I'm pretty sure it will help ease implementation)
+		Could also be x.__call()
+			Int.__call: \x, y -> *
 	Assuming x is nil
 		Is nil special in this regard

@@ -1,23 +1,47 @@
-This list doesn't seriously consider whitespace other than spaces (except for <block>)
+This list doesn't seriously consider most whitespace
+	Need to go through and add those considerations in
 
-<#_list> = <#>', <#>'*
+## Composition definitions (replace all mentions of # when defining a new definition. ie. a_list = <a>', <a>'*)
+#_list = <#>', <#>'*
 
-<arg> = <id>': <expr>'? '<- <type>'?
-<lambda> = \<arg_list>? -> '<expr>|<block>'?				## <expr>|<block>|<curry>
-<function> = def <id>(<arg_list>?) '<expr>|<block>'
-<call> = <var>(<expr_list>?)								## <var>'(<expr_list>?)| <expr_list>'
+## Functional definitions
+arg = <id>': <expr>'?' <- <type>'?						## '': <expr>'|' <- <type>''?
+lambda = \<arg_list>? -> '<expr>|<block>'?				## <expr>|<block>|<curry>		\<id_list>? -> '<expr>|<block>'? if I want to disable some features for lambdas
+function = def <var>(<arg_list>?) '<expr>|<block>'		## def <var><table>? '<expr>|<block>' if the "pattern match" syntax is adopted
+call = <var>(<expr_list>?)								## <var>'(<expr_list>?)| <expr_list>'
 
-<object> = type <type> <table>? <inheritance>?
-<inheritance> = ++ <type_list>
+## OOP definitions
+object = type <type_id> <table> <inheritance>?			## can roll the inheritence bit in line (I just think it might improve parsing accuracy)
+inheritance = ++ <type_list>
 
-<assign> = let? <var_list> ?<assign_op> <expr_list>
-<assign_op> = :<op>?
+## Table definitions
+table = [ <entry_list>? ]								## current definition doesn't "allow" for the trailing comma
+entry = let? <var>: <expr>								## <assignment> ???
 
-<table> = [ <entry_list>? ]
-<entry> = let? <var>: <expr>								## <assignment> ???
+## Type definitions
+typecheck = <var> <- <type>
+number = [0-9]+											## digit = [0-9]
+int = '+|-'?<number>
+float = '+|-'?<number>?.<number>?						## if i want to, i can enforce 0. for floats by changing to <int>.<number>? / <int>.'<digit>*'
+string = \".*\"											## "But what about \"This String\"!"
 
-<typecheck> = <var> <- <type>
+## Syntax definitions
+assign = let? <var_list><assign_op> <expr_list>
+assign_op = :<op>?
+whitespace = \n| 
+scope = \t
+keyword = if|...
+op = *|...
+syntax = 
 
-<expr> = .*
-<var> = <id>'\.<var>'*
-<block> = '\t'<expr>|<block>''+
+## Program definitions
+file = <import>*'<block>|<expr>'*						## Note this restricts imports to the file beginning
+
+## Unknown
+id = [A-Za-z_][^<whitespace>]*
+var_id = 
+type_id = 
+
+expr = .*
+var = <id>'\.<var>'*									## <id>'\.<field>'*		Currently this allows Int.String (but that might be useful for overloading)
+block = '\t'<expr>|<block>''+
