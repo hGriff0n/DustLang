@@ -11,7 +11,7 @@ def euler.1(x)
 		@sum:+ [i mod 3, i mod 5] ^ 0 and i or 0
 	return sum
 euler.1: \x -> [\i | i in [3..x], [i % 3, i % 5 ^ 0]].sum()
-## euler.1: \x -> [\i | i in [3..x], i.mod(3, 5) ^ 0].reduce(\x,s -> s + x)  I don't know about the i.mod call returning a table if given multiple inputs ???
+## euler.1: \x -> [\i | i in [3..x], i.mod(3, 5) ^ 0].reduce(\x,s -> +)  I don't know about the i.mod call returning a table if given multiple inputs ???
 
 ## Problem 2: Sum of the even fibonacci numbers below 4000000 (4613732)
 def euler.2(x)
@@ -37,7 +37,7 @@ euler.4: \ -> max([\i,j -> i * j | i in [999..111], j in [999..111], str(i * j).
 def euler.5
 	primes: math.primes \x -> <= 20			## get all primes less than 20
 	count: [].fill(1, size(primes))			## create a "pair" table the size of primes initialized to 1
-	## count: [].fill(1, #primes)
+	## count: table.replicate(#primes, 1)
 	
 	for x in ([2..20] - primes)				## for every non-prime <= 20
 		for i in [1..size(primes)]			## perform prime factorization		(for in in [1..#primes])

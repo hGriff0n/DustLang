@@ -17,14 +17,14 @@ Function Declaration
 Function Calling				
 	abs(4)	-or-	abs 4						## Mirrors the syntax of function declaration (ie. if decl uses (), so do calling)
 	Might enforce () to call a function with no arguments
-		Not sure about the "No ()" syntax otherwise (what does 'x: abs' mean)
-
+		Not sure about the semantics otherwise (what does 'x: abs' mean)
 
 Lambdas (Anonymous functions)
 	Syntax
 		add2: \x -> x + 2
 		add2: \x -> + 2					## Using currying
 	
+	## Move this to the currying section
 	Currying can also be used inside of named functions
 		Given:		\x -> +2		\i, j -> *		\x -> 2 +		\x, y -> max		## \x, y -> ???
 		Read:		\x -> op+ 2		\i,j -> op*		\x -> 2 op+		\x,y -> max			## \x, y -> ???			## Since +/*/... are sugar for op+/op*/...
@@ -51,10 +51,13 @@ Lambdas (Anonymous functions)
 
 	\-> x is a function with no arguments that returns the value of x
 		If the lambda is a closure than x may be any value
-		Otherwise, the lambda returns nil
+		Otherwise, the lambda returns nil (scoping notwithstanding)
 
 	Functions are just a sugar over an assignment of a lambda
 		Might add several abilities that a lambda doesn't have (such as overloading or argument type checking)
+
+Currying (Might have to delay implementation (need to consider all possible outcomes/options))
+	
 		
 Function Return Syntax
 	The value of the last executed statement of a function body is implicitly returned to the calling instance
@@ -69,10 +72,10 @@ Function Return Syntax
 Type Checking
 	At the core, Dust uses Duck Typing (ie. if it has the method it is allowable)
 	An error is only thrown at the instance where a type mismatch occurs (through functions/system/etc.)
+		Ie. the given variable is not of the given type or of a child type
 
-	Explicit type checking			## Uses the same syntax as Static Typing
-		def abs(x <- Number)
-		This will cause a type mismatch error iff abs is called with a variable whose type is not Number (assuming an overload on the type doesn't exist)
+	Explicit type checking
+		def abs(x <- Number)			## Uses the same syntax as Static Typing
 		This syntax cannot be used to specify the types of the values the function returns
 
 Function Argument Passing
@@ -80,10 +83,16 @@ Function Argument Passing
 		The two arguments are referred to as 'x' and 'y' internally
 
 	If add is called with less arguments							## Note these are purposely ignoring overloading
-		x is assigned to be the value of the argument and y is assigned nil
+		Any leftover variables are assigned to nil/default values
+			Basically the function is "recalled" with nil's added so that the arg_list matches exactly
 
 	If add is called with more arguments
-		The third value is dropped from calculations, x is assigned to be the first arg and y the second
+		The extra values are dropped from calculations, x is assigned to be the first arg and y the second
+		Should these expressions be evaluated before they are called ???
+			It would be expensive to enforce this (especially for large lists)
+				But it would also be incredibly difficult to not do so (given the dynamic nature)
+			But it's an intriguing possibility
+				Moreover, how would I know the type of an expression before I evaluate it
 
 	All function arguments are unique references					## This will be changed repeatedly during language development
 		The values of any variables used as arguments to a function call cannot be changed except through reassigning to the function's return
@@ -93,6 +102,7 @@ Function Argument Passing
 
 		The key point is to not allow changes inside the function to "accidentally" propogate outside of the function (except for possibly closures)
 			Much the same reasoning behind Haskell's functional nature
+			This cannot be subverted through api/debug/etc.
 
 		Implementation
 			It may be beneficial to allow such procedures to simplify the implementation and reduce memory usage
@@ -122,11 +132,14 @@ Named arguments
 Table functions
 	x: [
 		y: 3,
-		f: \z -> y + z
+		f: \z -> y + z,
+		sety: \x -> self.y: x
 	]
 
 	Scoping of variables begins with the table
-		It is possible to force this lookup with 'self.'
+		This means that referencing table fields within a function does not require any "special" syntax
+			However it is possible to force this lookup with 'self.' (self = x in this case)
+			Referencing the table could also be done with the "scoping" syntax (particularly for assignment)
 		It is also possible to use the table's name
 			However this is not guaranteed to give the desired results
 
@@ -142,10 +155,10 @@ Function default values
 	This could run into some problems with function overloading
 
 ## This entire section is based on the assumption that '[]', and the implied correlation with tables/pattern matching, is not the syntax for functions
-Function Overloading
+Function Overloading (Safe to ignore for now)
 	Function Overloading is a valid and correct semantic construct within the dust language specification
 		It is permissable to not allow overloading during early stages of implementation
-			But it must be implemented by version x.y.z
+			But it must be implemented by version 2/3
 		This might change if it becomes to difficult/expensive to implement
 		
 	Definitions (for the sake of simplicity in describing this set)
@@ -222,6 +235,12 @@ Function Overloading
 		It could be possible to store the matches (the values the function is defined on) in those tables
 			The rest can wait til implementation
 
+		def add(4, 2) 42
+
+		What about "range" overloads
+			def abs(x < 0) -x
+			def abs(x) x
+
 	Could overload resolution be a case of pattern matching
 		If the '[]' syntax is adopted for all definitions
 			Then that's what overloading is
@@ -248,6 +267,33 @@ Function Overloading
 				Go through all first levels and compare to first arg type (allows inheritance to be considered)
 				Repeat
 
+Closures
+	Much like overloads, this is just a specification for a how closures may be implemented
+		There's no specific timeframe however
+
+	What is a closure?
+		x: 3
+
+		def h(x) \y -> + y			## x is the argument (this is a closure)
+		h: \y -> x + y					## x is the global x (indistinct from scoping)
+		
+	Closure by value
+		Basically, the value of the variable at the time of function initialization is "spliced" into the function
+			It could be possible to store the reference, but I feel that this is a better
+		The above example 'g' can be easily handled with scoping rules
+			Although the syntax may have to be modified
+
+	To demonstrate closure value
+		def h(x)
+			ret: \y -> + x
+			x :+ 3					## The value of ret does not change with this statement (\y -> + x not \y -> + x + 3)
+			return ret
+	
+		do							## This is just to clarify that the function declaration is in a different scope than the print
+			x: 3
+			@f: \y -> + x
+		print(f(3))					## Outputs 6
+
 ## Once these are finished, see if there is anything else that needs/could be defined here (and do so)
 ## Once that is finished, start to write a more detailed section in the Provisional Language Manual
 ## Once that is finished, start to write a section for the Features manual
@@ -256,78 +302,64 @@ Function Overloading
 		Incomplete Features
 ####################################
 
-Closures (Incomplete, Unnecessary for beginning implementation)
-	What is a closure?		## Going by the wikipedia example
-		x: 3
-
-		def h(x) \y -> x + y			## x may be the global x
-		h: \y -> x + y					## x is the global x (indistinct from scoping)
-
-	Some edge cases?
-		def h(x)
-			ret: \y -> + x			## Does the value of x change (are these lines synonymous with \y -> + x + 3)
-			x :+ 3
-			return ret
-	
-			x: 3					## Note: This is in a different scope than the print statement
-			@f: \y -> + x
-		print(f(3))					## Is this invalid, undefined, or 6
-
-	Closure by value
-		Basically, the value of the variable at the time of function initialization is "spliced" into the function
-		So in the edge case above, the value of x does not change
-
-	Closures would just involve the creating scope being linked to the functions scope
-		This can be done automatically at closure creation
-			Can also only be performed if a closure is used in the function body
-				May be slightly inefficient memory wise (but if i design it modularly it won't matter)
-				
 Functions as objects (ala Scala) ??? (Incomplete)
-	 Could functions be implemented as tables		## Yes, but it might be tricky, especially in relation to overloading and pattern matching
-		Lambdas would have to remain system defined, much like ints and tables (though wouldn't ints have some method table ???)
-		How does this benefit me/dust ???
-			Simple closure implementation ???
-				Each table defines "__scope" that defines the behavior of '@'
-			Simple overloading implementation
-				Each overload is another part of the table
-				Then "__call"  dispatches the arguments to the correct field
-					See "Overloading Functions in Lua" (this is a rudimentary example but it shows the basic idea)
+	This started out as an idea that functions could "inherit" from other constructs/functions
+		I don't think this would really work as a syntax/semantic
+			Never mind how confusing it would be
+
+	But moreover it could be possible to implement functions using tables and lambdas
+		This means that lambdas, much like ints and tables, would have to be system defined
+			Does this mean that lambdas could have type functions (like table.reduce, etc.)???
+		The main benefit would be providing a supported framework for overload/pattern dispatch
+			It's touched on a bit within the Function Overload section
+			Google "Overloading Functions in Lua" for the basic idea behind this
+		It could also serve to unify the concepts of "easy memorization"
+		It's also possible that it could simplify the implementation of closures
+			In this case the "closure variables" would be imported into the table
+			
+	## quicksort table implementation using dispatch method for overloading
+	quick: [
+		__call: \list, *args -> __dispatch(list + args)(list + args),
+		__dispatch: \args ->
+			types: [\x -> typename(x) | x in args]
+			__match(args, types) or error("Non-exhaustive overload for " + self + " on " + types),
+
+		__match: \args, types ->							## This is a very basic matcher (no pattern matching/inheritance)
+			curr: __fns
+			for typ in types
+				if !curr[typ] return curr.def				## If the function is not defined on the type in that position, return the default definition for that level
+				curr: curr[typ]
+			curr.def,
 		
-	## quicksort defined entirely with tables and lambdas
-	quick: [
-		__call: \list, *args -> __fn(list + args),			## here args is always guaranteed to be a table
-		__fn: \[sel, *list] ->								## if a table is passed to quick, then args = [] and list + args = list
-			if not list return [sel]						## but if a comma list is used as the argument then list is not a table (quick implicitly needs a table)
-			mid, high: [sel], low: []						## Note: __fn(list, *args) might cause the *list arg in __fn to be []
-			for item in list
-				(switch item <=> sel
-					high, if 1								## It might be beneficial to have some degree of structure to the process of overload checking
-					low, if -1								## Otherwise the function body becomes slightly tedious to construct/build/extend
-					mid, otherwise) + item
-			[*quick(low), *mid, *quick(high)],
-		__newindex: \-> nil,								## disable table functions
-		__index: \-> nil									## but doesn't this implementation require access table indices ???
-	]
-
-	## quicksort table implementation using dispatch method for overloading with 
-	quick: [
-		__call: \list, *args -> __dispatch(#(list + args), list + args)(list + args),
-		## __call: \list, *ls -> __dispatch(#args, args)(args) where args = list + ls,		Statement scoping ???
-		__dispatch: \size, args -> ???						## need some way of turning size and args into a position in the __fns table
-			__fns[__match(size, args)]
-
+		## There still are many problems with handling pattern matching (I might end up scraping this idea)
 		__fns: [
-			\ -> nil,										## the overload for no arguments
-			\[_],											## the overload for a single item list (or just a single item because of the catching in dispatch)
-			\[sel, *list] ->								## the default overload
-				mid, high: [sel], low: []
-				for item in list
-					switch item <=> sel
-						high + item, if 1
-						low + item, if -1
-						mid + item, otherwise
-				[*quick(low), *mid, *quick(high)]
+			0: \ -> nil,									## Defines the function when passed with no arguments
+			def: \*list -> self(list),						## Defines the function given a number of arguments (forwards to the "table" overload)
+			Table: [										## How to handle naming (esp. with pattern matching of tables)
+				pm: [
+					1: \[_] - > _,							## Single item list (tables are "matched" based on their size, the total match notwithstanding)
+				],
+				def: \[sel, *list] ->						## Default overload (to unify code handling between types. This is the total match [sel, *list] = Table)
+					mid, high: [sel], low: []
+					for item in list
+						switch item <=> sel
+							high:+ item, if 1
+							low:+ item, if -1
+							mid:+ item, otherwise
+					[*quick(low), *mid, *quick(high)]
+			]
 		],
 		__newindex: \-> nil,
 		__index: \-> nil
 	]
+
+	So the basic pattern appears to be
+		__fns: [
+			<overloads on the number of arguments>,
+			def: <default overload>,							## might be able to interleave this with the above section (change def to inf ???)
+			pm: <overloads on specific values of arguments>,	## ie. pattern matching
+			<type>: <overloads on types>
+		]
+
+		At least one of these "sections" has to exist
+			But no section, by itself, has to exist

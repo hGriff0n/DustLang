@@ -3,9 +3,6 @@ Table Declaration
 	[ <entry> ', ' ] where <entry> = '<id>:' <expr>
 	The 'key' defaults to the next value of the range [1..] that is not already a key in the table
 		Note that tables are 1 indexed by default
-			Well, 0 based indexing is really only natural to programmers (it's not a universal feature of programming either)
-			Dust is going to be an interpreted language, so any minor performance considerations are not entirely relevant
-			Iteration over a table is accomplished entirely using "for each" loops, so specific indices don't matter
 			Table keys can take on any value, this is only an assumption for the sake of standardization
 			This behavior can be modified in-language by redefining global functions/metamethods
 	Entries
@@ -27,9 +24,10 @@ Table access
 			Easier to implement '.' as a sugar for string literals than for string and int literals
 			A workaround could be to convert strings to numbers if possible when used with '.'
 				t.1 = t[1] but t.x = t["x"]
-				How often are "1" like keys used anyways
+				How often are string numeral keys used anyways
 		Accessing a table with a variable can only be performed through t[<var>]
-			t.<var> = t["<var>"]
+			Using '.' syntax would translate to t.<var> = t["$var"]
+
 	Could it be possible to restrict the type of keys/values a table will support
 		ie. specify a table "array" so that array.s throws a type error but array[1] doesn't
 		This will allow globals to be "table" values as in Lua and the language spec to be consistent
@@ -39,11 +37,10 @@ Set Comprehension Syntax (In order of current preference. Only 1 will be valid s
 	mult: [\ -> x*y | x in l, y in r, true]			## possible elision (if captures are implemented)
 	mult: [x * y | x in l, y in r, true]			## haskell derived (possible sugar for the above (drop '\->') or some other implementation)
 
-
 Table/Set operatiors
 	Currently it is valid to perform an operation of Table + Int (ie. [] + 3 = [3])
 		In these cases the non-table type is implicitly converted to a Table whose sole element is the non-table value.
-		Currently they are not exactly well defined on tables though
+		These operations are not exactly well defined on tables though
 			When dealing with multiple elements with the same value, is this multiplicity removed or maintained (see Subtraction)
 
 	## From viewing the Stanford Compiler course. A + B reads "union of A and B" in regexs
@@ -51,6 +48,7 @@ Table/Set operatiors
 	Addition (+)								## Appends the elements from one table to the other
 		I'm pretty sure this would have to be system defined
 		I don't think this is entirely possible to implement in Dust (aside from calling an api function)
+
 	Subtraction (-)								## Removes all elements of one table from the other
 		Need to decide whether [2,2] - [2] should give [2] or []
 			Should (t + t) - t = t if t = [2]
@@ -63,11 +61,14 @@ Table/Set operatiors
 
 	Union (&)									## Takes the union of two tables
 		\l,r -> l + (r - l)						## I think [2] & [2] = [2]
+
 	Intersection (^)							## Takes the intersection of two tables (elements that both have in common)
 		\l,r -> l - (l - r)
 		## \l,r -> [\x | x in l, r.has(x)].flatten
+
 	Reduce (???)
 		If [2,2] - [2] = [] then it would be helpful to have an operator/method to remove all duplicates in a table
+
 	Splat (*)									## ala Ruby. Subject to change as it's very similar to multiplication
 		x, y: *[2, 2]							## equivalent to x, y: 2, 2
 		*x: 2, 2								## equivalent to x: [2, 2]
@@ -79,25 +80,33 @@ Set Ranges
 
 	I'm using the same symbol for ranges and tables
 		Technically ranges are just converted to tables
+			They might be instead converted to generators if they are accepted
 			The syntax is just an easy way to specify a large series of value
 
-	[1..10] is equivalent to [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]		## Range syntax: [<start>(,second)..(stop)(, lambda)]
-	[1,3..10] is equivalent to [1, 3, 5, 7, 9]						## Custom range increments can be inferred by stating the second value
-	[1..] is equivalent to [1, 2, 3, 4, 5, ....]					## Ranges can be infinite (iff lazy evaluation is implemented)
-	[10..1] is equivalent to [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]		## Sign increments can be inferred automatically
-	[1..25, \x -> x^2] gives [1, 4, 9, 16, 25]						## Algorithmic steps can be specified by a function (that does what ???)
+	[1..10] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]										## Range syntax: [<start>(,second)..(stop)(, lambda)]
+	[1,3..10] = [1, 3, 5, 7, 9]														## Custom range increments can be inferred by stating the second value
+	[1..] = [1, 2, 3, 4, 5, ....]													## Ranges can be infinite (iff lazy evaluation is implemented)
+	[10..1] = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]										## Sign increments can be inferred automatically
+	[1..28, \x -> x^2] = [1, 4, 9, 16, 25]											## Algorithmic steps can be specified by a function (that does what ???)
 	## what about open interval ranges? ie. [1..10) = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 
-Pattern Matching (Or should this go into functions ???)
+	Could I possibly generalize this rule to any type???
+		ie. ['a'..'e'] = ['a', 'b', 'c', 'd', 'e']
+
+		I could set some restrictions (somewhat like Haskell/Function Overloading)
+
+Pattern Matching (Table specific syntax)
 	def add([x, y])
 		x + y
 
-	This is (roughly) equivalent to
-		def add(t <- table)
-			t.1 + t.2						## (\<args> -> <body>)(*t) in a more general sense
+	This is (roughly) equivalent to			## Doesn't care about input size
+		def add(t <- Table)
+			(\x, y -> x + y)(*t)			## Note that pattern matching (in this case) is just syntactical sugar
+
 		This pattern will only match arrays of size 0, 1, or 2 (provided a pattern is not provided for those)
 			It could be possible to define some functions that would accept non-arrays but I don't know how that would be well defined/consistent
 			If an array of size 0 or 1 is passed, than the leftover "args" are assigned nil (much like normal function arg assignment)
+
 		It is possible to have a pattern that accepts arrays of size 3+	using the splat operator
 			def add([x, y, *_])
 
@@ -172,11 +181,6 @@ What about multi-dimensional tables (ie. matrices) ??? [i,j] vs. [i][j]. See LCS
 		However it would most likely be a form of syntactical sugar (more difficult to implement)
 			Easiest implementation would be to have tables as keys which has its own problems (ie. should [1,2] = [i,2] if i = 1, see Lua)
 
-	## This would allow the "memoization" trick to be trully useful without any extra classes/trouble
-	Should 'battleship[c,6]' be acceptable or should 'battleship[c][6]' be the only allowed syntax
-	The first style dovetails nicely with the ability to easily implement memorization tables as
-		matrices are often used in "memorization" problems, especially if types can't be combined easily (c,6 => c6)
-		Otherwise something like 'battleship[tile(c, 6)]' would have to be used in order to gain the benefits (I might be able to say otherwise)
 	See LCStests.txt for Longest Common Subsequence implemented in [i][j] and [i,j] syntax
 
 In-line Multiline lambdas (where do blocks end???)
@@ -193,14 +197,19 @@ In-line Multiline lambdas (where do blocks end???)
 
 Table functions
 	size(table)				## or go like Lua and have a size operator (op#)
-	zip(table, ...)			## creates a table of tables so that zip(t, tb).i = [t.i, tb.i] (ala Haskell)
 	entries(table)			## returns a new table filled with the entries of the passed table (ie. entries(t).i = [i, t.i], roughly)
 	flatten/smooth(table)	## Removes nesting in a list
+	next(table, idx)		## Returns the next index (ie. t: [ 1, 2, 3, 5: 5 ]; next(t, 1) = t[2]; next(t, 4) = t[5])
 
 	def reduce(t <- Table, fn <- Function, sum)
 		if !sum sum, t: fst(t), tail(t)
 		for x in t @sum: fn(x, sum)
 		sum													## is this line necessary or would the function return sum regardless (ie. what is the value of a for loop)
+
+	def replicate(item, n <- Number)						## replaces 'fill'
+		if n <= 0 return []
+		if n = 1 return [item]
+		replicate(item, floor(n / 2)) + item + replicate(item, ceil(n / 2))
 
 	has: \t,v -> t ^ v
 	map: \t,fn -> [\x -> fn(x) | x in t]
