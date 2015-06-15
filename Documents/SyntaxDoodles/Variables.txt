@@ -1,66 +1,108 @@
 
 
 Assignment
-	let? <var>: <value>				## appending let to the beginning of the assignment makes the variable "constant"
-	let? <var_list>: <val_list>
-		<var_list> = <id>(, <id>)*
-		<val_list> = <expr>(, <expr>)*
+	let? <var_list>: <expr_list>				## appending let to the beginning of the assignment makes the variable "constant"
 
-	An assignment will evaluate to the value assigned to the variable
-		Other possibilities: The old value of the variable
-
-	let x: [4, y: 3]
-	z: [2, 3]
-	y: (x: 5) + 4			## Error: Reassignment of constant variable 'x'
-	y: (z: 5) + 4			## Valid: Variable 'z' is not marked constant
-	y: \ -> x: 5 + 4		## Valid: Variable 'x' is in scope 'y' (lambda function)		Syntax will change
+	An assignment will evaluate to the value assigned to the variable (value of the linked expression)
+		In the case of multiple assignment, the value of the last assignment
 
 	Compound Assignment
-		let? <var>:<op> <value> = let? <var>: <var> <op> <value>
+		let? <var>:<op> <value> is equivalent to let? <var>: <var> <op> <value>
 			ie. x:+ 5 = x: x + 5
-		Note := is now a compound boolean assignment (was previously an alternate assignment syntax)
-		
-		x: 1
-		for _ in [1..5] x :+ 1
+			Note := is now a compound boolean assignment (was previously an alternate assignment syntax)
+		The question is whether this can be used with var_list and expr_list
+			x, y:+ 5, 3		=> x, y: x + 5, y + 3
+			x, y:+ 5		=> x, y: x + 5, y + 5	or x, y: x + 5, y + nil
+				The first makes it a bit odd in relation to multiple assignment/function rules but I feel it is the more intuitive option
 
-Multiple Assignment
-	let? <var_list>: <expr_list>
-	This construct is similar to performing a whole series of assignments
-		Appending let to the multiple assignment is like appending let to each of these assignments
-			Ie. every varable in the expression will be marked constant
-		The list of values are evaluated (ie. reduced) before the list of vars
-			x: 5
-			x, y: 3, x		## x = 3, y = 5 (y = 3 if values evaluated with vars)
+	Multiple Assignment
+		This is roughly similar to perform a sequence of assignments
+			The 'let' at the beginning is distributed to each "individual" assignment
+				Ie. every varable declared/assigned will be constant
 
-	The whole expression will evaluate to the result of the last assignment performed
+			The list of expressions are evaluated before the list of vars
+				This allows easy swap implementation (a, b: b, a)
+				What if the number of expressions > number of variables
+					The same question is asked in Functions/Function Argument Passing
+					This could be useful, but its expensive and wasteful
 	
-	x, y: 3, 4				## Equivalent x: 3; y: 4
-	def give23() 2, 3
-	x, y: give23()			## x = 2, y = 3
+	Pattern Matching in Assignment (Some discussion in Tables)
+		[x, y]: [3, 5]
+			x, y: 3, 5
 
 Type Checking
-	Static Typing				## Be sure to adjust Function Type Checking/Type Testing with any syntax 
-		let x <- Int			## let x: Int is not the syntax because it is useful to restrict a variable's type while also assigning a value (function declarations)
+	Static Typing				## Be sure to adjust Function Type Checking/Type Testing with any syntax
+		let <var> <- <type>
 
-		x: 5					## The syntax unfortunately apropriates the constant syntax (but the types of constants aren't exactly flexible anyways)
-		x: 4					## This could incite some degree of confusion among readers and coders
-		x: "Hello"				## Throws a type error, "Hello" cannot be converted to an integer
+		Note the similarity to the constant syntax
+			Unfortunately appropriates the syntax (and some semantics)
+			But it's not like the type of a constant is mutable anyways
+
+		Inheritance
+			If a var is statically typed, it will be able to hold values of any child type (but not a parent type, nil possible exception)
 
 	Type Testing
-		var <- Int					## Type Declaring syntax
-		typename(var) = "Int"		## This capability will be kept (though it has problems with inheritance)
-		type(var) = Int				## This is used in Tables to define type methods (ie. type([]).x: 3)
-		is? var, Int				## dust(deprecated) logic section (no problems with inheritance)
+		Definite Syntaxes
+			type(var) = Int				## This currently does not handle inheritance
+				type(var) ^ Int				## Not sure how this would work, but it should handle inheritance (iff '^' is reworked for types, "base type")
+			typename(var) = "Int"		## This can't handle inheritance
+			is? var, Int				## Should handle inheritance. Can "naively" be a wrapper function
+			var.is Int					## Can handle inheritance. Can also be a wrapper function
+
+		Possible Syntax
+			var <- Int					## Can handle inheritance
+				Extends the syntax for static/function typing
+					Might be implementationally difficult
 
 Variable versus Type Identifiers
 	Force type identifiers to begin with a capital and variables to begin with a lowercase ???
+	I might run into some trouble when implementing the proposed "conversion" syntax then
 
 "Calling" variables
-	Assuming x is not a function (ie. x: 5)
-	What is the semantical value of "x()"
-		Should it be error or 5
-			I want to lean towards 5 (I'm pretty sure it will help ease implementation)
-		Could also be x.__call()
-			Int.__call: \x, y -> *
-	Assuming x is nil
-		Is nil special in this regard
+	What is the semantics of "x()" if x is not a function
+
+	## For now (could have it error)
+	Have all instances of "x(...)" be translated to "x.__call(...)"
+		The result is then the return value of '__call'
+			In the case where x is a function, this is the result of the function
+		Int can define '__call' as \y: 1 -> y * self
+			Then x(5(x)) = x * 5 * x and x() = x
+		If call is not defined on the type
+			Throw an error, return nil, or return self
+
+Handling nil
+	Suppose the following code chunk
+		let x <- Int
+		y: nil
+		z: "Not nil"
+
+	What are the semantics of...		## Note x = nil, y = nil, z != nil
+		x.is Int		## true
+		x.is Nil		## ??			Does the value of x make this statement true
+		y.is Int		## false
+		y.is Nil		## true
+		z.is String		## true
+		z.is Nil		## ??			true if Nil is the parent type, false otherwise
+
+	Indexing a nil value does not inherently imply an error
+		For functions defined on Nil this is correct, useful, and well defined
+		For functions not defined on Nil
+			Silent failure
+				Any call returns nil or another default value
+			Provisional failure
+				Any call dispatches to a free function (if possible)
+					The free function may fail on a nil value (in which case the operation likely can't be performed on a nil value)
+			Absolute failure
+				This would entail that nil-checking be "proper" (or I could make Nil like the Maybe monad)
+
+	Default Value and Deletion
+		Currently if a variable is referenced that has not been previously assigned, the value will be nil
+		Also explicitly assigning a nil value to a variable is equivalent to deleting it
+			To avoid scoping issues, this deletion could be restricted to the value (ie. the variable remains "defined" in the scope)
+				This could run into some issues with memory/temporary variables
+
+String Interpolation
+	Provides a way to insert variable values inside a string
+
+	x: 3
+	"The value of x is $x"	=> "The value of x is 3"
