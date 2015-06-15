@@ -4,19 +4,18 @@
 	def quick(sel, *list)				## Splat operator
 		mid, high: [sel], low: []
 		for item in list
-			switch item <=> sel			## works similar to Java's compareTo
-				@high :+ item, if 1
-				@low :+ item, if -1
-				@mid :+ item, otherwise
+			switch: item <=> sel		## works similar to Java's compareTo
+			if switch = 1 .high:+ item
+			elseif switch = -1 .low:+ item
+			else .mid:+ item
 		[quick(low), mid, quick(high)].flatten()
 
-	def quick([sel, *list])				## overloading not needed with pattern matching (only accepts tables though)
+	def quick([sel, *list])					## overloading not needed with pattern matching (only accepts tables though)
 		if !list return sel
-		mid: [sel]						## how about 'mid, high: [sel], low: []'
-		high: low: []					## the question is about evalutation order (does low: get evaluated before high:)
+		mid: [sel]							## how about 'mid, high: [sel], low: []'
+		high: low: []						## the question is about evalutation order (does low: get evaluated before high:)
 		for item in list
-			switch item <=> sel			## the omni-sign is not valid syntax yet
-				@high :+ item, if 1
-				@low :+ item, if -1
-				@mid :+ item
+			if item > sel .high:+ item
+			elseif item < sel .low:+ item	## could '++' work similar to ':+' ???
+			else .mid:+ item
 		[*quick(low), *mid, *quick(high)]	## you can also use splat instead of flatten

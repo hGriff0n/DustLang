@@ -1,99 +1,115 @@
-if-else-elseif 
-	Testing the syntax for if-else-elseif branches in multiline, oneline, and noline variants
-		Testing "no keyword", "if - then", "do-block"
+Execution Structures
+	if-else-elseif
+		if <expr> <block>
+		'elseif <expr> <block>'*
+		'else <block>'?
 
-	def twoLineIf(x)
+		This setup could possibly allow multiple different syntaxes to be used
+			The 'do' syntax for blocks is of particular note here
+
 		if x < 50
 			print("x is smaller than 50")
-			return x * 2
-		elseif x < 100
-			print("x is smaller than 100")
-			return x
-		else
-			print("x is a big number")
-			return x / 2
 
-	def twoLineIf(x)
-		if x < 50 then
-			print("x is smaller than 50")
-			return x * 2
-		elseif x < 100 then
-			print("x is smaller than 100")
-			return x
-		else
-			print("x is a big number")
-			return x / 2
-			
-	def twoLineIf(x)
-		if x < 50 do
-			print("x is smaller than 50")
-			return x * 2
-		elseif x < 100 do
-			print("x is smaller than 100")
-			return x
-		else do
-			print("x is a big number")
-			return x / 2
-		
-			
-	def oneLineIf(x)
-		if x < 50
-			print("x is smaller than 50") and x * 2
-		elseif x < 100
-			print("x is smaller than 100") and x
-		else
-			print("x is a big number") and x / 2
-			
-	def oneLineIf(x)
-		if x < 50 then
-			print("x is smaller than 50") and x * 2
-		elseif x < 100 then
-			print("x is smaller than 100") and x
-		else
-			print("x is a big number") and x / 2
-			
-	def oneLineIf(x)
-		if x < 50 do
-			print("x is smaller than 50") and x * 2
-		elseif x < 100 do
-			print("x is smaller than 100") and x
-		else do
-			print("x is a big number") and x / 2
+		if x > 20 do										## This (possibly) means that "do" is a keyword similar to "then"
+			x:- 10											## This is because of the possible "do-block" syntax
 
+		if (x > 25)											## You can optionally wrap the boolean expression in parentheses (might not have to directly implement this)
+			print("x is greater than 35")
 
-	def noLineIf(x)
-		if x < 50 print("x is smaller than 50")
-		elseif x < 100 print("x is smaller than 100")
-		else print("x is a big number")
-		
-	def noLineIf(x)
-		if x < 50 then print("x is smaller than 50")
-		elseif x < 100 then print("x is smaller than 100")
-		else print("x is a big number")
-		
-	def noLineIf(x)
-		if x < 50 do print("x is smaller than 50")
-		elseif x < 100 do print("x is smaller than 100")
-		else do print("x is a big number")
+	Currently no switch statement in dust
+		I don't know what the exact benefit of a 'switch' is
 
-	def noLineIf(x)
-		if (x < 50) print("x is smaller than 50")
-		elseif (x < 100) print("x is smaller than 100")
-		else print("x is a big number")
+Looping Structures
+	for
+		for <var> in <table> <block>
+		Executes the given block for each entry in the table
+			Each entry is stored in the var for use in the block
+
+		Pure for-each style
+			Unlike in Lua, there is no direct syntax for increment loops
+			It is possible to simulate the syntax using ranges
+
+		Generator idiom support ??
+			A function that acts like an iterator (ie. can be used in a for loop)
+				There's two ways of doing this
+					Have a yield keyword (ala Python/Lua)
+					Have re-entrant functions (using return values as arguments gives the next return values in the series)
+				You could even remove the other type support and use only this (maybe with some sugar)
+			What does this provide
+				Provides a degree of concurrency/laziness
+				Could also have <var_list> instead of just <var>
+			Something to consider as the language develops (ie. later)
+
+	while
+		while <expr> <block>
+		Executes the given block while the expression evaluates to true
+
+	until
+		until <expr> <block>
+		Executes the given block until the expression evaluates to true
+		Guaranteed to execute at least once
+			Largely to differentiate it from while loops
+
+Structure reordering
+	Would it be possible to reverse the ordering of pieces within a control structure (ala Ruby)
+		Something on the order of "<block> if <expr>"
+
+	My current idea is to use ','
+		<block>, if <expr>
 
 Scoping
-	To assign a variable from an enclosing scope		## currently access will return the first non-nil value
-		@x: 3
-		$x: 3
-	@x refers to the variable 'x' from the enclosing scope
-		Or @x refers to the variable 'x' in the nearest scope where x is defined
-		@@x refers to the enclosing scope of the enclosing scope
-			Basically "stacking" enclosing lookups
-		Behavior if the current scope is the global scope (ie. there is no enclosing scope)
-			1) Throw an error
-			2) Silently fail (ie. @x = x)
-		Could I have special syntax for "searching" lookup ??
-			ie. @..x will return the value of x in nearest scoped that x is defined in (this is unnecessary if the second definition is taken)
+	The problem is how to differentiate between initializing a variable in the current scope and reassigning a variable from a "parent" scope
+		x: 3
+			x: 5		## current rules say that this is a new variable
+		print(x)		## so then how can I change the value of x in the new scope
+
+	To assign a variable from an enclosing scope		## access will return the first non-nil variable anyways (currently, might be beneficial to say otherwise)
+		.x: 3					## Some possible replacements for '.', @/$ (Possible static signifier in objects/Nice symbol that has no prior syntactical use)
+
+		The '.' forces the scope lookup to have some similarity with tables
+			Tables might even be used to implement scoping
+				This would make directly modifying globals really easy to implement (though if that's good or not)
+					Just provide a specific "global table" to the environment (ala Lua's '_G')
+			This also brings it's own problems (I forget what though)
+
+		Stacking scope lookups
+			x: 3
+				x: 5
+					x: 7			## How can i redefine the first x in this scope
+					..x: 9			## Chain lookups (I can't think of another option though)
+
+			Or I could say that this is bad design and refuse to support it
+
+		Which scope will the operator pick up
+			Goes up until a scope where the variable is defined, or the global scope, is reached
+				This runs into some problems with current "nil = deletion" logic
+				Do note that the lookup starts up one level from the current scope (global notwithstanding)
+
+			x: 3
+				y: 5
+					.x: 7
+				print(x)			## outputs 7 regardless (assuming current access rules)
+			print(x)				## outputs 7
+
+	When the "current" scope is the global scope (ie. no enclosing scope)
+		Currently the scope lookup stops when the current scope is the global scope (.x = x)
+			It would be possible to have the program fail in this instance
+
+	Interaction with Multiple Assignment
+		Unlike the 'let' keyword, forced scoping is a local action to the specific variable
+			In ".x, y: 3, 5", only 'x' is subject to the forced scoping rules
+
+			This also means that ".x, .y: 3, 5" both 'x' and 'y' are subject to 1 round of forced scoping
+
+Module Scoping (something to consider later)
+	Way to define a local "global" scope (especially for use in modules)
+
+Variable Access
+	Accessing a variable from an enclosing scope
+		It should be possible to use the same syntax for assigning in a enclosing scope to force an access
+			All this does is start the search for the name up one level
+		Just referencing the variable will start the lookup in the current scope
+			This gives simpler and "prettier" code (also might be more logical)
 
 "do-block" syntax (possibility?)
 	do
@@ -102,6 +118,20 @@ Scoping
 	print(x)			## nil
 
 	This is a "nice" syntax for creating blocks of code without the presence of control structures et al
+		It's entirely a visual concession (blocks are still able to be produced entirely with indentation)
+		
+	I could go halfway this
+		Reserve "do" as a keyword but have it actually do nothing
+		The capability to signify blocks can be easily added in later (especially since blocks are indented)
 
 Statement seperator
 	Should I have a ';' like character to seperate statements in a single line ???
+	Possible Options
+		';'
+		','
+		'!'
+	
+Statement scoping
+	Not currently supported in Dust
+		No "good" syntax
+		No appreciable need

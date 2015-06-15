@@ -20,9 +20,8 @@ entry = let? <var>: <expr>								## <assignment> ???
 
 ## Type definitions
 typecheck = <var> <- <type>
-number = [0-9]+											## digit = [0-9]
-int = '+|-'?<number>
-float = '+|-'?<number>?.<number>?						## if i want to, i can enforce 0. for floats by changing to <int>.<number>? / <int>.'<digit>*'
+int = '+|-'?[0-9]+
+float = <int>.[0-9]*									## A float must be appended by an int. 1/4 = 0.25 (.25 is not valid or indexes a table/scope)
 string = \".*\"											## "But what about \"This String\"!"
 
 ## Syntax definitions
@@ -43,5 +42,6 @@ var_id =
 type_id = 
 
 expr = .*
+block = '\t'<expr>|<block>''+							##'\t<chunk>'+
+chunk = <block>|<expr>									## since this pattern appears so frequently
 var = <id>'\.<var>'*									## <id>'\.<field>'*		Currently this allows Int.String (but that might be useful for overloading)
-block = '\t'<expr>|<block>''+
