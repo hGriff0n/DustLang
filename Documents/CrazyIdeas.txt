@@ -1,0 +1,5 @@
+If we allow all types to define metamethods, it is possible to create the weird c-style array indexing within dust
+	Int._nindex_: \t -> t[self]						## 3[t] = t[3] and 3.hello = "hello"[3] = 'l'
+
+Could I also define '_op^_' for strings to performing indexing ???
+	String._op^_: \x -> (x <- Int) and self[x] or Table(self) ^ x	## "Hello" ^ 3 = 'l'

@@ -8,43 +8,43 @@ euler.1: \x -> sum([3, 6..x] & [5, 10..x])
 def euler.1(x)
 	sum: 0
 	for i in [3..x]
-		@sum:+ [i mod 3, i mod 5] ^ 0 and i or 0
+		.sum:+ [i mod 3, i mod 5] ^ 0 and i or 0
 	return sum
-euler.1: \x -> [\i | i in [3..x], [i % 3, i % 5 ^ 0]].sum()
-## euler.1: \x -> [\i | i in [3..x], i.mod(3, 5) ^ 0].reduce(\x,s -> +)  I don't know about the i.mod call returning a table if given multiple inputs ???
+
+euler.1: \x -> [i | i in [3..x], [i % 3, i % 5 ^ 0]].sum()
+## euler.1: \x -> [i | i in [3..x], i.mod(3, 5) ^ 0].reduce(\x,s -> +)  I don't know about the i.mod call returning a table if given multiple inputs ???
 
 ## Problem 2: Sum of the even fibonacci numbers below 4000000 (4613732)
 def euler.2(x)
 	sum, fib: 2, [0, 2, 8]
 	while fib.3 < x
-		@sum:+ fib.3										## the 'scope' operator is not needed for access only assignment
-		@fib: [fib.2, fib.3, 4*fib.2 + fib.1]				## python has the global/nonlocal operator, lua has local for this instance
+		.sum:+ fib.3										## the 'scope' operator is not needed for access only assignment
+		.fib: [fib.2, fib.3, 4*fib.2 + fib.1]				## python has the global/nonlocal operator, lua has local for this instance
 	sum
 
 
 ## Problem 3: Largest prime factor of 600851475143 (6857)
-factor: \x -> [\i | i in [2..sqrt(x) + 1], x % i = 0]
+factor: \x -> i | i in [2..sqrt(x) + 1], x % i = 0]
 
 def euler.3(x)
 	factors: factor x
-	return fst([\i | i in factors.reverse(), !(factor(i))])				## there might be ways to speed this up, such as take(1, ...) instead of fst
+	return fst(i | i in factors.reverse(), !(factor i)])				## there might be ways to speed this up, such as take(1, ...) instead of fst
 
 ## Problem 4: Largest palindrome product of two 3-digit numbers (906609)
-euler.4: \ -> max([\i,j -> i * j | i in [999..111], j in [999..111], str(i * j).isPalindrome()])
-## euler.4: \ -> max [\i,j -> * | i in [999..111], j in [999..111], isPalindrome(i * j)]	Not fully defined in this instance
+euler.4: \ -> max(i * j | i in [999..111], j in [999..111], str(i * j).isPalindrome()])
+## euler.4: \ -> max [i * j | i in [999..111], j in [999..111], isPalindrome(i * j)]	Not fully defined in this instance
 
 ## Problem 5: Smallest number that is evenly divisible by [1..20] (232792560)
 def euler.5
 	primes: math.primes \x -> <= 20			## get all primes less than 20
-	count: [].fill(1, size(primes))			## create a "pair" table the size of primes initialized to 1
-	## count: table.replicate(#primes, 1)
+	count: Table.replicate(1, size primes)	## create a "pair" table the size of primes initialized to 1
 	
 	for x in ([2..20] - primes)				## for every non-prime <= 20
 		for i in [1..size(primes)]			## perform prime factorization		(for in in [1..#primes])
 			c: 0
 			while x % primes.i = 0	## and c: c + 1 ???
-				@c:+ 1
-				@x:/ primes.i
-			@count.i: max(count.i, c)
+				.c:+ 1
+				.x:/ primes.i
+			.count.i: max(count.i, c)
 
-	return [\[i, j] -> i ^ j : i in zip(primes, count)].reduce(\r,x -> r * x)
+	return [i.1 ^ i.2 | i in zip(primes, count)].reduce(\r,x -> r * x)

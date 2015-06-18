@@ -25,6 +25,9 @@ Assignment
 				What if the number of expressions > number of variables
 					The same question is asked in Functions/Function Argument Passing
 					This could be useful, but its expensive and wasteful
+		Values are assigned to variables in a left-right order (splat notwithstanding)
+			The first value in the <expr_list> is assigned to the first variable in the <var_list>
+			It might be advantageous to think of these two items as being removed from their respective lists
 	
 	Pattern Matching in Assignment (Some discussion in Tables)
 		[x, y]: [3, 5]

@@ -101,6 +101,16 @@ Scoping
 
 			This also means that ".x, .y: 3, 5" both 'x' and 'y' are subject to 1 round of forced scoping
 
+Control Structures as Expressions
+	Is this definition for Table.sum valid
+		Table.sum: \l, sum: 0 ->
+			(for x in l .sum:+ x)				## sum would be implicitly returned here
+
+		As opposed to
+			Table.sum: \l, sum: 0 ->
+				for x in l .sum:+ x
+				return sum
+
 Module Scoping (something to consider later)
 	Way to define a local "global" scope (especially for use in modules)
 

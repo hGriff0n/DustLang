@@ -321,7 +321,7 @@ Functions as objects (ala Scala) ??? (Incomplete)
 	quick: [
 		__call: \list, *args -> __dispatch(list + args)(list + args),
 		__dispatch: \args ->
-			types: [\x -> typename(x) | x in args]
+			types: [typename(x) | x in args]
 			__match(args, types) or error("Non-exhaustive overload for " + self + " on " + types),
 
 		__match: \args, types ->							## This is a very basic matcher (no pattern matching/inheritance)
