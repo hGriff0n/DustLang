@@ -319,7 +319,7 @@ Functions as objects (ala Scala) ??? (Incomplete)
 			
 	## quicksort table implementation using dispatch method for overloading
 	quick: [
-		__call: \list, *args -> __dispatch(list + args)(list + args),
+		_op(): \list, args -> __dispatch(list + args)(list + args),
 		__dispatch: \args ->
 			types: [typename(x) | x in args]
 			__match(args, types) or error("Non-exhaustive overload for " + self + " on " + types),
@@ -349,8 +349,8 @@ Functions as objects (ala Scala) ??? (Incomplete)
 					[*quick(low), *mid, *quick(high)]
 			]
 		],
-		__newindex: \-> nil,
-		__index: \-> nil
+		_nindex: \-> nil,
+		_index: \-> nil
 	]
 
 	So the basic pattern appears to be
@@ -363,3 +363,14 @@ Functions as objects (ala Scala) ??? (Incomplete)
 
 		At least one of these "sections" has to exist
 			But no section, by itself, has to exist
+
+Way to capture a variable number of arguments without resorting to the splat operator
+	Smallest way to define a function, f, so that
+		f([2, 4]) = f(2, 4)
+
+	Here's a slight trick
+		\t, *ct -> t + ct
+
+		So what if i give [2, 4], 3
+			This function would give [2, 4, 3]
+			I think I'd rather have [[2, 4], 3]

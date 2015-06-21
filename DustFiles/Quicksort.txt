@@ -16,6 +16,6 @@
 		high: low: []						## the question is about evalutation order (does low: get evaluated before high:)
 		for item in list
 			if item > sel .high:+ item
-			elseif item < sel .low:+ item	## could '++' work similar to ':+' ???
+			elseif item < sel .low:+ item	## could '++' = ':+'
 			else .mid:+ item
 		[*quick(low), *mid, *quick(high)]	## you can also use splat instead of flatten

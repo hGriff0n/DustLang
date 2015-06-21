@@ -28,7 +28,7 @@ factor: \x -> i | i in [2..sqrt(x) + 1], x % i = 0]
 
 def euler.3(x)
 	factors: factor x
-	return fst(i | i in factors.reverse(), !(factor i)])				## there might be ways to speed this up, such as take(1, ...) instead of fst
+	return fst([i | i in factors.reverse(), !(factor i)])				## there might be ways to speed this up, such as take(1, ...) instead of fst
 
 ## Problem 4: Largest palindrome product of two 3-digit numbers (906609)
 euler.4: \ -> max(i * j | i in [999..111], j in [999..111], str(i * j).isPalindrome()])

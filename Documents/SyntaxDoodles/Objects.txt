@@ -44,15 +44,15 @@ Type Methods
 	def Foo.new(x)		def Foo.set(x)
 		Foo.count:+ 1		attr: x
 
-Way to implement '__newindex'-esque behavior
+Way to implement '_nindex'-esque behavior
 	The basic idea is to allow foo.decrement(3) to provide some valid behavior
 		Possibly even be a way to extend type definitions
 			This would basically take the place of message passing
 			See ruby for a more in depth view of this phenomenon
 
 	Since types are basically tables (and may even be implemented as tables)
-		It could come down to defining '__newindex' on the type
-			I could also have some other field name that basically redirects to '__newindex' (but more inline with "type" thinking)
+		It could come down to defining '_nindex' on the type
+			I could also have some other field name that basically redirects to '_nindex' (but more inline with "type" thinking)
 
 
 ## I'm leaning towards deprecating this section (once I've figured out how to implement currying)

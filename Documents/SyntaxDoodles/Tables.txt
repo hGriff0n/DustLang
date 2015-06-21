@@ -11,13 +11,6 @@ Table Declaration
 			This does mean that you can refer to previous table fields for variable assignment (???)
 				ie. [ x: 3, y: x + 3 ] = [ x: 3, y: 6 ]
 
-Table Sub-types
-	Arrays
-		Table with only a contiguous subset of integers as keys
-	Sets
-		Table with only numeric keys
-	Global/Scope
-
 Table access
 	Table values are accessed through the '.' and '[]' characters
 		Currently t.1 = t[1] (this may change to t.1 = t["1"])
@@ -32,74 +25,61 @@ Table access
 		ie. specify a table "array" so that array.s throws a type error but array[1] doesn't
 		This will allow globals to be "table" values as in Lua and the language spec to be consistent
 
-Set Comprehension Syntax (In order of current preference. Only 1 will be valid syntax)
-	mult: [\x,y -> * | x in l, y in r, true]		## current favorite
-	mult: [\ -> x*y | x in l, y in r, true]			## possible elision (if captures are implemented)
-	mult: [x * y | x in l, y in r, true]			## haskell derived (possible sugar for the above (drop '\->') or some other implementation)
+Set Comprehension Syntax
+	mult: [x * y | x in l, y in r, true]			## haskell derived
 
-Table/Set operatiors
-	Currently it is valid to perform an operation of Table + Int (ie. [] + 3 = [3])
-		In these cases the non-table type is implicitly converted to a Table whose sole element is the non-table value.
-		These operations are not exactly well defined on tables though
-			When dealing with multiple elements with the same value, is this multiplicity removed or maintained (see Subtraction)
+	General Syntax Form
+		[<expr> | <extract_list>, <expr_list>]
+			extract = <var> in <table>
 
-	## From viewing the Stanford Compiler course. A + B reads "union of A and B" in regexs
+	This can possibly be implemented by translating to [\ -> x * y | x in l, r in r, true]
+		This involves scoping/closure work however
+		General form = '[<lambda> | <extract_list>, <expr_list>]'
 
-	Addition (+)								## Appends the elements from one table to the other
-		I'm pretty sure this would have to be system defined
-		I don't think this is entirely possible to implement in Dust (aside from calling an api function)
-
-	Subtraction (-)								## Removes all elements of one table from the other
-		Need to decide whether [2,2] - [2] should give [2] or []
-			Should (t + t) - t = t if t = [2]
-			t + (t - t) = t no matter how op-/op+ are defined
-
-		\l, r -> [\x | x in l, !r.has(x)]			## [2,2] - [2] = []
-		def op-(l <- Table, r <- Table)				## [2,2] - [2] = [2] ([2] - [2,2] will cause errors though)
-			for x in r l:-x							## (for x in r l:- x) and l ???
-			return l
-
-	Union (&)									## Takes the union of two tables
-		\l,r -> l + (r - l)						## I think [2] & [2] = [2]
-
-	Intersection (^)							## Takes the intersection of two tables (elements that both have in common)
-		\l,r -> l - (l - r)
-		## \l,r -> [\x | x in l, r.has(x)].flatten
-
-	Reduce (???)
-		If [2,2] - [2] = [] then it would be helpful to have an operator/method to remove all duplicates in a table
-
-	Splat (*)									## ala Ruby. Subject to change as it's very similar to multiplication
-		x, y: *[2, 2]							## equivalent to x, y: 2, 2
-		*x: 2, 2								## equivalent to x: [2, 2]
-		I'm pretty sure this would have to be system defined
+	Do these constructions implicitly work only on tables with integer keys (ie. spec)
 
 Set Ranges
 	Syntax
-		[<start>', <second>'..'<stop>'', <lambda>']
+		[<start>', <second>'?..'<stop>'?', <lambda>'?]
 
 	I'm using the same symbol for ranges and tables
 		Technically ranges are just converted to tables
-			They might be instead converted to generators if they are accepted
-			The syntax is just an easy way to specify a large series of value
+			They might be instead converted to generators (if they are accepted)
+			The syntax is just an easy way to specify a large series of 
 
-	[1..10] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]										## Range syntax: [<start>(,second)..(stop)(, lambda)]
-	[1,3..10] = [1, 3, 5, 7, 9]														## Custom range increments can be inferred by stating the second value
-	[1..] = [1, 2, 3, 4, 5, ....]													## Ranges can be infinite (iff lazy evaluation is implemented)
-	[10..1] = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]										## Sign increments can be inferred automatically
-	[1..28, \x -> x^2] = [1, 4, 9, 16, 25]											## Algorithmic steps can be specified by a function (that does what ???)
-	## what about open interval ranges? ie. [1..10) = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+	Semantics
+		The range generates a table/generator that consists of the numbers >= <start> and <= <stop>
+			ex. [1..5] = [1, 2, 3, 4, 5]
+		The default increment used to generate the list is '+1' (or next if generalized)
+			This increment can be implicitly changed by specifying the second value in the sequence
+				This specification (currently) only works on a linear scale
+				Changing the sign does not require a second value (<stop> < <start>)
+					ex. [5..1] = [5, 4, 3, 2, 1]
+		Ranges can be infinite in length (iff lazy evaluation is implemented)
+			Just don't provide a value for <stop>
+			ex. [1..] specifies the set of natural numbers
+		More complex steps increments can be specified by providing a lambda
+			Currently the lambda is passed the index where the value will be stored
+			ex. [1..28, \x -> ^2] = [1, 4, 9, 16, 25]
+		Ranges work on variables (don't require literals)
+			x: 5
+			[1..x] = [1, 2, 3, 4, 5]
 
 	Could I possibly generalize this rule to any type???
 		ie. ['a'..'e'] = ['a', 'b', 'c', 'd', 'e']
 
-		I could set some restrictions (somewhat like Haskell/Function Overloading)
+		Require that the values are "Sequencable" and "Orderable"
+			Have 'next'/'prev' defined
+				ie. 'a'.next() = 'b'
+			Have 'op<' defined
+				This is just a way to implement decrementing when <stop> < <start>
+			
 
 Pattern Matching (Table specific syntax)
 	def add([x, y])
 		x + y
 
-	This is (roughly) equivalent to			## Doesn't care about input size
+	This is (roughly) equivalent to			## This translation doesn't care about input size
 		def add(t <- Table)
 			(\x, y -> x + y)(*t)			## Note that pattern matching (in this case) is just syntactical sugar
 
@@ -111,7 +91,7 @@ Pattern Matching (Table specific syntax)
 			def add([x, y, *_])
 
 	Way to keep a reference to the original list?
-		def orig(t: [x, y, _*])			## I don't think this works
+		def orig(t: [x, y, *_])			## I don't think this works
 
 	Can pattern matching be used in variable assignment
 		t: [1, 2]
@@ -119,69 +99,32 @@ Pattern Matching (Table specific syntax)
 
 		If I write the code to enable the syntax in either setting, I have the code to enable it in the other
 
-Metamethods (another term ???)
-	What are metamethods
-		Certain functions that allow the interpreter/programmer to customize/define the behavior of certain syntax elements on tables (see Lua)
-			For example, accessing a table will be routed through the '__index' metamethod
-		It could be possible to have meta-metamethods (functions that modify metamethods, ie. '__memoize' in the memorization examples)
-
-	factorial: [						## This memorization table for the computation of factorials (see NeatTricks for more info)
-		0: 1,							## However through metamethods, the syntax for table access/assignment doubles as a function "call"
-		__memoize: \x ->				## This defines the memoization function
-			if x < 0, return nil		## But it also modifies the table (See NeatTricks.txt)
-			x *	factorial[x - 1],
-		__call: \x -> factorial[x]		## Validates 'factorial(4)' syntax. Only syntactical sugar in the long run
-	]
-
-	Should a prefix (ala '__') to metamethods be enforced or optional (and should it prefered in this case)
-		__call, __memoize, __index, __newindex
-		op+, op-, op&, op^, op<, op>, op= etc.		## Note that <= can be defined as \x,y -> x < y or x = y
-
-	How to refer to the table (when referring to table keys/fields inside of the table)
-		'self' keyword
-			This can be done implicitly through scoping
-		Can also refer to the table by name
-			This runs into some problem with scoping/reassignment
-
 Interaction between tables and constant-ness (Metamethods and 'let' syntax)
 	Entries can be added but not changed (see NeatTricks memoize example)
 		Use 'let' fields								## Generalization of the constant declarization rules (they're not exactly defined though)
 			const_table: [ let x: 5	]
 
 		For a more generalized (ie. table-wide) behavior
-			__newindex: \x,y -> y and (let self[x]: y)		## wouldn't this call __newindex ???
+			_nindex: \x,y -> y and (let self[x]: y)		## wouldn't this call _nindex ???
 
 		Or disable reassignment
-			__index: \x -> self[x]						## const_table.x: 3 is const_table.__index("x", 3)
+			_index: \x -> self[x]						## const_table.x: 3 is const_table._index("x", 3)
 
 	Entries can be changed but not added
-		Disable assignment by redefining the __newindex metamethod
+		Disable assignment by redefining the _nindex metamethod
 			fixed_table: [
-				__newindex: \ -> nil					## fixed by proxy
-				__newindex: noAssign					## __newindex: nil (ie. is nil(x, y) valid syntax/semantics ???)
+				_nindex: \ -> nil					## fixed by proxy
+				_nindex: noAssign					## _newindex: nil (ie. is nil(x, y) valid syntax/semantics ???)
 			]
 
 	Entries can not be added or changed
 		Use 'let' syntax (declare the table with let)	## This solution could also solve P1 behavior (most languages treat this as such)
 			let immutable_table: []						## I feel that this option is simpler and more consistent however
-		Disable reassignment and assignment by redefining __index and __newindex
+		Disable reassignment and assignment by redefining _index and _nindex
 			This is a combination to the above "solutions" 
 
 	Can possibly extract some of the specific details to some outside function/factory/flag/metatmethod
-		Automates the process of disabling __newindex/__index as shown in the first two solutions
-
-What about multi-dimensional tables (ie. matrices) ??? [i,j] vs. [i][j]. See LCS for comparison between the two
-	[i][j] syntax
-		It is a standard syntax accross programming languages
-		It is guaranteed to be valid and semantically defined in dust as being the sequential access of nested tables
-
-	[i,j] syntax
-		It is similar to the typical written syntax for matrices
-		As demonstrated in LCS, it could make most memorization problems trivial to implement
-		However it would most likely be a form of syntactical sugar (more difficult to implement)
-			Easiest implementation would be to have tables as keys which has its own problems (ie. should [1,2] = [i,2] if i = 1, see Lua)
-
-	See LCStests.txt for Longest Common Subsequence implemented in [i][j] and [i,j] syntax
+		Automates the process of disabling _nindex/_index as shown in the first two solutions
 
 In-line Multiline lambdas (where do blocks end???)
 	Try to make it so that a multi-lined lambda only needs the default table seperator to be defined inline.
@@ -195,32 +138,190 @@ In-line Multiline lambdas (where do blocks end???)
 		op+: \x -> "Your name is " + x
 	]
 
+	To refer to the table in which the lambda/function is defined use 'self'
+		It's also possible to use the table by name
+		It's also possible to use the scope operator to force lookup into the table
+			Again access (but not assignment) to table fields is resolved implicitly
+
 Table functions
 	size(table)				## or go like Lua and have a size operator (op#)
 	entries(table)			## returns a new table filled with the entries of the passed table (ie. entries(t).i = [i, t.i], roughly)
 	flatten/smooth(table)	## Removes nesting in a list
 	next(table, idx)		## Returns the next index (ie. t: [ 1, 2, 3, 5: 5 ]; next(t, 1) = t[2]; next(t, 4) = t[5])
+	count: \t, elem -> t.reduce \x, s -> s + Int(x = elem)
+		## \t, elem -> size [x | x in t, x = elem]
 
 	def reduce(t <- Table, fn <- Function, sum)
 		if !sum sum, t: fst(t), tail(t)
 		for x in t @sum: fn(x, sum)
-		sum													## is this line necessary or would the function return sum regardless (ie. what is the value of a for loop)
+		sum													## this line is unnecessary if a for loop can be evaluated to a value
 
-	def replicate(item, n <- Number)						## replaces 'fill'
-		if n <= 0 return []
+	def replicate(item, n <- Number)
+		if !n or n <= 0 return []
 		if n = 1 return [item]
-		replicate(item, floor(n / 2)) + item + replicate(item, ceil(n / 2))
+		replicate(item, floor(n / 2)) + item + replicate(item, ceil(n / 2))			## this doesn't work for evens
 
 	has: \t,v -> t ^ v
-	map: \t,fn -> [\x -> fn(x) | x in t]
+	map: \t,fn -> [fn(x) | x in t]
 	sum: \t -> t.reduce(\x, s -> x + s)
-	entries: \t -> t.zip(t.keys, t.values)					## Might change the naming. Also, t.1 gives the key as opposed to t.key 
+	entries: \t -> t.zip(t.keys, t.values)					## Might change the naming. Also, t.1 gives the key as opposed to t.key
+	flip \t, *ot -> *((ot and ot.reverse() or []) + t)		## \*t -> *(t.reverse())
 
-Have a syntax/ability to perform python-like slices???
-	Python code: arr[:n]	get the first n items
-				 arr[i:i+n] get the first n items starting at i
-				 arr[i:n]	get the subarray from i to n (not actually python syntax)
+Metamethods
+	All syntactical operations basically boil down to calling specific functions (metamethods)
+		These functions can be modified/defined to enable certain behaviors to be associated with certain syntax (such as the addition of two Ints using '+')
+			In this case, the Int type table defines _op+ to do the addition (largely by forwarding to add/etc.)
+			The question is how should metamethods be handled with regards to literals
+				My current idea is to translate '<literal>' to '<type>(<literal>)'
+				Or I could have the "metamethoding" solved purely at runtime (through scoping-esque prcesses)
+		All (default) metamethods are prepended by a single '_'
+		This defines [] + 5 but what about 5 + []??
 
-	Could arr[i,j] be an slice (with a __slice metamethod) ???
+	There should be a way of explicitly disabling specific syntaxes
+		Assigning an error function/nil seems like a good way
+
+	Metamethods
+		index, nindex, op(), op*, op+, op-, op/, op^, op=, order, assign(?)
+		How to identify what is/isn't a new index
+
+	There are no such things as "meta-metamethods" (currently)
+		Meta-metamethods would be functions/flags that modify other metamethods (ie. _memoize previously)
+		This same functionality can be accomplished using type tables and static methods
+			However it sometimes'll require a degree of indirection (currently this works well though)
+
+	Metatables
+		Metatable is the general collection of metamethods for a particular table
+		Metatables would involve having a specific function to modify metamethods for the table
+			It could also be a function to seperate the metafunctions from the table
+		Metatables should always be compared by their references
+			It easier and simpler for implementation and program logic
+
+	factorial: Function.memoize([
+			0: 1,
+			fact: \x -> x < 0 and nil or x * self[x - 1]
+		], "fact", true)				## handles memorization by routing through 'fact'. Also defines '()' to use memoization
+
+	def Function.memoize(t <- Table, mem_fn: "mem_fn", call)				## Possible way to define "memoize"
+		t and t._nindex: \*args -> self[mem_fn](*args)
+		call and t._op(): \*args -> self[*args]
+		return t
+		
+Table/Set operatiors
+	All table operators will convert operands to a table
+		This means that [] + 3 = [] + [3] = 3 + []			## Although the syntax/semantics of the last is ill-defined
+		Need a way to define the semantics of the last construction
+			You could add in a section to the int table but that's intrusive, complex, and "case"-y
+
+	Addition
+		This would most likely have to be system defined in some form (table.append ???)
+		Add just works to append two tables together
+			I might adjust it to have a more set based behavior but this works fine
+
+		Syntax 1 (+)
+			Current syntax (Possibly set based)
+		Syntax 2 (++)
+			Current class inheritance syntax (also used in Haskell)
+
+		l, t: [1, 2, 3, 4], [3, 4, 5, 6]
+		l + t = [1, 2, 3, 4, 3, 4, 5, 6]
+
+	Subtraction (-)								## Removes all elements of one table from the other
+		\l, r -> [x | x in l, !r.has(x)]
+
+		To perform piecewise subtraction (ie. picewiseSub([2, 2], [2]) = [2])
+			def piecewiseSub(t1 <- Table, t2)
+				[replicate(e, t1.count(e) - t2.count(e)) | e in Set(t1)].flatten()
+
+				## if t2 not a table
+				t1, p: t1 - t2, t1.count(t2)
+				t1 + replicate(t2, p)
+
+	Union (*)									## Takes the union of two tables
+		This is the same syntax as splat
+			Change splat to ! or ~
+			Keep splat and union
+			Change union to / or &
+
+		\l,r -> Set(l + r)						## \l, r - > l + (r - l)	(this preserves duplicates in l but not r)
+
+	Intersection (^)							## Takes the intersection of two tables (elements that both have in common)
+		\l,r -> [x | x in l, r.has(x)]			## \l,r -> l - (l - r)
+
+	Reduce (ie. Remove Duplicates)
+		[2, 2].single() = Set([2, 2]) = [2]
+			Other names: noDup, 
+
+	Splat (*)									## ala Ruby. Subject to change as it's very similar to multiplication
+		The splat operator holds the dual meanings of splitting and creating tables
+
+		In the case of table splitting (where the splat is prefixed onto a table/variable)
+			The splat operator translates the table into a <expr_list>
+			The list is ordered by it's keys (value at index 1 will appear before the value at index 2, ...)
+				How do I handle strings/etc. ???
+
+		In the case of variable/argument assignment (where the splat is prefixed onto a variable)
+			The splat operator works to translate an <expr_list> into a table
+				It can be used as an alternate syntax to table literals (in some cases)
+				This table is what is then assigned to the variable
+					The translation process uses a strict left-right order (the first value is at index 1, ...)
+				In this situation the splat operator does not serve to split apart the table
+
+			Suppose a situation like "x, *y: 3, 4, 5"
+				Under the rules of multiple assignment, this situation translates to "x: 3; *y: 4, 5"
+				Then y = [4, 5] and x = 3 under the process described above
+
+			Suppose a situation like "*x, y: 3, 4, 5"
+				Follow the same rules as shown above (I'll need to change sections of the function/etc. sections)
+					It's the simpler process
+					But the other way (to reverse the order of assignment) runs into problems with "*x, *z: 3, 4, 5"
+						This choice doesn't
+
+Table Sub-types
+	Arrays
+		Table with only a contiguous subset of integers as keys
+	Sets
+		Table with only numeric keys
+	Global/Scope
+
+Have a syntax/ability to perform python-like slices
+	This can be accomplished through a (type) method
+		t: [1, 2, 3, 4, 5, 6, 7]
+		t.slice \i -> i ^ [3..] = [3, 4, 5, 6, 7]
+		t.slice 3 = [3, 4, 5, 6, 7]						## i could also overload the method
+
+What about multi-dimensional tables (ie. matrices) ??? [i,j] vs. [i][j]. See LCS for comparison between the two
+	[i][j] will be the only syntax that is, by default, supported (at least at release)
+		It's the standard syntax accross languages and it's already well defined semantically (nested tables)
+
+	However it is possible to implement [i, j] syntax within the current structure
+		Wrap within a table using splat/pattern matching
+			Use pattern matching to grab the i and j (ie. _nindex: \[i, j] -> ...)		## Note this requires [[i, j]]
+				This would mean that the table would be used as the key
+					This brings up the problem of whether [1, 2] = [i, 2]
+
+			It's possible to allow splat to collect the args into a table (ie. _nindex: \*t -> ...)
+				Implementationally weird however
+
+		It would then be nice to have a way of modifying where _nindex will store values	## Remember that _nindex/_index also handle access
+			Have a way to map [i, j] -> x within _nindex
+				Have the second return value be the key
+					ie. x[3]: 4 translates to set flip x._mkey(3), x._nindex(4)
+				Have a second metamethod that gets invoked in unison with _nindex
+					ie. x[3]: 4 translates to set x._mKey(3), x._nindex(4)
+			_index: \[i, j] -> self[f(i, j)]
+
+Table Equality
+	## t1._op=(t2) returns true
+	
+	Entry-wise Equality
+		size(t1) = size(t2)
+		Metatable(t1) = Metatable(t2)				## This should always be a Quick Equality check
+		for	t in zip(t1, t2) t.1 = t.2				## t1[k] = t2[k]
+
+	Quick Equality									## this precludes [1, 2] = [i, 2]
+		ref(t1) = ref(t2)
+
+	It could be possible to switch between the two by redefining _op=
+		This then takes us back to the need to modify the key
 
 ## repl.it

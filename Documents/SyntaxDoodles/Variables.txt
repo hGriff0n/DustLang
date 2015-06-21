@@ -65,10 +65,10 @@ Variable versus Type Identifiers
 	What is the semantics of "x()" if x is not a function
 
 	## For now (could have it error)
-	Have all instances of "x(...)" be translated to "x.__call(...)"
-		The result is then the return value of '__call'
+	Have all instances of "x(...)" be translated to "x._op()(...)"
+		The result is then the return value of '_op()'
 			In the case where x is a function, this is the result of the function
-		Int can define '__call' as \y: 1 -> y * self
+		Int can define '_op()' as \y: 1 -> y * self
 			Then x(5(x)) = x * 5 * x and x() = x
 		If call is not defined on the type
 			Throw an error, return nil, or return self
