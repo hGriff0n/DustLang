@@ -9,7 +9,7 @@ Assignment
 	Compound Assignment
 		let? <var>:<op> <value> is equivalent to let? <var>: <var> <op> <value>
 			ie. x:+ 5 = x: x + 5
-			Note := is now a compound boolean assignment (was previously an alternate assignment syntax)
+
 		The question is whether this can be used with var_list and expr_list
 			x, y:+ 5, 3		=> x, y: x + 5, y + 3
 			x, y:+ 5		=> x, y: x + 5, y + 5	or x, y: x + 5, y + nil
@@ -47,7 +47,6 @@ Type Checking
 	Type Testing
 		Definite Syntaxes
 			type(var) = Int				## This currently does not handle inheritance
-				type(var) ^ Int				## Not sure how this would work, but it should handle inheritance (iff '^' is reworked for types, "base type")
 			typename(var) = "Int"		## This can't handle inheritance
 			is? var, Int				## Should handle inheritance. Can "naively" be a wrapper function
 			var.is Int					## Can handle inheritance. Can also be a wrapper function
@@ -56,24 +55,56 @@ Type Checking
 			var <- Int					## Can handle inheritance
 				Extends the syntax for static/function typing
 					Might be implementationally difficult
+			type(var) ^ Int				## Could possibly handle inheritance (rework '^' for types)
+				Seeks for Int within the iheritance heirarchy of type(var)
+				Also is very extensible
+					type(var) ^ [Int, String] = var <- Int or var <- String
 
 Variable versus Type Identifiers
-	Force type identifiers to begin with a capital and variables to begin with a lowercase ???
-	I might run into some trouble when implementing the proposed "conversion" syntax then
+	Variable identifiers cannot begin with a capital letter
+		All variables must begin with a lowercase letter
+		This rule is relaxed slightly in the case of type constructors and converters
+
+	Conversely all Types must begin with a capital letter
 
 "Calling" variables
-	What is the semantics of "x()" if x is not a function
+	All instances of "x(...)" go through the type's '_op()' metamethod
+		When x is a function, this is a function call
+		Say x is an Int/Float/Number
+			Than this syntax could double as multiplication
+			Int._op(): \y: 1 -> y * self
+		If '_op()' is not defined on type(x)
+			Error - "Undefined syntax error"
 
-	## For now (could have it error)
-	Have all instances of "x(...)" be translated to "x._op()(...)"
-		The result is then the return value of '_op()'
-			In the case where x is a function, this is the result of the function
-		Int can define '_op()' as \y: 1 -> y * self
-			Then x(5(x)) = x * 5 * x and x() = x
-		If call is not defined on the type
-			Throw an error, return nil, or return self
+Nil and nil
+	nil is the only possible value of type Nil
+		nil is the default value of all dust variables
 
-Handling nil
+	Nil is a special type inside of dust
+		It is the default type of all dust variables
+			Unless the variable has been statically typed, (var.is Nil) = true
+				If the variable is statically typed, then (var.is Nil) = false		## This includes function parameters (problems with default parameters)
+					Note: Type checking only occurs upon assignment/initialization	## var = nil until var: ... (where ... is of type(var))
+						Or should I rather automatically assign a default type value to the variable
+					This is largelly a syntactical failing							## No good syntax for performing both at once
+				Also note that literals cannot be of type Nil
+			Coincides with the default value of all variables being nil
+
+		It is a weak type
+			If a variable has been assigned a value, then type(var) != Nil			## except if var = nil
+				The variable's type has been "subsumed" by the values type
+					The same procedure happens when var is assigned nil
+				Note: (var.is Nil) = true					## currently
+					var can also access any Nil specific functions
+
+			Nil largely signifies the possible absence of a value
+
+	let x <- Int
+	print(x)							## outputs 'nil (print takes untyped arguments)
+
+	x: 5
+	x: nil								## error: Can't assign nil to a typed variable
+
 	Suppose the following code chunk
 		let x <- Int
 		y: nil
@@ -81,31 +112,34 @@ Handling nil
 
 	What are the semantics of...		## Note x = nil, y = nil, z != nil
 		x.is Int		## true
-		x.is Nil		## ??			Does the value of x make this statement true
+		x.is Nil		## false		## Note (x = nil) = true
 		y.is Int		## false
 		y.is Nil		## true
 		z.is String		## true
-		z.is Nil		## ??			true if Nil is the parent type, false otherwise
+		z.is Nil		## true
 
 	Indexing a nil value does not inherently imply an error
 		For functions defined on Nil this is correct, useful, and well defined
-		For functions not defined on Nil
-			Silent failure
-				Any call returns nil or another default value
-			Provisional failure
-				Any call dispatches to a free function (if possible)
-					The free function may fail on a nil value (in which case the operation likely can't be performed on a nil value)
-			Absolute failure
-				This would entail that nil-checking be "proper" (or I could make Nil like the Maybe monad)
+			There's a possibility of turning Nil into something similar to the Maybe monad
 
-	Default Value and Deletion
-		Currently if a variable is referenced that has not been previously assigned, the value will be nil
-		Also explicitly assigning a nil value to a variable is equivalent to deleting it
-			To avoid scoping issues, this deletion could be restricted to the value (ie. the variable remains "defined" in the scope)
-				This could run into some issues with memory/temporary variables
+		For functions not defined on Nil
+			Call Nil.msg if it exists (I may not define it)
+			Otherwise this would be an access error
+
+	Deletion
+		A value can not be explicitly deleted by the programmer
+			Values are deleted either through RAII or through garbage collection
+
+Type Heirarchy			## Needed for implementation
+	Java Object
+		At the core of the dust type system, resides a "Object" type
+		All types, except for Nil, are subtypes of "Object"	(including literals)
+
+	C++ System
 
 String Interpolation
-	Provides a way to insert variable values inside a string
+	Unlike Ruby, Dust does not provide a default method for interpolating strings with local variables
+		Rather Dust follows the Lua/Java syntax of "adding" to strings
 
-	x: 3
-	"The value of x is $x"	=> "The value of x is 3"
+	But in the case of "printf" style methods, a '$' is assumed to indicate an "interpolation point"
+		printf("The value of x is $x", x)
