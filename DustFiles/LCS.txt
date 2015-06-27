@@ -10,8 +10,8 @@
 
 ## Longest Common Subsequence implemented in [i][j] syntax
 LCS: [													## The core idea is that LCS[i] should always go through _index
-	let 0: [ _nindex_: \ -> 0 ],						## The memorization of results happens in the table that is stored at LCS[i]
-	_index_: \n -> self[n],
+	let 0: [ _nindex: \ -> 0 ],							## The memorization of results happens in the table that is stored at LCS[i]
+	_index: \n -> self[n],
 ]
 
 def LCS.newrow(seq1, seq2, idx)							## This process can probably be simplified
@@ -19,8 +19,7 @@ def LCS.newrow(seq1, seq2, idx)							## This process can probably be simplified
 			let i: idx,
 			let xi: seq1[idx],
 			let y: seq2,
-			mem_fn: \j ->
-				j = 0 and 0 or xi = y[j] and LCS[i - 1][j - 1] + 1 or max(LCS[i - 1][j], LCS[i][j - 1])
+			mem_fn: \j -> j = 0 and 0 or xi = y[j] and LCS[i - 1][j - 1] + 1 or max(LCS[i - 1][j], LCS[i][j - 1]),
 		])
 
 def LCS.init(x, y)
@@ -32,26 +31,27 @@ def LCS.init(x, y)
 ## print(LCS[2][4])
 
 ## Longest Common Subsequence implemented in [i, j] syntax
-LCS: Table.memoize([ mem_fn: \[i,j] -> [i, j] ^ 0 and 0 or x[i] = y[j] and self[i-1, j-1] + 1 or max(self[i-1, j], self[i, j-1]) ])
-
-def LCS.init(s1, s2)
-	self.removeIf(\k,v -> k != "mem_fn" and !ismetamethod(k, v))		## removes everything but the defined metamethods (ie. previous iterations)
-	set(self, "x", s1)
-	set(self, "y", s2)
+LCS: Table.memoize([
+	mem_fn: \[i,j] -> [i, j] ^ 0 and 0 or x[i] = y[j] and self[i-1, j-1] + 1 or max(self[i-1, j], self[i, j-1]),
+	init: \s1, s2 ->
+		self.removeIf \k,v -> k != "mem_fn" and !ismetamethod(k,v)		## removes everything but the defined metamethods (ie. previous iterations)
+		set(self, "x", s1)
+		set(self, "y", s2)
+])
 
 ## print(LCS[2,4])
 
 ## Longest Common Subsequence implemented in [i, j] syntax but using a pattern matched _index
-## Internally LCS stores it's table like in the first example
-## I just realized that this is almost exactly similar to the second example in execution (this one takes less liberties with the syntax however)
+## Internally LCS stores it's table like in the first example (this example just takes less liberties with syntax)
 
 LCS: [
 	mem_fn: \[i, j] -> [i, j] ^ 0 and 0 or x[i] = y[j] and self[[i - 1, j - 1]] + 1 or max(self[[i - 1, j]], self[[i, j - 1]]),
 	_op(): \t, *ot -> self[t + ot],						## small trick to allow LCS(2, 4) = LCS([2, 4])
-	x: "", y: ""										## What about let x, y <- String ???
+	x: "", y: ""										## What about let x, y <- Indexable ???
 ]
 
-def LCS.init(s1 <- String, s2 <- String)				## The "<- String"s are unnecessary if x and y are statically typed
+## Is this (Indexable) a possible way of allowing strings and tables to be used in this ???
+def LCS.init(s1 <- Indexable, s2 <- Indexable)			## The "<- Indexable"s are unnecessary if x and y are statically typed
 	self.removeIf \k -> !(k <- String)
 	x, y: s1, s2
 

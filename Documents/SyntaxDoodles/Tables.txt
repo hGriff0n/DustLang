@@ -1,24 +1,25 @@
 
 Table Declaration
-	[ <entry> ', ' ] where <entry> = '<id>:' <expr>
+	[ <entry_list> ] where entry = '<id>:'? <expr>
+
 	The 'key' defaults to the next value of the range [1..] that is not already a key in the table
 		Note that tables are 1 indexed by default
 			Table keys can take on any value, this is only an assumption for the sake of standardization
 			This behavior can be modified in-language by redefining global functions/metamethods
-	Entries
-		The last comma in a table's entry list is optional
-		Table entry lists do not function like multiple assignment (no <key>, <key>: <value>, <value>)
-			This does mean that you can refer to previous table fields for variable assignment (???)
-				ie. [ x: 3, y: x + 3 ] = [ x: 3, y: 6 ]
+
+	Note that entry_list does not function like multiple assignment
+		Could this mean inter-table referencing is permissable during table declaration
+			ie. [ x: 3, y: x + 3 ] = [ x: 3, y: 6 ]
 
 Table access
 	Table values are accessed through the '.' and '[]' characters
-		Currently t.1 = t[1] (this may change to t.1 = t["1"])
-			Easier to implement '.' as a sugar for string literals than for string and int literals
-			A workaround could be to convert strings to numbers if possible when used with '.'
-				t.1 = t[1] but t.x = t["x"]
-				How often are string numeral keys used anyways
-		Accessing a table with a variable can only be performed through t[<var>]
+		Only Int and String literals can be indexed through '.'
+			The entire process of enabling '.' is basically a combination of
+				Converting the raw text to String or Int literals (adding "" if String)
+				Replacing the '.<literal>' with '[<literal>]'
+			Note: All numeric strings (ie. "1") require using '[]' (table.1 = table[1])
+
+		Accessing a table with a variable can only be performed using '[]'
 			Using '.' syntax would translate to t.<var> = t["$var"]
 
 	Could it be possible to restrict the type of keys/values a table will support
@@ -26,15 +27,15 @@ Table access
 		This will allow globals to be "table" values as in Lua and the language spec to be consistent
 
 Set Comprehension Syntax
-	mult: [x * y | x in l, y in r, true]			## haskell derived
+	mult: [x * y | x in l, y in r, true]			## Note the 'true' is not needed
 
 	General Syntax Form
-		[<expr> | <extract_list>, <expr_list>]
+		[<expr> | <extract_list>', <expr_list>'?]
 			extract = <var> in <table>
 
 	This can possibly be implemented by translating to [\ -> x * y | x in l, r in r, true]
 		This involves scoping/closure work however
-		General form = '[<lambda> | <extract_list>, <expr_list>]'
+		Also possible to translate to [\ -> * | x in l, r in r, true] (with currying)
 
 	Do these constructions implicitly work only on tables with integer keys (ie. spec)
 
@@ -69,10 +70,8 @@ Set Ranges
 		ie. ['a'..'e'] = ['a', 'b', 'c', 'd', 'e']
 
 		Require that the values are "Sequencable" and "Orderable"
-			Have 'next'/'prev' defined
-				ie. 'a'.next() = 'b'
-			Have 'op<' defined
-				This is just a way to implement decrementing when <stop> < <start>
+			Have 'next'/'prev' defined			## To generate the range
+			Have 'op<' defined					## To automatically decrement/increment
 			
 
 Pattern Matching (Table specific syntax)
@@ -138,11 +137,6 @@ In-line Multiline lambdas (where do blocks end???)
 		op+: \x -> "Your name is " + x
 	]
 
-	To refer to the table in which the lambda/function is defined use 'self'
-		It's also possible to use the table by name
-		It's also possible to use the scope operator to force lookup into the table
-			Again access (but not assignment) to table fields is resolved implicitly
-
 Table functions
 	size(table)				## or go like Lua and have a size operator (op#)
 	entries(table)			## returns a new table filled with the entries of the passed table (ie. entries(t).i = [i, t.i], roughly)
@@ -168,33 +162,31 @@ Table functions
 	flip \t, *ot -> *((ot and ot.reverse() or []) + t)		## \*t -> *(t.reverse())
 
 Metamethods
-	All syntactical operations basically boil down to calling specific functions (metamethods)
+	All syntactical operations basically boil down to calling specific functions, or metamethods
 		These functions can be modified/defined to enable certain behaviors to be associated with certain syntax (such as the addition of two Ints using '+')
-			In this case, the Int type table defines _op+ to do the addition (largely by forwarding to add/etc.)
+			In this case, the Int type table defines _op+ to do the addition (largely by forwarding to a system function)
 			The question is how should metamethods be handled with regards to literals
 				My current idea is to translate '<literal>' to '<type>(<literal>)'
 				Or I could have the "metamethoding" solved purely at runtime (through scoping-esque prcesses)
 		All (default) metamethods are prepended by a single '_'
-		This defines [] + 5 but what about 5 + []??
 
 	There should be a way of explicitly disabling specific syntaxes
 		Assigning an error function/nil seems like a good way
 
 	Metamethods
 		index, nindex, op(), op*, op+, op-, op/, op^, op=, order, assign(?)
+			Need to add a section explaining what each metamethod is
 		How to identify what is/isn't a new index
-
-	There are no such things as "meta-metamethods" (currently)
-		Meta-metamethods would be functions/flags that modify other metamethods (ie. _memoize previously)
-		This same functionality can be accomplished using type tables and static methods
-			However it sometimes'll require a degree of indirection (currently this works well though)
 
 	Metatables
 		Metatable is the general collection of metamethods for a particular table
-		Metatables would involve having a specific function to modify metamethods for the table
-			It could also be a function to seperate the metafunctions from the table
-		Metatables should always be compared by their references
-			It easier and simpler for implementation and program logic
+			It's more of a useful idea for describing than an actual implementation detail
+			Though it would be very useful (for standardization, etc.) to provide facilities that work on metatables
+				Particularly set_metatable and get_metatable
+				They would also imply have various functions that modify the metamethods (versus the old idea of metametamethods)
+
+		Metatables are always be compared by reference
+			It easier and simpler to implement and reason		## ie. How to compare functions
 
 	factorial: Function.memoize([
 			0: 1,
@@ -206,75 +198,82 @@ Metamethods
 		call and t._op(): \*args -> self[*args]
 		return t
 		
-Table/Set operatiors
-	All table operators will convert operands to a table
-		This means that [] + 3 = [] + [3] = 3 + []			## Although the syntax/semantics of the last is ill-defined
-		Need a way to define the semantics of the last construction
-			You could add in a section to the int table but that's intrusive, complex, and "case"-y
+Table/Set operations
+	All table operators ensure that all operands are tables
+		This means that [] + 3 = [] + [3]
+
+		Defining [] + 3 is easy, but how can I define 3 + []??
+			Case Int._op+ with a "type table" (intrusive and complex)
+				Int._op+: \o -> o <- Number and add(self, Int(o)) or o._op+(self)				## This isn't exactly a type table (this pattern will constantly recur)
+				Int._op+: \o -> o ^ Int.add_types and add(self, Int(o)) or o._op+(self)			## Int.add_types is a type table
+			Add a global "type table" that defines precendence
+
+	let l, t: [1, 2, 3, 4], [3, 4, 5, 6,]
 
 	Addition
 		This would most likely have to be system defined in some form (table.append ???)
-		Add just works to append two tables together
-			I might adjust it to have a more set based behavior but this works fine
 
-		Syntax 1 (+)
-			Current syntax (Possibly set based)
-		Syntax 2 (++)
-			Current class inheritance syntax (also used in Haskell)
+		Add just works by appending the two tables together
+			For a set-based definition, see Union
 
-		l, t: [1, 2, 3, 4], [3, 4, 5, 6]
 		l + t = [1, 2, 3, 4, 3, 4, 5, 6]
 
 	Subtraction (-)								## Removes all elements of one table from the other
 		\l, r -> [x | x in l, !r.has(x)]
 
+		l - t = [1, 2] = piecewiseSub(l, t)	## in this case
+		t - l = [5, 6]
+
 		To perform piecewise subtraction (ie. picewiseSub([2, 2], [2]) = [2])
 			def piecewiseSub(t1 <- Table, t2)
-				[replicate(e, t1.count(e) - t2.count(e)) | e in Set(t1)].flatten()
+				[replicate(e, t1.count(e) - t2.count(e)) | e in Set(t1)].flatten()			## replicate(e, < 0) = []. Assumes t2 is a table
 
 				## if t2 not a table
 				t1, p: t1 - t2, t1.count(t2)
 				t1 + replicate(t2, p)
 
 	Union (*)									## Takes the union of two tables
-		This is the same syntax as splat
-			Change splat to ! or ~
-			Keep splat and union
-			Change union to / or &
+		\l,r -> Set(l + r)						## \l, r - > l + (r - l)			This preserves duplicates in l but not r
 
-		\l,r -> Set(l + r)						## \l, r - > l + (r - l)	(this preserves duplicates in l but not r)
+		l * t = [1, 2, 3, 4, 5, 6]
 
 	Intersection (^)							## Takes the intersection of two tables (elements that both have in common)
 		\l,r -> [x | x in l, r.has(x)]			## \l,r -> l - (l - r)
+
+		l ^ t = [3, 4]
 
 	Reduce (ie. Remove Duplicates)
 		[2, 2].single() = Set([2, 2]) = [2]
 			Other names: noDup, 
 
-	Splat (*)									## ala Ruby. Subject to change as it's very similar to multiplication
-		The splat operator holds the dual meanings of splitting and creating tables
+Splat Operator (*)									## ala Ruby
+	The splat operator serves to convert between tables and expr_lists (splits tables and combines expr_lists)
+		Currently the splat operator is the same as the set union operator (might make parsing difficult)
+			Change splat to ! or ~
+			Change union to / or &
+			Keep both as is					## This is the current standard
 
-		In the case of table splitting (where the splat is prefixed onto a table/variable)
-			The splat operator translates the table into a <expr_list>
-			The list is ordered by it's keys (value at index 1 will appear before the value at index 2, ...)
-				How do I handle strings/etc. ???
+	In the case of table splitting (where the splat is prefixed onto a table/variable)
+		The splat operator translates the table into a <expr_list>
+		The list is ordered by it's keys (value at index 1 will appear before the value at index 2, ...)
+			How do I handle strings/etc. ???
 
-		In the case of variable/argument assignment (where the splat is prefixed onto a variable)
-			The splat operator works to translate an <expr_list> into a table
-				It can be used as an alternate syntax to table literals (in some cases)
-				This table is what is then assigned to the variable
-					The translation process uses a strict left-right order (the first value is at index 1, ...)
-				In this situation the splat operator does not serve to split apart the table
+	In the case of variable/argument assignment (where the splat is prefixed onto a variable)
+		The splat operator works to translate an <expr_list> into a table
+			It can be used as an alternate syntax to table literals (in some cases)
+			This table is what is then assigned to the variable
+				The translation process uses a strict left-right order (the first value is at index 1, ...)
+			In this situation the splat operator does not serve to split apart the table
 
-			Suppose a situation like "x, *y: 3, 4, 5"
-				Under the rules of multiple assignment, this situation translates to "x: 3; *y: 4, 5"
-				Then y = [4, 5] and x = 3 under the process described above
+		Suppose a situation like "x, *y: 3, 4, 5"
+			Under the rules of multiple assignment, this situation translates to "x: 3; *y: 4, 5"
+			Then y = [4, 5] and x = 3 under the process described above
 
-			Suppose a situation like "*x, y: 3, 4, 5"
-				Follow the same rules as shown above (I'll need to change sections of the function/etc. sections)
-					It's the simpler process
-					But the other way (to reverse the order of assignment) runs into problems with "*x, *z: 3, 4, 5"
-						This choice doesn't
+		Suppose a situation like "*x, y: 3, 4, 5"
+			Follow the same rules as shown above (I'll need to change sections of the function/etc. sections)
+				It's the simpler process
+				But the other way (to reverse the order of assignment) runs into problems with "*x, *z: 3, 4, 5"
+					This choice doesn't
 
 Table Sub-types
 	Arrays
@@ -284,10 +283,10 @@ Table Sub-types
 	Global/Scope
 
 Have a syntax/ability to perform python-like slices
-	This can be accomplished through a (type) method
+	This can be accomplished through a method
 		t: [1, 2, 3, 4, 5, 6, 7]
 		t.slice \i -> i ^ [3..] = [3, 4, 5, 6, 7]
-		t.slice 3 = [3, 4, 5, 6, 7]						## i could also overload the method
+		t.slice 3 = [3, 4, 5, 6, 7]						## i could overload the method
 
 What about multi-dimensional tables (ie. matrices) ??? [i,j] vs. [i][j]. See LCS for comparison between the two
 	[i][j] will be the only syntax that is, by default, supported (at least at release)
@@ -311,14 +310,14 @@ What about multi-dimensional tables (ie. matrices) ??? [i,j] vs. [i][j]. See LCS
 			_index: \[i, j] -> self[f(i, j)]
 
 Table Equality
-	## t1._op=(t2) returns true
+	## How should t1._op=(t2) work
 	
-	Entry-wise Equality
+	Entries (Default method)
 		size(t1) = size(t2)
-		Metatable(t1) = Metatable(t2)				## This should always be a Quick Equality check
+		Metatable(t1) = Metatable(t2)				## This is always a reference check
 		for	t in zip(t1, t2) t.1 = t.2				## t1[k] = t2[k]
 
-	Quick Equality									## this precludes [1, 2] = [i, 2]
+	Reference									## this precludes [1, 2] = [i, 2]
 		ref(t1) = ref(t2)
 
 	It could be possible to switch between the two by redefining _op=

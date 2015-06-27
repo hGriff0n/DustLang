@@ -1,53 +1,64 @@
 ## What is an expression ?
+Lambdas
+	Lambdas, or anonymous functions, are one of the few data types, largely by necessity, that are entirely system defined. 
+
+Functions
+	Dust functions are first class objects, much in the same way as any Int or Table. In fact, it is possible to implement
+	Functions (with argument overloading, etc.) using only lambdas and tables, however they are system defined for practicality.
+	Functions are higher-order lambdas that provide a set of conveniences, such as default argument values and type checking.
+
+	Syntax
+		Definition
+			The definition of a function is signified through the 'def' keyword and is divided into two parts; signature and body.
+
+			The function signature must immediately follow the 'def' keyword. The function signature consists of a variable identifier,
+			An open parenthesis, an optional arg_list, and a closing parenthesis. This is a slight degree of syntactical sugar
+			In that the function's name is part of the definition and not outside of the body (This may be eased a bit later).
+
+			The function body must immediately follow the signature declaration. The function body consists of a
+			Code block on the next line (and indented at least one level) or a singular expression on the same line.
+			In both cases, the value of the function is implicitly the value of the last evaluated expression.
+
+			function_def = def <variable>(<arg_list>?) <expr>|<block>			## def <variable>?(<arg_list>?) <expr>|<block>
+
+		Arg_list
+			An arg_list is the set of possible arguments to a function. At it's simplest, it is just a list of variable identifiers.
+			However, it is possible to assign default arguments (values of the variable if it passed 'nil') or to restrict the
+			Argument's type (But never both). Specifying default argument involves the same syntax as assigning a variable. Restricting
+			Argument type involves the same syntax as type checking (this may also invoke conversion operations).
+
+			arg = <variable> '': <expr>'|'<- <type>''?
+
+		Calling
+			Functions naturally have the '_op()' metamethod defined, thereby enabling the '()' syntax. However, it is currently
+			Permissable to forgo the parentheses when calling a function with 1 or more arguments (no arguments would be
+			Indistinct from the function object itself). This defintion is likely to be system-defined as well.
+
+	Semantics
+	
+	Scoping
+		Closures
+		
 
 Function Declaration	
-	def <name>(<arg> ': <val>' '<- <type>' ', ')		## Commas follow the same rules as tables (ie. an ending comma is optional)
-		<body>
+	def <name>(<arg_list>?) <expr>|<block>
+		arg = <variable> '':<val>'|'<- <type>''?
 
 	def abs(x <- Number)								## Might end up changing the syntax to use {} instead of ()
 		x > 0 and x or -x
 
-														## I don't know about the consistency/conceptual
-	def abs[x <- Number]								## This has some interesting implications (conceptually, implementation, etc.)
-		x > 0 and x or -x								## It's the pattern matching syntax (unifies implementation).
-														## A possible way to work towards implementing [i, j] syntax 
-														## This syntax would imply abs[4] to call (but I still like '()' syntax for that)
-														## But then what's the syntax for pattern matching ('()' syntax? Splat also works)
+	## Have a way to create Functions using "Function(<lambda>)" style ???
+	## How about abs: def(<arg_list>) <expr>|<block> ???
 
-Function Calling				
+Fuction Calling				
 	abs(4)	-or-	abs 4						## Mirrors the syntax of function declaration (ie. if decl uses (), so do calling)
-	Might enforce () to call a function with no arguments
-		Not sure about the semantics otherwise (what does 'x: abs' mean)
+
+	Parentheses cannot be elided if the function is not called without any arguments
+		Indistinct from the function object itself, especially in the case of assignment (ie. x: abs)
 
 Lambdas (Anonymous functions)
 	Syntax
 		add2: \x -> x + 2
-		add2: \x -> + 2					## Using currying
-	
-	## Move this to the currying section
-	Currying can also be used inside of named functions
-		Given:		\x -> +2		\i, j -> *		\x -> 2 +		\x, y -> max		## \x, y -> ???
-		Read:		\x -> op+ 2		\i,j -> op*		\x -> 2 op+		\x,y -> max			## \x, y -> ???			## Since +/*/... are sugar for op+/op*/...
-		Desired:	x + 2			i * j			2 + x			max x,y				max(double(x, y))
-
-		Could I define it as the first line of a function is implicitly it's arguments ???
-			Then currying simply becomes a question of concatenation
-			Slightly confusing and possibly inefficient (but an easy way to start implementation)
-			Translate: x + 2		i j *		x 2 +		x y max		x y ???
-
-		Rearrange arguments around the functions (this could be computationally confusing)
-			If there was a way to turn 2 op+ into op+ 2, then copy-pasting the arguments (with commas) would work (assuming the "no-parens" is valid)
-			Translate: op+ 2, x		op* i,j			op+ 2, x		max x,y			max(double x,y)
-			It should be largely trivial to add in parentheses if I need to afterwards
-
-		Use message passing (the syntax/idea isn't nailed yet)
-			Then just turn the lambda body into message passing syntax ???
-			Translate: ( op+ 2, x)	( op* i, j)		(2 op+ x)		( max x, y)		( max ( double x, y))
-
-		All things considered, the the translations should probably replace the original function in memory
-
-	\x is a shorcut for \x -> x	
-		This is to simplify the syntax of table comprehensions (Might be removed if the syntax is changed)
 
 	\-> x is a function with no arguments that returns the value of x
 		If the lambda is a closure than x may be any value
@@ -57,20 +68,51 @@ Lambdas (Anonymous functions)
 		Might add several abilities that a lambda doesn't have (such as overloading or argument type checking)
 
 Currying (Might have to delay implementation (need to consider all possible outcomes/options))
+	Given:		\x -> +2		\i, j -> *		\x -> 2 +		\x, y -> max		## \x, y -> ???
+	Read:		\x -> op+ 2		\i,j -> op*		\x -> 2 op+		\x,y -> max			## \x, y -> ???			## Since +/*/... are sugar for op+/op*/...
+	Desired:	x + 2			i * j			2 + x			max x,y				max(double(x, y))
+
+	Could I define it as the first line of a function is implicitly it's arguments ???
+		Then currying simply becomes a question of concatenation
+		Slightly confusing and possibly inefficient (but an easy way to start implementation)
+		Translate: x + 2		i j *		x 2 +		x y max		x y ???
+
+	Rearrange arguments around the functions (this could be computationally confusing)
+		If there was a way to turn 2 op+ into op+ 2, then copy-pasting the arguments (with commas) would work (assuming the "no-parens" is valid)
+		Translate: op+ 2, x		op* i,j			op+ 2, x		max x,y			max(double x,y)
+		It should be largely trivial to add in parentheses if I need to afterwards
 	
+	Redefine what it means to accept a different number of arguments
+		Given:	\ -> + 2		\ -> *			\ -> 2 +		\ -> max			## \x, y ->
+		This changes the translations slightly (but the result is simple and well defined)
+			The core idea behind the redefinition is not currently accepted however
+
+	All things considered, the the translations should probably replace the original function in memory
 		
 Function Return Syntax
+	Work to make this semantics indistinct from the semantics of a code block
+		The "return" value is the last evaluated statement
+		You can specify returns/break
+		Multiple return values
+
 	The value of the last executed statement of a function body is implicitly returned to the calling instance
 
 	The function can be forced to treat any statement as the last statement by placing return immediately before the statement
 		ie. add: \x -> return x + 2					## what about \x -> x + 2 return	(this may be easier to implement)
+
+	Can I generalize "return" to a "break" keyword
+		No cause return is a stronger keyword
+			do
+				for x in [1..5]
+					if x = 3 break		## this stops the for loop, return stops the do-block
+			
 
 	Multiple Return
 		Multiple values can be returned from a single function call by ensuring that the last executed statement is a comma seperated list of expressions
 		Note: This is the same syntax as in multiple variable assignment (The behavior follows the same rules, etc.)
 		
 Type Checking
-	At the core, Dust uses Duck Typing (ie. if it has the method it is allowable)
+	At the core (ie. untyped variables), Dust uses Duck Typing (ie. if it has the method it is allowable)
 	An error is only thrown at the instance where a type mismatch occurs (through functions/system/etc.)
 		Ie. the given variable is not of the given type or of a child type
 
@@ -86,6 +128,10 @@ Function Argument Passing
 		Any leftover variables are assigned to nil/default values
 			Basically the function is "recalled" with nil's added so that the arg_list matches exactly
 
+		I could also go the "currying" route (like Haskell)
+			Calling a function with less arguments returns a function object that would expect the remaining arguments
+			This would need some integration into the existing syntax/semantics
+
 	If add is called with more arguments
 		The extra values are dropped from calculations, x is assigned to be the first arg and y the second
 		Should these expressions be evaluated before they are called ???
@@ -94,25 +140,28 @@ Function Argument Passing
 			But it's an intriguing possibility
 				Moreover, how would I know the type of an expression before I evaluate it
 
+		I could also go a "modified currying" route
+			The return expressions are then called with the remaining values
+			This would trivially enable much of the current currying operations (just redefine the functions to expect no arguments)
+				However it's very confusing and possibly inoperable (what do I do with expression lists ???)
+
 	All function arguments are unique references					## This will be changed repeatedly during language development
 		The values of any variables used as arguments to a function call cannot be changed except through reassigning to the function's return
 			x: [5]
 			foo(x)
-			print(x = [5])			## This will always output "true"
+			print(x = [5])			## outputs 'true' (unless f redefines print (or x if x is a global))
 
 		The key point is to not allow changes inside the function to "accidentally" propogate outside of the function (except for possibly closures)
-			Much the same reasoning behind Haskell's functional nature
-			This cannot be subverted through api/debug/etc.
+			The same reasoning behind Haskell's functional nature
+			This cannot be subverted through any api/debug/etc. functions
 
-		Implementation
-			It may be beneficial to allow such procedures to simplify the implementation and reduce memory usage
+		However it is permissable for the function to modify the arguments
+			Any changes made to the arguments remain local to the function body
+				The changes can be reflected to the original variable by returning the argument
 
 Pattern Matching (only works if function overloading is valid)
 	def add([x, y,])		## This table will only match a table of two elements or less (x/y are assigned to nil in this case)
 		x + y
-
-	ie. def add[x, y, z,]	## This pattern only matches a table of three elements (this is a proposed function syntax)
-		x + y + z
 
 	def add([x, y, *z])		## This pattern matches a table of 3+ elements. In practice, it will only match a table of 4+ elements due to the previous delcaration
 		x + y
@@ -121,19 +170,14 @@ Pattern Matching (only works if function overloading is valid)
 	def add(4, 2) 42
 
 Named arguments
-	The usage of name arguments is disallowed in dust
-		It is possible to implement a similar system using table arguments
-			Just have the function take a single table as argument (all function values are dervied from there)
-		Might be easy to implement if the functions are tables proposal is accepted (though probably tricky)
-			add(y: 3, x: 5)		## Same as assignment syntax
-	This might be implemented if the proposed function syntax is accepted
-		The proposed syntax would merge functions calling and tables (the above workaround)
+	The usage of name arguments is not natively supported in dust
+		However it is possible to implement similar systems using tables
 
-Table functions
+Tables and Functions
 	x: [
 		y: 3,
 		f: \z -> y + z,
-		sety: \x -> self.y: x
+		sety: \z -> y: z
 	]
 
 	Scoping of variables begins with the table
@@ -152,120 +196,11 @@ Function default values
 	add(nil ,2) = 4						## it might be possible to write add(,2)
 	add(3) = 6
 
-	This could run into some problems with function overloading
-
-## This entire section is based on the assumption that '[]', and the implied correlation with tables/pattern matching, is not the syntax for functions
-Function Overloading (Safe to ignore for now)
-	Function Overloading is a valid and correct semantic construct within the dust language specification
-		It is permissable to not allow overloading during early stages of implementation
-			But it must be implemented by version 2/3
-		This might change if it becomes to difficult/expensive to implement
-		
-	Definitions (for the sake of simplicity in describing this set)
-		When referring to the function call, N
-		When referring to a function, F# where F0 is the original function, F1 the first overload, etc.
-		When referring to the types of the arguments, #_Types
-		When referring to the number of arguments of a function/call, #_Args
-
-	About defining functions with differing number of arugments (All work done on the assumption that F0, F1, F2 are generic)
-		The semantics of calling a function with N_Args < F0_Args or F0_Args <= N_Args are well defined (assigning to nil/dropping extra)
-
-		The minimal difference between the expected and given number of arguments
-			The chosen overload should have the smallest difference to what is given (F#_Args - N_Args -> 0)
-			In the case that two overloads have the same difference, the overload with less args should be chosen
-				Calling a function with more args than expected involves dropping the extra values
-				Calling a function with less args than expected involves assigning to nil
-				A function will always be correct in the first case as it is the expected case
-				A function may be correct in the second case (it's not good practice but it's possible)
-					It's also possible that the "extra" args are "optional" and therefore the function is well defined in their absence
-				Therefore it is better to assume the first than the second
-
-		Also possible to accept the largest overload where F#_ARGS <= N_ARGS
-			One simple method for chosing the correct overload
-			Runs by the same reasoning as above
-
-	About overloading functions with different types (This is probably the most important)
-		The Longest Contiguous Subsequence forms the basis of dust overloading
-			Say F0_Types: [String, Int], F1_Types: [String, Table, Int]
-				Matches N_Type to F_Type in order (if N_Type.1 = F_Type.1 then LCS(F, N).1 = N_Type.1)
-					Type will match if equal or inherited
-					But if N_Type.1 != F_Type.1 then LCS(F, N) = [] regardless of whether N_Type.2 = F_Type.2
-
-				All possible values of LCS
-					LCS(F0, N) is [], [String], or [String, Int]
-					LCS(F1, N) is [], [String], [String, Table], or [String, Table, Int]
-					LCS(F, N) is [LCS(F0, N), LCS(F1, N), ...]			## The set of LCS for all overloads of F
-
-				Say N_Types: [String, Int]
-					Then LCS(N, F0) = [String, Int], LCS(N, F1) = [String]
-
-			For a function to be a valid dispatch for N, the LCS must completely span F_Types or N_Types
-				size(LCS(N, F)) = size(N_Args) if size(F_Args) >= size(N_Args)				## In this case F is the selected function (not a set of functions)
-				size(LCS(N, F)) = size(F_Args) if size(F_Args) < size(N_Args)
-
-			The correct overload is the one with the largest LCS
-				Say LCS(N, F0) = LCS(N, F1)
-					In this case, F0 and F1 are conceptually generic (in relation to N and each other)
-					Therefore the correct overload would be selected based on the number of arguments
-
-		Inheritance Types
-			Cannot match a parent type to a child type
-			Lookup should prefer dispatching on the type as defined
-				However I don't think you can eliminate overloads based on this (see second example)
-			Say F0_Types: [Foo, String], F1_Types: [Bar, String], and F2_Types: [Foo, Int] where Bar inherits from Foo
-				If N_Types = [Bar, String] then LCS(F, N) = [[Foo, String], [Bar, String], [Foo]]		## F1 is dispatched
-				IF N_Types = [Bar, Int] then LCS(F, N) = [[Foo], [Bar], [Foo, Int]]						## F2
-				If N_Types = [Foo, String] then LCS(F, N) = [[Foo, String], [], [Foo]]					## F0
-
-		Nil and nil
-			F0_Types: Nil is a possible way to represent a purely generic overload
-			A generic overload will always be a possible dispatch for the resolution process
-				Lowest priority (only selected if a more precise overload cannot be found)
-			Note that nil is a possible value for any type
-				It could also be possible for all objects to be children of Nil (so this is a natural step of the type system)
-
-		Dispatch Failure
-			No overload for N_Types can be found (conceptually similar to pattern matching, maybe implementationally too)
-				I must throw an error in this case (but what error)
-					"F is not defined for N_Types"
-					"Non-exhaustive overload for F (N_Types)"
-
-	Pattern Matching
-		Assuming that functions contain dispatch tables laying out a tree of what types the function is defined for
-		It could be possible to store the matches (the values the function is defined on) in those tables
-			The rest can wait til implementation
-
-		def add(4, 2) 42
-
-		What about "range" overloads
-			def abs(x < 0) -x
-			def abs(x) x
-
-	Could overload resolution be a case of pattern matching
-		If the '[]' syntax is adopted for all definitions
-			Then that's what overloading is
-			However that could make the process of using pattern matching more complicated/confusing
-
-	About declaring an overload where F3_Types = F0_Types
-		This is a redefinition (it's syntactically and semantically valid unlike C++)
-			F3 will replace F0 in dispatch/memory/etc.
-		What about def sel(x <- Table) and def sel([x, *y])
-			Any list that would match one, would match the other
-				The two definitions are functionally equivalent
-				I'm just not sure how to implement it though
-			I think the end goal would be to have the second as a redefinition
-				It is the more precise version after all
-
-	Implementation
-		C++ uses name_mangling to solve overloads
-			foo(int x) is internall foo_int(int x)
-
-		Could use a cascading system
-			foo_dispatch: [ String: [ Int, Table: [ Int ] ] ]
-				corresponds to functions of [String, Int], [String, Int, Table]
-			lookup is just a case of reducing the number of possible outcomes
-				Go through all first levels and compare to first arg type (allows inheritance to be considered)
-				Repeat
+	You can't define default values and statically type a function argument
+		Both syntaxes provide an assurance that the argument will have a valid value
+		There's no sense in doubling up on the protection
+			The additional syntax will also be a mess to read (and possibly parse)
+			However, being able to add both may make the interpreter more general
 
 Closures
 	Much like overloads, this is just a specification for a how closures may be implemented
@@ -291,86 +226,20 @@ Closures
 	
 		do							## This is just to clarify that the function declaration is in a different scope than the print
 			x: 3
-			@f: \y -> + x
+			@f: \y -> y + x
 		print(f(3))					## Outputs 6
 
-## Once these are finished, see if there is anything else that needs/could be defined here (and do so)
-## Once that is finished, start to write a more detailed section in the Provisional Language Manual
-## Once that is finished, start to write a section for the Features manual
-
-####################################
-		Incomplete Features
-####################################
-
-Functions as objects (ala Scala) ??? (Incomplete)
-	This started out as an idea that functions could "inherit" from other constructs/functions
-		I don't think this would really work as a syntax/semantic
-			Never mind how confusing it would be
-
-	But moreover it could be possible to implement functions using tables and lambdas
-		This means that lambdas, much like ints and tables, would have to be system defined
-			Does this mean that lambdas could have type functions (like table.reduce, etc.)???
-		The main benefit would be providing a supported framework for overload/pattern dispatch
-			It's touched on a bit within the Function Overload section
-			Google "Overloading Functions in Lua" for the basic idea behind this
-		It could also serve to unify the concepts of "easy memorization"
-		It's also possible that it could simplify the implementation of closures
-			In this case the "closure variables" would be imported into the table
-			
-	## quicksort table implementation using dispatch method for overloading
-	quick: [
-		_op(): \list, args -> __dispatch(list + args)(list + args),
-		__dispatch: \args ->
-			types: [typename(x) | x in args]
-			__match(args, types) or error("Non-exhaustive overload for " + self + " on " + types),
-
-		__match: \args, types ->							## This is a very basic matcher (no pattern matching/inheritance)
-			curr: __fns
-			for typ in types
-				if !curr[typ] return curr.def				## If the function is not defined on the type in that position, return the default definition for that level
-				curr: curr[typ]
-			curr.def,
-		
-		## There still are many problems with handling pattern matching (I might end up scraping this idea)
-		__fns: [
-			0: \ -> nil,									## Defines the function when passed with no arguments
-			def: \*list -> self(list),						## Defines the function given a number of arguments (forwards to the "table" overload)
-			Table: [										## How to handle naming (esp. with pattern matching of tables)
-				pm: [
-					1: \[_] - > _,							## Single item list (tables are "matched" based on their size, the total match notwithstanding)
-				],
-				def: \[sel, *list] ->						## Default overload (to unify code handling between types. This is the total match [sel, *list] = Table)
-					mid, high: [sel], low: []
-					for item in list
-						switch item <=> sel
-							high:+ item, if 1
-							low:+ item, if -1
-							mid:+ item, otherwise
-					[*quick(low), *mid, *quick(high)]
-			]
-		],
-		_nindex: \-> nil,
-		_index: \-> nil
-	]
-
-	So the basic pattern appears to be
-		__fns: [
-			<overloads on the number of arguments>,
-			def: <default overload>,							## might be able to interleave this with the above section (change def to inf ???)
-			pm: <overloads on specific values of arguments>,	## ie. pattern matching
-			<type>: <overloads on types>
-		]
-
-		At least one of these "sections" has to exist
-			But no section, by itself, has to exist
-
 Way to capture a variable number of arguments without resorting to the splat operator
-	Smallest way to define a function, f, so that
-		f([2, 4]) = f(2, 4)
+	The impetus is to find the smallest way to define a function f, so that
+		f([x, y]) = f(x, y)
 
 	Here's a slight trick
 		\t, *ct -> t + ct
 
-		So what if i give [2, 4], 3
-			This function would give [2, 4, 3]
-			I think I'd rather have [[2, 4], 3]
+		However it's not totally correct
+			Suppose x: [2, 4] and y: 3
+			f(x, y) = [2, 4, 3]
+			f([x, y]) = [[2, 4], 3]
+
+			A correct version would be
+				\t, *ct -> ct and ([t] + ct) or t
