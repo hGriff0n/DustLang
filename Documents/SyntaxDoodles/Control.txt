@@ -19,6 +19,12 @@ Execution Structures
 	Currently no switch statement in dust
 		I don't know what the exact benefit of a 'switch' is
 
+	Ternary Statement
+		<expr> and <expr> or <expr>
+			I'm currently going to "overload" and/or to "return" <expr> in their individual cases
+				Wrapping the whole structure might be a bit complicated
+		It could be possible to write one line if-else's using the control expressions idea
+
 Looping Structures
 	for
 		for <var> in <table> <block>
@@ -50,6 +56,80 @@ Looping Structures
 		Guaranteed to execute at least once
 			Largely to differentiate it from while loops
 
+Control Structures as Expressions
+	Extends the rules regarding the implicit return statement to control strucutres
+		Ie. the value of the last executed statement is the value of the structure
+			This does not include the bound/boolean checks in loops
+		You really have to wrap the structure in parentheses to get any use out of it (especially for loops)
+			Otherwise with scoping, any "additional" stuff is either part of the loop or on a different line (ie. syntax error)
+
+	Table.sum: \l, sum: 0 -> for x in l .sum:+ x		## sum is implicitly returned here
+	-versus-
+	Table.sum: \l, sum: 0 ->
+		for x in l .sum:+ x
+		return sum
+	-versus-
+	Table.sum: \t -> t.reduce \x, s -> x + s
+
+	x: if y = 3 4 else 2
+	-versus-
+	x: y = 3 and 4 or 2
+
+	This also means you can "assign" loops
+		x: for z in [1..10] z * 2						## equivalent to x: 10 * 2
+		This is really only useful when wrapped in parentheses
+
+Shortcircuiting evaluation
+	Returning a value from a control structure without evaluating all expressions
+		Shortcircuits the implicit return rules of control structures/functions
+			Causes the following expression list to be evaluated and then skips all following evaluation (thereby causing the list to be the "last evaluated expression")
+
+		"for x in [1..5] if x = 3 return x" is an example of shortcircuiting the for loop
+		Currently there are two different semantics (and syntaxes) for doing so
+			However a third may be added in later (depending on resumable functions)
+			All syntaxes follow the same formula of "<keyword> <expr_list>"
+
+	Hard exit	- return
+		The main use for return is within functions (although it is allowable to use within the default process)
+		Hard exit causes the program to return to the "call point" (or exits the program if in the default process)
+			The "call point" is the section where the function was called
+
+	Soft exit	 - break
+		Soft exit causes the program to go "up" one level of scoping				## see break/continue in other languages
+			Similar semantically to hard exit but with a more limited focus (and a more general use case)
+			May also have no meaning when used in the default process (ie. break 5)
+
+		do
+			x: (for x in [1..5] if x = 3 break x)
+		print(x)										## outputs '3' (wouldn't output if return was used)
+
+	Resumable exit - yield (if resumable functions are implemented)
+		Similar semantics to Python and Lua
+
+Boolean Expressions and Operations
+	true/false
+		[] and nil are implicitly convertible to false (0 might be included)
+		All other values are convertible to true
+
+	and/or	(ie. <expr> and|or <expr>)
+		Both keywords are short-circuited
+		The value of the construct is the value of the last evaluated expression
+			This means that <expr1> and <expr2> =
+				expr1 if expr1 = false
+				expr2 otherwise
+
+	! (not operator)
+		maps true to false and false to true
+		_op!: \b -> b = true and false or true
+
+	=, <, <=, >=, >, !=, <=>
+		Only = and < technically require a definition
+			However, at the minimum I might also define >		## floating point considerations
+		Comparator function (ala '<=>')
+			-1 if a < b, 0 if a = b, 1 if a > b, and nil otherwise
+			I might still need to system define '=' for this
+		Metamethod defs (this is still compatible with comparator)
+
 Structure reordering
 	Would it be possible to reverse the ordering of pieces within a control structure (ala Ruby)
 		Something on the order of "<block> if <expr>"
@@ -57,69 +137,33 @@ Structure reordering
 	My current idea is to use ','
 		<block>, if <expr>
 
-Scoping
-	The problem is how to differentiate between initializing a variable in the current scope and reassigning a variable from a "parent" scope
+Scopes
+	Module Scoping (something to consider later)
+		Way to define a local "global" scope (especially for use in modules)
+
+Variable Scope Lookup					(ie. How to determine which variable is being referenced accross scopes)
+	The first method is to search for a scope where the variable is defined
+		If the current scope doesn't have 'x' defined than lookup goes to the parent scope
+			Note, that the current "nil = deletion" logic could cause some problems						## Are they problems or not
+			Note that if the current scope is the global scope, than lookup will "fail" (nil or error)
+				I could also give the ability to put a hard limit on the number of recursions before the lookup "gives up"
+		If the current scope does have 'x' defined than the lookup stage is over
+
+	However in variable assignment, this lookup is not performed				## Assignment is local by default
+		To force a lookup when assigning, you can prepend the variable with a '.'
+			Semantically speaking, this also forces the lookup to begin up a level
+		The '.' also works on variable access in the same way (ie. force up a level)
+		The effects of the '.' are local to the applied variable
+			So in ".x, y: 3, 5" only 'x' is subject to the lookup rules
+
+	Question regarding stacking lookups
 		x: 3
-			x: 5		## current rules say that this is a new variable
-		print(x)		## so then how can I change the value of x in the new scope
+			x: 5
+				..x: 7				## These two lines attempt to define the x two scopes prior
+					.(.x): 9
+						..y: 7		## y is declared in the global scope (or will the second scope op do otherwise)
 
-	To assign a variable from an enclosing scope		## access will return the first non-nil variable anyways (currently, might be beneficial to say otherwise)
-		.x: 3					## Some possible replacements for '.', @/$ (Possible static signifier in objects/Nice symbol that has no prior syntactical use)
-
-		The '.' forces the scope lookup to have some similarity with tables
-			Tables might even be used to implement scoping
-				This would make directly modifying globals really easy to implement (though if that's good or not)
-					Just provide a specific "global table" to the environment (ala Lua's '_G')
-			This also brings it's own problems (I forget what though)
-
-		Stacking scope lookups
-			x: 3
-				x: 5
-					x: 7			## How can i redefine the first x in this scope
-					..x: 9			## Chain lookups (I can't think of another option though)
-
-			Or I could say that this is bad design and refuse to support it
-
-		Which scope will the operator pick up
-			Goes up until a scope where the variable is defined, or the global scope, is reached
-				This runs into some problems with current "nil = deletion" logic
-				Do note that the lookup starts up one level from the current scope (global notwithstanding)
-
-			x: 3
-				y: 5
-					.x: 7
-				print(x)			## outputs 7 regardless (assuming current access rules)
-			print(x)				## outputs 7
-
-	When the "current" scope is the global scope (ie. no enclosing scope)
-		Currently the scope lookup stops when the current scope is the global scope (.x = x)
-			It would be possible to have the program fail in this instance
-
-	Interaction with Multiple Assignment
-		Unlike the 'let' keyword, forced scoping is a local action to the specific variable
-			In ".x, y: 3, 5", only 'x' is subject to the forced scoping rules
-
-			This also means that ".x, .y: 3, 5" both 'x' and 'y' are subject to 1 round of forced scoping
-
-Control Structures as Expressions
-	Is this definition for Table.sum valid
-		Table.sum: \l, sum: 0 ->
-			(for x in l .sum:+ x)				## sum would be implicitly returned here
-
-		As opposed to
-			Table.sum: \l, sum: 0 ->
-				for x in l .sum:+ x
-				return sum
-
-Module Scoping (something to consider later)
-	Way to define a local "global" scope (especially for use in modules)
-
-Variable Access
-	Accessing a variable from an enclosing scope
-		It should be possible to use the same syntax for assigning in a enclosing scope to force an access
-			All this does is start the search for the name up one level
-		Just referencing the variable will start the lookup in the current scope
-			This gives simpler and "prettier" code (also might be more logical)
+		I could say this is bad and refuse to support it
 
 "do-block" syntax (possibility?)
 	do
@@ -127,19 +171,21 @@ Variable Access
 		print(x)		## 5
 	print(x)			## nil
 
-	This is a "nice" syntax for creating blocks of code without the presence of control structures et al
-		It's entirely a visual concession (blocks are still able to be produced entirely with indentation)
-		
 	I could go halfway this
 		Reserve "do" as a keyword but have it actually do nothing
 		The capability to signify blocks can be easily added in later (especially since blocks are indented)
 
 Statement seperator
-	Should I have a ';' like character to seperate statements in a single line ???
-	Possible Options
-		';'
-		','
-		'!'
+	Allow multiple, independent statements to coincide on one line
+	x: 5
+	print x
+
+	Option ()			## Lisp-style syntax
+		Generalize the rules so that every expression results in a value
+			These intermediate values are often discarded
+			This also would have an affect on function arguments
+
+		(x: 5) (print x)
 	
 Statement scoping
 	Not currently supported in Dust
