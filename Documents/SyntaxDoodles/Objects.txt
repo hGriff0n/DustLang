@@ -7,104 +7,72 @@ Type Declaration
 		attr: 5
 	]
 
+	Foo: [ attr: 5 ]	## Could this be a possible syntax (Variables are forced to be lowercase)
+		I like the idea of it (the syntax might need work)
+
 Type Methods
 	Methods can be declared either as lambdas inside the type declaration or as functions outside (prepend with type name, much like tables)
-		Distinction between "static" and "instance" methods (possibilities)
-			Have all inline methods as static and all outside as instance
-			Have special syntax/keywords to specify (similar to Objective-C)
-			Have the first argument to be implicitly the object (similar to Lua)
 
 	type Foo [
 		attr: 5,
 		new: \x -> attr: x
 	]
 
+	Special type functions/members (can these be modified after they've been defined ???)
+		new	- defines the semantics of creating a new object (of calling the constructor)
+		del - defines the semantics of deletion (what happens when the object is to be deleted)				## might remove this
+		msg - defines what happens when the type is indexed with a non-defined index (not assignment)		## basically wraps '_nindex'
+		rtm - flag to allow/disallow run-time modification of classes										## might remove this
+
+		What members can't/shouldn't the programmer modify?
+			'_op()' is used to create and initialize an object of the given type (but Functors)
+
 	How to define static variables ???
-		What's the point of static methods if static variables don't exist
-			You can always have static methods be free functions anyways
+		To mark a member/method as static, postpend the variable name with a `/'
+			Or prepend it with a '.' (uses the scoping syntax)				## This doesn't work in function definitions
 
-		Scoping syntax
-			You can use the same syntax for scope lookup (though some syntaxes don't work for this)
+		type Foo [
+			count`: 0,
+			.count: 0,
+			new: \ -> Foo.count:+ 1,
+			del: \ -> Foo.count:- 1
+		]
 
-		Special static symbol (@, $, ...)
-			Append the symbol to the field name
-			Doesn't work well outside of the type table (inline definitions)
-				Could cause problems defining static methods outside of the type table
+		def Foo.static'(foo)
+			print(foo.count)
 
-		Provide a special "static" keyword that redirects to the type table
-			Could also index the type table directly (redifinitions, etc.)
+		Static variables/methods can be accessed/modified from instances of the type
+			In the case of modifications, these changes are global (or thread local) to the type
+			In the case of functions, the 'self' paremeter is the type table (not the object)
+				Possibly add a syntax to implicitly pass the object as the first parameter
+					Forget the "static" signifier (expect for the type table) ???
 
-	## implicit "foo" parameter that these work on
-	def Foo@new(x)		def @Foo.new(x)		def Foo?new(x)		defs Foo.new(x)		def Foo.new(foo, x)		## have a way to implicitly pass self as the first arg
-		count:+ 1			count:+ 1			count:+ 1			count:+ 1			count:+ 1
+		x: Foo()
+		x.static()			## print(x.count)
+		x.static'()			## print(nil.count)
+		Foo.static(x)		## print(x.count)
 
-	def Foo.$new(x)		def Foo.@new(x)
-		count:+ 1			count:+ 1
-
-	def Foo.new(x)		def Foo.set(x)
-		Foo.count:+ 1		attr: x
-
-Way to implement '_nindex'-esque behavior
-	The basic idea is to allow foo.decrement(3) to provide some valid behavior
-		Possibly even be a way to extend type definitions
-			This would basically take the place of message passing
-			See ruby for a more in depth view of this phenomenon
-
-	Since types are basically tables (and may even be implemented as tables)
-		It could come down to defining '_nindex' on the type
-			I could also have some other field name that basically redirects to '_nindex' (but more inline with "type" thinking)
-
-
-## I'm leaning towards deprecating this section (once I've figured out how to implement currying)
-Message Passing		## I don't quite know what this is, but this seems like an nice syntax
-	x: new Foo(3)			## should probably rearrange to Foo.new or Foo(), but many are familiar with this syntax
-							## This could possibly help with implementing currying
-							## ie. \i,j -> * turns into {i op* j} or something like that (would it be possible to have something like {(nil) op* i j})
-
-	x.increment(2)			## Standard syntax
-	{x increment 2}			## In Object-C, this would read [x increment: 2]
-	(x increment 2)
-	($x increment 2)		## would I need the parenthesis here
-	(x increment <- 2)
-	(x <- increment 2)
-	(x increment | 2)
-	(x | increment 2)
-
-	General syntax appears to be
-		<signifier><variable> <method> "<args>" " " <signifer>
-			ie. ( x increment 2 )
-		(<variable> <signifier> <method> "<args>" ", ")
-
-	Questions
-		How should message passing nil/nothing be defined (ie. what does { increment x 2} produce)
-			Wouldn't the message passing just translate to @<variable>.<method>(<args>) ??
-			So then passing nothing would directly translate to @.<method>(<args>)	(ie. calls the method as defined in the scope)
-
+		How about a static keyword ???
 
 Dust OOP
-	Interface of supported functions
-		I don't know if this is going to be feasible to implement
-			Maybe with Message Passing, otherwise not without the Type Functions proposal
-		interface Foo x
-			has_method? x <method> ...
-
-	Combination of Interface and Implementation
-		type Foo [ x: 3 ]
+	Dust OOP primarily relies on duck typing (ie. does this object support these methods)
+		There is no way of specifying how data should be laid out in memory/organization
 
 Inheritence syntax
 	<type> ++ <type_list>
-		This does mean that dust supports multiple inheritance (I feel its consistent with the internal model, I also come from C++)
+		This does mean that dust supports multiple inheritance
+		This "imports" the definitions for any functions not already defined from the type_list
+			If function overloading is accepted, this will import alternate overloads
 
 	type Bar [
 		width: 3,
 		height: 4
 	] ++ Foo
 
-	Currently the ++ is a special syntax for types
-		Could I make so that ++ performs some function on tables in general (depends on the implementation of type inheritance)
-			Setting up metatables?
-		Otherwise I'll seriously consider using + instead
-			I don't think it'd quite as succintly express the same semantics however
+	Currently the '++' is a special syntax for types that specifies a child relationship to the type_list
+		I could make it so that ++ is an extensible syntax (depends on implementation of type inheritance)
+		I could just switch to + to perform the same semantics
+		Or just leave it be
 
 
 Interfaces (If I ever implement them)
@@ -125,28 +93,28 @@ Interfaces (If I ever implement them)
 
 
 Extensible objects
-	Can member functions be added to an object after declaration and definition (can objects accrue methods as the program executes)
-		I feel like I should allow this to be a possibility (it's certainly in the language's dna)
-		But at the same time there should be a way to restrict modifications (even from API functions)
-			This restriction would be really useful throughout the entire language
+	Currently members/methods can be added and defined on an object after declaration (ie. objects can accrue methods as the program executes)
+		I might end up adding a small flag to types that can turn this feature off
 
 
-Everything's an object (ala Ruby) ???
-	Variables, even of "primitive" types have access to various type function (through indexing)
-		This just provides a semantic meaning to "x.add(3)" and "3.add(x)"
-		Small question about differentiating between inplace assignment (I don't think this would be valid, given the function restrictions)
+Everything's an object (ala Ruby)
+	Variables, even of "primitive" types have access to various type function
+		This provides a semantic meaning to "x.add(3)" and "3.add(x)" iff 'add' is defined on 'type(x)' and Int
+
 
 Convertible Types
 	Way to define the behavior of "" + 5 = "5"				## Int is automatically converted to a string
+		You can always defined _op+ to perform a string cast first			## String(...)
 
-	System defined convertability
-		Probably the simpler option
-			May even be the only option for some types (such as Int/String)
-		But not as extensible
+	User defined converters
+		Method of the form "def <type>.<type>()"			## ie. Int.String defines the conversion from Int to String
 
-	User defined convertability
-		def <type>.<type>()
-			ie. Int.String() defines the conversion from Int to String
-		These functions would be hidden from the interpreter when running overload dispatch (currently)
-			That provides an interesting point into whether I should evaluate arguments
-				If I don't evaluate them, how am I supposed to know their type?
+	This may/may not be implemented
+		The main use is to implicitly convert types in function calls
+		Otherwise you can always use casting inside of the function
+
+
+For Function Overloading Dispatch
+	If I don't evaluate arguments, how am I supposed to know their type
+
+Type Reflection
