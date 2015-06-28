@@ -1,8 +1,0 @@
-@program "Constants"
-@version 0.1.7
-
-x: 5
-let y := 5
-
-## add error handling code ??? (allow me to test multiple errors in one file ???) But this would be a compile/interpret error
-y: 4				## Error: Attempt to modify constant variable 'y' at line 6 in ???
