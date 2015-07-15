@@ -1,6 +1,6 @@
 
 Table Declaration
-	[ <entry_list> ] where entry = '<id>:'? <expr>
+	[ <entry_list>? ] where entry = '<id>:'? <expr>
 
 	The 'key' defaults to the next value of the range [1..] that is not already a key in the table
 		Note that tables are 1 indexed by default
@@ -8,8 +8,12 @@ Table Declaration
 			This behavior can be modified in-language by redefining global functions/metamethods
 
 	Note that entry_list does not function like multiple assignment
-		Could this mean inter-table referencing is permissable during table declaration
+		Inter-table referencing is permissable during declaration
 			ie. [ x: 3, y: x + 3 ] = [ x: 3, y: 6 ]
+		Could this mean that multiple assignment is permissable within a table ???
+			ie. [ x, y: 3, 6 ] = [ x: 3, y: 6 ]
+			It might be useful to restrict this to enable easier parsing of pattern matching
+				Allows the ':'/',' to differentiate between the two
 
 Table access
 	Table values are accessed through the '.' and '[]' characters
@@ -17,25 +21,26 @@ Table access
 			The entire process of enabling '.' is basically a combination of
 				Converting the raw text to String or Int literals (adding "" if String)
 				Replacing the '.<literal>' with '[<literal>]'
+					This implies that '.' is entirely a syntactic sugar
 			Note: All numeric strings (ie. "1") require using '[]' (table.1 = table[1])
 
 		Accessing a table with a variable can only be performed using '[]'
 			Using '.' syntax would translate to t.<var> = t["$var"]
 
-	Could it be possible to restrict the type of keys/values a table will support
-		ie. specify a table "array" so that array.s throws a type error but array[1] doesn't
-		This will allow globals to be "table" values as in Lua and the language spec to be consistent
+	It should be possible to restrict the types of keys and values within a table
+		ie. int_arr: [ _keys: Int, _val: Int ]			## int_arr: [ _keys: _vals: Int ]
+
 
 Set Comprehension Syntax
 	mult: [x * y | x in l, y in r, true]			## Note the 'true' is not needed
 
 	General Syntax Form
 		[<expr> | <extract_list>', <expr_list>'?]
-			extract = <var> in <table>
+			extract = <var> in <table>				## or <var> in <accessor> if the generator idiom is accepted
 
 	This can possibly be implemented by translating to [\ -> x * y | x in l, r in r, true]
 		This involves scoping/closure work however
-		Also possible to translate to [\ -> * | x in l, r in r, true] (with currying)
+		Also possible to translate to [\ -> * | x in l, r in r, true] (currying)
 
 	Do these constructions implicitly work only on tables with integer keys (ie. spec)
 
@@ -69,12 +74,14 @@ Set Ranges
 	Could I possibly generalize this rule to any type???
 		ie. ['a'..'e'] = ['a', 'b', 'c', 'd', 'e']
 
-		Require that the values are "Sequencable" and "Orderable"
+		Require that the values are "Sequential" and "Orderable"
 			Have 'next'/'prev' defined			## To generate the range
 			Have 'op<' defined					## To automatically decrement/increment
 			
 
 Pattern Matching (Table specific syntax)
+	[ <var_list> ]
+
 	def add([x, y])
 		x + y
 
@@ -90,13 +97,21 @@ Pattern Matching (Table specific syntax)
 			def add([x, y, *_])
 
 	Way to keep a reference to the original list?
-		def orig(t: [x, y, *_])			## I don't think this works
+		See the Haskell section on the syntax to see its usefulness
 
-	Can pattern matching be used in variable assignment
+		def orig(t: [x, y, *_])			## This is the same as default value syntax
+		def orig([x, y, *_] -> t)		## Similar to lambdas, but otherwise it's a unique construct (it can't be used in lambdas though)
+		def orig(t[x, y, *_])			## Confusing syntax
+		def orig([x, y, *_] and t)		## Very odd syntax. Might be a tad difficult to implement, but otherwise alright
+
+	Pattern Matching in variable assignment
 		t: [1, 2]
 		[x, y]: t						## equivalent to x, y: *t
 
-		If I write the code to enable the syntax in either setting, I have the code to enable it in the other
+		Keep the idea around for later consideration (it is trivially easy to rewrite to established syntax)
+
+	The code for pattern matching should be relatively referential
+		If I can enable the syntax in table arguments, I can enable it in variable assignment
 
 Interaction between tables and constant-ness (Metamethods and 'let' syntax)
 	Entries can be added but not changed (see NeatTricks memoize example)
@@ -107,7 +122,7 @@ Interaction between tables and constant-ness (Metamethods and 'let' syntax)
 			_nindex: \x,y -> y and (let self[x]: y)		## wouldn't this call _nindex ???
 
 		Or disable reassignment
-			_index: \x -> self[x]						## const_table.x: 3 is const_table._index("x", 3)
+			_index: \x -> self[x]						## const_table.x: 3 is const_table._index("x", 3) (maybe)
 
 	Entries can be changed but not added
 		Disable assignment by redefining the _nindex metamethod
@@ -140,26 +155,32 @@ In-line Multiline lambdas (where do blocks end???)
 Table functions
 	size(table)				## or go like Lua and have a size operator (op#)
 	entries(table)			## returns a new table filled with the entries of the passed table (ie. entries(t).i = [i, t.i], roughly)
-	flatten/smooth(table)	## Removes nesting in a list
+	flatten(table)			## Removes nesting in a list
+	smooth(table)			## Reduces nesting in a list
 	next(table, idx)		## Returns the next index (ie. t: [ 1, 2, 3, 5: 5 ]; next(t, 1) = t[2]; next(t, 4) = t[5])
-	count: \t, elem -> t.reduce \x, s -> s + Int(x = elem)
-		## \t, elem -> size [x | x in t, x = elem]
+	count: \t, elem -> size [x | x in t, x = elem]
+		## \t, elem -> t.reduce \x, s -> s + Int(x = elem)
+
+	smooth: \t -> !(ret: []) and for i in t .ret:+ i		## would this be allowed ???
+	smooth: \t ->
+		ret: []
+		for i in t .ret:+ i
 
 	def reduce(t <- Table, fn <- Function, sum)
 		if !sum sum, t: fst(t), tail(t)
-		for x in t @sum: fn(x, sum)
-		sum													## this line is unnecessary if a for loop can be evaluated to a value
+		for x in t .sum: fn(x, sum)
 
-	def replicate(item, n <- Number)
-		if !n or n <= 0 return []
-		if n = 1 return [item]
-		replicate(item, floor(n / 2)) + item + replicate(item, ceil(n / 2))			## this doesn't work for evens
+	def replicate(item, n <- Int)
+		if n < 1 []											## I don't have to check if n exists!
+		elseif n = 1 [item]
+		else replicate(item, Int(n / 2)) + item + replicate(item, Int((n - 1) / 2))		## Int(n) = floor(n)
+		## else self(item, Int(n / 2)) + item + self(item, Int((n - 1) / 2))
 
 	has: \t,v -> t ^ v
 	map: \t,fn -> [fn(x) | x in t]
 	sum: \t -> t.reduce(\x, s -> x + s)
 	entries: \t -> t.zip(t.keys, t.values)					## Might change the naming. Also, t.1 gives the key as opposed to t.key
-	flip \t, *ot -> *((ot and ot.reverse() or []) + t)		## \*t -> *(t.reverse())
+	flip: \*t -> *(t.reverse())
 
 Metamethods
 	All syntactical operations basically boil down to calling specific functions, or metamethods
@@ -204,7 +225,7 @@ Table/Set operations
 
 		Defining [] + 3 is easy, but how can I define 3 + []??
 			Case Int._op+ with a "type table" (intrusive and complex)
-				Int._op+: \o -> o <- Number and add(self, Int(o)) or o._op+(self)				## This isn't exactly a type table (this pattern will constantly recur)
+				Int._op+: \o -> o <- Number and add(self, Int(o)) or o._op+(self)				## This isn't exactly a type table (this pattern could have a recur loop)
 				Int._op+: \o -> o ^ Int.add_types and add(self, Int(o)) or o._op+(self)			## Int.add_types is a type table
 			Add a global "type table" that defines precendence
 
@@ -260,20 +281,19 @@ Splat Operator (*)									## ala Ruby
 
 	In the case of variable/argument assignment (where the splat is prefixed onto a variable)
 		The splat operator works to translate an <expr_list> into a table
-			It can be used as an alternate syntax to table literals (in some cases)
+			It can be used as an alternate syntax to table literals
 			This table is what is then assigned to the variable
 				The translation process uses a strict left-right order (the first value is at index 1, ...)
 			In this situation the splat operator does not serve to split apart the table
 
 		Suppose a situation like "x, *y: 3, 4, 5"
-			Under the rules of multiple assignment, this situation translates to "x: 3; *y: 4, 5"
+			Under the rules of multiple assignment, this situation translates to "x: 3 and *y: 4, 5"
 			Then y = [4, 5] and x = 3 under the process described above
 
 		Suppose a situation like "*x, y: 3, 4, 5"
 			Follow the same rules as shown above (I'll need to change sections of the function/etc. sections)
-				It's the simpler process
-				But the other way (to reverse the order of assignment) runs into problems with "*x, *z: 3, 4, 5"
-					This choice doesn't
+				Any other way would run into confusion when multiple splats are used (where's the boundary)
+				I like the idea for x = [3, 4] and y = 5 but it is not feasible at the moment
 
 Table Sub-types
 	Arrays
@@ -286,7 +306,8 @@ Have a syntax/ability to perform python-like slices
 	This can be accomplished through a method
 		t: [1, 2, 3, 4, 5, 6, 7]
 		t.slice \i -> i ^ [3..] = [3, 4, 5, 6, 7]
-		t.slice 3 = [3, 4, 5, 6, 7]						## i could overload the method
+		t.slice 3 = [3, 4, 5, 6, 7]						## overloads to simplify the calling proccess
+		t.slice [3..] = [3, 4, 5, 6, 7]
 
 What about multi-dimensional tables (ie. matrices) ??? [i,j] vs. [i][j]. See LCS for comparison between the two
 	[i][j] will be the only syntax that is, by default, supported (at least at release)
@@ -303,10 +324,8 @@ What about multi-dimensional tables (ie. matrices) ??? [i,j] vs. [i][j]. See LCS
 
 		It would then be nice to have a way of modifying where _nindex will store values	## Remember that _nindex/_index also handle access
 			Have a way to map [i, j] -> x within _nindex
-				Have the second return value be the key
-					ie. x[3]: 4 translates to set flip x._mkey(3), x._nindex(4)
+				Have the second return value of _nindex be the key
 				Have a second metamethod that gets invoked in unison with _nindex
-					ie. x[3]: 4 translates to set x._mKey(3), x._nindex(4)
 			_index: \[i, j] -> self[f(i, j)]
 
 Table Equality
@@ -320,7 +339,7 @@ Table Equality
 	Reference									## this precludes [1, 2] = [i, 2]
 		ref(t1) = ref(t2)
 
-	It could be possible to switch between the two by redefining _op=
+	It should be possible to switch between the two by redefining _op=
 		This then takes us back to the need to modify the key
 
 ## repl.it
