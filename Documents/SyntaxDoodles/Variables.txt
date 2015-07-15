@@ -35,11 +35,17 @@ Assignment
 
 Type Checking
 	Static Typing				## Be sure to adjust Function Type Checking/Type Testing with any syntax
-		let <var> <- <type>
+		let <var> <- <expr> | <type>
 
-		Note the similarity to the constant syntax
-			Unfortunately appropriates the syntax (and some semantics)
-			But it's not like the type of a constant is mutable anyways
+		The interpreter now has the capability to assign a variable while statically typing
+			This is done by inferring the type of an expression
+			The old syntax of let <var> <- <type> is still viable
+				However it is likely to be deprecated in the future
+					Although it still has it's uses inside of function declarations
+				It invalidates the guarantee that a "typed" variable has a non-nil value
+					The small time inbetween typing and assigning, <var> = nil
+
+		Can I drop the let ???
 
 		Inheritance
 			If a var is statically typed, it will be able to hold values of any child type (but not a parent type, nil possible exception)
@@ -55,6 +61,7 @@ Type Checking
 			var <- Int					## Can handle inheritance
 				Extends the syntax for static/function typing
 					Might be implementationally difficult
+				Might not be possible
 			type(var) ^ Int				## Could possibly handle inheritance (rework '^' for types)
 				Seeks for Int within the iheritance heirarchy of type(var)
 				Also is very extensible
@@ -105,19 +112,6 @@ Nil and nil
 	x: 5
 	x: nil								## error: Can't assign nil to a typed variable
 
-	Suppose the following code chunk
-		let x <- Int
-		y: nil
-		z: "Not nil"
-
-	What are the semantics of...		## Note x = nil, y = nil, z != nil
-		x.is Int		## true
-		x.is Nil		## false		## Note (x = nil) = true
-		y.is Int		## false
-		y.is Nil		## true
-		z.is String		## true
-		z.is Nil		## true
-
 	Indexing a nil value does not inherently imply an error
 		For functions defined on Nil this is correct, useful, and well defined
 			There's a possibility of turning Nil into something similar to the Maybe monad
@@ -131,11 +125,7 @@ Nil and nil
 			Values are deleted either through RAII or through garbage collection
 
 Type Heirarchy			## Needed for implementation
-	Java Object
-		At the core of the dust type system, resides a "Object" type
-		All types, except for Nil, are subtypes of "Object"	(including literals)
-
-	C++ System
+	Some degree of Java, Ruby, and Lua
 
 String Interpolation
 	Unlike Ruby, Dust does not provide a default method for interpolating strings with local variables

@@ -1,29 +1,29 @@
 Execution Structures
 	if-else-elseif
-		if <expr> <block>
+		if <expr> <block>					## expr = ...|'(<expr>)'|...
 		'elseif <expr> <block>'*
 		'else <block>'?
 
-		This setup could possibly allow multiple different syntaxes to be used
-			The 'do' syntax for blocks is of particular note here
+		It is possible to use a "if-then" style syntax with the 'do' keyword
+			However 'do' is only a "helper keyword" (it does not (really) have a semantical meaning)
+			The "if-do" syntax still follows the general style and format but it is slightly easier to read
 
 		if x < 50
 			print("x is smaller than 50")
 
-		if x > 20 do										## This (possibly) means that "do" is a keyword similar to "then"
-			x:- 10											## This is because of the possible "do-block" syntax
+		if x > 20 do										## "do" signifies a code block, it's not necessary
+			print "x is bigger than 20"
 
-		if (x > 25)											## You can optionally wrap the boolean expression in parentheses (might not have to directly implement this)
-			print("x is greater than 35")
-
-	Currently no switch statement in dust
-		I don't know what the exact benefit of a 'switch' is
+	There is no native support for a switch statement in dust
+		I can't settle on a good syntax for it
+		There's multiple ways to get a good analog anyways
 
 	Ternary Statement
-		<expr> and <expr> or <expr>
+		<expr> and <expr> or <expr>					## ala Lua
 			I'm currently going to "overload" and/or to "return" <expr> in their individual cases
-				Wrapping the whole structure might be a bit complicated
-		It could be possible to write one line if-else's using the control expressions idea
+				Wrapping the whole structure might be a bit complicated however
+		It could also be possible to write one line if-else's using the control expressions idea
+			This takes advantage of the "control structures as expressions" semantics (not as concise as the above though)
 
 Looping Structures
 	for
@@ -35,16 +35,22 @@ Looping Structures
 			Unlike in Lua, there is no direct syntax for increment loops
 			It is possible to simulate the syntax using ranges
 
-		Generator idiom support ??
-			A function that acts like an iterator (ie. can be used in a for loop)
-				There's two ways of doing this
-					Have a yield keyword (ala Python/Lua)
-					Have re-entrant functions (using return values as arguments gives the next return values in the series)
-				You could even remove the other type support and use only this (maybe with some sugar)
-			What does this provide
-				Provides a degree of concurrency/laziness
-				Could also have <var_list> instead of just <var>
-			Something to consider as the language develops (ie. later)
+		Generator/Iterator idiom
+			A function, possibly resumable, that can be repeatably called to iterate a for loop
+				There's two ways of implementing this within dust
+					Have a yield keyword (ala Python/Lua) for resumable functions (useful anyways)
+					Have re-entrant functions (returns the value for the current iteration, the value is the argument for the next iteration)
+				I don't think I'd be able to enforce anything for the generator
+					This could be useful in itself
+
+			What would this idiom provide?
+				A degree of concurrency/laziness
+				Allows native use of <var_list> instead of just <var>
+
+			Something to consider as the langugae develops
+				I also could convert completely to this idiom
+					I could preserve the old syntax by using syntactic sugar
+					This would likely entail that any function could be used in a for loop (can't tell which are which)
 
 	while
 		while <expr> <block>
@@ -55,6 +61,8 @@ Looping Structures
 		Executes the given block until the expression evaluates to true
 		Guaranteed to execute at least once
 			Largely to differentiate it from while loops
+			The ordering is to simplify the code to process control blocks
+				The language also currently only allows left->right readings
 
 Control Structures as Expressions
 	Extends the rules regarding the implicit return statement to control strucutres
@@ -64,35 +72,28 @@ Control Structures as Expressions
 			Otherwise with scoping, any "additional" stuff is either part of the loop or on a different line (ie. syntax error)
 
 	Table.sum: \l, sum: 0 -> for x in l .sum:+ x		## sum is implicitly returned here
-	-versus-
+		   -versus-
 	Table.sum: \l, sum: 0 ->
 		for x in l .sum:+ x
 		return sum
-	-versus-
-	Table.sum: \t -> t.reduce \x, s -> x + s
 
 	x: if y = 3 4 else 2
-	-versus-
+		  -versus-
 	x: y = 3 and 4 or 2
-
-	This also means you can "assign" loops
-		x: for z in [1..10] z * 2						## equivalent to x: 10 * 2
-		This is really only useful when wrapped in parentheses
 
 Shortcircuiting evaluation
 	Returning a value from a control structure without evaluating all expressions
 		Shortcircuits the implicit return rules of control structures/functions
-			Causes the following expression list to be evaluated and then skips all following evaluation (thereby causing the list to be the "last evaluated expression")
+			Evaluates the following expression list and then skips all following evaluation
+				Causes the following list to implicitly be the "last evaluated expression"
+				Also stops iteration of the loop/function/etc. if necessary
 
 		"for x in [1..5] if x = 3 return x" is an example of shortcircuiting the for loop
-		Currently there are two different semantics (and syntaxes) for doing so
-			However a third may be added in later (depending on resumable functions)
-			All syntaxes follow the same formula of "<keyword> <expr_list>"
 
 	Hard exit	- return
-		The main use for return is within functions (although it is allowable to use within the default process)
-		Hard exit causes the program to return to the "call point" (or exits the program if in the default process)
-			The "call point" is the section where the function was called
+		The main use for return is within functions (although it is allowable to use anywhere)
+			There might be another use within the module/import system
+		Hard exit causes the program to return to the "call point" (exits the program if in the default process)
 
 	Soft exit	 - break
 		Soft exit causes the program to go "up" one level of scoping				## see break/continue in other languages
@@ -113,18 +114,18 @@ Boolean Expressions and Operations
 
 	and/or	(ie. <expr> and|or <expr>)
 		Both keywords are short-circuited
-		The value of the construct is the value of the last evaluated expression
-			This means that <expr1> and <expr2> =
-				expr1 if expr1 = false
-				expr2 otherwise
+		These keywords follow the same evaluation principles as control structures
+			ie. the value of the construct is the value of the last expression
+			So then <expr1> and <expr2> = if <expr1> <expr2> else <expr1>				## or is similar
 
-	! (not operator)
-		maps true to false and false to true
-		_op!: \b -> b = true and false or true
+	! for the not operator
+		_op!: \b -> b and false or true
 
 	=, <, <=, >=, >, !=, <=>
 		Only = and < technically require a definition
 			However, at the minimum I might also define >		## floating point considerations
+			Interesting to note that (x <= n) = (x < next(n))
+
 		Comparator function (ala '<=>')
 			-1 if a < b, 0 if a = b, 1 if a > b, and nil otherwise
 			I might still need to system define '=' for this
@@ -165,27 +166,41 @@ Variable Scope Lookup					(ie. How to determine which variable is being referenc
 
 		I could say this is bad and refuse to support it
 
+	There's also the possibility of going to global-first declarations
+		It's simpler to implement
+		I could even keep the same syntax
+		However I'd lose out on a lot of flexibility
+
 "do-block" syntax (possibility?)
 	do
 		x: 5
 		print(x)		## 5
 	print(x)			## nil
 
-	I could go halfway this
+	It is possible to "halfway" implement this feature
 		Reserve "do" as a keyword but have it actually do nothing
-		The capability to signify blocks can be easily added in later (especially since blocks are indented)
+		The actual semantical value of the keyword is minimal in the current framework
+			It can be trivially modified at a later point (I could "force" a code block to follow a do)
+		I do like the keyword and it seems to fit well with the rest of the language
 
 Statement seperator
 	Allow multiple, independent statements to coincide on one line
 	x: 5
-	print x
+	print x							## This can be translated to "print (x: 5)" within the current rules (I'm not sure about the assignment however)
 
-	Option ()			## Lisp-style syntax
+	Option ()			## Lisp-style
 		Generalize the rules so that every expression results in a value
-			These intermediate values are often discarded
-			This also would have an affect on function arguments
+			These values would often be unnecessary and discarded
+			This would have an affect on function arguments (what???)
 
 		(x: 5) (print x)
+		-versus-
+		print x: 5
+
+Defining Expressions
+	Dust is (turning into) an expression-based language but I have no real discussion of what an expression means		## probably for the best
+
+	Assignment
 	
 Statement scoping
 	Not currently supported in Dust

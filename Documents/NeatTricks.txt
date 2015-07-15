@@ -33,3 +33,20 @@ It uses the same syntax as functions, thus preserving the mental link between ap
 The specific method is '_op()' which defines the semantics of () on the table object.
 
 	fib: Table.memoize([1, 1, mem_fn: \x -> fib(n - 1) + fib(n - 2), _op(): \x -> fib[x]])
+
+
+The smallest way to define a function f, so that f([x, y]) = f(x, y)
+	\t, *ct -> t + ct
+
+	However it's not totally correct
+		Suppose x: [2, 4] and y: 3
+		f(x, y) = [2, 4, 3]
+		f([x, y]) = [[2, 4], 3]
+
+	A correct version would be
+		\t, *ct -> ct and ([t] + ct) or t
+
+
+One line table sum (without using Table.reduce)
+	def Table.sum(t <- Table, sum: 0)
+		for x in t .sum:+ x

@@ -112,7 +112,7 @@ Function Return Syntax
 		Note: This is the same syntax as in multiple variable assignment (The behavior follows the same rules, etc.)
 		
 Type Checking
-	At the core (ie. untyped variables), Dust uses Duck Typing (ie. if it has the method it is allowable)
+	At the core (ie. on untyped variables), Dust uses Duck Typing (ie. if it has the method it is allowable)
 	An error is only thrown at the instance where a type mismatch occurs (through functions/system/etc.)
 		Ie. the given variable is not of the given type or of a child type
 
@@ -153,11 +153,11 @@ Function Argument Passing
 
 		The key point is to not allow changes inside the function to "accidentally" propogate outside of the function (except for possibly closures)
 			The same reasoning behind Haskell's functional nature
-			This cannot be subverted through any api/debug/etc. functions
+			This cannot be "directly" subverted through any api/debug/etc. functions
 
-		However it is permissable for the function to modify the arguments
+		It is permissable for the function to modify the arguments (for convenience)
 			Any changes made to the arguments remain local to the function body
-				The changes can be reflected to the original variable by returning the argument
+				The changes can be reflected to the original variable through return
 
 Pattern Matching (only works if function overloading is valid)
 	def add([x, y,])		## This table will only match a table of two elements or less (x/y are assigned to nil in this case)
@@ -169,10 +169,6 @@ Pattern Matching (only works if function overloading is valid)
 	## What about pure "haskell" pattern matching (whether I will actually implement this is undecided (possibly costly))
 	def add(4, 2) 42
 
-Named arguments
-	The usage of name arguments is not natively supported in dust
-		However it is possible to implement similar systems using tables
-
 Tables and Functions
 	x: [
 		y: 3,
@@ -183,6 +179,7 @@ Tables and Functions
 	Scoping of variables begins with the table
 		This means that referencing table fields within a function does not require any "special" syntax
 			However it is possible to force this lookup with 'self.' (self = x in this case)
+				Though this might be deprecated so that the function can be self
 			Referencing the table could also be done with the "scoping" syntax (particularly for assignment)
 		It is also possible to use the table's name
 			However this is not guaranteed to give the desired results
@@ -201,6 +198,7 @@ Function default values
 		There's no sense in doubling up on the protection
 			The additional syntax will also be a mess to read (and possibly parse)
 			However, being able to add both may make the interpreter more general
+				But with the new syntax for typing, this should be trivial
 
 Closures
 	Much like overloads, this is just a specification for a how closures may be implemented
@@ -243,3 +241,14 @@ Way to capture a variable number of arguments without resorting to the splat ope
 
 			A correct version would be
 				\t, *ct -> ct and ([t] + ct) or t
+
+'self' for functions
+	Could I appropriate the 'self' idiom to handle recursion in functions
+		There's alot of parallels to the use in tables and types and the proposed use here
+		However, this interferes with the current definitions of "Table Functions"
+
+	def factorial(n <- Int)
+		n < 2 and 1 or n * self(n - 1)
+
+	def factorial(n <- Int)
+		n < 2 and 2 or n * factorial(n - 1)
