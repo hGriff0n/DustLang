@@ -4,96 +4,95 @@
 #include <iostream>
 
 #include "ast.h"
-#include "state.h"
+#include "state.h"			// Include the stack in here ???
+
+// doesn't have operator precedence (how to avoid left recursion)
+// also need to change the calling convention (for unary operators)
+
+// For dust I should probably split the grammar and actions into seperate files
+// For quick testing of grammar, pegjs.org/online
 
 namespace calculator {
-	using namespace pegtl;		// I think I can "redefine" elements of the PEGTL library by "overloading" them here (see identifier)
-								// Scope lookup checks here first I think.
+	using namespace pegtl;
 
 	using AST = std::stack<std::shared_ptr<ASTNode>>;		// Would STATE be a better name (might have to adjust to use pointers)
-	using input = pegtl::input;				// For some reason, Intellisense was complaining input was "ambiguous"
+	using input = pegtl::input;
+	using eps = pegtl::success;
 
 	struct expr;
-	struct sign : one<'+', '-'> {};
+	struct unary;
 
-	// Comments (slightly hackish currently)
-	struct comment : if_must<two<'#'>, until<eolf>> {};								// ##[^{eolf}]*
+	struct sep : star<one<' '>> {};
 
-	// Specifying literals
-	struct integer : seq<opt<sign>, plus<digit>> {};								// (+|-)?[0-9]+
-	struct decimal : seq<opt<sign>, plus<digit>, one<'.'>, opt<plus<digit>>> {};	// (+|-)?[0-9]+\.[0-9]+
-	struct number : sor<decimal, integer> {};										// {decimal}|{integer}
+	struct comment : if_must<two<'#'>, until<eolf>> {};										// ##.*
+	struct integer : plus<digit> {};														// [0-9]+
+	struct decimal : seq<plus<digit>, one<'.'>, star<digit>> {};							// [0-9]+\.[0-9]*
+	struct number : sor<decimal, integer> {};												// {decimal}|{integer}
+																							//struct literal : sor<number> {};														// {number}?
 
-	// Specifying syntax
-	struct op : one<'+', '*', '-', '/', '=', '<', '>'> {};
-	struct un_op : seq<op, expr> {};										// {op}{expr}
-	struct bin_op : seq<number, pad<op, one<' '>>, number> {};				// {number} *{op} *{number}
-
-	// Specifying organization
-	struct expr : sor<bin_op, seq<star<space>, comment>> {};						// need to be able to recognize number and bin_op
-
-	struct grammar : must<plus<expr>, star<space>, eof> {};							// accepts multiple lines and then quits (allows trailing whitespace)
+																							// no operators, etc. (variables would also be included here)
+	struct parens : if_must<one<'('>, sep, expr, sep, one<')'>> {};							//\( *{expr} *\)					possible problems with function calls
+	struct atomic : sor<number, parens, unary> {};											//{number}|{parens}|{unary}			highest precedence
 
 
+	struct unary : seq<one<'-', '!'>, atomic> {};											// [\-!]{atomic}
+																							// stuff to use to build infix
 
-	// Specifying parsing actions
+																							// Need to rework to give operator precedence (Probably'll invalidate the actions)		// {op} *{expr}
+	struct p_1 : seq<one<'*', '/'>, sep, expr> {};											// [/\*] *{expr}
+	struct p_2 : seq<one<'+', '-'>, sep, expr> {};											// [\+\-] *{expr}
+	struct p_3 : seq<one<'<', '=', '>'>, sep, expr> {};										// [<=>] *{expr}
+	struct p_4 : seq<one<'^', '%'>, sep, expr> {};											// A catch-all definition (I'm going to be redefining this system anyways)
+	struct infix : sor<p_1, p_2, p_3, p_4> {};												// {p_1}|{p_2}|{p_3}				pegtl_calc and lua53_parse work a bit differently (ala above)
+	struct m_expr : seq<atomic, opt<sep, infix>> {};										// {atomic}( *{infix})?				relies on a lot of recursion
+
+																							//struct infix : success {};
+
+																							//struct m_expr : list<atomic, infix, one<' '>> {};										// {atomic} *{infix}*
+
+																							// Expr is more of a guarantee that something exists on the stack
+	struct expr : sor<m_expr> {};															// {m_expr}
+	struct statement : sor<expr, eps> {};													// ({expr})?
+
+	struct grammar : must<sep, statement, sep, opt<comment>, eof> {};						//  *{statement} *{comment}?{eof}
+
+
+																							// Which ones need to define actions ???
+																							// number, unary, p_1/2/3
+
 	template <typename Rule>
 	struct action : nothing<Rule> {};
 
-	template<> struct action<comment> {
+	template <> struct action<integer> {
 		static void apply(const input& in, AST& ast) {
-			std::cout << "Comment:" << in.string().substr(2) << "\n";				// Could still use trimming
-		}
-	};
-
-	template<> struct action<integer> {
-		static void apply(const input& in, AST& ast) {
-			ast.push(std::make_shared<Literal>(in.string() + " ", ValType::INT));		// What do I want to store in the nodes?  (Node Data, Location, ...)
+			ast.push(makeNode<Literal>(in.string(), ValType::INT));		// What do I want to store in the nodes?  (Node Data, Location, ...)
 		}
 	};
 
 	template <> struct action<decimal> {
 		static void apply(const input& in, AST& ast) {
-			ast.push(std::make_shared<Literal>(in.string() + " ", ValType::FLOAT));
+			ast.push(makeNode<Literal>(in.string(), ValType::FLOAT));
 		}
 	};
 
-	template <> struct action<op> {
+	template <> struct action<unary> {
 		static void apply(const input& in, AST& ast) {
-			ast.push(std::make_shared<BinOp>(in.string()));			// Leave the "raw" Node on the stack for later processing
+			auto op = makeNode<UnOp>(in.string().substr(0, 1));
+			op->addChild(node(ast));
+			ast.push(op);
 		}
 	};
 
-	//*
-	// Also look at the shunting yard algorithm
-
-	template <> struct action<bin_op> {
+	struct infix_action {
 		static void apply(const input& in, AST& ast) {
-			// stack: ..., {lhs}, {op}, {rhs}
-
-			auto rhs = node(ast);
-			auto op = node(ast);
-			//op->addChild(node(ast)).addChild(rhs);			// Depends on how the argument "passing" is handled (this line or the next line)
-			op->addChild(rhs).addChild(node(ast));
-			ast.push(op);										// Don't replace op with the above line. push expects a shared_ptr<ASTNode> not an ASTNode
-
-			// stack: ..., {op}
-		}
-	}; 
-	//*/
-
-	template <> struct action<expr> {
-		static void apply(const input& in, AST& ast) {
-			auto n_expr = std::make_shared<Expression>();
-
-			// Will need to correct the implementation (too greedy currently)
-				// Perhaps use "shift-reduce" to construct the object
-				// Currently also produces slightly "non-optimal" trees (can be compacted further)
-
-			while (ast.size() > 0)
-				n_expr->addChild(node(ast));
-
-			ast.push(n_expr);
+			auto op = makeNode<BinOp>(in.string().substr(0, 1));				// std::string{ in.string().front() });
+			op->addChild(node(ast)).addChild(node(ast));
+			ast.push(op);
 		}
 	};
+
+	template <> struct action<p_1> : infix_action{};
+	template <> struct action<p_2> : infix_action{};
+	template <> struct action<p_3> : infix_action{};
+	template <> struct action<p_4> : infix_action{};
 }
