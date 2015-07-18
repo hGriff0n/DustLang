@@ -1,5 +1,5 @@
 #include "Calculator.h"
-//#include "test.h"
+#include "test.h"
 
 #include <pegtl/analyze.hh>
 
@@ -9,32 +9,29 @@ template <typename T> void print(std::shared_ptr<T>&, std::string);
 int main(int argc, const char* argv[]) {
 	std::cout << "Analyzing `calculator::grammar`....." << std::endl;
 	pegtl::analyze<calculator::grammar>();		// Analyzes the grammar
+	std::cout << "\nAnalyzing `test::grammar`.....\n";
+	pegtl::analyze<test::grammar>();
 	std::cout << "\n\n";
 
 	calculator::AST parse_tree;
 	EvalState state;
 
-	state.reg_func("_op+", [](int l, int r) { return l + r; });
-	state.reg_func("_op*", [](int l, int r) { return l * r; });
-	state.reg_func("_op-", [](int l, int r) { return l - r; });
-	state.reg_func("_op/", [](int l, int r) { return l / r; });
-	state.reg_func("_op=", [](int l, int r) { return l == r; });
-	state.reg_func("_op<", [](int l, int r) { return l < r; });
-	state.reg_func("_op>", [](int l, int r) { return l > r; });
-	state.reg_func("_op^", [](int l, int r) { return (int)pow((float)l, (float)r); });
-	state.reg_func("_op%", [](int l, int r) { return l % r; });
-
 	// Switch statement inside eval (quicker to implement, each case does the call)				// Modifying storage is going to be difficult for both (different signatures)
 	// or autoLua-type metaprogramming (this will take longer but is more extensible)
 	// or have lua-style calling convention (I can append to autoLua metaprogramming wrapper easily on top of this)
 
-	//state.reg_func("_op+", 2, [](int l, int r) { return l + r; });							// Redefine state to store the num_args
-	//state.reg_func("_ou-", 1, [](int r) { return -r; });
-	//state.reg_func("_ou!", 1, [](int r) { return !r; });
-
-	// What's the purpose of the return statement then??
-	//state.reg_func("_op+", [](EvalState& s) { s.push(s.pop() + s.pop()); return 1; });		// How many values were pushed on the stack
-	//state.reg_func("_ou-", [](EvalState& s) { s.push(-s.pop()); return 1; });
+	// What's the purpose of the return statement then?? (Currently how many values were pushed on the stack)
+	state.reg_func("_op+", [](EvalState& s) { s.push(s.pop() + s.pop()); return 1; });											// Relies on arguments being evaluated right->left
+	state.reg_func("_op*", [](EvalState& s) { s.push(s.pop() * s.pop()); return 1; });
+	state.reg_func("_op-", [](EvalState& s) { s.push(s.pop() - s.pop()); return 1; });
+	state.reg_func("_op/", [](EvalState& s) { s.push(s.pop()/s.pop()); return 1; });
+	state.reg_func("_op=", [](EvalState& s) { s.push(s.pop() == s.pop()); return 1; });
+	state.reg_func("_op<", [](EvalState& s) { s.push(s.pop() < s.pop()); return 1; });
+	state.reg_func("_op>", [](EvalState& s) { s.push(s.pop() > s.pop()); return 1; });
+	state.reg_func("_op^", [](EvalState& s) { float base = s.pop(); s.push((int)pow(base, (float)s.pop())); return 1; });
+	state.reg_func("_op%", [](EvalState& s) { s.push(s.pop() % s.pop()); return 1; });
+	state.reg_func("_ou-", [](EvalState& s) { s.push(-s.pop()); return 1; });
+	state.reg_func("_ou!", [](EvalState& s) { s.push(!s.pop()); return 1; });
 
 	std::string input;
 

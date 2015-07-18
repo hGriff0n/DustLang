@@ -77,17 +77,44 @@ namespace calculator {
 
 	template <> struct action<unary> {
 		static void apply(const input& in, AST& ast) {
+			// stack: ..., {rhs}
+
 			auto op = makeNode<UnOp>(in.string().substr(0, 1));
 			op->addChild(node(ast));
 			ast.push(op);
+
+			// stack: ..., {op}
 		}
 	};
 
 	struct infix_action {
 		static void apply(const input& in, AST& ast) {
+			// stack: ..., {lhs}, {rhs}, {op}
+
 			auto op = makeNode<BinOp>(in.string().substr(0, 1));				// std::string{ in.string().front() });
-			op->addChild(node(ast)).addChild(node(ast));
+			auto rhs = node(ast);												// Why are these not equivalent lines (__cdecl doesn't explain this)?
+			op->addChild(rhs).addChild(node(ast));
+			//op->addChild(node(ast)).addChild(node(ast));						// Ensure that the children are arranged in order (ie. left above right in stack)
 			ast.push(op);
+
+
+			/*  I can *theoretically* perform all operations involving only literals at parse-time (could do it for everything too)
+			auto rhs = node(ast);
+			auto lhs = node(ast);
+			auto op = makeNode<BinOp>(in.string().substr(0, 1));
+			op->addChild(rhs).addChild(lhs);
+
+			if (rhs->token_type() == lhs->token_type() == TokenType::Literal) {
+				node->eval(state);		// I'd need to include the state here
+				ast.push(makeNode<Literal>(state.top(), typeOf(state.pop());	// Ordering ???
+			} else {
+				ast.push(op);
+			}
+			
+			
+			//*/
+
+			// stack: ..., {op}
 		}
 	};
 

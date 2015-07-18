@@ -4,12 +4,14 @@
 #include <string>
 #include <functional>
 #include <vector>
+// Run-time state
 
 //class Table;
 
-// Run-time state
+//class Environ;	// ???
 class EvalState {
 	private:
+		// If I move this outside/public I can instead pass this to the function
 		template <typename T>
 		struct _stack {
 			std::vector<T> s;
@@ -31,7 +33,8 @@ class EvalState {
 			}
 		};
 
-		std::map<std::string, std::function<int(int, int)>> calc_rules;			// I can extend this to be the "global" environment
+		typedef std::function<int(EvalState&)> func_type;
+		std::map<std::string, func_type> calc_rules;			// I can extend this to be the "global" environment
 		//std::vector<Table> globals; int curr_global;
 		_stack<int> stack;
 
@@ -39,7 +42,7 @@ class EvalState {
 	public:
 		EvalState() {};
 
-		EvalState& reg_func(std::string, const std::function<int(int, int)>&);
+		EvalState& reg_func(std::string, const func_type&);
 
 		EvalState& push(int v) {
 			stack.push(v);
@@ -52,5 +55,8 @@ class EvalState {
 			return stack.s;
 		}
 		
-		int call(std::string);		// I don't like this interface
+		// I don't like this interface
+		int call(std::string);
+		//int call(std::string, int);
+		//EvalState& call(std::string, int, int);
 };
