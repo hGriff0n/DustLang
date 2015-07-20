@@ -19,8 +19,12 @@ std::string _typename(ASTNode& node) {
 			return "Literal";
 		case TokenType::Operator:			// 2
 			return "Operator";
-		case TokenType::Expr:				// 99
+		case TokenType::Variable:			// 3
+			return "Variable";
+		case TokenType::Expr:				// 98
 			return "Expression";
+		case TokenType::Debug:				// 99
+			return "Debug";
 		default:
 			return "Unrecognized Token";
 	}
@@ -37,13 +41,13 @@ std::string _type(Literal& node) {
 	}
 }
 
-void clear(std::stack<std::shared_ptr<ASTNode>>& s) {
+void clear(stack<std::shared_ptr<ASTNode>>& s) {
 	while (!s.empty())
 		s.pop();
 }
 
 std::string Literal::to_string() { return _type(*this) + " " + val; }
-
+std::string Variable::to_string() { return name; }
 
 EvalState& ASTNode::eval(EvalState& state) {
 	return state;
@@ -61,5 +65,9 @@ EvalState& UnOp::eval(EvalState& state) {
 
 EvalState& BinOp::eval(EvalState& state) {
 	state.call(this->oper);
+	return state;
+}
+
+EvalState& Variable::eval(EvalState& state) {
 	return state;
 }

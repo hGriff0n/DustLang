@@ -1,10 +1,9 @@
 #pragma once
 
 #include <memory>
-#include <vector>
-#include <stack>
 #include <string>
 
+#include "stack.h"
 #include "defines.h"
 
 class EvalState;
@@ -40,6 +39,16 @@ class ASTNode {
 		}
 
 		virtual EvalState& eval(EvalState&);
+};
+
+class Debug : public ASTNode {
+	protected:
+		std::string msg;
+
+	public:
+		Debug(std::string m) : ASTNode{ TokenType::Debug }, msg{ m } {};
+
+		std::string to_string() { return msg; }
 };
 
 class Literal : public ASTNode {			// A literal can't have children (except for maybe Tables and functions, but I could make another class in the heirarchy)	
@@ -85,22 +94,27 @@ class BinOp : public ASTNode {				// Might eventually be used for function argum
 		EvalState& eval(EvalState&);
 };
 
+class Variable : public ASTNode {
+	protected:
+		std::string name;
+
+	public:
+		Variable(std::string n) : ASTNode{ TokenType::Variable }, name{ n } {}
+
+		std::string to_string();
+
+		EvalState& eval(EvalState&);
+};
+
 EvalState& evaluate(std::shared_ptr<ASTNode>&, EvalState&);		// The return and arguments will change over time (should I return the eval state ???)
 
 std::string _type(Literal&);
-void clear(std::stack<std::shared_ptr<ASTNode>>&);
+void clear(stack<std::shared_ptr<ASTNode>>&);
 std::string _typename(ASTNode&);
 
 template <typename T, typename... C>
 auto makeNode(C&&... args) {
 	return std::make_shared<T>(args...);
-}
-
-template <typename T>
-T node(std::stack<T>& stack) {
-	T ret = stack.top();
-	stack.pop();
-	return ret;
 }
 
 /*
