@@ -1,5 +1,4 @@
 #include "Calculator.h"
-#include "test.h"
 
 #include <pegtl/analyze.hh>
 
@@ -9,8 +8,6 @@ template <typename T> void print(std::shared_ptr<T>&, std::string);
 int main(int argc, const char* argv[]) {
 	std::cout << "Analyzing `calculator::grammar`....." << std::endl;
 	pegtl::analyze<calculator::grammar>();		// Analyzes the grammar
-	std::cout << "\nAnalyzing `test::grammar`.....\n";
-	pegtl::analyze<test::grammar>();
 	std::cout << "\n\n";
 
 	calculator::AST parse_tree;
@@ -40,11 +37,8 @@ int main(int argc, const char* argv[]) {
 		try {
 			pegtl::parse<calculator::grammar, calculator::action>(input, input, parse_tree);	// Still don't know the entire point of the second argument
 
-			//while (!parse_tree.empty())
-			//	print(node(parse_tree));
-
 			print(parse_tree.top());
-			evaluate(node(parse_tree), state);
+			evaluate(parse_tree.pop(), state);
 			std::cout << ":: " << state.pop() << std::endl;
 		} catch (pegtl::parse_error& e) {
 			std::cout << e.what() << std::endl;
@@ -55,6 +49,7 @@ int main(int argc, const char* argv[]) {
 		std::cout << "> ";
 	}
 
+	return 0;
 }
 
 template <typename T>
