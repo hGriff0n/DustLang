@@ -4,122 +4,147 @@
 #include <iostream>
 
 #include "ast.h"
-#include "state.h"			// Include the stack in here ???
+#include "state.h"
 
-// doesn't have operator precedence (how to avoid left recursion)
-// also need to change the calling convention (for unary operators)
+// also need to change the calling convention (for unary operators) ???
 
 // For dust I should probably split the grammar and actions into seperate files
 // For quick testing of grammar, pegjs.org/online
 
 namespace calculator {
 	using namespace pegtl;
-
-	using AST = std::stack<std::shared_ptr<ASTNode>>;		// Would STATE be a better name (might have to adjust to use pointers)
-	using input = pegtl::input;
 	using eps = pegtl::success;
+	using AST = stack<std::shared_ptr<ASTNode>>;		// Would STATE be a better name
 
+
+	// Forward declarations
 	struct expr;
-	struct unary;
+	struct expr_0;
 
-	struct sep : star<one<' '>> {};
+	// "Readability" Tokens
+	struct sep : one<' '> {};
+	struct seps : star<sep> {};
+	struct o_paren : one<'('> {};
+	struct c_paren : one<')'> {};
+	struct comment : if_must<two<'#'>, until<eolf>> {};								// ##.*
 
-	struct comment : if_must<two<'#'>, until<eolf>> {};										// ##.*
-	struct integer : plus<digit> {};														// [0-9]+
-	struct decimal : seq<plus<digit>, one<'.'>, star<digit>> {};							// [0-9]+\.[0-9]*
-	struct number : sor<decimal, integer> {};												// {decimal}|{integer}
-																							//struct literal : sor<number> {};														// {number}?
+	// Literal Tokens
+	struct integer : plus<digit> {};												// [0-9]+
+	struct decimal : seq<plus<digit>, one<'.'>, star<digit>> {};					// [0-9]+\.[0-9]*
+	struct number : plus<digit> {};
 
-																							// no operators, etc. (variables would also be included here)
-	struct parens : if_must<one<'('>, sep, expr, sep, one<')'>> {};							//\( *{expr} *\)					possible problems with function calls
-	struct atomic : sor<number, parens, unary> {};											//{number}|{parens}|{unary}			highest precedence
+	// Identifier Tokens
+	struct id_end : identifier_other {};
+	struct type_id : seq<range<'A', 'Z'>, star<id_end>> {};							// [A-Z]{id_end}*
+	struct var_id : seq<range<'a', 'z'>, star<id_end>> {};							// [a-z]{id_end}*
+
+																					// Operator Tokens
+	struct un_op : sor<one<'!'>, one<'-'>> {};
+	struct op_1 : sor<one<'^'>> {};
+	struct op_2 : sor<one<'*'>, one<'/'>> {};
+	struct op_3 : sor<one<'+'>, one<'-'>, one<'%'>> {};
+	struct op_4 : sor<one<'<'>, one<'='>, one<'>'>> {};
+	//struct op_4 : sor<string<'<', '='>, string<'>', '='>, string<'!', '='>, one<'<'>, one<'='>, one<'>'>> {};
+
+	// Atomic Tokens
+	struct unary : seq<un_op, expr_0> {};
+	struct parens : if_must<o_paren, seps, expr, seps, c_paren> {};
+
+	// Expression Tokens
+	struct expr_0 : sor<number, unary, parens> {};
+	struct ee_1 : if_must<op_1, seps, expr_0> {};									// Structures the parsing to allow the ast to be constructed left->right
+	struct expr_1 : seq<expr_0, star<seps, ee_1>, seps> {};							// {expr_0}( *{op_1} *{expr_0})* *
+	struct ee_2 : if_must<op_2, seps, expr_1> {};
+	struct expr_2 : seq<expr_1, star<seps, ee_2>, seps> {};							// {expr_1}( *{op_2} *{expr_1})* *
+	struct ee_3 : if_must<op_3, seps, expr_2> {};
+	struct expr_3 : seq<expr_2, star<seps, ee_3>, seps> {};							// {expr_2}( *{op_3} *{expr_2})* *
+	struct ee_4 : if_must<op_4, seps, expr_3> {};
+	struct expr_4 : seq<expr_3, star<seps, ee_4>, seps> {};							// {expr_3}( *{op_4} *{expr_3})* *
+
+																					// Organization Tokens
+	struct expr : seq<expr_4> {};
+
+	// Grammar Token
+	struct grammar : sor<expr, var_id> {};											// {expr}|{var_id}
 
 
-	struct unary : seq<one<'-', '!'>, atomic> {};											// [\-!]{atomic}
-																							// stuff to use to build infix
-
-																							// Need to rework to give operator precedence (Probably'll invalidate the actions)		// {op} *{expr}
-	struct p_1 : seq<one<'*', '/'>, sep, expr> {};											// [/\*] *{expr}
-	struct p_2 : seq<one<'+', '-'>, sep, expr> {};											// [\+\-] *{expr}
-	struct p_3 : seq<one<'<', '=', '>'>, sep, expr> {};										// [<=>] *{expr}
-	struct p_4 : seq<one<'^', '%'>, sep, expr> {};											// A catch-all definition (I'm going to be redefining this system anyways)
-	struct infix : sor<p_1, p_2, p_3, p_4> {};												// {p_1}|{p_2}|{p_3}				pegtl_calc and lua53_parse work a bit differently (ala above)
-	struct m_expr : seq<atomic, opt<sep, infix>> {};										// {atomic}( *{infix})?				relies on a lot of recursion
-
-																							//struct infix : success {};
-
-																							//struct m_expr : list<atomic, infix, one<' '>> {};										// {atomic} *{infix}*
-
-																							// Expr is more of a guarantee that something exists on the stack
-	struct expr : sor<m_expr> {};															// {m_expr}
-	struct statement : sor<expr, eps> {};													// ({expr})?
-
-	struct grammar : must<sep, statement, sep, opt<comment>, eof> {};						//  *{statement} *{comment}?{eof}
-
-
-																							// Which ones need to define actions ???
-																							// number, unary, p_1/2/3
+	/*
+	*  Parser Actions
+	*/
 
 	template <typename Rule>
 	struct action : nothing<Rule> {};
 
-	template <> struct action<integer> {
+	// Number Actions
+	template <> struct action<number> {
 		static void apply(const input& in, AST& ast) {
-			ast.push(makeNode<Literal>(in.string(), ValType::INT));		// What do I want to store in the nodes?  (Node Data, Location, ...)
+			ast.push(makeNode<Literal>(in.string(), ValType::INT));
 		}
 	};
 
-	template <> struct action<decimal> {
-		static void apply(const input& in, AST& ast) {
-			ast.push(makeNode<Literal>(in.string(), ValType::FLOAT));
+
+	// Identifier Actions
+	template <> struct action<var_id> {
+		static void apply(input& in, AST& ast) {
+			ast.push(makeNode<Variable>(in.string()));
 		}
 	};
 
+
+	// Operator Actions
+	template <> struct action<un_op> {
+		static void apply(const input& in, AST& ast) {
+			ast.push(makeNode<UnOp>(in.string()));
+		}
+	};
+
+	struct BinOpAction {
+		static void apply(const input& in, AST& ast) {
+			ast.push(makeNode<BinOp>(in.string()));
+		}
+	};
+
+	template <> struct action<op_1> : BinOpAction{};
+	template <> struct action<op_2> : BinOpAction{};
+	template <> struct action<op_3> : BinOpAction{};
+	template <> struct action<op_4> : BinOpAction{};
+
+
+	// Atomic Actions
 	template <> struct action<unary> {
-		static void apply(const input& in, AST& ast) {
-			// stack: ..., {rhs}
+		// See ExprAction for reasoning
+		static void apply(input& in, AST& ast) {
+			if (ast.size() >= 2) {
+				auto operand = ast.pop();
 
-			auto op = makeNode<UnOp>(in.string().substr(0, 1));
-			op->addChild(node(ast));
-			ast.push(op);
-
-			// stack: ..., {op}
+				if (ast.top()->token_type() == TokenType::Operator)
+					ast.top()->addChild(operand);
+				else
+					ast.push(operand);
+			}
 		}
 	};
 
-	struct infix_action {
-		static void apply(const input& in, AST& ast) {
-			// stack: ..., {lhs}, {rhs}, {op}
 
-			auto op = makeNode<BinOp>(in.string().substr(0, 1));				// std::string{ in.string().front() });
-			auto rhs = node(ast);												// Why are these not equivalent lines (__cdecl doesn't explain this)?
-			op->addChild(rhs).addChild(node(ast));
-			//op->addChild(node(ast)).addChild(node(ast));						// Ensure that the children are arranged in order (ie. left above right in stack)
-			ast.push(op);
+	// Expression Actions
+	struct ee_actions {
+		static void apply(input& in, AST& ast) {
+			// stack: ..., {lhs}, {op}, {rhs}
 
+			if (ast.size() >= 3) {
+				auto rhs = ast.pop();
+				auto op = ast.pop();
 
-			/*  I can *theoretically* perform all operations involving only literals at parse-time (could do it for everything too)
-			auto rhs = node(ast);
-			auto lhs = node(ast);
-			auto op = makeNode<BinOp>(in.string().substr(0, 1));
-			op->addChild(rhs).addChild(lhs);
-
-			if (rhs->token_type() == lhs->token_type() == TokenType::Literal) {
-				node->eval(state);		// I'd need to include the state here
-				ast.push(makeNode<Literal>(state.top(), typeOf(state.pop());	// Ordering ???
-			} else {
+				op->addChild(rhs).addChild(ast.pop());				// might have the ordering messed up
 				ast.push(op);
 			}
-			
-			
-			//*/
 
 			// stack: ..., {op}
 		}
 	};
 
-	template <> struct action<p_1> : infix_action{};
-	template <> struct action<p_2> : infix_action{};
-	template <> struct action<p_3> : infix_action{};
-	template <> struct action<p_4> : infix_action{};
+	template <> struct action<ee_1> : ee_actions{};
+	template <> struct action<ee_2> : ee_actions{};
+	template <> struct action<ee_3> : ee_actions{};
+	template <> struct action<ee_4> : ee_actions{};
 }
