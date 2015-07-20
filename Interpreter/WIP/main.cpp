@@ -26,6 +26,9 @@ int main(int argc, const char* argv[]) {
 	state.reg_func("_op<", [](EvalState& s) { s.push(s.pop() < s.pop()); return 1; });
 	state.reg_func("_op>", [](EvalState& s) { s.push(s.pop() > s.pop()); return 1; });
 	state.reg_func("_op^", [](EvalState& s) { float base = s.pop(); s.push((int)pow(base, (float)s.pop())); return 1; });
+	state.reg_func("_op<=", [](EvalState& s) { s.push(s.pop() <= s.pop()); return 1; });
+	state.reg_func("_op>=", [](EvalState& s) { s.push(s.pop() >= s.pop()); return 1; });
+	state.reg_func("_op!=", [](EvalState& s) { s.push(s.pop() != s.pop()); return 1; });
 	state.reg_func("_op%", [](EvalState& s) { s.push(s.pop() % s.pop()); return 1; });
 	state.reg_func("_ou-", [](EvalState& s) { s.push(-s.pop()); return 1; });
 	state.reg_func("_ou!", [](EvalState& s) { s.push(!s.pop()); return 1; });

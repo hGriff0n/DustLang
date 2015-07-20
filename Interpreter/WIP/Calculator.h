@@ -43,8 +43,7 @@ namespace calculator {
 	struct op_1 : sor<one<'^'>> {};
 	struct op_2 : sor<one<'*'>, one<'/'>> {};
 	struct op_3 : sor<one<'+'>, one<'-'>, one<'%'>> {};
-	struct op_4 : sor<one<'<'>, one<'='>, one<'>'>> {};
-	//struct op_4 : sor<string<'<', '='>, string<'>', '='>, string<'!', '='>, one<'<'>, one<'='>, one<'>'>> {};
+	struct op_4 : sor<string<'<', '='>, string<'>', '='>, string<'!', '='>, one<'<'>, one<'='>, one<'>'>> {};		// A tad crude
 
 	// Atomic Tokens
 	struct unary : seq<un_op, expr_0> {};
