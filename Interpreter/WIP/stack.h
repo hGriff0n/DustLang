@@ -2,6 +2,7 @@
 
 #include <vector>
 
+// Might rename (I want to include methods that aren't very analagous to "stack")
 template <typename T>
 class stack {
 	private:

@@ -8,6 +8,7 @@
 
 class EvalState;
 
+// Run a fine-grained finger over these classes and ensure they only have what they need
 class ASTNode {
 	protected:
 		std::vector<std::shared_ptr<ASTNode>> children;				// Should I move this to Expression as that's the only one that really needs it
@@ -29,6 +30,10 @@ class ASTNode {
 		}
 		auto end() {
 			return children.end();
+		}
+
+		std::shared_ptr<ASTNode> get(int i) {
+			return children[i];
 		}
 
 		TokenType token_type() {
@@ -71,6 +76,7 @@ class Expression : public ASTNode {
 		Expression() : ASTNode{ TokenType::Expr } {}
 };
 
+// change to Function ???
 class UnOp : public ASTNode {
 	protected:
 		std::string oper;
@@ -105,6 +111,27 @@ class Variable : public ASTNode {
 
 		EvalState& eval(EvalState&);
 };
+
+// change to Function ???
+class Assignment : public ASTNode {
+	protected:
+		std::string op;
+		std::shared_ptr<ASTNode> var() { return ASTNode::get(1); }
+		std::shared_ptr<ASTNode> val() { return ASTNode::get(0); }
+
+	public:
+		Assignment(std::string assign_t) : ASTNode{ TokenType::Assignment }, op{ assign_t } {}
+
+		std::string to_string();
+		EvalState& eval(EvalState&);
+};
+
+//template <class N>
+class List : public ASTNode {
+
+};
+
+
 
 EvalState& evaluate(std::shared_ptr<ASTNode>&, EvalState&);		// The return and arguments will change over time (should I return the eval state ???)
 

@@ -5,7 +5,8 @@
 
 EvalState& evaluate(std::shared_ptr<ASTNode>& node, EvalState& state) {
 	for (auto& n : *node)
-		evaluate(n, state);		// Children work first (Especially good in a stack based execution environment)
+		evaluate(n, state);		// Children work first (Especially good in a stack based execution environment) (What about variables ???)
+								// I should move this work into the eval functions
 
 	// What about error handling ??? (Solve this later)
 	return node->eval(state);
@@ -25,6 +26,8 @@ std::string _typename(ASTNode& node) {
 			return "Expression";
 		case TokenType::Debug:				// 99
 			return "Debug";
+		case TokenType::Assignment:
+			return "Assignment";
 		default:
 			return "Unrecognized Token";
 	}
@@ -48,8 +51,14 @@ void clear(stack<std::shared_ptr<ASTNode>>& s) {
 
 std::string Literal::to_string() { return _type(*this) + " " + val; }
 std::string Variable::to_string() { return name; }
+std::string Assignment::to_string() { return op;  }
 
 EvalState& ASTNode::eval(EvalState& state) {
+	/*
+	for (auto n : *this) 
+		n->eval(state);
+	*/
+
 	return state;
 }
 
@@ -59,15 +68,34 @@ EvalState& Literal::eval(EvalState& state) {
 }
 
 EvalState& UnOp::eval(EvalState& state) {
+	//ASTNode::eval(state).call(this->oper);
 	state.call(this->oper);					// Need to work on the calling convention
 	return state;
 }
 
 EvalState& BinOp::eval(EvalState& state) {
+	//ASTNode::eval(state).call(this->oper);
 	state.call(this->oper);
 	return state;
 }
 
 EvalState& Variable::eval(EvalState& state) {
+	state.push(state.get(this->name));		// Think about adjusting when I change the stack from being ints only (simplifies assignment code)
+	return state;
+}
+
+EvalState& Assignment::eval(EvalState& state) {
+	state.pop();				// Because of how evaluation is currently performed
+
+	auto variable = var();
+	//val()->eval(state);
+
+	if (op != ":") {			// If compound assignment
+		variable->eval(state);
+		state.call("_op" + op.substr(1));
+	}
+
+	state.set(variable->to_string(), state.top());
+
 	return state;
 }

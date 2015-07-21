@@ -29,7 +29,7 @@ int main(int argc, const char* argv[]) {
 	state.reg_func("_op<=", [](EvalState& s) { s.push(s.pop() <= s.pop()); return 1; });
 	state.reg_func("_op>=", [](EvalState& s) { s.push(s.pop() >= s.pop()); return 1; });
 	state.reg_func("_op!=", [](EvalState& s) { s.push(s.pop() != s.pop()); return 1; });
-	state.reg_func("_op%", [](EvalState& s) { s.push(s.pop() % s.pop()); return 1; });
+	state.reg_func("_op%", [](EvalState& s) { s.push(s.pop() % s.pop()); return 1; });			// Not an "official" operator
 	state.reg_func("_ou-", [](EvalState& s) { s.push(-s.pop()); return 1; });
 	state.reg_func("_ou!", [](EvalState& s) { s.push(!s.pop()); return 1; });
 
@@ -40,9 +40,16 @@ int main(int argc, const char* argv[]) {
 		try {
 			pegtl::parse<calculator::grammar, calculator::action>(input, input, parse_tree);	// Still don't know the entire point of the second argument
 
-			print(parse_tree.top());
-			evaluate(parse_tree.pop(), state);
-			std::cout << ":: " << state.pop() << std::endl;
+			//while (!parse_tree.empty())
+			//	print(parse_tree.pop());
+			
+			//*/
+			if (!parse_tree.empty()) {
+				print(parse_tree.top());
+				evaluate(parse_tree.pop(), state);
+				std::cout << ":: " << state.pop() << std::endl;
+			}
+			//*/
 		} catch (pegtl::parse_error& e) {
 			std::cout << e.what() << std::endl;
 
@@ -58,7 +65,6 @@ int main(int argc, const char* argv[]) {
 template <typename T>
 void print(std::shared_ptr<T>& ast) {
 	print(ast, "|");
-	//std::cout << std::endl;			// slightly odd
 }
 
 template <typename T>

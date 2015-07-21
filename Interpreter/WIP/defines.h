@@ -12,4 +12,5 @@ enum class TokenType : int {
 	Variable = 3,
 	Expr = 98,
 	Debug = 99,
+	Assignment = 100,			// Remove
 };

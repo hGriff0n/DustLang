@@ -1,6 +1,6 @@
 #include "state.h"
 
-EvalState& EvalState::reg_func(std::string name, const EvalState::func_type& rule) {
+EvalState& EvalState::reg_func(std::string name, const DustFunc& rule) {
 	calc_rules[name] = rule;
 	return *this;
 }
@@ -8,4 +8,12 @@ EvalState& EvalState::reg_func(std::string name, const EvalState::func_type& rul
 int EvalState::call(std::string name) {
 	int n = calc_rules[name](*this);
 	return n;			// int is a holdover from old code
+}
+
+void EvalState::set(std::string var, int val) {
+	globals[var] = val;
+}
+
+int EvalState::get(std::string var) {
+	return globals[var];
 }
