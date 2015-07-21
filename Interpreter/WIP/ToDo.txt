@@ -1,0 +1,36 @@
+
+Timeline
+	1 Variable assignment
+		Precedence (Need to check with my notes for what I want)
+		Multiple assignment
+	2 Type System
+		Generalized Stack
+		More literals (float, bool, string, etc.)
+		Improved variables (?)
+		Type Inheritance/Heirarchy
+		Type Conversions
+		Type Inference/Errors (enable/disable "I'm " + name) (or in Function Calling)
+		Optional: let constness (or should this go into keywords)
+	3 Function Calling		print("Hello, World!")
+		Basic syntax and semantics (Argument passing, etc.)
+		Type functions (Wouldn't this necessitate tables though)
+			I think this is more on specifying behavior than Int.func (see last of Type Systems)
+		Function type (functions can be assigned)
+		_op() syntax (Metamethods ???)
+		Optional: No parens syntax
+	4 Keywords (More of a framework update)
+	5 Scoping
+		Mutilined grammar
+	6 Control Structures
+	7 Table definition (This can go before scoping)
+	8 Function definition (no lambdas)
+	9 Metamethods (converting syntax into function calls)
+	...
+
+Other
+	Make stack throw exceptions when out of data, etc. (ie. Exceptions and error handling)
+	Make the parser reject ill-formed input
+
+Notes (In case I forget some of my decisions)
+	3 + e: 4	=> (3 + e)[: 4]		/> (3 + (e: 4))		// To difficult to modify the grammar. I can't find anywhere that I expected it
+	(e: 3) + 3 * e = 12									// The assignment is evaluated before the multiplication (left->right evaluation). This has some problems with current organization
