@@ -4,10 +4,6 @@
 #include <iostream>
 
 EvalState& evaluate(std::shared_ptr<ASTNode>& node, EvalState& state) {
-	for (auto& n : *node)
-		evaluate(n, state);		// Children work first (Especially good in a stack based execution environment) (What about variables ???)
-								// I should move this work into the eval functions
-
 	// What about error handling ??? (Solve this later)
 	return node->eval(state);
 }
@@ -54,10 +50,8 @@ std::string Variable::to_string() { return name; }
 std::string Assignment::to_string() { return op;  }
 
 EvalState& ASTNode::eval(EvalState& state) {
-	/*
 	for (auto n : *this) 
 		n->eval(state);
-	*/
 
 	return state;
 }
@@ -68,34 +62,30 @@ EvalState& Literal::eval(EvalState& state) {
 }
 
 EvalState& UnOp::eval(EvalState& state) {
-	//ASTNode::eval(state).call(this->oper);
-	state.call(this->oper);					// Need to work on the calling convention
+	ASTNode::eval(state).call(this->oper);			// Work on calling convention??
 	return state;
 }
 
 EvalState& BinOp::eval(EvalState& state) {
-	//ASTNode::eval(state).call(this->oper);
-	state.call(this->oper);
+	ASTNode::eval(state).call(this->oper);			// Push arguments on the stack then call the operator
 	return state;
 }
 
 EvalState& Variable::eval(EvalState& state) {
-	state.push(state.get(this->name));		// Think about adjusting when I change the stack from being ints only (simplifies assignment code)
+	state.push(state.get(this->name));				// Can I rework this to push the name on the stack (but then how do I get the value?)
 	return state;
 }
 
 EvalState& Assignment::eval(EvalState& state) {
-	state.pop();				// Because of how evaluation is currently performed
+	auto variable = var();							// Get reference to the variable
+	val()->eval(state);								// Push the expression value onto the stack
 
-	auto variable = var();
-	//val()->eval(state);
-
-	if (op != ":") {			// If compound assignment
-		variable->eval(state);
-		state.call("_op" + op.substr(1));
+	if (op != ":") {								// If the assignment is compound
+		variable->eval(state);						// Push the variable's value onto the stack
+		state.call("_op" + op.substr(1));			// Call the linked operator
 	}
 
-	state.set(variable->to_string(), state.top());
+	state.set(variable->to_string(), state.top());	// Perform assignment (assuming to_string() == Variable::name)
 
 	return state;
 }
