@@ -10,8 +10,11 @@ class EvalState;
 
 // Run a fine-grained finger over these classes and ensure they only have what they need
 class ASTNode {
+	public:
+		typedef std::shared_ptr<ASTNode> node_ptr;
+
 	protected:
-		std::vector<std::shared_ptr<ASTNode>> children;				// Should I move this to Expression as that's the only one that really needs it
+		std::vector<node_ptr> children;				// Should I move this to Expression as that's the only one that really needs it
 		TokenType token;
 		//Debug data
 
@@ -20,7 +23,7 @@ class ASTNode {
 
 		}
 
-		ASTNode& addChild(std::shared_ptr<ASTNode>& n) {
+		ASTNode& addChild(node_ptr& n) {
 			children.emplace_back(n);
 			return *this;
 		}
@@ -32,12 +35,15 @@ class ASTNode {
 			return children.end();
 		}
 
-		std::shared_ptr<ASTNode> get(int i) {
+		node_ptr get(int i) {
 			return children[i];
 		}
 
 		TokenType token_type() {
 			return token;
+		}
+		void set_token(TokenType t) {
+			token = t;
 		}
 		virtual std::string to_string() {
 			return "";
@@ -91,6 +97,8 @@ class UnOp : public ASTNode {
 class BinOp : public ASTNode {				// Might eventually be used for function arguments
 	protected:
 		std::string oper;
+		node_ptr lhs() { return get(1); }	// 0 if lhs is first
+		node_ptr rhs() { return get(0); }
 
 	public:
 		BinOp(std::string op) : ASTNode{ TokenType::Operator }, oper{ "_op" + op } {}
@@ -116,8 +124,8 @@ class Variable : public ASTNode {
 class Assignment : public ASTNode {
 	protected:
 		std::string op;
-		std::shared_ptr<ASTNode> var() { return ASTNode::get(1); }
-		std::shared_ptr<ASTNode> val() { return ASTNode::get(0); }
+		node_ptr var() { return ASTNode::get(1); }	// 0 if lhs is first
+		node_ptr val() { return ASTNode::get(0); }
 
 	public:
 		Assignment(std::string assign_t) : ASTNode{ TokenType::Assignment }, op{ assign_t } {}
@@ -133,10 +141,10 @@ class List : public ASTNode {
 
 
 
-EvalState& evaluate(std::shared_ptr<ASTNode>&, EvalState&);		// The return and arguments will change over time (should I return the eval state ???)
+EvalState& evaluate(ASTNode::node_ptr&, EvalState&);		// The return and arguments will change over time (should I return the eval state ???)
 
 std::string _type(Literal&);
-void clear(stack<std::shared_ptr<ASTNode>>&);
+void clear(stack<ASTNode::node_ptr>&);
 std::string _typename(ASTNode&);
 
 template <typename T, typename... C>
