@@ -23,6 +23,7 @@ namespace calculator {
 	// Forward declarations
 	struct expr;
 	struct expr_0;
+	struct expr_5;
 
 	// "Readability" Tokens
 	struct sep : one<' '> {};
@@ -66,7 +67,8 @@ namespace calculator {
 	struct expr_4 : seq<expr_3, star<seps, ee_4>, seps> {};							// {expr_3}( *{op_4} *{expr_3})* *
 
 	struct assign : seq<var_id, seps, op_5> {};										// assignments are right associative
-	struct expr_5 : if_else<at<assign>, seq<assign, seps, expr_5>, expr_4> {};		// ({var_id} *{op_5} *{expr_5})|{expr_4}
+	struct ee_5 : seq<assign, seps, expr_5> {};										// Ensure expr_4 never triggers the assignment reduction
+	struct expr_5 : if_then_else<at<assign>, ee_5, expr_4> {};						// ({var_id} *{op_5} *{expr_5})|{expr_4}
 
 	// Organization Tokens
 	struct expr : seq<expr_5> {};
@@ -150,5 +152,6 @@ namespace calculator {
 	template <> struct action<ee_2> : ee_actions {};
 	template <> struct action<ee_3> : ee_actions {};
 	template <> struct action<ee_4> : ee_actions {};
-	template <> struct action<expr_5> : ee_actions {};
+	template <> struct action<ee_5> : ee_actions {};
+	//template <> struct action<expr_5> : ee_actions {};		// expr_4 could match expr_5, triggering the reduction (It still might be beneficial to formalize the shift-reduce framework)
 }

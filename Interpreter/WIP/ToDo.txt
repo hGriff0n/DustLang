@@ -1,10 +1,12 @@
 
 Timeline
 	1 Variable assignment
-		Precedence (Need to check with my notes for what I want)
 		Multiple assignment
+			Concept of List
+			Syntax and semantics
+			Fold into the current grammar
 	2 Type System
-		Generalized Stack
+		Generalized Stack (no stack<int>)
 		More literals (float, bool, string, etc.)
 		Improved variables (?)
 		Type Inheritance/Heirarchy
