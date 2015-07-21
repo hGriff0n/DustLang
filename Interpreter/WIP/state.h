@@ -4,6 +4,7 @@
 #include <string>
 #include <functional>
 #include "stack.h"
+#include <iostream>
 
 // Run-time state
 
@@ -14,6 +15,7 @@
 class EvalState;
 typedef std::function<int(EvalState&)> DustFunc;
 
+// Consider decoupling the call stack from evaluation state (It would be a seperate argument to evaluate & eval/a plug-in to EvalState)
 class EvalState {
 	private:
 		std::map<std::string, DustFunc> calc_rules;			// I can extend this to be the "global" environment
@@ -38,8 +40,14 @@ class EvalState {
 		int top() {
 			return ss.top();
 		}
+
 		std::vector<int> getStack() {
 			return ss.get();
+		}
+
+		EvalState& swap() {
+			ss.swap();
+			return *this;
 		}
 		
 		// I don't like this interface

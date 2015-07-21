@@ -15,6 +15,8 @@
 namespace calculator {
 	using namespace pegtl;
 	using eps = pegtl::success;
+	template <typename Cond, typename Then, typename Else>
+	using if_else = pegtl::if_then_else<Cond, Then, Else>;
 	using AST = stack<std::shared_ptr<ASTNode>>;		// Would STATE be a better name
 
 
@@ -48,7 +50,7 @@ namespace calculator {
 	struct op_5 : sor < string<':', '^'>, string<':', '*'>, string<':', '/'>, string<':', '+'>, string<':', '-'>,		// Assignment operators
 		string<':', '%'>, string<':', '<'>, string<':', '='>, string<':', '>'>, one < ':' >> {};			// Should :>=, :<=, and :!= be valid operators ???
 
-// Atomic Tokens
+	// Atomic Tokens
 	struct unary : seq<op_0, expr_0> {};
 	struct parens : if_must<o_paren, seps, expr, seps, c_paren> {};
 
@@ -63,13 +65,8 @@ namespace calculator {
 	struct ee_4 : if_must<op_4, seps, expr_3> {};
 	struct expr_4 : seq<expr_3, star<seps, ee_4>, seps> {};							// {expr_3}( *{op_4} *{expr_3})* *
 
-	struct ee_5 : seq<var_id, seps, op_5> {};										// assignments are right associative
-	struct expr_5 : if_then_else<at<ee_5>, seq<ee_5, seps, expr_5>, expr_4> {};		// ({var_id} *{op_5} *{expr_5})|{expr_4}
-	// 3 + e: 4	doesn't parse right (or does it)
-	// this is entirely a precedence problem
-		// 3 + e: 4 => 3 + (e: 4)
-		// e: 4 + 3 => e: (4 + 3)
-		// e: 3 + h: 4 => e: (3 + (h: 4))
+	struct assign : seq<var_id, seps, op_5> {};										// assignments are right associative
+	struct expr_5 : if_else<at<assign>, seq<assign, seps, expr_5>, expr_4> {};		// ({var_id} *{op_5} *{expr_5})|{expr_4}
 
 	// Organization Tokens
 	struct expr : seq<expr_5> {};
@@ -137,10 +134,12 @@ namespace calculator {
 		static void apply(input& in, AST& ast) {
 			// stack: ..., {lhs}, {op}, {rhs}
 			if (ast.size() >= 3) {
-				auto rhs = ast.pop();
-				auto op = ast.pop();
+				auto rhs = ast.pop();							// Don't check that the rhs is valid
+				auto op = ast.pop();							// Don't check that the operator is valid
+																// Don't check that the lhs is valid
 
-				op->addChild(rhs).addChild(ast.pop());				// might have the ordering messed up
+				op->addChild(rhs).addChild(ast.pop());				// Current ordering expected by operators
+				//op->addChild(ast.pop()).addChild(rhs);			// If I change the ordering
 				ast.push(op);
 			}
 			// stack: ..., {op}
@@ -152,5 +151,4 @@ namespace calculator {
 	template <> struct action<ee_3> : ee_actions {};
 	template <> struct action<ee_4> : ee_actions {};
 	template <> struct action<expr_5> : ee_actions {};
-
 }

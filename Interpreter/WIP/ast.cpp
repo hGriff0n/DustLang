@@ -3,7 +3,7 @@
 
 #include <iostream>
 
-EvalState& evaluate(std::shared_ptr<ASTNode>& node, EvalState& state) {
+EvalState& evaluate(ASTNode::node_ptr& node, EvalState& state) {
 	// What about error handling ??? (Solve this later)
 	return node->eval(state);
 }
@@ -40,7 +40,7 @@ std::string _type(Literal& node) {
 	}
 }
 
-void clear(stack<std::shared_ptr<ASTNode>>& s) {
+void clear(stack<ASTNode::node_ptr>& s) {
 	while (!s.empty())
 		s.pop();
 }
@@ -50,6 +50,7 @@ std::string Variable::to_string() { return name; }
 std::string Assignment::to_string() { return op;  }
 
 EvalState& ASTNode::eval(EvalState& state) {
+	// Is *this organized in right->left or left->right ???
 	for (auto n : *this) 
 		n->eval(state);
 
@@ -67,7 +68,16 @@ EvalState& UnOp::eval(EvalState& state) {
 }
 
 EvalState& BinOp::eval(EvalState& state) {
-	ASTNode::eval(state).call(this->oper);			// Push arguments on the stack then call the operator
+	//rhs()->eval(state).push(lhs()->eval(state).pop());	// For some reason this works
+
+	// Change when I change the syntax/semantics for DustFuncs
+		// Currently expect: {last_arg}, ..., {first_arg}
+		// Might change to: {first_arg}, ..., {last_arg}	// In this case the swap is unnecessary
+		// Also change how parsing lays out the data (optimized for the current expectation?)
+	rhs()->eval(lhs()->eval(state)).swap().call(oper);		// Call lhs, then rhs, then swap their positions on the stack, then call (operators expect stack = ..., {rhs}, {lhs})
+
+	//{...}.getStack().swap();								// Change EvalState::getStack to return stack&
+	//state.call(oper);										// Unless I pop and push intermediate arguments (how maintainable is this though)
 	return state;
 }
 
@@ -82,8 +92,10 @@ EvalState& Assignment::eval(EvalState& state) {
 
 	if (op != ":") {								// If the assignment is compound
 		variable->eval(state);						// Push the variable's value onto the stack
+		// val()->eval(variable->eval(state));		// If the syntax is changed as shown in BinOp
 		state.call("_op" + op.substr(1));			// Call the linked operator
-	}
+	} // else
+	// val()->eval(state);
 
 	state.set(variable->to_string(), state.top());	// Perform assignment (assuming to_string() == Variable::name)
 

@@ -9,6 +9,11 @@ class stack {
 		std::vector<T> s;
 		//int top = -1;
 
+		template <typename Iter>
+		void swap(Iter& a, Iter& b) {
+			std::iter_swap(a, b);
+		}
+
 	public:
 		void push(T obj) {
 			s.emplace_back(obj);					//++top;
@@ -30,6 +35,12 @@ class stack {
 
 		int size() {
 			return s.size();
+		}
+
+
+		// Not exactly "stack" operations
+		void swap() {
+			swap(s.end() - 2, s.end() - 1);
 		}
 
 		std::vector<T> get() { return s; }

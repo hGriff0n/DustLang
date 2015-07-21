@@ -32,29 +32,27 @@ int main(int argc, const char* argv[]) {
 	state.reg_func("_op%", [](EvalState& s) { s.push(s.pop() % s.pop()); return 1; });			// Not an "official" operator
 	state.reg_func("_ou-", [](EvalState& s) { s.push(-s.pop()); return 1; });
 	state.reg_func("_ou!", [](EvalState& s) { s.push(!s.pop()); return 1; });
+	state.reg_func("print", [](EvalState& s) { std::cout << s.pop() << std::endl; return 0; });			// These functions need more "features" (print("H","e", "l","l","o" ) => H\ne\nl\nl\no\n
 
 	std::string input;
 
 	std::cout << "> ";
 	while (std::getline(std::cin, input) && input != "exit") {									// see pegtl/sum.cc for "string" parse ???
 		try {
-			pegtl::parse<calculator::grammar, calculator::action>(input, input, parse_tree);	// Still don't know the entire point of the second argument
+			if (input == "clear")
+				system("cls");
+			else {
+				pegtl::parse<calculator::grammar, calculator::action>(input, input, parse_tree);	// Still don't know the entire point of the second argument
 
-			//while (!parse_tree.empty())
-			//	print(parse_tree.pop());
-			
-			//*/
-			if (!parse_tree.empty()) {
 				print(parse_tree.top());
 				evaluate(parse_tree.pop(), state);
 				std::cout << ":: " << state.pop() << std::endl;
 			}
-			//*/
 		} catch (pegtl::parse_error& e) {
 			std::cout << e.what() << std::endl;
 
 			clear(parse_tree);
-		}
+		} // catch stack exceptions
 
 		std::cout << "> ";
 	}
