@@ -34,6 +34,10 @@ int main(int argc, const char* argv[]) {
 	state.reg_func("_ou!", [](EvalState& s) { s.push(!s.pop()); return 1; });
 	state.reg_func("print", [](EvalState& s) { std::cout << s.pop() << std::endl; return 0; });			// These functions need more "features" (print("H","e", "l","l","o" ) => H\ne\nl\nl\no\n
 
+	state.set("a", 1);
+	state.set("b", 2);
+	state.set("c", 3);
+
 	std::string input;
 
 	std::cout << "> ";
@@ -41,12 +45,19 @@ int main(int argc, const char* argv[]) {
 		try {
 			if (input == "clear")
 				system("cls");
+			else if (input == "pop")
+				std::cout << "::" << state.pop() << std::endl;
 			else {
 				pegtl::parse<calculator::grammar, calculator::action>(input, input, parse_tree);	// Still don't know the entire point of the second argument
 
+				//while (!parse_tree.empty())
+				//	print(parse_tree.pop());
+
+				//*/
 				print(parse_tree.top());
 				evaluate(parse_tree.pop(), state);
 				std::cout << ":: " << state.pop() << std::endl;
+				//*/
 			}
 		} catch (pegtl::parse_error& e) {
 			std::cout << e.what() << std::endl;
