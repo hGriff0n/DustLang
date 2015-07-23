@@ -20,6 +20,14 @@ namespace calculator {
 	using AST = stack<std::shared_ptr<ASTNode>>;		// Would STATE be a better name
 
 
+	// Rule Templates
+	template <typename Rule, typename Sep, typename Pad>							// Covers pegtl::list (apes list_tail)
+	struct list : seq<pegtl::list<Rule, Sep, Pad>, opt<star<Pad>, disable<Sep>>> {};	// Prevents the comma action from being called multiple times (is this necessary?)
+	template <typename Rule>
+	struct w_list : list<Rule, comma, sep> {};										// Weak list, allows trailing comma		// old: list<Rule, comma, sep>
+	template <typename Rule>
+	struct s_list : pegtl::list<Rule, comma, sep> {};								// Strict list, no trailing comma
+
 	// Forward declarations
 	struct expr;
 	struct expr_0;
@@ -30,6 +38,7 @@ namespace calculator {
 	struct seps : star<sep> {};
 	struct o_paren : one<'('> {};
 	struct c_paren : one<')'> {};
+	struct comma : one<','> {};
 	struct comment : if_must<two<'#'>, until<eolf>> {};								// ##.*
 
 	// Literal Tokens
@@ -65,10 +74,24 @@ namespace calculator {
 	struct expr_3 : seq<expr_2, star<seps, ee_3>, seps> {};							// {expr_2}( *{op_3} *{expr_2})* *
 	struct ee_4 : if_must<op_4, seps, expr_3> {};
 	struct expr_4 : seq<expr_3, star<seps, ee_4>, seps> {};							// {expr_3}( *{op_4} *{expr_3})* *
+	//struct assign : seq<var_id, seps, op_5> {};										// assignments are right associative
+	//struct ee_5 : seq<assign, seps, expr_5> {};										// Ensure expr_4 never triggers the assignment reduction
+	//struct expr_5 : if_then_else<at<assign>, ee_5, expr_4> {};						// ({var_id} *{op_5} *{expr_5})|{expr_4}
 
-	struct assign : seq<var_id, seps, op_5> {};										// assignments are right associative
-	struct ee_5 : seq<assign, seps, expr_5> {};										// Ensure expr_4 never triggers the assignment reduction
-	struct expr_5 : if_then_else<at<assign>, ee_5, expr_4> {};						// ({var_id} *{op_5} *{expr_5})|{expr_4}
+	// Workspace
+		// Change number_list to expr_list (intersection problems with var_list -> assignment. How to parse "e, f: g, h, i: 3, 4")
+		// Replace expr_5 with multiple assignment
+
+
+	// Optimize and integrate multiple assignment
+		// Can I utilize the lookahead phase to push var_id's onto the stack ???
+	struct var_list : s_list<var_id> {};											// AST and lookahead? (seq<var_id, seps, sor<one<','>, op_5>>)  // this could technically match an expression list
+	struct expr_list : s_list<expr_4> {};							// Multiple assignments don't work well currently
+	//struct expr_list : s_list<expr_5> {};								// a, b: b, c: 9  => a = b = c = 0			a, b: (b, c: 9[, 0])[, 0]
+	struct assign : seq<var_list, seps, op_5> {};
+	struct ee_5 : seq<assign, seps, expr_list> {};
+	struct expr_5 : if_then_else<at<assign>, ee_5, expr_4> {};
+
 
 	// Organization Tokens
 	struct expr : seq<expr_5> {};
@@ -83,6 +106,40 @@ namespace calculator {
 
 	template <typename Rule>
 	struct action : nothing<Rule> {};
+
+	// Workspace
+	template <> struct action<comma> {
+		static void apply(input& in, AST& ast) {
+			ast.push(makeNode<Debug>(in.string()));
+		}
+	};
+
+	template <TokenType t> struct list_actions {
+		static void apply(input& in, AST& ast) {
+			auto list = makeNode<List>(t);
+
+			// Old code to handel two commas on top of stack (uncomment if list is changed to inherit from list_tail)
+			//if (ast.top()->to_string() == ",") ast.pop();
+			
+			if (ast.top()->to_string() != ",")
+				ast.push(makeNode<Debug>(","));
+
+			while (!ast.empty() && ast.top()->to_string() == ",") {
+				ast.pop();
+				list->addChild(ast.pop());
+			}
+
+			// If there's only one element in the list, should I push the element instead (list->size() == 1)
+
+			ast.push(list);
+		}
+	};
+
+	template <> struct action<var_list> : list_actions<TokenType::Variable> {};
+	template <> struct action<expr_list> : list_actions<TokenType::Expr> {};
+
+	// See ee_actions for mult_assign action definition
+
 
 	// Number Actions
 	template <> struct action<number> {
@@ -117,7 +174,7 @@ namespace calculator {
 
 	// Atomic Actions
 	template <> struct action<unary> {
-		// See ExprAction for reasoning
+		// See ee_actions for reasoning?
 		static void apply(input& in, AST& ast) {
 			if (ast.size() >= 2) {
 				auto operand = ast.pop();
@@ -154,4 +211,6 @@ namespace calculator {
 	template <> struct action<ee_4> : ee_actions {};
 	template <> struct action<ee_5> : ee_actions {};
 	//template <> struct action<expr_5> : ee_actions {};		// expr_4 could match expr_5, triggering the reduction (It still might be beneficial to formalize the shift-reduce framework)
+
+	//template <> struct action<mult_assign> : ee_actions {};
 }
