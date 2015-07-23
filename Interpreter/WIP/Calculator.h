@@ -21,10 +21,11 @@ namespace calculator {
 
 
 	// Rule Templates
+	struct comma; struct sep;
 	template <typename Rule, typename Sep, typename Pad>							// Covers pegtl::list (apes list_tail)
 	struct list : seq<pegtl::list<Rule, Sep, Pad>, opt<star<Pad>, disable<Sep>>> {};	// Prevents the comma action from being called multiple times (is this necessary?)
 	template <typename Rule>
-	struct w_list : list<Rule, comma, sep> {};										// Weak list, allows trailing comma		// old: list<Rule, comma, sep>
+	struct w_list : list<Rule, comma, sep> {};										// Weak list, allows trailing comma		// I could add the Sep template and pass in comma everywhere (arguably more extensible, don't need the forward declaration) or I could just move these after "Readability"
 	template <typename Rule>
 	struct s_list : pegtl::list<Rule, comma, sep> {};								// Strict list, no trailing comma
 
@@ -74,10 +75,6 @@ namespace calculator {
 	struct expr_3 : seq<expr_2, star<seps, ee_3>, seps> {};							// {expr_2}( *{op_3} *{expr_2})* *
 	struct ee_4 : if_must<op_4, seps, expr_3> {};
 	struct expr_4 : seq<expr_3, star<seps, ee_4>, seps> {};							// {expr_3}( *{op_4} *{expr_3})* *
-	//struct assign : seq<var_id, seps, op_5> {};										// assignments are right associative
-	//struct ee_5 : seq<assign, seps, expr_5> {};										// Ensure expr_4 never triggers the assignment reduction
-	//struct expr_5 : if_then_else<at<assign>, ee_5, expr_4> {};						// ({var_id} *{op_5} *{expr_5})|{expr_4}
-
 	// Workspace
 		// Change number_list to expr_list (intersection problems with var_list -> assignment. How to parse "e, f: g, h, i: 3, 4")
 		// Replace expr_5 with multiple assignment
@@ -86,11 +83,22 @@ namespace calculator {
 	// Optimize and integrate multiple assignment
 		// Can I utilize the lookahead phase to push var_id's onto the stack ???
 	struct var_list : s_list<var_id> {};											// AST and lookahead? (seq<var_id, seps, sor<one<','>, op_5>>)  // this could technically match an expression list
-	struct expr_list : s_list<expr_4> {};							// Multiple assignments don't work well currently
+	struct expr_list : s_list<expr_4> {};							// Chaining assignments doesn't work well currently
 	//struct expr_list : s_list<expr_5> {};								// a, b: b, c: 9  => a = b = c = 0			a, b: (b, c: 9[, 0])[, 0]
-	struct assign : seq<var_list, seps, op_5> {};
+																				// Isn't this how chaining technically works ???
+																				// a, b, c: 3, d, e: 4 => a = b = c = d = e = 0 (I at least need to understand why)
+																				// This is a by-product of how lists are constructed
+																					// There's a comma between the 3 and the d, so the 3 is included in the var_list
+																					// Then d, e: 0, 0 => (3, d, e: 4) = 0 => a, b, c: 0, 0, 0
+																				// a, b: b, (c: 9) => a = b = c = 0 (parsing it's equivalent to a, b: b, c: 9
+	struct assign : seq<var_list, seps, op_5> {};						// I can always allow this and warn against the dangers
 	struct ee_5 : seq<assign, seps, expr_list> {};
 	struct expr_5 : if_then_else<at<assign>, ee_5, expr_4> {};
+
+	//struct assign : seq<var_id, seps, op_5> {};										// assignments are right associative
+	//struct ee_5 : seq<assign, seps, expr_5> {};										// Ensure expr_4 never triggers the assignment reduction
+	//struct expr_5 : if_then_else<at<assign>, ee_5, expr_4> {};						// ({var_id} *{op_5} *{expr_5})|{expr_4}
+
 
 
 	// Organization Tokens
@@ -137,8 +145,6 @@ namespace calculator {
 
 	template <> struct action<var_list> : list_actions<TokenType::Variable> {};
 	template <> struct action<expr_list> : list_actions<TokenType::Expr> {};
-
-	// See ee_actions for mult_assign action definition
 
 
 	// Number Actions
@@ -189,6 +195,7 @@ namespace calculator {
 
 
 	// Expression Actions
+		// Consider formalizing a shift-reduce framework here
 	struct ee_actions {
 		static void apply(input& in, AST& ast) {
 			// stack: ..., {lhs}, {op}, {rhs}
@@ -210,7 +217,4 @@ namespace calculator {
 	template <> struct action<ee_3> : ee_actions {};
 	template <> struct action<ee_4> : ee_actions {};
 	template <> struct action<ee_5> : ee_actions {};
-	//template <> struct action<expr_5> : ee_actions {};		// expr_4 could match expr_5, triggering the reduction (It still might be beneficial to formalize the shift-reduce framework)
-
-	//template <> struct action<mult_assign> : ee_actions {};
 }

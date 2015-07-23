@@ -103,76 +103,48 @@ EvalState& Variable::eval(EvalState& state) {
 }
 
 
-// Modify these two to handle multiple assignment
-
+// Need to clean up variable declarations (easier if I remove some comments)
 EvalState& Assignment::eval(EvalState& state) {
-	/*/
-	auto variable = var();							// Get reference to the variable
-	val()->eval(state);								// Push the expression value onto the stack
-
-	if (op != ":") {								// If the assignment is compound
-		variable->eval(state);						// Push the variable's value onto the stack
-		// val()->eval(variable->eval(state));		// If the syntax is changed as shown in BinOp
-		state.call("_op" + op.substr(1));			// Call the linked operator
-	} // else
-	// val()->eval(state);
-
-	state.set(variable->to_string(), state.top());	// Perform assignment (assuming to_string() == Variable::name)
-
-	return state;
-	/*/
-
-	//auto _val = val();
-	//val()->eval(state);
-
 	auto r_var = var()->begin(), l_var = var()->end();			// could convert to use std::make_pair
 	auto r_val = val()->begin(), l_val = val()->end();
 	int var_size = l_var - r_var, val_size = l_val - r_val;
-	//std::string last_name = (*r_var)->to_string();
 
-	// Will have to adjust these to account for multiple returns from functions
-		// I don't know how many values the function will return at parse-time (some of my assumptions will be invalid)
-		// Possibly keep a running tally of "used" variables and values
-			// "request" a new value iff there is still a variable to take it (update based on how many were variables pushed on the stack)
-			// don't pair the request and assignment loops
+	// Problems with this code in relation to multiple function returns and the splat operator
+		// I don't know how many values will be returned at parse-time
+			// Can a function return change the number of variables to be assigned (Though this is a massive side-effect
+			// Should this run-time difference in variables and values change the number of expressions evaluated
+		// Splat modifies the number of values that a variable "accepts" (I could modify the grammar for this)
+		// Doesn't check that any assignments are "okay"
+		// You could still perform optimizations on the assumption that the function returns 0-1 items (memoize the iterators)
+			// Possibly keep a running tally of "used" variables and values
+				// "request" a new value iff there is still a variable to take it (update based on how many were variables pushed on the stack)
+				// don't pair the request and assignment loops
 
 	// More values than variables (Readjust the val iterator (Can I store the new iterator???))
-		// This causes all values to the right to not be evaluated (I could possibly optimize this by memoizing the iterator)
-		// This still might have some difficulties when dealing with multiple returns from functions
-			// Could functions increase the number of variables ???
 	while (val_size > var_size) {
 		++r_val; --val_size;
 	}
 
-	// Evaluate expr_list (left->right)
-		// Will have to adjust to account for functions with multiple returns
+	// Evaluate expr_list (left->right) (1st on bottom)
 	while (r_val != l_val) {
-		--l_val;
-		(*l_val)->eval(state);		// take care to 
+		--l_val; (*l_val)->eval(state);
 	}
 
-	// More variables than values (Push nil(0) on the stack)
+	// Didn't I give a seperate semantics if there are more variables than values in a compound assignment (namely the last value is carried over)???
+
+	// More variables than values (Push nil{0} on the stack)
 	while(var_size > val_size) {
 		state.push(0); --var_size;
 	}
 
-	// Pair the assignments (take care to leave the last value on the stack)
-		// There's also the issue of compound assignment (I could have a special compound function variable that performs the extra stuff?)
-			// Could do a template dispatch iff I restrict the compound to a single char (no :<=, currently valid)
+	// Perform the assignments (right->left, compound if necessary)
 	while (l_var != r_var) {
-		state.set((*r_var)->to_string(), state.pop());
-		//std::cout << (*r_var)->to_string() << ": " << state.pop() << std::endl;
-		++r_var;
+		if (compound) (*r_var)->eval(state).call("_op" + op);
+		state.set((*r_var)->to_string(), state.pop()); ++r_var;
 	}
 
-	//state.push(state.get(last_name));
-	state.push(state.get((*var()->begin())->to_string()));
-	
-	//*/
-
-	//state.push(0);
-
-	return state;
+	// The value of the last variable is the assignment's value (or is it?)
+	return (*var()->begin())->eval(state);
 }
 
 // List data is stored right->left

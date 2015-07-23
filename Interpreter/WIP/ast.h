@@ -124,12 +124,14 @@ class Variable : public ASTNode {
 class Assignment : public ASTNode {
 	protected:
 		std::string op;
+		bool compound;
+
 		// Should I move these to be member variables ???
 		node_ptr var() { return ASTNode::get(1); }	// 0 if lhs is first
 		node_ptr val() { return ASTNode::get(0); }
 
 	public:
-		Assignment(std::string assign_t) : ASTNode{ TokenType::Assignment }, op{ assign_t } {}
+		Assignment(std::string assign_t) : ASTNode{ TokenType::Assignment }, op{ assign_t.substr(1) }, compound{ assign_t != ":" } {}
 
 		std::string to_string();
 		EvalState& eval(EvalState&);
