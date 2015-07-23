@@ -34,10 +34,6 @@ int main(int argc, const char* argv[]) {
 	state.reg_func("_ou!", [](EvalState& s) { s.push(!s.pop()); return 1; });
 	state.reg_func("print", [](EvalState& s) { std::cout << s.pop() << std::endl; return 0; });			// These functions need more "features" (print("H","e", "l","l","o" ) => H\ne\nl\nl\no\n
 
-	state.set("a", 1);
-	state.set("b", 2);
-	state.set("c", 3);
-
 	std::string input;
 
 	std::cout << "> ";

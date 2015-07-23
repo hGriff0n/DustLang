@@ -133,7 +133,7 @@ EvalState& Assignment::eval(EvalState& state) {
 	// Didn't I give a seperate semantics if there are more variables than values in a compound assignment (namely the last value is carried over)???
 
 	// More variables than values (Push nil{0} on the stack)
-	while(var_size > val_size) {
+	while (var_size > val_size) {
 		state.push(0); --var_size;
 	}
 
