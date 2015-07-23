@@ -2,8 +2,7 @@
 Timeline
 	1 Variable assignment
 		Multiple assignment
-			Concept of List
-			Syntax and semantics
+			Semantics
 			Fold into the current grammar
 	2 Type System
 		Generalized Stack (no stack<int>)
