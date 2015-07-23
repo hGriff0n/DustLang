@@ -75,6 +75,9 @@ namespace calculator {
 	struct expr_3 : seq<expr_2, star<seps, ee_3>, seps> {};							// {expr_2}( *{op_3} *{expr_2})* *
 	struct ee_4 : if_must<op_4, seps, expr_3> {};
 	struct expr_4 : seq<expr_3, star<seps, ee_4>, seps> {};							// {expr_3}( *{op_4} *{expr_3})* *
+	//struct assign : seq<var_id, seps, op_5> {};										// assignments are right associative
+	//struct ee_5 : seq<assign, seps, expr_5> {};										// Ensure expr_4 never triggers the assignment reduction
+	//struct expr_5 : if_then_else<at<assign>, ee_5, expr_4> {};						// ({var_id} *{op_5} *{expr_5})|{expr_4}
 	// Workspace
 		// Change number_list to expr_list (intersection problems with var_list -> assignment. How to parse "e, f: g, h, i: 3, 4")
 		// Replace expr_5 with multiple assignment
@@ -82,9 +85,11 @@ namespace calculator {
 
 	// Optimize and integrate multiple assignment
 		// Can I utilize the lookahead phase to push var_id's onto the stack ???
+
+	
 	struct var_list : s_list<var_id> {};											// AST and lookahead? (seq<var_id, seps, sor<one<','>, op_5>>)  // this could technically match an expression list
-	struct expr_list : s_list<expr_4> {};							// Chaining assignments doesn't work well currently
-	//struct expr_list : s_list<expr_5> {};								// a, b: b, c: 9  => a = b = c = 0			a, b: (b, c: 9[, 0])[, 0]
+	//struct expr_list : s_list<expr_4> {};							// Chaining assignments doesn't work well currently
+	struct expr_list : s_list<expr_5> {};								// a, b: b, c: 9  => a = b = c = 0			a, b: (b, c: 9[, 0])[, 0]
 																				// Isn't this how chaining technically works ???
 																				// a, b, c: 3, d, e: 4 => a = b = c = d = e = 0 (I at least need to understand why)
 																				// This is a by-product of how lists are constructed
@@ -95,9 +100,6 @@ namespace calculator {
 	struct ee_5 : seq<assign, seps, expr_list> {};
 	struct expr_5 : if_then_else<at<assign>, ee_5, expr_4> {};
 
-	//struct assign : seq<var_id, seps, op_5> {};										// assignments are right associative
-	//struct ee_5 : seq<assign, seps, expr_5> {};										// Ensure expr_4 never triggers the assignment reduction
-	//struct expr_5 : if_then_else<at<assign>, ee_5, expr_4> {};						// ({var_id} *{op_5} *{expr_5})|{expr_4}
 
 
 
@@ -145,6 +147,25 @@ namespace calculator {
 
 	template <> struct action<var_list> : list_actions<TokenType::Variable> {};
 	template <> struct action<expr_list> : list_actions<TokenType::Expr> {};
+	
+	// a, b: 3, (d: 3)
+
+	//*/
+	// This allows "a, b: 3, (d: 3)" (blocks the process that creates lists)
+		// I'm not sure if I should love this or hate it with a burning passion
+	template <> struct action<o_paren> {
+		static void apply(input& in, AST& ast) {
+			ast.push(makeNode<Debug>("("));
+		}
+	};
+
+	template <> struct action<c_paren> {
+		static void apply(input& in, AST& ast) {
+			auto t = ast.pop();
+			ast.pop();	ast.push(t);
+		}
+	};
+	//*/
 
 
 	// Number Actions

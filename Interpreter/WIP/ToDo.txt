@@ -2,8 +2,8 @@
 Timeline
 	1 Variable assignment
 		Multiple assignment
-			Semantics
-			Fold into the current grammar
+			Semantics: "a, b:+ 2"		|	"a, b:+ 2, 2"		or	"a, b:+ 2, nil/0"
+			Semantics: "a, b: b, c: 9"	|	"a, b: (b, c: 9)"	or	"a, b: b, (c: 9)"
 	2 Type System
 		Generalized Stack (no stack<int>)
 		More literals (float, bool, string, etc.)
