@@ -1,32 +1,28 @@
 
 Timeline
-	1 Variable assignment
-		Multiple assignment
-			Concept of List
-			Syntax and semantics
-			Fold into the current grammar
-	2 Type System
+	1 Type System
 		Generalized Stack (no stack<int>)
 		More literals (float, bool, string, etc.)
+			Escaped characters in strings (this can be delayed though)
 		Improved variables (?)
 		Type Inheritance/Heirarchy
 		Type Conversions
 		Type Inference/Errors (enable/disable "I'm " + name) (or in Function Calling)
 		Optional: let constness (or should this go into keywords)
-	3 Function Calling		print("Hello, World!")
+	2 Function Calling		print("Hello, World!")
 		Basic syntax and semantics (Argument passing, etc.)
 		Type functions (Wouldn't this necessitate tables though)
 			I think this is more on specifying behavior than Int.func (see last of Type Systems)
 		Function type (functions can be assigned)
 		_op() syntax (Metamethods ???)
 		Optional: No parens syntax
-	4 Keywords (More of a framework update)
-	5 Scoping
+	3 Keywords (More of a framework update)
+	4 Scoping
 		Mutilined grammar
-	6 Control Structures
-	7 Table definition (This can go before scoping)
-	8 Function definition (no lambdas)
-	9 Metamethods (converting syntax into function calls)
+	5 Control Structures
+	6 Table definition (This can go before scoping)
+	7 Function definition (no lambdas)
+	8 Metamethods (converting syntax into function calls)
 	...
 
 Other
@@ -36,3 +32,5 @@ Other
 Notes (In case I forget some of my decisions)
 	3 + e: 4	=> (3 + e)[: 4]		/> (3 + (e: 4))		// To difficult to modify the grammar. I can't find anywhere that I expected it
 	(e: 3) + 3 * e = 12									// The assignment is evaluated before the multiplication (left->right evaluation). This has some problems with current organization
+	a, b:+ 2											// I'm going to go with the current semantics for now for simplicity. However, it still possible for it to be changed in the future
+	a, b: b, c: 9										// Again, I'm going to use the current semantics for simplicity. There also would be difficulty in correctly parsing it otherwise due to the overlap and the fact that an assignment is an expression

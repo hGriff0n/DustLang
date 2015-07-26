@@ -1,27 +1,96 @@
-e: 1
+## Include more mundane "3 + 3" expressions here (also don't delete any)
+
+## Check basic operator/expression precedence
+3 + 3
+	e = 6
+
+3 ^ 2 * 2
+	3 = 18
+
+3 + 3 * (3 + 3)
+	e = 21
+
+## Check type system
+3.3
+	e = 3.3
+
+true
+	e = true
+
+"Hello, World!"
+	e = Hello, World!
+
+## Check assignments
+a: 1
+	a = 1
 	e = 1
-	h = 0
-
-e: e
-	e = 1
-	h = 0
-
-e: 3 + (h: 4)
-	e = 7
-	h = 4
-
-e: h :+ 3
-	e = 7
-	h = 7
-
-e: 3 + (h: 4 + e)
-	e = 14
-	h = 11
-
-e: 3 + e / 3
-	e = 7
-	h = 11
-
-e:= e / -(h - (e: 4)) + e ^ (h: 2) - h / 2  // 55
+	
+a: 3 + (b:+ 1)
+	a = 4
+	b = 1
+	e = 4
+	
+a:^ a / 2
+	a = 16
+	e = 16
+	
+a:= a / -(b - (a: 4)) + a ^ (b: 2) - b / 2
+	a = 0
+	b = 2
 	e = 0
-	h = 2
+
+a, b: b, a + 1
+	a = 2
+	b = 1
+	e = 1
+	
+a, b: 3
+	a = 3
+	b = 0
+	e = 0
+
+a, b: 1, 2, 3
+	a = 1
+	b = 2
+	e = 2
+
+a, b:+ 2
+	a = 3
+	b = 2		// There's a good case that b:- 2 is a better semantic meaning here
+	e = 2
+
+a, b, c: 3 + b, 4 - a, b ^ a
+	a = 5
+	b = 5
+	c = 8
+	e = 8
+
+a, b: 1, 2, (c: 3)
+	a = 1
+	b = 2
+	c = 8
+	e = 2
+
+a, b: c, d: 3, 4
+	a = 4
+	b = 0
+	c = 3
+	d = 4
+	e = 0
+
+a, b: (c, d: 3), 4
+	a = 0
+	b = 4
+	c = 3
+	d = 0
+	e = 4
+
+a, b: 3, c, d: 3, 4				## a, b: 3, (c, d: 3, 4)
+	a = 3
+	b = 4
+	c = 3
+	d = 4
+	e = 4
+
+## Error tests
+a, 3, b: 1, 2, 3  (no error)

@@ -20,6 +20,15 @@ namespace calculator {
 	using AST = stack<std::shared_ptr<ASTNode>>;		// Would STATE be a better name
 
 
+	// Rule Templates
+	struct comma; struct sep;
+	template <typename Rule, typename Sep, typename Pad>							// Covers pegtl::list (apes list_tail)
+	struct list : seq<pegtl::list<Rule, Sep, Pad>, opt<star<Pad>, disable<Sep>>> {};	// Prevents the comma action from being called multiple times (is this necessary?)
+	template <typename Rule>
+	struct w_list : list<Rule, comma, sep> {};										// Weak list, allows trailing comma		// I could add the Sep template and pass in comma everywhere (arguably more extensible, don't need the forward declaration) or I could just move these after "Readability"
+	template <typename Rule>
+	struct s_list : pegtl::list<Rule, comma, sep> {};								// Strict list, no trailing comma
+
 	// Forward declarations
 	struct expr;
 	struct expr_0;
@@ -30,12 +39,18 @@ namespace calculator {
 	struct seps : star<sep> {};
 	struct o_paren : one<'('> {};
 	struct c_paren : one<')'> {};
+	struct comma : one<','> {};
 	struct comment : if_must<two<'#'>, until<eolf>> {};								// ##.*
 
 	// Literal Tokens
 	struct integer : plus<digit> {};												// [0-9]+
 	struct decimal : seq<plus<digit>, one<'.'>, star<digit>> {};					// [0-9]+\.[0-9]*
 	struct number : plus<digit> {};
+	struct boolean : sor<string<'t','r','u','e'>, string<'f','a','l','s','e'>> {};
+	struct str : seq<one<'"'>, star<any>, one<'"'>> {};			// Need to allow escape sequences
+
+	// Keyword Tokens
+
 
 	// Identifier Tokens
 	struct id_end : identifier_other {};
@@ -66,9 +81,18 @@ namespace calculator {
 	struct ee_4 : if_must<op_4, seps, expr_3> {};
 	struct expr_4 : seq<expr_3, star<seps, ee_4>, seps> {};							// {expr_3}( *{op_4} *{expr_3})* *
 
-	struct assign : seq<var_id, seps, op_5> {};										// assignments are right associative
-	struct ee_5 : seq<assign, seps, expr_5> {};										// Ensure expr_4 never triggers the assignment reduction
-	struct expr_5 : if_then_else<at<assign>, ee_5, expr_4> {};						// ({var_id} *{op_5} *{expr_5})|{expr_4}
+
+	// Optimize and integrate multiple assignment
+		// Can I utilize the lookahead phase to push var_id's onto the stack ???
+	struct var_list : s_list<var_id> {};											// AST and lookahead? (seq<var_id, seps, sor<one<','>, op_5>>)  // this could technically match an expression list
+	struct expr_list : s_list<expr_5> {};											// {expr_5} *, *
+
+	struct assign : seq<var_list, seps, op_5> {};									// assignments are right associative
+	struct ee_5 : seq<assign, seps, expr_list> {};									// ensure that expr_4 doesn't trigger the expression reduction
+	struct expr_5 : if_then_else<at<assign>, ee_5, expr_4> {};						// {var_list} *{op_5} * {expr_list}
+
+
+
 
 	// Organization Tokens
 	struct expr : seq<expr_5> {};
@@ -83,6 +107,55 @@ namespace calculator {
 
 	template <typename Rule>
 	struct action : nothing<Rule> {};
+
+	// Workspace
+	template <> struct action<comma> {
+		static void apply(input& in, AST& ast) {
+			ast.push(makeNode<Debug>(in.string()));
+		}
+	};
+
+	template <TokenType t, bool only = false> struct list_actions {
+		static void apply(input& in, AST& ast) {
+			auto list = makeNode<List>(t);
+			bool typed = false;
+
+			//if (ast.top()->to_string() == ",") ast.pop();				// Old code to handle two commas on stack top
+			
+			if (ast.top()->to_string() != ",")
+				ast.push(makeNode<Debug>(","));
+
+			while (!ast.empty() && ast.top()->to_string() == ",") {
+				ast.pop();
+				if (!only || ast.top()->token_type() == t) list->addChild(ast.pop());
+				else typed = true;
+			}
+
+			if (typed) ast.push(makeNode<Debug>(","));
+
+			ast.push(list);
+		}
+	};
+
+	template <> struct action<var_list> : list_actions<TokenType::Variable, true> {};
+	template <> struct action<expr_list> : list_actions<TokenType::Expr> {};
+
+	//*/
+	// This allows "a, b: 3, (d: 3)" (blocks the process that creates lists)
+		// I'm not sure if I should love this or hate it with a burning passion
+	template <> struct action<o_paren> {
+		static void apply(input& in, AST& ast) {
+			ast.push(makeNode<Debug>("("));
+		}
+	};
+
+	template <> struct action<c_paren> {
+		static void apply(input& in, AST& ast) {
+			ast.swap(); ast.pop();			// Might use some testing (empty parens)
+		}
+	};
+	//*/
+
 
 	// Number Actions
 	template <> struct action<number> {
@@ -117,7 +190,7 @@ namespace calculator {
 
 	// Atomic Actions
 	template <> struct action<unary> {
-		// See ExprAction for reasoning
+		// See ee_actions for reasoning?
 		static void apply(input& in, AST& ast) {
 			if (ast.size() >= 2) {
 				auto operand = ast.pop();
@@ -132,6 +205,7 @@ namespace calculator {
 
 
 	// Expression Actions
+		// Consider formalizing a shift-reduce framework here
 	struct ee_actions {
 		static void apply(input& in, AST& ast) {
 			// stack: ..., {lhs}, {op}, {rhs}
@@ -153,5 +227,4 @@ namespace calculator {
 	template <> struct action<ee_3> : ee_actions {};
 	template <> struct action<ee_4> : ee_actions {};
 	template <> struct action<ee_5> : ee_actions {};
-	//template <> struct action<expr_5> : ee_actions {};		// expr_4 could match expr_5, triggering the reduction (It still might be beneficial to formalize the shift-reduce framework)
 }

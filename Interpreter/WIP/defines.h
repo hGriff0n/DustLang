@@ -1,8 +1,12 @@
 #pragma once
 
 enum class ValType : int {
+	BOOL = 0,
 	INT = 1,
 	FLOAT = 2,
+	STRING = 3,
+	FUNCTION = 4,
+	TABLE = 6,
 };
 
 enum class TokenType : int {
@@ -12,5 +16,6 @@ enum class TokenType : int {
 	Variable = 3,
 	Expr = 98,
 	Debug = 99,
-	Assignment = 100,			// Remove
+	Assignment = 100,			// Temporary
+	List = 101,					// Temporary
 };

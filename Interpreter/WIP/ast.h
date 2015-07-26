@@ -124,11 +124,14 @@ class Variable : public ASTNode {
 class Assignment : public ASTNode {
 	protected:
 		std::string op;
+		bool compound;
+
+		// Should I move these to be member variables ???
 		node_ptr var() { return ASTNode::get(1); }	// 0 if lhs is first
 		node_ptr val() { return ASTNode::get(0); }
 
 	public:
-		Assignment(std::string assign_t) : ASTNode{ TokenType::Assignment }, op{ assign_t } {}
+		Assignment(std::string assign_t) : ASTNode{ TokenType::Assignment }, op{ assign_t.substr(1) }, compound{ assign_t != ":" } {}
 
 		std::string to_string();
 		EvalState& eval(EvalState&);
@@ -136,15 +139,24 @@ class Assignment : public ASTNode {
 
 //template <class N>
 class List : public ASTNode {
+	protected:
+		TokenType vals;
 
+	public:
+		List(TokenType t) : ASTNode{ TokenType::List }, vals{ t } {}
+
+		std::string to_string();
+		EvalState& eval(EvalState&);
+
+		int size() { return ASTNode::end() - ASTNode::begin(); }
 };
-
 
 
 EvalState& evaluate(ASTNode::node_ptr&, EvalState&);		// The return and arguments will change over time (should I return the eval state ???)
 
 std::string _type(Literal&);
 void clear(stack<ASTNode::node_ptr>&);
+std::string _typename(TokenType);
 std::string _typename(ASTNode&);
 
 template <typename T, typename... C>
