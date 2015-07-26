@@ -46,6 +46,11 @@ namespace calculator {
 	struct integer : plus<digit> {};												// [0-9]+
 	struct decimal : seq<plus<digit>, one<'.'>, star<digit>> {};					// [0-9]+\.[0-9]*
 	struct number : plus<digit> {};
+	struct boolean : sor<string<'t','r','u','e'>, string<'f','a','l','s','e'>> {};
+	struct str : seq<one<'"'>, star<any>, one<'"'>> {};			// Need to allow escape sequences
+
+	// Keyword Tokens
+
 
 	// Identifier Tokens
 	struct id_end : identifier_other {};
@@ -75,28 +80,16 @@ namespace calculator {
 	struct expr_3 : seq<expr_2, star<seps, ee_3>, seps> {};							// {expr_2}( *{op_3} *{expr_2})* *
 	struct ee_4 : if_must<op_4, seps, expr_3> {};
 	struct expr_4 : seq<expr_3, star<seps, ee_4>, seps> {};							// {expr_3}( *{op_4} *{expr_3})* *
-	//struct assign : seq<var_id, seps, op_5> {};										// assignments are right associative
-	//struct ee_5 : seq<assign, seps, expr_5> {};										// Ensure expr_4 never triggers the assignment reduction
-	//struct expr_5 : if_then_else<at<assign>, ee_5, expr_4> {};						// ({var_id} *{op_5} *{expr_5})|{expr_4}
-	// Workspace
-		// Change number_list to expr_list (intersection problems with var_list -> assignment. How to parse "e, f: g, h, i: 3, 4")
-		// Replace expr_5 with multiple assignment
 
 
 	// Optimize and integrate multiple assignment
 		// Can I utilize the lookahead phase to push var_id's onto the stack ???
-
-	
 	struct var_list : s_list<var_id> {};											// AST and lookahead? (seq<var_id, seps, sor<one<','>, op_5>>)  // this could technically match an expression list
-	//struct expr_list : s_list<expr_4> {};							// Chaining assignments doesn't work well currently
-	struct expr_list : s_list<expr_5> {};								// a, b: 3, c, d: 3, 4
-																			// Currently translates to "a, b: (3, c, d: 3, 4)". Completely nonsensical
+	struct expr_list : s_list<expr_5> {};											// {expr_5} *, *
 
-	struct assign : seq<var_list, seps, op_5> {};
-	struct ee_5 : seq<assign, seps, expr_list> {};
-	// I could define an action overload on at<assign> that pushes an empty Node on the stack
-		// Then just ensure that the node gets removed (I hate myself)
-	struct expr_5 : if_then_else<at<assign>, ee_5, expr_4> {};
+	struct assign : seq<var_list, seps, op_5> {};									// assignments are right associative
+	struct ee_5 : seq<assign, seps, expr_list> {};									// ensure that expr_4 doesn't trigger the expression reduction
+	struct expr_5 : if_then_else<at<assign>, ee_5, expr_4> {};						// {var_list} *{op_5} * {expr_list}
 
 
 
