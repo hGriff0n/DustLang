@@ -89,15 +89,13 @@ namespace calculator {
 	
 	struct var_list : s_list<var_id> {};											// AST and lookahead? (seq<var_id, seps, sor<one<','>, op_5>>)  // this could technically match an expression list
 	//struct expr_list : s_list<expr_4> {};							// Chaining assignments doesn't work well currently
-	struct expr_list : s_list<expr_5> {};								// a, b: b, c: 9  => a = b = c = 0			a, b: (b, c: 9[, 0])[, 0]
-																				// Isn't this how chaining technically works ???
-																				// a, b, c: 3, d, e: 4 => a = b = c = d = e = 0 (I at least need to understand why)
-																				// This is a by-product of how lists are constructed
-																					// There's a comma between the 3 and the d, so the 3 is included in the var_list
-																					// Then d, e: 0, 0 => (3, d, e: 4) = 0 => a, b, c: 0, 0, 0
-																				// a, b: b, (c: 9) => a = b = c = 0 (parsing it's equivalent to a, b: b, c: 9
-	struct assign : seq<var_list, seps, op_5> {};						// I can always allow this and warn against the dangers
+	struct expr_list : s_list<expr_5> {};								// a, b: 3, c, d: 3, 4
+																			// Currently translates to "a, b: (3, c, d: 3, 4)". Completely nonsensical
+
+	struct assign : seq<var_list, seps, op_5> {};
 	struct ee_5 : seq<assign, seps, expr_list> {};
+	// I could define an action overload on at<assign> that pushes an empty Node on the stack
+		// Then just ensure that the node gets removed (I hate myself)
 	struct expr_5 : if_then_else<at<assign>, ee_5, expr_4> {};
 
 
@@ -124,31 +122,30 @@ namespace calculator {
 		}
 	};
 
-	template <TokenType t> struct list_actions {
+	template <TokenType t, bool only = false> struct list_actions {
 		static void apply(input& in, AST& ast) {
 			auto list = makeNode<List>(t);
+			bool typed = false;
 
-			// Old code to handel two commas on top of stack (uncomment if list is changed to inherit from list_tail)
-			//if (ast.top()->to_string() == ",") ast.pop();
+			//if (ast.top()->to_string() == ",") ast.pop();				// Old code to handle two commas on stack top
 			
 			if (ast.top()->to_string() != ",")
 				ast.push(makeNode<Debug>(","));
 
 			while (!ast.empty() && ast.top()->to_string() == ",") {
 				ast.pop();
-				list->addChild(ast.pop());
+				if (!only || ast.top()->token_type() == t) list->addChild(ast.pop());
+				else typed = true;
 			}
 
-			// If there's only one element in the list, should I push the element instead (list->size() == 1)
+			if (typed) ast.push(makeNode<Debug>(","));
 
 			ast.push(list);
 		}
 	};
 
-	template <> struct action<var_list> : list_actions<TokenType::Variable> {};
+	template <> struct action<var_list> : list_actions<TokenType::Variable, true> {};
 	template <> struct action<expr_list> : list_actions<TokenType::Expr> {};
-	
-	// a, b: 3, (d: 3)
 
 	//*/
 	// This allows "a, b: 3, (d: 3)" (blocks the process that creates lists)
@@ -161,8 +158,7 @@ namespace calculator {
 
 	template <> struct action<c_paren> {
 		static void apply(input& in, AST& ast) {
-			auto t = ast.pop();
-			ast.pop();	ast.push(t);
+			ast.swap(); ast.pop();			// Might use some testing (empty parens)
 		}
 	};
 	//*/

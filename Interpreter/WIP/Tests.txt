@@ -1,3 +1,5 @@
+## Include more mundane "3 + 3" expressions here (also don't delete any)
+
 a: 1
 	a = 1
 	e = 1
@@ -37,25 +39,25 @@ a, b: 1, 2, 3
 	e = 2
 
 a, b:+ 2, 2
-	a = 5
-	b = 2
-	e = 2
+	a = 3
+	b = 4
+	e = 4
 
 a, b:- 2
-	a = 3
-	b = 2		// There's a good case that b:- 2 is a better semantic meaning here
-	e = 2
+	a = 1
+	b = 4		// There's a good case that b:- 2 is a better semantic meaning here
+	e = 4
 
 a, b, c: 3 + b, 4 - a, b ^ a
-	a = 5
-	b = 1
-	c = 8
-	e = 8
+	a = 7
+	b = 3
+	c = 4
+	e = 4
 
 a, b: 1, 2, (c: 3)
 	a = 1
 	b = 2
-	c = 8
+	c = 4
 	e = 2
 
 a, b: 3, (d: 3)
@@ -77,3 +79,13 @@ a, b: (c, d: 3), 4
 	c = 3
 	d = 0
 	e = 4
+
+a, b: 3, c, d: 3, 4
+	"a, b: 3, (c, d: 3, 4)" or "a, b: 3, c, (d: 3, 4)"
+	a = 3
+	b = ?	4
+	c = ?	3
+	d = ?	4
+	e = ?	4
+
+a, 3, b: 1, 2, 3  (no error)
