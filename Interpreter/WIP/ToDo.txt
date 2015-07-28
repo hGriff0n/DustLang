@@ -2,13 +2,14 @@
 Timeline
 	1 Type System
 		Generalized Stack (no stack<int>)
-		More literals (float, bool, string, etc.)
+		Recognize more literals (float, bool, string, etc.)
+			Use in expressions, assign to variables, etc.
 			Escaped characters in strings (this can be delayed though)
-		Improved variables (?)
+		Improved variables (???)
 		Type Inheritance/Heirarchy
 		Type Conversions
 		Type Inference/Errors (enable/disable "I'm " + name) (or in Function Calling)
-		Optional: let constness (or should this go into keywords)
+		let constness and static typing (the actual "binding" work can be a part of keywords, etc.)
 	2 Function Calling		print("Hello, World!")
 		Basic syntax and semantics (Argument passing, etc.)
 		Type functions (Wouldn't this necessitate tables though)

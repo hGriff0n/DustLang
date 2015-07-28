@@ -12,7 +12,7 @@ int main(int argc, const char* argv[]) {
 	vector<DustObj> generics;
 	generics.push_back(makeObj(3));
 	generics.push_back(makeObj(3.3));
-	generics.push_back(makeObj(false));
+	generics.push_back(makeObj(true));
 
 	cout << "::Test makeObj correctness::\n";
 	cout << _type(generics[0].type) << " " << (int)generics[0] << endl;
@@ -20,9 +20,28 @@ int main(int argc, const char* argv[]) {
 	cout << _type(generics[2].type) << " " << (bool)generics[2] << endl;
 
 	cout << "\n::Test DustObj conversions::\n";
-	cout << _type(generics[1].type) << " " << (double)generics[1] << " -> INT " << (int)generics[1] << endl;
-	cout << _type(generics[0].type) << " " << (int)generics[0] << " -> FLOAT " << (double)generics[0] << endl;
-	cout << _type(generics[2].type) << " " << (bool)generics[2] << " -> FLOAT " << (double)generics[2] << endl;
+	double g0 = generics[0];
+	int g1 = generics[1];
+	double g2 = generics[2];
+	cout << _type(generics[1].type) << " " << (double)generics[1] << " -> INT " << g1 << endl;
+	cout << _type(generics[0].type) << " " << (int)generics[0] << " -> FLOAT " << g0 << endl;
+	cout << _type(generics[2].type) << " " << (bool)generics[2] << " -> FLOAT " << g2 << endl;
+
+	cout << "\n::Test DustObj reassignment::\n";
+	generics[0] = 5.6;
+	generics[1] = false;
+	generics[2] = -2;
+	cout << _type(generics[0].type) << " " << (double)generics[0] << endl;
+	cout << _type(generics[1].type) << " " << (bool)generics[1] << endl;
+	cout << _type(generics[2].type) << " " << (int)generics[2] << endl;
+
+	cout << "\n::Test DustObj recasting::\n";
+	recast<int>(generics[0]);
+	recast<double>(generics[1]);
+	recast<bool>(generics[2]);
+	cout << _type(generics[0].type) << " " << (int)generics[0] << endl;
+	cout << _type(generics[1].type) << " " << (double)generics[1] << endl;
+	cout << _type(generics[2].type) << " " << (bool)generics[2] << endl;
 
 	cin.get();
 }
