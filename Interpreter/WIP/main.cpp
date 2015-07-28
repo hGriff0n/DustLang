@@ -6,6 +6,28 @@ template <typename T> void print(std::shared_ptr<T>&);
 template <typename T> void print(std::shared_ptr<T>&, std::string);
 
 int main(int argc, const char* argv[]) {
+	using namespace std;
+	// Test generic typing
+
+	vector<DustObj> generics;
+	generics.push_back(makeObj(3));
+	generics.push_back(makeObj(3.3));
+	generics.push_back(makeObj(false));
+
+	cout << "::Test makeObj correctness::\n";
+	cout << _type(generics[0].type) << " " << (int)generics[0] << endl;
+	cout << _type(generics[1].type) << " " << (double)generics[1] << endl;
+	cout << _type(generics[2].type) << " " << (bool)generics[2] << endl;
+
+	cout << "\n::Test DustObj conversions::\n";
+	cout << _type(generics[1].type) << " " << (double)generics[1] << " -> INT " << (int)generics[1] << endl;
+	cout << _type(generics[0].type) << " " << (int)generics[0] << " -> FLOAT " << (double)generics[0] << endl;
+	cout << _type(generics[2].type) << " " << (bool)generics[2] << " -> FLOAT " << (double)generics[2] << endl;
+
+	cin.get();
+}
+
+int tmp_old_main(int argc, const char* argv[]) {
 	std::cout << "Analyzing `calculator::grammar`....." << std::endl;
 	pegtl::analyze<calculator::grammar>();		// Analyzes the grammar
 	std::cout << "\n\n";

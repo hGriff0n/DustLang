@@ -36,8 +36,12 @@ std::string _typename(ASTNode& node) {
 }
 
 std::string _type(Literal& node) {
+	return _type(node.value_type());
+}
+
+std::string _type(ValType typ) {
 	// Or I could have ValType : std::string
-	switch (node.value_type()) {
+	switch (typ) {
 		case ValType::BOOL:					// 0
 			return "BOOL";
 		case ValType::INT:					// 1
@@ -51,9 +55,10 @@ std::string _type(Literal& node) {
 		case ValType::TABLE:				// 5
 			return "TABLE";
 		default:
-			return "Unrecognized Literal Type";
+			return "Unrecognized Type";
 	}
 }
+
 
 void clear(stack<ASTNode::node_ptr>& s) {
 	while (!s.empty())
@@ -92,8 +97,6 @@ EvalState& BinOp::eval(EvalState& state) {
 		// Also change how parsing lays out the data (optimized for the current expectation?)
 	rhs()->eval(lhs()->eval(state)).swap().call(oper);		// Call lhs, then rhs, then swap their positions on the stack, then call (operators expect stack = ..., {rhs}, {lhs})
 
-	//{...}.getStack().swap();								// Change EvalState::getStack to return stack&
-	//state.call(oper);										// Unless I pop and push intermediate arguments (how maintainable is this though)
 	return state;
 }
 

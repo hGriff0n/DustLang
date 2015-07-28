@@ -154,6 +154,7 @@ class List : public ASTNode {
 
 EvalState& evaluate(ASTNode::node_ptr&, EvalState&);		// The return and arguments will change over time (should I return the eval state ???)
 
+std::string _type(ValType);
 std::string _type(Literal&);
 void clear(stack<ASTNode::node_ptr>&);
 std::string _typename(TokenType);
