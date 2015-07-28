@@ -43,6 +43,18 @@ int main(int argc, const char* argv[]) {
 	cout << _type(generics[1].type) << " " << (double)generics[1] << endl;
 	cout << _type(generics[2].type) << " " << (bool)generics[2] << endl;
 
+	cout << "\n::Test DustObj constants::\n";
+	generics[1] = 5.5;
+	generics[1].let = true;
+	generics[1] = 3.3;
+	cout << _type(generics[1].type) << " " << (double)generics[1] << endl;
+
+	cout << "\n::Test DustObj let typing::\n";
+	generics[0] = 5;
+	generics[0].typed = true;
+	generics[0] = 3.3;
+	cout << _type(generics[0].type) << " " << (int)generics[0] << endl;
+
 	cin.get();
 }
 

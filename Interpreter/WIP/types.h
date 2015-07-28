@@ -2,9 +2,11 @@
 
 #include "defines.h"
 //#include "type_data.h"
+//#include <iostream>
 
 // Think of renaming these classes and functions (maybe easier if I move them into a namespace)
-
+// What about passing around DustObj (and have the conversion stuff there ???)
+// Can I improve the conversion system (currently heavily reliant on c-style casts)
 
 // size: 8
 union DustVal {
@@ -24,6 +26,12 @@ union DustVal {
 // maybe move to type_data
 template <typename T>
 struct Value {};
+
+// template <ValType T>
+//struct Vals {};				// needs a better name
+
+// template <> struct Vals<ValType::INT> { using type = Value<int>; }
+// template <> struct Value<int> { using type = Vals<ValType::INT>; }
 
 template <> struct Value<int> {
 	static const ValType type = ValType::INT;
@@ -109,13 +117,26 @@ DustObj makeObj(T val, bool typed = false, bool constant = false) {
 }
 
 template <typename T>
+DustVal convertTo(ValType type, T val) {
+	switch (type) {
+		case ValType::INT:
+		case ValType::BOOL:
+			return (int)val;
+		case ValType::FLOAT:
+			return (double)val;
+		default:
+			return 0;
+	}
+}
+
+template <typename T>
 void setObj(DustObj& o, T val) {
-	// if (o.let) throw error
-	// else
-	{
-		// if (o.typed) try conversion (to o.type)
-		// else
-		{
+	if (o.let)
+		0;		// throw error
+	else {
+		if (o.typed)
+			o.val = convertTo(o.type, val);
+		else {
 			o.type = Value<T>::type;
 			o.val = val;
 		}
@@ -124,15 +145,16 @@ void setObj(DustObj& o, T val) {
 
 template <typename T>
 void recast(DustObj& o) {
-	// if (o.typed) throw error
-	// else
-	{
+	if (o.typed)
+		0;		 //throw error
+	else {
 		o = (T)o;
 	}
 }
 
 // Needs:
-	// const and static bindings (disallow reassignment/other types)
-		// I can start to integrate this into the evaluate here
+	// Integrate this work into the existing framework (step 1 on ToDo)
+	// Improve basic functionality ???
 	// string data types
-	// Improve the syntax and api
+	// Improve the syntax, api, and capabilities
+		// steps 4-7 on ToDo

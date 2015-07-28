@@ -2,6 +2,7 @@
 Timeline
 	1 Type System
 		Generalized Stack (no stack<int>)
+		let constness and static typing (the actual "binding" work can be a part of keywords, etc.)
 		Recognize more literals (float, bool, string, etc.)
 			Use in expressions, assign to variables, etc.
 			Escaped characters in strings (this can be delayed though)
@@ -9,7 +10,6 @@ Timeline
 		Type Inheritance/Heirarchy
 		Type Conversions
 		Type Inference/Errors (enable/disable "I'm " + name) (or in Function Calling)
-		let constness and static typing (the actual "binding" work can be a part of keywords, etc.)
 	2 Function Calling		print("Hello, World!")
 		Basic syntax and semantics (Argument passing, etc.)
 		Type functions (Wouldn't this necessitate tables though)
@@ -27,7 +27,10 @@ Timeline
 	...
 
 Other
-	Make stack throw exceptions when out of data, etc. (ie. Exceptions and error handling)
+	Exceptions and error handling
+		Stack out of data
+		No defined conversion
+		...
 	Make the parser reject ill-formed input
 
 Notes (In case I forget some of my decisions)
