@@ -3,8 +3,10 @@
 #include <map>
 #include <string>
 #include <functional>
+
 #include "stack.h"
-#include <iostream>
+#include "types.h"
+//#include <iostream>
 
 // Run-time state
 
@@ -19,10 +21,9 @@ typedef std::function<int(EvalState&)> DustFunc;
 class EvalState {
 	private:
 		std::map<std::string, DustFunc> calc_rules;			// I can extend this to be the "global" environment
-		std::map<std::string, int> globals;
+		std::map<std::string, DustObj> globals;
 		//std::vector<Table> globals; int curr_global;
-		stack<int> ss;
-		//stack<DustValue> ss;
+		stack<DustObj> _call;
 
 	protected:
 	public:
@@ -30,25 +31,20 @@ class EvalState {
 
 		EvalState& reg_func(std::string, const DustFunc&);
 
-		EvalState& push(int v) {
-			ss.push(v);
+		// Generic stack
+		template <typename T>
+		EvalState& push(T v) {
+			_call.push(makeObj(v));
 			return *this;
 		}
-		int pop() {
-			return ss.pop();
+		DustObj pop() {
+			return _call.pop();
 		}
-		int top() {
-			return ss.top();
-		}
-
-		std::vector<int> getStack() {
-			return ss.get();
+		DustObj top() {
+			return _call.top();
 		}
 
-		EvalState& swap() {
-			ss.swap();
-			return *this;
-		}
+		EvalState& swap();
 		
 		// I don't like this interface
 		int call(std::string);
@@ -56,6 +52,11 @@ class EvalState {
 		//EvalState& call(std::string, int, int);
 
 		// Temporary interface for variables
-		void set(std::string, int);
-		int get(std::string);
+		template <typename T>
+		void set(std::string var, T val) {
+			globals[var] = makeObj(val);
+		}
+		DustObj get(std::string);
 };
+
+void addOperators(EvalState&);

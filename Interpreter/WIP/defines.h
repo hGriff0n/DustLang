@@ -1,12 +1,14 @@
 #pragma once
 
+// Ensure that the common type of two types is always the biggest
+	// ie. commonType(INT, FLOAT) == FLOAT, commonType(STRING, FUNCTION) == FUNCTION
 enum class ValType : int {
 	BOOL = 0,
 	INT = 1,
 	FLOAT = 2,
 	STRING = 3,
-	FUNCTION = 4,
 	TABLE = 6,
+	FUNCTION = 7,
 };
 
 enum class TokenType : int {

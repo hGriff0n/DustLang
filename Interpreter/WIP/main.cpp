@@ -5,7 +5,8 @@
 template <typename T> void print(std::shared_ptr<T>&);
 template <typename T> void print(std::shared_ptr<T>&, std::string);
 
-int main(int argc, const char* argv[]) {
+//int main(int argc, const char* argv[]) {
+int t_main(int argc, const char* argv[]) {
 	using namespace std;
 	// Test generic typing
 
@@ -15,50 +16,52 @@ int main(int argc, const char* argv[]) {
 	generics.push_back(makeObj(true));
 
 	cout << "::Test makeObj correctness::\n";
-	cout << _type(generics[0].type) << " " << (int)generics[0] << endl;
-	cout << _type(generics[1].type) << " " << (double)generics[1] << endl;
-	cout << _type(generics[2].type) << " " << (bool)generics[2] << endl;
+	cout << _type(generics[0].type) << " " << generics[0] << endl;
+	cout << _type(generics[1].type) << " " << generics[1] << endl;
+	cout << _type(generics[2].type) << " " << generics[2] << endl;
 
 	cout << "\n::Test DustObj conversions::\n";
-	double g0 = generics[0];
-	int g1 = generics[1];
-	double g2 = generics[2];
-	cout << _type(generics[1].type) << " " << (double)generics[1] << " -> INT " << g1 << endl;
-	cout << _type(generics[0].type) << " " << (int)generics[0] << " -> FLOAT " << g0 << endl;
-	cout << _type(generics[2].type) << " " << (bool)generics[2] << " -> FLOAT " << g2 << endl;
+	double g0 = (double)generics[0];
+	int g1 = (int)generics[1];
+	double g2 = (double)generics[2];
+	cout << _type(generics[1].type) << " " << generics[1] << " -> INT " << g1 << endl;
+	cout << _type(generics[0].type) << " " << generics[0] << " -> FLOAT " << g0 << endl;
+	cout << _type(generics[2].type) << " " << generics[2] << " -> FLOAT " << g2 << endl;
 
 	cout << "\n::Test DustObj reassignment::\n";
 	generics[0] = 5.6;
 	generics[1] = false;
 	generics[2] = -2;
-	cout << _type(generics[0].type) << " " << (double)generics[0] << endl;
-	cout << _type(generics[1].type) << " " << (bool)generics[1] << endl;
-	cout << _type(generics[2].type) << " " << (int)generics[2] << endl;
+	cout << _type(generics[0].type) << " " << generics[0] << endl;
+	cout << _type(generics[1].type) << " " << generics[1] << endl;
+	cout << _type(generics[2].type) << " " << generics[2] << endl;
 
 	cout << "\n::Test DustObj recasting::\n";
 	recast<int>(generics[0]);
 	recast<double>(generics[1]);
 	recast<bool>(generics[2]);
-	cout << _type(generics[0].type) << " " << (int)generics[0] << endl;
-	cout << _type(generics[1].type) << " " << (double)generics[1] << endl;
-	cout << _type(generics[2].type) << " " << (bool)generics[2] << endl;
+	cout << _type(generics[0].type) << " " << generics[0] << endl;
+	cout << _type(generics[1].type) << " " << generics[1] << endl;
+	cout << _type(generics[2].type) << " " << generics[2] << endl;
 
 	cout << "\n::Test DustObj constants::\n";
 	generics[1] = 5.5;
 	generics[1].let = true;
 	generics[1] = 3.3;
-	cout << _type(generics[1].type) << " " << (double)generics[1] << endl;
+	cout << _type(generics[1].type) << " " << generics[1] << endl;
 
 	cout << "\n::Test DustObj let typing::\n";
 	generics[0] = 5;
 	generics[0].typed = true;
 	generics[0] = 3.3;
-	cout << _type(generics[0].type) << " " << (int)generics[0] << endl;
+	cout << _type(generics[0].type) << " " << generics[0] << endl;
 
 	cin.get();
+	return 0;
 }
 
-int tmp_old_main(int argc, const char* argv[]) {
+//int old_main(int argc, const char* argv[]) {
+int main(int argc, const char* argv[]) {
 	std::cout << "Analyzing `calculator::grammar`....." << std::endl;
 	pegtl::analyze<calculator::grammar>();		// Analyzes the grammar
 	std::cout << "\n\n";
@@ -70,23 +73,7 @@ int tmp_old_main(int argc, const char* argv[]) {
 	// or autoLua-type metaprogramming (this will take longer but is more extensible)
 	// or have lua-style calling convention (I can append to autoLua metaprogramming wrapper easily on top of this)
 
-	// What's the purpose of the return statement then?? (Currently how many values were pushed on the stack)
-	state.reg_func("_op+", [](EvalState& s) { s.push(s.pop() + s.pop()); return 1; });											// Relies on arguments being evaluated right->left
-	state.reg_func("_op*", [](EvalState& s) { s.push(s.pop() * s.pop()); return 1; });
-	state.reg_func("_op-", [](EvalState& s) { s.push(s.pop() - s.pop()); return 1; });
-	state.reg_func("_op/", [](EvalState& s) { s.push(s.pop()/s.pop()); return 1; });
-	state.reg_func("_op=", [](EvalState& s) { s.push(s.pop() == s.pop()); return 1; });
-	state.reg_func("_op<", [](EvalState& s) { s.push(s.pop() < s.pop()); return 1; });
-	state.reg_func("_op>", [](EvalState& s) { s.push(s.pop() > s.pop()); return 1; });
-	state.reg_func("_op^", [](EvalState& s) { float base = s.pop(); s.push((int)pow(base, (float)s.pop())); return 1; });
-	state.reg_func("_op<=", [](EvalState& s) { s.push(s.pop() <= s.pop()); return 1; });
-	state.reg_func("_op>=", [](EvalState& s) { s.push(s.pop() >= s.pop()); return 1; });
-	state.reg_func("_op!=", [](EvalState& s) { s.push(s.pop() != s.pop()); return 1; });
-	state.reg_func("_op%", [](EvalState& s) { s.push(s.pop() % s.pop()); return 1; });			// Not an "official" operator
-	state.reg_func("_ou-", [](EvalState& s) { s.push(-s.pop()); return 1; });
-	state.reg_func("_ou!", [](EvalState& s) { s.push(!s.pop()); return 1; });
-	state.reg_func("print", [](EvalState& s) { std::cout << s.pop() << std::endl; return 0; });			// These functions need more "features" (print("H","e", "l","l","o" ) => H\ne\nl\nl\no\n
-
+	addOperators(state);
 	std::string input;
 
 	std::cout << "> ";
@@ -95,7 +82,7 @@ int tmp_old_main(int argc, const char* argv[]) {
 			if (input == "clear")
 				system("cls");
 			else if (input == "pop")
-				std::cout << "::" << state.pop() << std::endl;
+				std::cout << ":: " << state.pop() << std::endl;
 			else {
 				pegtl::parse<calculator::grammar, calculator::action>(input, input, parse_tree);	// Still don't know the entire point of the second argument
 

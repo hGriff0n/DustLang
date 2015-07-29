@@ -8,7 +8,7 @@
 
 class EvalState;
 
-// Run a fine-grained finger over these classes and ensure they only have what they need
+// Run a fine-grained finger over these classes and ensure they only have what they need (Definately need to clean this up)
 class ASTNode {
 	public:
 		typedef std::shared_ptr<ASTNode> node_ptr;
@@ -153,11 +153,11 @@ class List : public ASTNode {
 
 
 EvalState& evaluate(ASTNode::node_ptr&, EvalState&);		// The return and arguments will change over time (should I return the eval state ???)
-
-std::string _type(ValType);
-std::string _type(Literal&);
 void clear(stack<ASTNode::node_ptr>&);
-std::string _typename(TokenType);
+
+std::string _type(ValType);							// Get the value's type
+std::string _type(Literal&);
+std::string _typename(TokenType);					// Get the token name
 std::string _typename(ASTNode&);
 
 template <typename T, typename... C>

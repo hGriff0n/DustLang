@@ -45,9 +45,9 @@ namespace calculator {
 	// Literal Tokens
 	struct integer : plus<digit> {};												// [0-9]+
 	struct decimal : seq<plus<digit>, one<'.'>, star<digit>> {};					// [0-9]+\.[0-9]*
-	struct number : plus<digit> {};
 	struct boolean : sor<string<'t','r','u','e'>, string<'f','a','l','s','e'>> {};
 	struct str : seq<one<'"'>, star<any>, one<'"'>> {};			// Need to allow escape sequences
+	struct literals : sor<decimal, integer, boolean, str> {};
 
 	// Keyword Tokens
 
@@ -71,7 +71,7 @@ namespace calculator {
 	struct parens : if_must<o_paren, seps, expr, seps, c_paren> {};
 
 	// Expression Tokens
-	struct expr_0 : sor<number, var_id, unary, parens> {};							// {number}|{var_id}|{unary}|{parens}
+	struct expr_0 : sor<literals, var_id, unary, parens> {};							// {number}|{var_id}|{unary}|{parens}
 	struct ee_1 : if_must<op_1, seps, expr_0> {};									// Structures the parsing to allow the ast to be constructed left->right
 	struct expr_1 : seq<expr_0, star<seps, ee_1>, seps> {};							// {expr_0}( *{op_1} *{expr_0})* *
 	struct ee_2 : if_must<op_2, seps, expr_1> {};									// change name to left_assoc_# (or something similar)
@@ -158,9 +158,21 @@ namespace calculator {
 
 
 	// Number Actions
-	template <> struct action<number> {
+	template <> struct action<decimal> {
+		static void apply(const input& in, AST& ast) {
+			ast.push(makeNode<Literal>(in.string(), ValType::FLOAT));
+		}
+	};
+
+	template <> struct action<integer> {
 		static void apply(const input& in, AST& ast) {
 			ast.push(makeNode<Literal>(in.string(), ValType::INT));
+		}
+	};
+
+	template <> struct action<boolean> {
+		static void apply(const input& in, AST& ast) {
+			ast.push(makeNode<Literal>("1", ValType::BOOL));
 		}
 	};
 

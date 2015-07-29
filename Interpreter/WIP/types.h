@@ -2,7 +2,7 @@
 
 #include "defines.h"
 //#include "type_data.h"
-//#include <iostream>
+#include <iostream>
 
 // Think of renaming these classes and functions (maybe easier if I move them into a namespace)
 // What about passing around DustObj (and have the conversion stuff there ???)
@@ -11,6 +11,7 @@
 // size: 8
 union DustVal {
 	int i;
+	// long long i;				// sizeof(long long) == sizeof(double)
 	double d;
 	//void* u;
 
@@ -89,11 +90,13 @@ struct DustObj {
 	DustVal val;			// 8
 	bool typed, let;		// 2
 
+	DustObj() {}
 	DustObj(ValType t, DustVal v) : DustObj{ t, v, false, false } {}
 	DustObj(ValType t, DustVal v, bool s, bool c) : type{ t }, val{ v }, typed{ s }, let{ c } {}
 
+	// the 'explicit' allows the operator<< override to be selected but dirties the code (I'm probably going to change this later)
 	template <typename T>
-	operator T() {
+	explicit operator T() {
 		return Value<T>::convert(val, type);
 	}
 
@@ -102,17 +105,25 @@ struct DustObj {
 		setObj(*this, val);
 		return *this;
 	}
+
+	//bool operator==(DustObj& other);		// Quick Table equality??
 };
 
-/*
+inline ValType commonType(DustObj& l, DustObj& r) {
+	return static_cast<ValType>(__max(static_cast<int>(l.type), static_cast<int>(r.type)));			// Assumes the typing structure in 
+}
+
 template <typename T>
 DustObj makeObj(T val) {
 	return makeObj(val, false, false);
 }
-*/
 
-template <typename T>			// it might be beneficial to remove the default arguments (constant and not typed). The default is then a no-argument function (or require all args)
-DustObj makeObj(T val, bool typed = false, bool constant = false) {
+inline DustObj makeObj(DustObj val) {
+	return val;
+}
+
+template <typename T>
+DustObj makeObj(T val, bool typed, bool constant) {
 	return DustObj{ Value<T>::type, val, typed, constant };
 }
 
@@ -152,9 +163,31 @@ void recast(DustObj& o) {
 	}
 }
 
+template <class stream>
+stream& operator<<(stream& out, DustObj val) {
+	switch (val.type) {
+		case ValType::INT:
+		case ValType::BOOL:
+			out << val.val.i; break;
+		case ValType::FLOAT:
+			out << val.val.d; break;
+		default:
+			break;
+	}
+
+	return out;
+}
+
 // Needs:
 	// Integrate this work into the existing framework (step 1 on ToDo)
 	// Improve basic functionality ???
+		// Make the "type" data a bit more fluid
+			// This has a lot of reprecussions
+			// This is a precursor of the type heirarchy
+		// Setup the framework to consider metamethods
+		// Further generalize ???
 	// string data types
 	// Improve the syntax, api, and capabilities
 		// steps 4-7 on ToDo
+	// Eventually move this system to the type_traits style in "type_traits.h" and similar to autoLua
+		// rework and improve the system while doing this

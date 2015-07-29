@@ -79,7 +79,16 @@ EvalState& ASTNode::eval(EvalState& state) {
 }
 
 EvalState& Literal::eval(EvalState& state) {
-	state.push(std::stoi(val));
+	switch (type) {
+		case ValType::INT:
+		case ValType::BOOL:
+			state.push(std::stoi(val)); break;		// std::stoll;
+		case ValType::FLOAT:
+			state.push(std::stod(val)); break;
+		default:
+			state.push(0);
+	}
+
 	return state;
 }
 

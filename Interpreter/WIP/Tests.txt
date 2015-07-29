@@ -20,7 +20,7 @@ true
 "Hello, World!"
 	e = Hello, World!
 
-## Check assignments
+## Check assignments (Sprinkle other types in here)
 a: 1
 	a = 1
 	e = 1
