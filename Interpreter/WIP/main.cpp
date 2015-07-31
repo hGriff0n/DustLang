@@ -62,9 +62,11 @@ int t_main(int argc, const char* argv[]) {
 
 //int old_main(int argc, const char* argv[]) {
 int main(int argc, const char* argv[]) {
-	std::cout << "Analyzing `calculator::grammar`....." << std::endl;
+	using namespace std;
+
+	cout << "Analyzing `calculator::grammar`....." << endl;
 	pegtl::analyze<calculator::grammar>();		// Analyzes the grammar
-	std::cout << "\n\n";
+	cout << "\n\n";
 
 	calculator::AST parse_tree;
 	EvalState state;
@@ -74,17 +76,21 @@ int main(int argc, const char* argv[]) {
 	// or have lua-style calling convention (I can append to autoLua metaprogramming wrapper easily on top of this)
 
 	addOperators(state);
-	std::string input;
+	string input;
 
-	std::cout << "> ";
-	while (std::getline(std::cin, input) && input != "exit") {									// see pegtl/sum.cc for "string" parse ???
+	cout << "> ";
+	while (getline(cin, input) && input != "exit") {									// see pegtl/sum.cc for "string" parse ???
 		try {
 			if (input == "clear")
 				system("cls");
 			else if (input == "pop")
-				std::cout << ":: " << state.pop() << std::endl;
+				cout << ":: " << state.pop() << endl;
 			else if (input == "size")
-				std::cout << ":: " << str_size() << std::endl;
+				cout << ":: " << str_size() << endl;
+			else if (input.size() > 4 && input.substr(0, 4) == "num ")
+				cout << num_of(input.substr(4)) << endl;
+			else if (input == "all_strings")
+				all_strings();
 			else {
 				pegtl::parse<calculator::grammar, calculator::action>(input, input, parse_tree);	// Still don't know the entire point of the second argument
 
@@ -94,11 +100,11 @@ int main(int argc, const char* argv[]) {
 				//*/
 				print(parse_tree.top());
 				evaluate(parse_tree.pop(), state);
-				std::cout << ":: " << state.pop() << std::endl;
+				cout << ":: " << state.pop() << endl;
 				//*/
 			}
 		} catch (pegtl::parse_error& e) {
-			std::cout << e.what() << std::endl;
+			cout << e.what() << endl;
 
 			clear(parse_tree);
 		} // catch stack exceptions

@@ -1,5 +1,4 @@
 #include "state.h"
-#include <iostream>
 
 EvalState& EvalState::reg_func(std::string name, const DustFunc& rule) {
 	calc_rules[name] = rule;
@@ -34,6 +33,7 @@ void addOperators(EvalState& state) {
 			case ValType::FLOAT:
 				s.push((double)l + (double)r); return 1;
 			case ValType::STRING:
+				//s.push(add_string(l, r)); return 1;			// I can "possibly" do very precise manipulations
 				s.push((string)l + (string)r); return 1;
 				// add string
 			default:
@@ -228,15 +228,64 @@ void addOperators(EvalState& state) {
 }
 
 
-static std::string* storage = new std::string[100];
-static std::string* next = storage;
+#include <unordered_map>
 
-std::string* store(std::string s) {
-	if (next - storage >= 100) throw "";
-	*next = s;
-	return next++;
+struct str_record {
+	int n;
+	std::string s;
+};
+
+static const int MAX_STRS = 100;
+static str_record* storage = new str_record[MAX_STRS];
+static str_record* open = storage;
+static std::unordered_map<std::string, str_record*> registry{};
+
+// Improvement: Garbage collection
+	// Add a stack to next_record (to fill holes)
+// Improvement: Dynamic Memory
+// Improvement: Reduce storage duration of temporary values (I don't even use remove yet)
+	// Or find a way to eliminate the storage of temps
+
+//*/
+str_record* next_record() {
+	if (str_size() == MAX_STRS) throw "Reached Max Number of Strings";
+	return open++;
+}
+
+str_record* store(std::string s) {
+	str_record* ret = nullptr;
+
+	if (registry.count(s) == 0) {			// New (or collected) string
+		registry[s] = next_record();
+		ret = registry[s];
+		ret->n = 0;
+		ret->s = s;
+	} else
+		ret = registry[s];
+
+	++(ret->n);
+	return ret;
+}
+
+std::string recall(str_record* r) {
+	return r->s;
+}
+
+void remove(str_record* r) {
+	--(r->n);
+	r = nullptr;				// this does not delete what's at r
 }
 
 int str_size() {
-	return next - storage;
+	return open - storage;
+}
+
+int num_of(std::string s) {
+	return registry[s]->n;
+}
+
+void all_strings() {
+	for (auto it : registry)
+		std::cout << it.first << " :: " << it.second->n << std::endl;
+	// even temporary strings have it.second->n == 1
 }

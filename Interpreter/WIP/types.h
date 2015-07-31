@@ -5,6 +5,8 @@
 //#include "type_data.h"
 #include <iostream>
 
+struct str_record;
+
 // Think of renaming these classes and functions (maybe easier if I move them into a namespace)
 	// Also think of splitting into many files (this is getting to be a bit unwieldy and type_traits doesn't need to know all that many details)
 // What about passing around DustObj (and have the conversion stuff there ???)
@@ -14,26 +16,26 @@
 union DustVal {
 	int i;					// long long i;				// sizeof(long long) == sizeof(double)
 	double d;
-	std::string* s;
+	str_record* s;
 	//void* u;
 
 	DustVal() {}
 	DustVal(int value) : i{ value } {}
 	DustVal(double value) : d{ value } {}
-	DustVal(std::string* value) : s{ value } {}
+	DustVal(str_record* value) : s{ value } {}
 	DustVal(DustVal& copy) {
 		*this = copy;
 	}
 };
 
-// How to store strings ????
-	// Can I improve this to be tied to the EvalState (I certainly can tie it to threads)
-	// Currently this uses a static array in state.cpp
-		// Uses new entries for each entry
-		// Very small (size 100)
-		// Don't like the general implementation
-std::string* store(std::string);
+// Improve String storage (especially in regards to temporary values)
+str_record* next_record();
+str_record* store(std::string);
+std::string recall(str_record*);
+void remove(str_record*);
 int str_size();
+int num_of(std::string);
+void all_strings();
 
 
 // maybe move to type_data
@@ -53,7 +55,7 @@ template <> struct Value<int> {
 			case ValType::FLOAT:
 				return val.d;
 			case ValType::STRING:
-				return std::stoi(*val.s);
+				return std::stoi(recall(val.s));
 			default:
 				return 0;				// throw error
 		}
@@ -74,7 +76,7 @@ template <> struct Value<double> {
 			case ValType::FLOAT:
 				return val.d;
 			case ValType::STRING:
-				return std::stod(*val.s);
+				return std::stod(recall(val.s));
 			default:
 				return 0;				// throw error
 		}
@@ -94,7 +96,7 @@ template <> struct Value<bool> {
 			case ValType::FLOAT:
 				return val.d;
 			case ValType::STRING:
-				//return std::stoi(*val.s);			// true -> 1 ????
+				//return std::stoi(recall(val.s));
 			default:
 				return 0;				// throw error
 		}
@@ -115,13 +117,13 @@ template <> struct Value<std::string> {
 			case ValType::FLOAT:
 				return std::to_string(val.d);
 			case ValType::STRING:
-				return *val.s;
+				return recall(val.s);
 			default:
 				return "";
 		}
 	}
 
-	static std::string* value(std::string val) {
+	static str_record* value(std::string val) {
 		return store(val);
 	}
 };
@@ -152,9 +154,11 @@ struct DustObj {
 	//bool operator==(DustObj& other);		// Quick Table equality??
 };
 
-
+// commonType is more of a test of converting between two disjoint types
+// lub is a traversal up the type tree
+//inline ValType commonType(DustObj& l, DustObj& r) {
 inline ValType lub(DustObj& l, DustObj& r) {
-	return static_cast<ValType>(__max(static_cast<int>(l.type), static_cast<int>(r.type)));			// Assumes the typing structure in 
+	return static_cast<ValType>(__max(static_cast<int>(l.type), static_cast<int>(r.type)));			// Assumes the typing structure in defines
 }
 
 /*/
@@ -232,7 +236,7 @@ stream& operator<<(stream& out, DustObj val) {
 		case ValType::FLOAT:
 			out << val.val.d; break;
 		case ValType::STRING:
-			out << *val.val.s; break;
+			out << recall(val.val.s); break;
 		default:
 			break;
 	}
