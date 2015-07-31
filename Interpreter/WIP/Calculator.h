@@ -24,6 +24,13 @@ namespace calculator {
 	struct comma; struct sep;
 	template <typename Rule, typename Sep, typename Pad>							// Covers pegtl::list (apes list_tail)
 	struct list : seq<pegtl::list<Rule, Sep, Pad>, opt<star<Pad>, disable<Sep>>> {};	// Prevents the comma action from being called multiple times (is this necessary?)
+	//template <typename If, typename Then, typename Else = failure>
+	//struct if_at : if_then_else<at<If>, Then, Else> {};
+	template <typename Rule>
+	struct unless : if_then_else<at<Rule>, failure, any> {};
+	//struct unless : if_at<Rule, failure, any> {};
+
+	// Can I move these under "Readability"
 	template <typename Rule>
 	struct w_list : list<Rule, comma, sep> {};										// Weak list, allows trailing comma		// I could add the Sep template and pass in comma everywhere (arguably more extensible, don't need the forward declaration) or I could just move these after "Readability"
 	template <typename Rule>
@@ -33,6 +40,7 @@ namespace calculator {
 	struct expr;
 	struct expr_0;
 	struct expr_5;
+	struct str;
 
 	// "Readability" Tokens
 	struct sep : one<' '> {};
@@ -40,13 +48,16 @@ namespace calculator {
 	struct o_paren : one<'('> {};
 	struct c_paren : one<')'> {};
 	struct comma : one<','> {};
+	struct quote : one<'"'> {};
+	struct esc : one<'\\'> {};		// % ???
 	struct comment : if_must<two<'#'>, until<eolf>> {};								// ##.*
 
 	// Literal Tokens
 	struct integer : plus<digit> {};												// [0-9]+
 	struct decimal : seq<plus<digit>, one<'.'>, star<digit>> {};					// [0-9]+\.[0-9]*
 	struct boolean : sor<string<'t','r','u','e'>, string<'f','a','l','s','e'>> {};
-	struct str : seq<one<'"'>, star<any>, one<'"'>> {};			// Need to allow escape sequences
+	struct body : plus<sor<seq<esc, quote>, unless<quote>>> {};
+	struct str : seq<quote, opt<body>, quote> {};
 	struct literals : sor<decimal, integer, boolean, str> {};
 
 	// Keyword Tokens
@@ -58,20 +69,19 @@ namespace calculator {
 	struct var_id : seq<range<'a', 'z'>, star<id_end>> {};							// [a-z]{id_end}*
 
 	// Operator Tokens
-	struct op_0 : sor<one<'!'>, one<'-'>> {};			// unary operators
-	struct op_1 : sor<one<'^'>> {};
-	struct op_2 : sor<one<'*'>, one<'/'>> {};
-	struct op_3 : sor<one<'+'>, one<'-'>, one<'%'>> {};
-	struct op_4 : sor<string<'<', '='>, string<'>', '='>, string<'!', '='>, one<'<'>, one<'='>, one<'>'>> {};		// A tad "crude"
-	struct op_5 : sor < string<':', '^'>, string<':', '*'>, string<':', '/'>, string<':', '+'>, string<':', '-'>,		// Assignment operators
-		string<':', '%'>, string<':', '<'>, string<':', '='>, string<':', '>'>, one < ':' >> {};			// Should :>=, :<=, and :!= be valid operators ???
+	struct op_0 : one<'!', '-'> {};													// unary operators
+	struct op_1 : one<'^'> {};
+	struct op_2 : one<'*', '/'> {};
+	struct op_3 : one<'+', '-', '%'> {};
+	struct op_4 : sor<string<'<', '='>, string<'>', '='>, string<'!', '='>, one<'<', '=', '>'>> {};					// A tad "crude"
+	struct op_5 : seq<one<':'>, opt<one<'^', '*', '/', '+', '-', '%', '<', '=', '>'>>> {};							// Assignment operators (should :>=, :<=, and :!= be valid???)
 
 	// Atomic Tokens
 	struct unary : seq<op_0, expr_0> {};
 	struct parens : if_must<o_paren, seps, expr, seps, c_paren> {};
 
 	// Expression Tokens
-	struct expr_0 : sor<literals, var_id, unary, parens> {};							// {number}|{var_id}|{unary}|{parens}
+	struct expr_0 : sor<literals, var_id, unary, parens> {};						// {number}|{var_id}|{unary}|{parens}
 	struct ee_1 : if_must<op_1, seps, expr_0> {};									// Structures the parsing to allow the ast to be constructed left->right
 	struct expr_1 : seq<expr_0, star<seps, ee_1>, seps> {};							// {expr_0}( *{op_1} *{expr_0})* *
 	struct ee_2 : if_must<op_2, seps, expr_1> {};									// change name to left_assoc_# (or something similar)
@@ -109,55 +119,14 @@ namespace calculator {
 	struct action : nothing<Rule> {};
 
 	// Workspace
-	template <> struct action<comma> {
-		static void apply(input& in, AST& ast) {
-			ast.push(makeNode<Debug>(in.string()));
+	template <> struct action<body> {
+		static void apply(const input& in, AST& ast) {
+			// Should I perform escaping here or at eval?
+			ast.push(makeNode<Literal>(in.string(), ValType::STRING));
 		}
 	};
 
-	template <TokenType t, bool only = false> struct list_actions {
-		static void apply(input& in, AST& ast) {
-			auto list = makeNode<List>(t);
-			bool typed = false;
-
-			//if (ast.top()->to_string() == ",") ast.pop();				// Old code to handle two commas on stack top
-			
-			if (ast.top()->to_string() != ",")
-				ast.push(makeNode<Debug>(","));
-
-			while (!ast.empty() && ast.top()->to_string() == ",") {
-				ast.pop();
-				if (!only || ast.top()->token_type() == t) list->addChild(ast.pop());
-				else typed = true;
-			}
-
-			if (typed) ast.push(makeNode<Debug>(","));
-
-			ast.push(list);
-		}
-	};
-
-	template <> struct action<var_list> : list_actions<TokenType::Variable, true> {};
-	template <> struct action<expr_list> : list_actions<TokenType::Expr> {};
-
-	//*/
-	// This allows "a, b: 3, (d: 3)" (blocks the process that creates lists)
-		// I'm not sure if I should love this or hate it with a burning passion
-	template <> struct action<o_paren> {
-		static void apply(input& in, AST& ast) {
-			ast.push(makeNode<Debug>("("));
-		}
-	};
-
-	template <> struct action<c_paren> {
-		static void apply(input& in, AST& ast) {
-			ast.swap(); ast.pop();			// Might use some testing (empty parens)
-		}
-	};
-	//*/
-
-
-	// Number Actions
+	// Literal Actions
 	template <> struct action<decimal> {
 		static void apply(const input& in, AST& ast) {
 			ast.push(makeNode<Literal>(in.string(), ValType::FLOAT));
@@ -239,4 +208,53 @@ namespace calculator {
 	template <> struct action<ee_3> : ee_actions {};
 	template <> struct action<ee_4> : ee_actions {};
 	template <> struct action<ee_5> : ee_actions {};
+
+
+	// List Actions
+	template <TokenType t, bool only = false> struct list_actions {
+		static void apply(input& in, AST& ast) {
+			auto list = makeNode<List>(t);
+			bool typed = false;
+
+			//if (ast.top()->to_string() == ",") ast.pop();				// Old code to handle two commas on stack top
+
+			if (ast.top()->to_string() != ",")
+				ast.push(makeNode<Debug>(","));
+
+			while (!ast.empty() && ast.top()->to_string() == ",") {
+				ast.pop();
+				if (!only || ast.top()->token_type() == t) list->addChild(ast.pop());
+				else typed = true;
+			}
+
+			if (typed) ast.push(makeNode<Debug>(","));
+
+			ast.push(list);
+		}
+	};
+
+	template <> struct action<var_list> : list_actions<TokenType::Variable, true> {};
+	template <> struct action<expr_list> : list_actions<TokenType::Expr> {};
+	//template <> struct action<arg_list> : list_actions<TokenType::Arg, true> {};
+	//template <> struct action<tbl_list> : list_actions<TokenType::Field> {};			// true?
+
+
+	// Other Actions
+	template <> struct action<o_paren> {
+		static void apply(input& in, AST& ast) {
+			ast.push(makeNode<Debug>("("));
+		}
+	};
+
+	template <> struct action<c_paren> {
+		static void apply(input& in, AST& ast) {
+			ast.swap(); ast.pop();			// Might use some testing (empty parens)
+		}
+	};
+
+	template <> struct action<comma> {
+		static void apply(input& in, AST& ast) {
+			ast.push(makeNode<Debug>(in.string()));
+		}
+	};
 }

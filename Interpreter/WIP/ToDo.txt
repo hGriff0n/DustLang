@@ -1,11 +1,9 @@
 
 Timeline
 	1 Type System
-		Generalized Stack (no stack<int>)
-		let constness and static typing (the actual "binding" work can be a part of keywords, etc.)
-		Recognize more literals (float, bool, string, etc.)
-			Use in expressions, assign to variables, etc.
+		Recognize more literals (string)
 			Escaped characters in strings (this can be delayed though)
+				The current grammar accepts escaped quotes (doesn't escape them though)
 		Improved variables (???)
 		Type Inheritance/Heirarchy
 		Type Conversions
