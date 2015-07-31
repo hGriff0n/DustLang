@@ -85,6 +85,8 @@ EvalState& Literal::eval(EvalState& state) {
 			state.push(std::stoi(val)); break;		// std::stoll;
 		case ValType::FLOAT:
 			state.push(std::stod(val)); break;
+		case ValType::STRING:
+			state.push(val); break;
 		default:
 			state.push(0);
 	}

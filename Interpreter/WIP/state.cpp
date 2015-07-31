@@ -22,15 +22,20 @@ EvalState& EvalState::swap() {
 
 // Still need to modify to account for metamethods (future)
 void addOperators(EvalState& state) {
+	using string = std::string;
+
 	state.reg_func("_op+", [](EvalState& s) {
 		auto l = s.pop(), r = s.pop();
 
-		switch (commonType(l, r)) {
+		switch (lub(l, r)) {
 			case ValType::INT:
 			case ValType::BOOL:
 				s.push((int)l + (int)r); return 1;
 			case ValType::FLOAT:
 				s.push((double)l + (double)r); return 1;
+			case ValType::STRING:
+				s.push((string)l + (string)r); return 1;
+				// add string
 			default:
 				return 0;
 		}
@@ -39,12 +44,13 @@ void addOperators(EvalState& state) {
 	state.reg_func("_op*", [](EvalState& s) {
 		auto l = s.pop(), r = s.pop();
 
-		switch (commonType(l, r)) {
+		switch (lub(l, r)) {
 			case ValType::INT:
 			case ValType::BOOL:
 				s.push((int)l * (int)r); return 1;
 			case ValType::FLOAT:
 				s.push((double)l * (double)r); return 1;
+			//case ValType::STRING:
 			default:
 				return 0;
 		}
@@ -53,7 +59,7 @@ void addOperators(EvalState& state) {
 	state.reg_func("_op-", [](EvalState& s) {
 		auto l = s.pop(), r = s.pop();
 
-		switch (commonType(l, r)) {
+		switch (lub(l, r)) {
 			case ValType::INT:
 			case ValType::BOOL:
 				s.push((int)l - (int)r); return 1;
@@ -67,7 +73,7 @@ void addOperators(EvalState& state) {
 	state.reg_func("_op/", [](EvalState& s) {
 		auto l = s.pop(), r = s.pop();
 
-		switch (commonType(l, r)) {
+		switch (lub(l, r)) {
 			case ValType::INT:
 			case ValType::BOOL:
 			case ValType::FLOAT:
@@ -80,7 +86,7 @@ void addOperators(EvalState& state) {
 	state.reg_func("_op^", [](EvalState& s) {
 		auto l = s.pop(), r = s.pop();
 
-		switch (commonType(l, r)) {
+		switch (lub(l, r)) {
 			case ValType::INT:
 			case ValType::BOOL:
 			case ValType::FLOAT:
@@ -94,7 +100,7 @@ void addOperators(EvalState& state) {
 	state.reg_func("_op%", [](EvalState& s) {
 		auto l = s.pop(), r = s.pop();
 
-		switch (commonType(l, r)) {
+		switch (lub(l, r)) {
 			case ValType::INT:
 			case ValType::BOOL:
 			case ValType::FLOAT:
@@ -107,12 +113,14 @@ void addOperators(EvalState& state) {
 	state.reg_func("_op=", [](EvalState& s) {
 		auto l = s.pop(), r = s.pop();
 
-		switch (commonType(l, r)) {
+		switch (lub(l, r)) {
 			case ValType::INT:
 			case ValType::BOOL:
 				s.push((int)l == (int)r); return 1;
 			case ValType::FLOAT:
 				s.push((double)l == (double)r); return 1;
+			case ValType::STRING:
+				s.push((string)l == (string)r); return 1;
 			default:
 				return 0;
 		}
@@ -121,7 +129,7 @@ void addOperators(EvalState& state) {
 	state.reg_func("_op<", [](EvalState& s) {
 		auto l = s.pop(), r = s.pop();
 
-		switch (commonType(l, r)) {
+		switch (lub(l, r)) {
 			case ValType::INT:
 			case ValType::BOOL:
 				s.push((int)l < (int)r); return 1;
@@ -135,7 +143,7 @@ void addOperators(EvalState& state) {
 	state.reg_func("_op>", [](EvalState& s) {
 		auto l = s.pop(), r = s.pop();
 
-		switch (commonType(l, r)) {
+		switch (lub(l, r)) {
 			case ValType::INT:
 			case ValType::BOOL:
 				s.push((int)l > (int)r); return 1;
@@ -149,7 +157,7 @@ void addOperators(EvalState& state) {
 	state.reg_func("_op<=", [](EvalState& s) {
 		auto l = s.pop(), r = s.pop();
 
-		switch (commonType(l, r)) {
+		switch (lub(l, r)) {
 			case ValType::INT:
 			case ValType::BOOL:
 				s.push((int)l <= (int)r); return 1;
@@ -163,7 +171,7 @@ void addOperators(EvalState& state) {
 	state.reg_func("_op>=", [](EvalState& s) {
 		auto l = s.pop(), r = s.pop();
 
-		switch (commonType(l, r)) {
+		switch (lub(l, r)) {
 			case ValType::INT:
 			case ValType::BOOL:
 				s.push((int)l >= (int)r); return 1;
@@ -217,4 +225,18 @@ void addOperators(EvalState& state) {
 		std::cout << s.pop() << std::endl;
 		return 0;
 	});
+}
+
+
+static std::string* storage = new std::string[100];
+static std::string* next = storage;
+
+std::string* store(std::string s) {
+	if (next - storage >= 100) throw "";
+	*next = s;
+	return next++;
+}
+
+int str_size() {
+	return next - storage;
 }

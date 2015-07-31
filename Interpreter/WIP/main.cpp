@@ -83,6 +83,8 @@ int main(int argc, const char* argv[]) {
 				system("cls");
 			else if (input == "pop")
 				std::cout << ":: " << state.pop() << std::endl;
+			else if (input == "size")
+				std::cout << ":: " << str_size() << std::endl;
 			else {
 				pegtl::parse<calculator::grammar, calculator::action>(input, input, parse_tree);	// Still don't know the entire point of the second argument
 

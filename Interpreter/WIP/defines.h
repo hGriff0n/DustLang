@@ -1,7 +1,7 @@
 #pragma once
 
-// Ensure that the common type of two types is always the biggest
-	// ie. commonType(INT, FLOAT) == FLOAT, commonType(STRING, FUNCTION) == FUNCTION
+// Ensure that the common type of two types is always the biggest (for the current version)
+	// ie. lub(INT, FLOAT) == FLOAT, lub(STRING, FUNCTION) == FUNCTION
 enum class ValType : int {
 	BOOL = 0,
 	INT = 1,
