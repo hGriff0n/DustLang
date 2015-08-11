@@ -12,9 +12,10 @@ namespace dust {
 			Value(void* v) : u{ v }{}
 		};
 
-		struct Obj {
+		struct Variable {
 			int type_id;
 			Value val;
+			// bool typ, let;
 		};
 	}
 }

@@ -14,6 +14,9 @@ Declare conversions between classes (and allow conversions to select with operat
 Inheritance Heirarchy
 	Single parent
 		Simplest to implement and use
+		I'm going to develop this testing framework using single parent as a baseline
+			I'll try to keep the situation decoupled enough that I could easily switch to a multiple inheritance style later on
+			Right now multiple inheritance introduces too many complexities and errors to be worthwhile
 
 	Multiple parents
 		More complex to use but more in-line with my vision for the language
