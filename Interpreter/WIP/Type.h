@@ -7,6 +7,7 @@
 
 namespace dust {
 	class EvalState;
+	class TypeSystem;
 	typedef std::function<int(EvalState&)> Function;
 
 	namespace impl {
@@ -14,13 +15,11 @@ namespace dust {
 			std::string name;
 			size_t id, parent;									//std::vector<int> parents for multiple inheritance
 			std::map<std::string, Function> ops;
-			//std::map<std::string, impl::Value> fields;		// Replaces ops
+			//std::map<std::string, impl::Value> fields;		// Replaces ops (Do I need to keep track of fields ???)
 
 			Type(std::string t, size_t s) : Type(t, s, -1) {}
 			Type(std::string t, size_t s, size_t p) : name{ t }, id{ s }, parent{ p } {}
 			Type(std::string t, size_t s, Type p) : Type(t, s, p.id) {}
-
-			//operator int() { return id; }
 		};
 
 		// std::less<T> uses operator< by default
@@ -47,11 +46,12 @@ namespace dust {
 					auto idx = key(l, r);
 
 					if (conv.count(idx) == 0) throw std::string{ "No Conversion between " + l.name + " and " + r.name };
+					//if (conv.count(idx) == 0) return 0;		// Common Type is Object
 
 					return conv[idx][0];
 				}
 
-				// From -> To conversion
+				// From -> To conversion (This function is really only useful if ConvTracker stores the conversion function)
 				size_t convert(Type& from, Type& to) {
 					auto idx = key(from, to);
 
