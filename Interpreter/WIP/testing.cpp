@@ -1,6 +1,7 @@
-#include "Type.h"
-#include <vector>
-#include <array>
+//#include "Type.h"
+//#include <vector>
+#include "TypeSystem.h"
+
 #include <iostream>
 
 #define p(x) std::cout << x
@@ -15,93 +16,34 @@
 	// Possibly handling multiple inheritance
 	// Add Inheritance considerations for lub operations (searches inheritance tree for conversion function)
 	// Improving and consolidating the API
+		// Maybe integrate ConvTracker in TypeSystem
+	// Move function definitions into .cpp files
 
 class dust::EvalState {
 	private:
 		std::map<std::string, int> type_id;
-		std::vector<impl::Type> types;
+		impl::TypeSystem ts;
 
 	public:
-		struct Type {
-			size_t id;
-			EvalState* e;
-
-			Type(size_t i, EvalState* s) : id{ i }, e{ s } {}
-
-			Type& addOp(std::string s, const Function& f) {
-				e->types[id].ops[s] = f;
-				return *this;
-			}
-
-			impl::Type operator*() { return e->types[id]; }
-		};
-
-		Type newType(std::string t) {
-			return newType(t, types.front());
-		}
-
-		Type newType(std::string t, impl::Type p) {
-			types.emplace_back(t, types.size(), p);
-
-			return{ types.size() - 1, this };
-		}
-
-		Type newType(std::string t, Type p) {
-			types.emplace_back(t, types.size(), p.id);
-
-			return{ types.size() - 1, this };
-		}
 
 		impl::Type getType(std::string t) {
-			return types[type_id[t]];
+			return ts._get(type_id[t]);
 		}
 
-		int dispatch(impl::Type t, std::string op) {
-			while (t.ops.count(op) == 0)
-				t = t.id > 0 ? types[t.parent] : throw std::string{ "Dispatch error" };
+		int dispatch(impl::Type& t, std::string op) {
+			auto ty = ts.findDef(t.id, op);
 
 			return 0;
-			//return t.ops[op](*this);					// I use this (similar) code in the current production !!!!!
+			//return ts._get(ty).ops[op](*this);					// I use this (similar) code in the current production !!!!!
 		}
 
 		impl::Type dispatch_(impl::Type t, std::string op) {
-			while (t.ops.count(op) == 0)
-				t = t.id > 0 ? types[t.parent] : throw std::string{ "Dispatch error" };
-
-			return t;
+			return ts._get(ts.findDef(t.id, op));
 		}
 };
 
-/*/
-// Move type system functions into TypeSystem class
-class dust::TypeSystem {
-	private:
-		std::vector<dust::impl::Type> typs;
-		dust::impl::ConvTracker conv;
-
-	public:
-		struct Type {};
-
-		Type newType(std::string);
-		Type newType(std::string, impl::Type& p);
-		Type newType(std::string, Type& p);
-		Type newType(std::string, size_t);
-
-		size_t lub(size_t, size_t, std::string);
-		size_t lub(dust::impl::Type&, dust::impl::Type&, std::string);
-
-		size_t findDef(size_t, std::string, std::vector<dust::impl::Type>&);
-		size_t findDef(dust::impl::Type&, std::string, std::vector<dust::impl::Type>&);
-};
-//*/
-
-size_t dispatch(dust::impl::Type&, std::string, std::vector<dust::impl::Type>&, dust::EvalState&);
-size_t dispatch(size_t, std::string, std::vector<dust::impl::Type>&, dust::EvalState&);
-
-size_t findDef(dust::impl::Type&, std::string, std::vector<dust::impl::Type>&);
-size_t findDef(size_t, std::string, std::vector<dust::impl::Type>&);
-
-size_t lub(dust::impl::Type&, dust::impl::Type&, std::string, dust::impl::ConvTracker&, std::vector<dust::impl::Type>&);
+size_t dispatch(dust::impl::TypeSystem::Type&, std::string, dust::impl::TypeSystem&, dust::EvalState&);
+size_t dispatch(size_t, std::string, dust::impl::TypeSystem&, dust::EvalState&);
 
 int main(int argc, const char* argv[]) {
 	using namespace dust::impl;
@@ -112,56 +54,37 @@ int main(int argc, const char* argv[]) {
 	/*
 	"Global" structures that will eventually be collected within EvalState
 	*/
-	//TypeSystem ts;
-	std::vector<Type> types;
-	dust::impl::ConvTracker convs;
+	TypeSystem ts;
 
 	/*
 	Type declarations
 	*/
-	types.emplace_back("Object", types.size());
-	auto Object = types.front();
+	auto Object = ts.getType(0);
 
-	Type Number{ "Number", types.size(), Object };
-	Number.ops["_op*"] = [](EvalState& e) { return 1; };
-	types.push_back(Number);
+	auto Number = ts.newType("Number");
+	Number.addOp("_op*", [](EvalState& e) { return 1; });
 
-	Type Int{ "Int", types.size(), Number };
-	Int.ops["_op+"] = [](EvalState& e) { return 2; };
-	types.push_back(Int);
+	auto Int = ts.newType("Int", Number);
+	Int.addOp("_op+", [](EvalState& e) { return 2; });
 
-	Type Float{ "Float", types.size(), Number };
-	Float.ops["_op+"] = [](EvalState& e) { return 3; };
-	Float.ops["_op*"] = [](EvalState& e) { return 3; };
-	types.push_back(Float);
-
-	Type String{ "String", types.size(), Object };
-	String.ops["_op+"] = [](EvalState& e) { return 4; };
-	String.ops["_op/"] = [](EvalState& e) { return 4; };
-	types.push_back(String);
-
-	// Ideal api (Type names act as aliases)
-	//auto Number = ts.newType("Number");
-	//Number.addOp("_op*", [](EvalState& e) { return 1; });
-
-	//auto Int = ts.newType("Int", Number);			// Have the API functions prevent a type from being a parent to itself
-	//Int.addOp("_op+", [](EvalState& e) { return 2; });
+	auto Float = ts.newType("Float", Number);
+	Float.addOp("_op+", [](EvalState& e) { return 3; });
+	Float.addOp("_op*", [](EvalState& e) { return 3; });
 	
-	//auto Float = ts.newType("Float", Number);
-	//Float.addOp("_op+", [](EvalState& e) { return 3; });
-
-	//auto String = ts.newType("String");
-	//String.addOp("_op+", [](EvalState& e) { return 4; });
-	//String.addOp("_op/", [](EvalState& e) { return 4; });
+	auto String = ts.newType("String");
+	String.addOp("_op+", [](EvalState& e) { return 4; });
+	String.addOp("_op/", [](EvalState& e) { return 4; });
 
 	/*
 	Conversion declarations
 	*/
-	//ts.addConv(Int, Float);		// This will probably be automated in the addOp method (Int.String -> addConv(Int, String))
-	convs.add(Int, Float);
-	convs.add(Int, String);
-	convs.add(String, Int);
-	// convs.add(Number, String);			// Replace conversion of Int -> String (Will lub(Int, String) = String ???)
+	Int.addConv(String);
+	String.addConv(Int);
+	Int.addConv(Float);
+	//Int.addOp("String", [](EvalState& e) { return 2; });				// Causes a conversion between Int and String to be marked in ts (I'd need a way to associate name -> id in ts)
+	//String.addOp("Int", [](EvalState& e) { return 4; });
+	//Int.addOp("Float", [](EvalState& e) { return 2; });
+	// Number.addConv(String);			// Replace conversion of Int -> String (Will lub(Int, String) = String ???)
 
 	/*
 	Testing
@@ -170,74 +93,44 @@ int main(int argc, const char* argv[]) {
 	// Testing common type
 	try {
 		ps("String + Int         ");
-		pl(dispatch(lub(String, Int, "_op+", convs, types), "_op+", types, e));			// String._op+
+		pl(dispatch(ts.lub(String, Int, "_op+"), "_op+", ts, e));						// String._op+ (4)
 		ps("Int + String         ");
-		pl(dispatch(lub(Int, String, "_op+", convs, types), "_op+", types, e));			// String._op+
+		pl(dispatch(ts.lub(Int, String, "_op+"), "_op+", ts, e));						// String._op+ (4)
 		ps("String * Int         ");
-		pl(dispatch(lub(String, Int, "_op*", convs, types), "_op*", types, e));			// Number._op*
+		pl(dispatch(ts.lub(String, Int, "_op*"), "_op*", ts, e));						// Number._op* (1)
 		ps("Float / Int          ");
-		pl(dispatch(lub(Float, Int, "_op/", convs, types), "_op/", types, e));			// Exception
+		pl(dispatch(ts.lub(Float, Int, "_op/"), "_op/", ts, e));						// Exception
 	} catch (std::string& e) {
-		pl("\n" + e);
+		pl(e);
 	}
 
 	// Testing Inheritance
 	try {
 		ps("Int._op*             ");
-		pl(dispatch(Int, "_op*", types, e));						// Number._op*
+		pl(dispatch(Int, "_op*", ts, e));								// Number._op* (1)
 		ps("Float._op*           ");
-		pl(dispatch(Float, "_op*", types, e));						// Float._op*
+		pl(dispatch(Float, "_op*", ts, e));								// Float._op* (3)
 		ps("String._op*          ");
-		pl(dispatch(String, "_op*", types, e));						// Exception
+		pl(dispatch(String, "_op*", ts, e));							// Exception
 
 	} catch (std::string& e) {
-		pl("\n" + e);
+		pl(e);
 	}
 
 
 	std::cin.get();
 }
 
-// Very basic inheritance relation
-size_t dispatch(dust::impl::Type& t, std::string op, std::vector<dust::impl::Type>& types, dust::EvalState& e) {
-	return dispatch(t.id, op, types, e);
-}
+size_t dispatch(size_t t, std::string op, dust::impl::TypeSystem& ts, dust::EvalState& e) {
+	t = ts.findDef(t, op);
 
-// Overload for using the type field index
-size_t dispatch(size_t t, std::string op, std::vector<dust::impl::Type>& types, dust::EvalState& e) {
-	t = findDef(t, op, types);
-
-	ps(types[t].name + "." + op);
+	ps(ts._get(t).name + "." + op);
 	
-	return types[t].ops[op](e);
-	// return types[findDef(t, op, types)].ops[op](e);
+	return ts._get(t).ops[op](e);
 }
 
-size_t findDef(dust::impl::Type& t, std::string field, std::vector<dust::impl::Type>& types) {
-	return findDef(t.id, field, types);
-}
-
-size_t findDef(size_t t, std::string field, std::vector<dust::impl::Type>& types) {
-	auto err_t = t;
-
-	while (types[t].ops.count(field) == 0)
-		t = t > 0 ? types[t].parent : throw std::string{ "Dispatch error: " + types[err_t].name + "." + field + " not defined" };
-
-	return t;
-}
-
-size_t lub(dust::impl::Type& l, dust::impl::Type& r, std::string op, dust::impl::ConvTracker& conv, std::vector<dust::impl::Type>& types) {
-	auto t = conv.lub(l, r);
-
-	// if (t == 0) (conv.lub currently throws an error if there is no direct conversion)
-	// Should this take into account inheritance conversions (ie. Int + String would translate to String(Number(Int)) + String if Number.String and !Int.String)
-
-	try {
-		findDef(t, op, types);				// Check if the common type has the operator declared
-		return t;							// Uses try-check since findDef throws an exception when the inheritance tree is used (unfortunately)
-	} catch (std::string& e) { }
-
-	return l.id + r.id - t;					// Assume the other type has the operator declared (This will raise an error in dispatch)
+size_t dispatch(dust::impl::TypeSystem::Type& t, std::string op, dust::impl::TypeSystem& ts, dust::EvalState& e) {
+	return dispatch(t.id, op, ts, e);
 }
 
 /*

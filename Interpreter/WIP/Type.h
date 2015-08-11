@@ -7,10 +7,11 @@
 
 namespace dust {
 	class EvalState;
-	class TypeSystem;
 	typedef std::function<int(EvalState&)> Function;
 
 	namespace impl {
+		class TypeSystem;
+
 		struct Type {
 			std::string name;
 			size_t id, parent;									//std::vector<int> parents for multiple inheritance
