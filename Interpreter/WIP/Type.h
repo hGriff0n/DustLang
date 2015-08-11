@@ -5,18 +5,6 @@
 #include <string>
 #include <functional>
 
-struct dust::impl::Type;
-
-namespace std {
-	template<> struct less<std::pair<dust::impl::Type, dust::impl::Type>> {
-		using argType = std::pair<dust::impl::Type, dust::impl::Type>;
-
-		bool operator()(const argType& lhs, const argType& rhs) {
-			return lhs.first.id < rhs.first.id && lhs.second.id < rhs.second.id;
-		}
-	};
-}
-
 namespace dust {
 	class EvalState;
 	typedef std::function<int(EvalState&)> Function;
@@ -35,48 +23,62 @@ namespace dust {
 			//operator int() { return id; }
 		};
 
-		struct ConvTracker {
-			using storage = Type;
-			using key_type = std::pair<Type, Type>;					// key_type = std::pair<int, int> (but then I'd be specializing less<std::pair<int, int>>)
-			std::map<key_type, std::array<storage, 2>> conv;		// I don't know what I want to store in the array
+		// std::less<T> uses operator< by default
+		struct convPair : std::pair<size_t, size_t> {
+			convPair(size_t t1, size_t t2) : pair{ t1, t2 } {}
+			convPair(Type& t1, Type& t2) : pair{ t1.id, t2.id } {}
 
-			key_type key(Type t1, Type t2) {
-				return t1.id < t2.id ? std::make_pair(t1, t2) : std::make_pair(t2, t1);
-				//return t1.id < t2.id ? std::make_pair(t1.id, t2.id) : std::make_pair(t2.id, t1.id);
+			bool operator<(convPair& rhs) {
+				return first < rhs.first && second < rhs.second;
+			}
+		};
+
+		class ConvTracker {
+			using key_type = convPair;
+			std::map<key_type, std::array<size_t, 2>> conv;
+
+			key_type key(Type& t1, Type& t2) {
+				return t1.id < t2.id ? convPair{ t1.id, t2.id } : convPair{ t2.id, t1.id };
 			}
 
-			// Common Type conversion
-			storage lub(Type t1, Type t2) {
-				auto idx = key(t1, t2);
+			public:
+				// Common Type conversion
+				size_t lub(Type& l, Type& r) {
+					auto idx = key(l, r);
 
-				if (conv.count(idx) == 0) throw std::string{ "No Conversion between " + t1.name + " and " + t2.name };
+					if (conv.count(idx) == 0) throw std::string{ "No Conversion between " + l.name + " and " + r.name };
 
-				return conv[idx][0];											// Select the highest precedence conversion
-			}
+					return conv[idx][0];
+				}
 
-			// To-From conversion
-			storage getConv(Type from, Type to) {
-				auto idx = key(from, to);
+				// From -> To conversion
+				size_t convert(Type& from, Type& to) {
+					auto idx = key(from, to);
 
-				if (conv.count(idx) == 0) throw std::string{ "No Conversion from " + from.name + " to " + to.name };
+					if (conv.count(idx) == 0) goto noConv;
 
-				return conv[idx][(conv[idx][0].id == to.id ? 0 : 1)];
-			}
+					int id = conv[idx][conv[idx][0] == to.id ? 0 : 1];
+					if (id == 0) goto noConv;
 
-			// Add new conversion (maintains precedence ordering)
-			void add(Type from, Type to) {
-				auto idx = key(from, to);
-				int sidx = 0;															// No conversion or to -> from not defined
+					return id;
 
-				if (conv[idx][1].id == from.id) {										// to -> from defined at index 1
-						conv[idx][0] = conv[idx][1];
+				noConv:
+					throw std::string{ "No Conversion from " + from.name + " to " + to.name };
+				}
+
+				void add(Type& from, Type& to) {
+					auto idx = key(from, to);
+					int sidx = 0;										// No conversion || to -> from not defined
+
+					if (conv[idx][1] == from.id) {						// to -> from defined at index 1
+						conv[idx][0] = conv[idx][1];					// new conversion precedence
 						sidx = 1;
 
-				} else if (conv[idx][0].id == from.id)									// to -> from defined at index 0
-					sidx = 1;
+					} else if (conv[idx][0] == from.id)					// to -> from defined at index 0
+						sidx = 1;
 
-				conv[idx][sidx] = to;
-			}
+					conv[idx][sidx] = to.id;
+				}
 		};
 	}
 }

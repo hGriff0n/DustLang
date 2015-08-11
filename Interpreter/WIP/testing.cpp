@@ -76,9 +76,8 @@ class dust::EvalState {
 		}
 };
 
-dust::impl::Type lub(dust::impl::Type, dust::impl::Type /*, CONVER */);
-int dispatch(dust::impl::Type, std::string, std::vector<dust::impl::Type>&, dust::EvalState&);
-void setConvert(dust::impl::Type, dust::impl::Type /*, CONVER */);
+int dispatch(dust::impl::Type&, std::string, std::vector<dust::impl::Type>&, dust::EvalState&);
+int dispatch(size_t, std::string, std::vector<dust::impl::Type>&, dust::EvalState&);
 
 int main(int argc, const char* argv[]) {
 	using namespace dust::impl;
@@ -141,16 +140,16 @@ int main(int argc, const char* argv[]) {
 	*/
 	try {
 		// Testing common type
-		//ps("lub(String, Int)._op+");
-		//pl(dispatch(lub(String, Int), "_op+", types, e));		// Should call String._op+
-		//ps("lub(Int, String)._op+");
-		//pl(dispatch(lub(Int, String), "_op+", types, e));		// Should call String._op+
+		ps("String _op+ Int      ");
+		pl(dispatch(convs.lub(String, Int), "_op+", types, e));		// Should call String._op+
+		ps("Int _op+ String      ");
+		pl(dispatch(convs.lub(Int, String), "_op+", types, e));		// Should call String._op+
 
 		// Testing Inheritance
 		ps("Int._op*             ");
-		pl(dispatch(Int, "_op*", types, e));					// Should call Number._op*
+		pl(dispatch(Int, "_op*", types, e));						// Should call Number._op*
 		ps("String._op*          ");
-		pl(dispatch(String, "_op*", types, e));					// Dispatch error
+		pl(dispatch(String, "_op*", types, e));						// Dispatch error
 
 
 
@@ -163,22 +162,18 @@ int main(int argc, const char* argv[]) {
 	std::cin.get();
 }
 
-void setConvert(dust::impl::Type from, dust::impl::Type to /*, CONVER */) {
-
-}
-
-dust::impl::Type lub(dust::impl::Type l, dust::impl::Type r /*, CONVER */) {
-	return l;
-}
-
 // Very basic inheritance relation
-int dispatch(dust::impl::Type t, std::string op, std::vector<dust::impl::Type>& types, dust::EvalState& e) {
+int dispatch(dust::impl::Type& t, std::string op, std::vector<dust::impl::Type>& types, dust::EvalState& e) {
 	while (t.ops.count(op) == 0)
 		t = t.id > 0 ? types[t.parent] : throw std::string{ "Dispatch error" };
 
 	ps(t.name + "." + op);
 
 	return t.ops[op](e);
+}
+
+int dispatch(size_t t, std::string op, std::vector<dust::impl::Type>& types, dust::EvalState& e) {
+	return dispatch(types[t], op, types, e);
 }
 
 /*
