@@ -1,0 +1,69 @@
+Make this into a "Document" describing the type system
+	Or make a similar document
+
+Type Structure
+	Contains range of acceptable values
+	Contains list of parents ???
+		How to store/recall/use inheritance heirarchy
+
+Declare conversions between classes (and allow conversions to select with operators)
+	Define conversion function
+		Have the conversion function be used by the program to convert between objects
+			Currently they are disjoint (ie. the conversion function is not acutally called for the conversion)
+			
+Inheritance Heirarchy
+	Single parent
+		Simplest to implement and use
+
+	Multiple parents
+		More complex to use but more in-line with my vision for the language
+
+Operators vs Indexing
+	Indexing relies on inheritance
+		The question is finding out where the given field is defined (and if it's a valid operation)
+			Finding out if it's valid or not may be a problem if Nil is always indexable
+
+	Operators work on common types (currently 'lub')
+		Common type is two types where one is convertable to another
+			The question is whether common type should catch inheritance relationships
+				Ie. Should I have to define a converter between Int and Float if Float <- Int for 3 + 3.5 = 6.5
+					Yes as Parent Types are not Child Types (Float is automatically an Int but Int isn't a Float)
+
+			Int -> Float means that lub(Int, Float) = Float since Int is convertible to Float
+				Float -> Int means that lub(Int, Float) is inconclusive since both are convertible to the other
+					Though from the work in Precedence, lub(Int, Float) = Float due to order of declarations
+					There might be cases where lub(Int, Float, x) = Int (only using the three arg lub)
+
+		Methods
+			lub(l, r) finds the common type of l and r
+			lub(l, r, op) finds the common type of l and r where op is defined
+			In notes, I've suggested "s.call(lub(l, r, op)[op])" for selecting the function to call
+				This could be shortened to "s.call(lub(l, r, op))" if lub returns the function to call
+				Can extend this with variadics to perform "interface" checking
+				This might have problems when I go to implement function definitions
+
+		Precedence
+			Int and Float should both be convertible to each other
+			But 3.5 + 3 should always be 6.5 and not 6 (ie. Float has higher precedence)
+
+			I'm going to use an "order of declaration" approach
+				The first parsed conversion function establishes the common type (the 'to' type)
+				This has some complications when reordering "require" statements (if different files declare conversion functions to and from two types)
+					This can be worked around through "best practice" (maintain any conversion functions between two classes to one file)
+					This still leaves open the problem of decoupled conversions (ie. two types are convertible but neither's file requires the other)
+						It might be useful to enable a "forward-declaration" style syntax
+							The only hurdle would be allowing reassignment of Type identifiers (in select cases?)
+							Otherwise the current semantics and syntax would allow the feature wholeheartedly
+						Indexing forward declared types is already well-defined by the language.
+				What if the converter function is "overruled" or rewritten
+					I can maintain a "rolling" precedence (ie. the redefinition would switch the result of lub)
+						Under this method, reassigning the conversion function (ie. x = x) would also trigger this behavior
+
+			How to figure out which conversion was declared first
+				
+				
+TypeTraits style class
+
+Registers
+
+Redesigned State class

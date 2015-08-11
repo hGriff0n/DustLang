@@ -29,6 +29,10 @@ class stack {
 			return s.back();
 		}
 
+		T peek() {
+			return s.end() - 2;
+		}
+
 		bool empty() {
 			return s.empty();
 		}
