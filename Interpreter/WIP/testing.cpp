@@ -9,14 +9,12 @@
 #define pl(x) p(x) << std::endl
 
 // Current testing devoted to
-	// Formalizing the Type System and Inheritance/Common Type Frameworks
 	// Systems for selecting the correct types and functions for program semantics
 
 // Things to work on
 	// Possibly handling multiple inheritance
-	// Add Inheritance considerations for lub operations (searches inheritance tree for conversion function)
+	// Add Inheritance considerations for lub operations (searches inheritance tree for conversion function)?
 	// Improving and consolidating the API
-		// Maybe integrate ConvTracker in TypeSystem
 	// Move function definitions into .cpp files
 
 class dust::EvalState {
@@ -27,7 +25,7 @@ class dust::EvalState {
 	public:
 
 		impl::Type getType(std::string t) {
-			return ts._get(type_id[t]);
+			return ts.get(type_id[t]);
 		}
 
 		int dispatch(impl::Type& t, std::string op) {
@@ -38,7 +36,7 @@ class dust::EvalState {
 		}
 
 		impl::Type dispatch_(impl::Type t, std::string op) {
-			return ts._get(ts.findDef(t.id, op));
+			return ts.get(ts.findDef(t.id, op));
 		}
 };
 
@@ -59,7 +57,7 @@ int main(int argc, const char* argv[]) {
 	/*
 	Type declarations
 	*/
-	auto Object = ts.getType(0);
+	//auto Object = ts.getType(0);
 
 	auto Number = ts.newType("Number");
 	Number.addOp("_op*", [](EvalState& e) { return 1; });
@@ -81,7 +79,9 @@ int main(int argc, const char* argv[]) {
 	Int.addConv(String);
 	String.addConv(Int);
 	Int.addConv(Float);
-	//Int.addOp("String", [](EvalState& e) { return 2; });				// Causes a conversion between Int and String to be marked in ts (I'd need a way to associate name -> id in ts)
+	// Conversions will be declared in dust by defining specific functions
+		// Change the conversion process to handle this case (Need a way to associate name -> id)
+	//Int.addOp("String", [](EvalState& e) { return 2; });
 	//String.addOp("Int", [](EvalState& e) { return 4; });
 	//Int.addOp("Float", [](EvalState& e) { return 2; });
 	// Number.addConv(String);			// Replace conversion of Int -> String (Will lub(Int, String) = String ???)
@@ -92,13 +92,13 @@ int main(int argc, const char* argv[]) {
 
 	// Testing common type
 	try {
-		ps("String + Int         ");
+		ps("String + Int ");
 		pl(dispatch(ts.lub(String, Int, "_op+"), "_op+", ts, e));						// String._op+ (4)
-		ps("Int + String         ");
+		ps("Int + String ");
 		pl(dispatch(ts.lub(Int, String, "_op+"), "_op+", ts, e));						// String._op+ (4)
-		ps("String * Int         ");
+		ps("String * Int ");
 		pl(dispatch(ts.lub(String, Int, "_op*"), "_op*", ts, e));						// Number._op* (1)
-		ps("Float / Int          ");
+		ps("Float / Int  ");
 		pl(dispatch(ts.lub(Float, Int, "_op/"), "_op/", ts, e));						// Exception
 	} catch (std::string& e) {
 		pl(e);
@@ -106,11 +106,11 @@ int main(int argc, const char* argv[]) {
 
 	// Testing Inheritance
 	try {
-		ps("Int._op*             ");
+		ps("Int._op*     ");
 		pl(dispatch(Int, "_op*", ts, e));								// Number._op* (1)
-		ps("Float._op*           ");
+		ps("Float._op*   ");
 		pl(dispatch(Float, "_op*", ts, e));								// Float._op* (3)
-		ps("String._op*          ");
+		ps("String._op*  ");
 		pl(dispatch(String, "_op*", ts, e));							// Exception
 
 	} catch (std::string& e) {
@@ -124,9 +124,9 @@ int main(int argc, const char* argv[]) {
 size_t dispatch(size_t t, std::string op, dust::impl::TypeSystem& ts, dust::EvalState& e) {
 	t = ts.findDef(t, op);
 
-	ps(ts._get(t).name + "." + op);
+	ps(ts.get(t).name + "." + op);
 	
-	return ts._get(t).ops[op](e);
+	return ts.get(t).ops[op](e);
 }
 
 size_t dispatch(dust::impl::TypeSystem::Type& t, std::string op, dust::impl::TypeSystem& ts, dust::EvalState& e) {
