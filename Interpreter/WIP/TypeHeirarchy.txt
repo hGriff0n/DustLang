@@ -4,3 +4,11 @@ Object												   Nil
  Number      String   Bool   Table   Function
   |------|
 Float   Int
+
+Float < Number		(Float is a child of Number)
+Int < Number
+Number < Object
+String < Object
+Bool < Object
+Table < Object
+Function < Object

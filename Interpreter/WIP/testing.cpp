@@ -4,19 +4,26 @@
 
 #include <iostream>
 
-#define p(x) std::cout << x
+#define p(x) std::cout << (x)
 #define ps(x) p(x) << " :: "
 #define pl(x) p(x) << std::endl
 
 // Current testing devoted to
 	// Systems for selecting the correct types and functions for program semantics
 
+// TODO:
+	// Update Dust documentation to reflect the recent work on the type system
+
 // Things to work on
-	// Possibly handling multiple inheritance
-	// Add Inheritance considerations for lub operations (searches inheritance tree for conversion function)?
+	// Some "feasibility studies" on multiple inheritance
+	// Can I get inheritable (implicit) converters to work in the case of com operations (Way of establishing precedence)
+		// They can work easily in the case of function arguments and typed assignments
 	// Improving and consolidating the API
+	// Currently NIL type is an error code, but the idea is for it to have some meaning (ie. operations and values)
 	// Move function definitions into .cpp files
 	// Add/Improve Exception and Error support (or at least define entry points)
+
+// I also need to merge my current work on dust semantics and syntax with the documents in DustParser (keed documentation intact)
 
 class dust::EvalState {
 	private:
@@ -58,6 +65,8 @@ int main(int argc, const char* argv[]) {
 	/*
 	Type declarations
 	*/
+	auto Object = ts.getType("Object");
+
 	auto Number = ts.newType("Number");
 	Number.addOp("_op*", [](EvalState& e) { return 1; });
 
@@ -71,43 +80,21 @@ int main(int argc, const char* argv[]) {
 	auto String = ts.newType("String");
 	String.addOp("_op+", [](EvalState& e) { return 4; });
 	String.addOp("_op/", [](EvalState& e) { return 4; });
-
+	
 	/*
 	Conversion declarations
 	*/
 	Int.addOp("String", [](EvalState& e) { return 2; });
 	String.addOp("Int", [](EvalState& e) { return 4; });
 	Int.addOp("Float", [](EvalState& e) { return 2; });
-	// Number.addOp("String", [](EvalState& e) { return 1; });		// Replace conversion of Int -> String (Will lub(Int, String) = String ???)
+	// Number.addOp("String", [](EvalState& e) { return 1; });		// Replace conversion Int -> String. Adds conversion Float -> String (Iff converters can be inherited, precedence issues)
 
-	// Possible way of implementing lub (that allows for inheriting conversions)
-		// Current implementation only allows direct conversions (converters are not inherited)
-
-	// lub(l, r)
-		// if l and r are same type, return l
-		// if l and r have an inheritance relationship, return parent(l, r)
-	
-		// if l -> r is defined and prec(l -> r) > prec(r -> l), return r
-		// if r -> l is defined, return l
-
-		// Can l inherit conversions to r (and vice versa)
-		// Can I use r -> p = parent(l) iff parent(p) == findDef(l, op)
-		// What if l and r have an inheritance relationship (Object, they always will)
-		// What if l and r have an inheritance relationship and l -> r or r -> l is defined
-
-		// auto lc_type = findDef(l, types[r].name);				// Find where l defines a conversion to r
-		// auto rc_type = findDef(r, types[l].name);				// Find where r defines a conversion to l
-																	// It is okay to only search for a converter to the original type due to the parent/child dictonomy (Is it?)
-
-		// if (rc_type == NO_CONVERSION) return lc_type;			// No conversion from r to l (Also handles no conversion period)
-		// if (lc_type == NO_CONVERSION) return rc_type;			// No conversion from l to r
-		// 
-
+	pl("");
 	/*
 	Testing
 	*/
 
-	// Testing common type
+	//* Testing common type
 	try {
 		ps("String + Int   ");
 		pl(dispatch(ts.com(String, Int, "_op+"), "_op+", ts, e));						// String._op+ (4)
@@ -116,7 +103,7 @@ int main(int argc, const char* argv[]) {
 		ps("String * Int   ");
 		pl(dispatch(ts.com(String, Int, "_op*"), "_op*", ts, e));						// Number._op* (1)
 		ps("Int + Int      ");
-		pl(dispatch(ts.com(Int, Int, "_op+"), "_op+", ts, e));
+		pl(dispatch(ts.com(Int, Int, "_op+"), "_op+", ts, e));							// Int._op+ (2)
 		//ps("Float / Int    ");
 		//pl(dispatch(ts.com(Float, Int, "_op/"), "_op/", ts, e));						// Exception
 		ps("Float + String ");
@@ -124,6 +111,9 @@ int main(int argc, const char* argv[]) {
 	} catch (std::string& e) {
 		pl(e);
 	}
+
+	pl("");
+	pl("");
 
 	// Testing Inheritance
 	try {
@@ -137,17 +127,19 @@ int main(int argc, const char* argv[]) {
 	} catch (std::string& e) {
 		pl(e);
 	}
-
+	//*/
 
 	std::cin.get();
 }
 
 size_t dispatch(size_t t, std::string op, dust::impl::TypeSystem& ts, dust::EvalState& e) {
-	t = ts.findDef(t, op);
+	auto d_type = ts.findDef(t, op);
 
-	ps(ts.get(t).name + "." + op);
+	if (d_type == ts.NIL) throw std::string{ "Dispatch Error: " + ts.get(t).name + "." + op + " is not defined" };
+
+	ps(ts.get(d_type).name + "." + op);
 	
-	return ts.get(t).ops[op](e);
+	return ts.get(d_type).ops[op](e);
 }
 
 size_t dispatch(dust::impl::TypeSystem::Type& t, std::string op, dust::impl::TypeSystem& ts, dust::EvalState& e) {

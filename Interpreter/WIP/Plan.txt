@@ -12,36 +12,59 @@ Declare conversions between classes (and allow conversions to select with operat
 			Currently they are disjoint (ie. the conversion function is not acutally called for the conversion)
 			
 Inheritance Heirarchy
-	Single parent
-		Simplest to implement and use
-		I'm going to develop this testing framework using single parent as a baseline
-			I'll try to keep the situation decoupled enough that I could easily switch to a multiple inheritance style later on
-			Right now multiple inheritance introduces too many complexities and errors to be worthwhile
+	Single Inheritance
+		Simplest and Easiest method to implement and use
+			It's the current framework
+			Simple to reason about and (relatively) inexpensive
+		I can still allow "++ <type_list>" as valid syntax with semantics
+			The first type would be set as the type's parent
+			The rest of the types would be merged with the type (ignoring all multiply defined methods)
 
-	Multiple parents
-		More complex to use but more in-line with my vision for the language
+	Multiple inheritance
+		There's not a real computational reason for not allowing multiple inheritance
+			The current system only really needs some modifications (ie. wrap the search loop in a ranged for, add some recursion) for it to work
+				Slightly more complex (and has the possibility to be much more expensive)
+			If I'm memoizing ancestors, the complexity hit is really reduced
+		There are some accuracy problems regarding selecting correct overloads (inherit the same method from multiple types)
+			Select the first type where the method is found
+			Select the last type where the method is found
 
 Operators vs Indexing
 	Indexing relies on inheritance
 		The question is finding out where the given field is defined (and if it's a valid operation)
 			Finding out if it's valid or not may be a problem if Nil is always indexable
 
-	Operators work on common types (currently 'lub')
+	Operators work on common types (currently 'com')
 		Common type is two types where one is convertable to another
 			The question is whether common type should catch inheritance relationships
-				Ie. Should I have to define a converter between Int and Float if Float <- Int for 3 + 3.5 = 6.5
-					Yes as Parent Types are not Child Types (Float is automatically an Int but Int isn't a Float)
+				Ie. Should I have to define a converter between Int and Float if Float would be a child of Int to allow 3 + 3.5 (Note: Int < Number and Float < Number)
+					Yes if I want 3 + 3.5 = 6.5 (Int can't be derived to Float, a child type; Float can be derived to Int, a parent type)
+					But if I want 3 + 3.5 = 6, then there is no need to define a converter due to the inheritance relationship (Only implemented in _com)
+						ancestor(Int, Float) = Int
 
-			Int -> Float means that lub(Int, Float) = Float since Int is convertible to Float
-				Float -> Int means that lub(Int, Float) is inconclusive since both are convertible to the other
-					Though from the work in Precedence, lub(Int, Float) = Float due to order of declarations
-					There might be cases where lub(Int, Float, x) = Int (only using the three arg lub)
+			Int -> Float means that Int is convertible to Float and therefore com(Int, Float) = Int
+				Float -> Int means that Float is convertible to Int
+					com(Int, Float) = Int unless Int -> Float is redefined due to precedence resolution
+
+		com Procedure:
+			Part 1: Check if they are the same type
+				Simple and quick optimization (moreover, very likely to occur)
+			Part 2: Check for converters
+				Look for a -> b or b <- a and return the "to" type
+				If both are found, use precedence resolution
+			Part 3: Return common ancestor
+				Roundabout way of returning Part 1
+				Slightly more expensive (I also don't want to remember that ancestor(l, l) = l)
+
+			Precedence Resolution: First defined converter
+				I could instead use a first declared approach (this isn't as subject to the problems involved in first defined)
+					This completely resolves the problem with reassigning the converter
 
 		Methods
 			lub(l, r) finds the common type of l and r
-			lub(l, r, op) finds the common type of l and r where op is defined
-			In notes, I've suggested "s.call(lub(l, r, op)[op])" for selecting the function to call
-				This could be shortened to "s.call(lub(l, r, op))" if lub returns the function to call
+			com(l, r, op) finds the common type of l and r where op is defined
+			In notes, I've suggested "s.call(com(l, r, op)[op])" for selecting the function to call
+				This could be shortened to "s.call(com(l, r, op))" if lub returns the function to call
 				Can extend this with variadics to perform "interface" checking
 				This might have problems when I go to implement function definitions
 
@@ -58,12 +81,25 @@ Operators vs Indexing
 							The only hurdle would be allowing reassignment of Type identifiers (in select cases?)
 							Otherwise the current semantics and syntax would allow the feature wholeheartedly
 						Indexing forward declared types is already well-defined by the language.
-				What if the converter function is "overruled" or rewritten
-					I can maintain a "rolling" precedence (ie. the redefinition would switch the result of lub)
-						Under this method, reassigning the conversion function (ie. x = x) would also trigger this behavior
 
-			How to figure out which conversion was declared first
-				
+				What if the converter function is "overruled" or rewritten
+					"Rolling" precedence (ie. the redefinition would switch the result of lub)
+						Under this method, reassigning the conversion function (ie. x = x) would also trigger this behavior (Good or not?)
+						It's also really easy to abuse (much along the same lines as the require statements)
+
+		Converters
+			Converters are functions that specify a conversion from one type to another
+				Converters are declared as a method in the from type's table
+				The method name is, naturally, the to type (this does entail a slight bending of the grammar)
+			Converters are not inherited (for the purposes of determining common type)
+				It is possible that they could be inherited for other instances (but it's concievable that this won't be true)
+					It would be possible to explicitly invoke a converter from a parent type (the question is over implicit invokations)
+				There's no accurate way of establishing precedence between inherited converters
+				There's also a degree of computational explosion that is involved in even finding a correct converter
+					Declared converter to declared type (Part 2 of current common type resoultion)
+					Inherited converter to declared type
+					Declared converter to parent type
+					Inherited converter to parent type
 				
 TypeTraits style class
 
