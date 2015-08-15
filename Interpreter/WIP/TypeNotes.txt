@@ -1,0 +1,66 @@
+
+Dust Type System
+
+Shorthand
+	Given types 'a' and 'b', a < b indicates that a inherits from b
+
+Variables in dust are inherently dynamically typed (ie. they can store values of any type)
+	There does exist syntax to statically type variables
+		Though it acts more as a promise that the value exists than anything else
+
+	All variables (and even values) keep track of their type
+		In this respect, dust is strongly typed
+		
+		Question: Say a variable of static type 'h' is assigned a value of type 'k' where k < h.
+			How is the type information of both types maintained? Is it even necessary to maintain both sets?
+
+Common Type and Inheritance
+	Two concepts underpin the majority of the Dust type system
+
+	The first, and easiest to explain, is inheritance (standard OOP procedure)
+		Dust is (currently) single inheritance only
+			I cannot safely reason about, and ensure the correctness, of multiple inheritance dispatch and indexing
+		
+		This will cause some problems when figuring out how to implement types in Dust
+			It just seems like a natural response to allow a type_list after the inheritance operator
+			A possible fix: Import definitions from the rest of the types if they aren't defined by the "parent" type
+
+	The second is "Common Type" (implemented through the com method)
+		Common Type is mainly used to determine which operator overload should be called
+			Answers the question of "Should '3 + 3.5 = 6.5 or 6?", ie Int._op+(3, 3.5) versus Float._op+(3, 3.5)
+			## Why is common type an answer
+
+		The procedure for determining the common type of two types is threefold
+			First is a check for whether the two are the same type
+				This step isn't entirely necessary as they would share the same ancestor (themselves)
+				However this is a relatively common case that is trivially easy to optimize
+			Second is a search for a converter from one type to the other
+			Third is a search for a common ancestor
+
+		Converter Search
+			The idea is that if type 'a' defines a converter to type 'b', than the intended meaning of a + b is probably b._op+(a)
+
+			However, there are slight complications if both types define a converter to the other
+				This complication is resolved by determining the precedence of each type's converter
+					Currently precedence is determined by "first definition"
+						This approach has some problems regarding rearranging "require" statements
+							This can be slightly mitigated by having "best practice" to declare both in the same file (if declared at all)
+								I could possibly create a system to enforce this practice, though it could be difficult
+								This still leaves open the problems involved in "decoupled" types
+						This approach also allows "Rolling Precedence" (ie. redefinition could change the result of com)
+							However, this clashes with the ability to perform "forward declarations" (way of solving the "decoupled" problem)
+							Moreover, there's a problem in that reassigning a converter to itself can possibly alter the precedence of the converter (unexpected behavior)
+
+					However it would be possible to switch to a "first declaration" resolution
+						This easily allows the "forward declaration" solution while also providing a more consistent behavior (see above)
+
+					This solution is the reason why converters are not inherited in common type situations
+						It's a computational complexity minefield, nevermind the problems involved in comparing precedence
+							eg. a.c exists, where b < c and d.a exists, where b < d. Which converter is the intended meaning?
+
+		Common Ancestor
+			This step is just a simple travel of the inheritance tree
+			This step always results in a usable type (as Nil is currently not implemented) due to the nature of the type heirarchy
+				Guaranteed to return Object or a child type of Object
+			Current implementation is to memoize this result for future lookup
+				This also reuses the key I have to create to perform the Converter Search

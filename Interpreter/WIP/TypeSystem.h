@@ -7,27 +7,19 @@
 
 namespace dust {
 	namespace impl {
+
 		class TypeSystem {
 			public:
-				// A visitor interface to the type records that allows modifications to be performed on individual types in-place (modifications are maintained)
-				struct Type {
+				// A visitor interface to the type records that allows modifications on individual types to be maintained after scope exit
+				struct TypeVisitor {
 					size_t id;
 					TypeSystem* ts;
 
-					Type(size_t i, TypeSystem* self) : id{ i }, ts{ self } {}
+					TypeVisitor(size_t i, TypeSystem* self) : id{ i }, ts{ self } {}
 
-					Type& addOp(std::string op, Function f) {
-						if (ts->type_id.count(op) > 0)
-							ts->addConv(id, ts->type_id[op]);
-
-						ts->types[id].ops[op] = f;
-
-						return *this;
-					}
-
-					operator size_t() {
-						return id;
-					}
+					TypeVisitor& addOp(std::string, Function);
+					
+					operator size_t();
 				};
 
 				static const size_t NIL = -1;
@@ -39,144 +31,65 @@ namespace dust {
 				std::map<std::string, size_t> type_id;					// Associates name to type id
 
 				// Generate a convPair key so that key(a, b) == key(b, a)
-				convPair key(size_t t1, size_t t2) {
-					return convPair{ std::min(t1, t2), std::max(t1, t2) };
-				}
-
-				// Determines if p is a parent of t (ie. p `isParentOf` t)
-				bool isParentOf(size_t p, size_t t) {
-					while (t != p && t != NIL)
-						t = t > 0 ? types[t].parent : NIL;
-
-					return t != NIL;
-				}
-
-				// Find the common ancestor of l and r
-				size_t ancestor(size_t l, size_t r) {
-					while (l != 0) {
-						if (isParentOf(l, r)) return l;
-						l = types[l].parent;
-					}
-
-					return 0;				// Object is always an ancestor
-				}
+				convPair key(size_t, size_t);
 
 				// Really only useful if I'm storing the conversion function in conv (I'm not though)
-				size_t convert(size_t from, size_t to) {
-					auto idx = key(from, to);
+				//size_t convert(size_t, size_t);
 
-					if (conv.count(idx) == 0) return NIL;
-					int id = conv[idx][conv[idx][0] == to ? 0 : 1];
-					if (id == 0) return NIL;
+				// Add a conversion to the registry while maintaining precedence levels (Only callable from the TypeVisitor interface)
+				void addConv(size_t, size_t);
 
-					return id;
-				}
+				// Determines if p is a parent of t (ie. p `isParentOf` t)
+				bool isParentOf(size_t, size_t);
 
-				// Add a conversion to the registry while maintaining precedence levels (currently uses first definition)
-				void addConv(size_t from, size_t to) {
-					auto idx = key(from, to);
-					int sidx = 0;
-
-					// Assign a default value to the array ???
-					// if (conv.count(idx) == 0) conv[idx][1] = NIL;
-
-					if (conv[idx][1] == from) {
-						conv[idx][0] = conv[idx][1];
-						sidx = 1;
-					} else if (conv[idx][0] == from)
-						sidx = 1;
-
-					conv[idx][sidx] = to;
-				}
+				// Find the common ancestor of l and r
+				size_t ancestor(size_t, size_t);
 
 				// Create a Type visitor with the given parent
-				Type newType(std::string t, size_t p) {
-					if (type_id.count(t) == 0) {							// If the type is new
-						types.push_back({ t, types.size(), p });
-						//types.emplace_back(t, types.size(), p);
-
-						type_id[t] = types.size() - 1;						// Add a new name association
-
-					} else {}												// This potentially allows for forward declarations, etc. with minimal code
-
-					return Type{ type_id[t], this };
-				}
+				TypeVisitor newType(std::string, size_t);
 
 			public:
-				TypeSystem() {
-					types.emplace_back("Object", 0);
-				}
+				TypeSystem();
 
-				// Type Creation Methods
-				Type newType(std::string t) {
-					return newType(t, 0);
-				}
+				// Type Visitor Creation Methods
+				TypeVisitor newType(std::string);
 
-				Type newType(std::string t, impl::Type& p) {
-					return newType(t, p.id);
-				}
+				TypeVisitor newType(std::string, Type&);
 
-				Type newType(std::string t, Type& p) {
-					return newType(t, p.id);
-				}
+				TypeVisitor newType(std::string, TypeVisitor&);
 
 
-				// Inheritance Resolution (Find definition of op in the inheritance tree from t upwards)
-				size_t findDef(size_t t, std::string op) {
-					while (t != NIL && types[t].ops.count(op) == 0)
-						t = t > 0 ? types[t].parent : NIL;
-
-					return t;
-				}
+				// Inheritance Resolution (Find definition of a field in the inheritance tree given a starting type)
+				size_t findDef(size_t, std::string);
 
 
 				// Common Type Resolution (Find a type that defines op and that both l and r can be cast to)
 					// Need a way to signify whether a converter was selected (maybe move this logic out of TypeSystem, then I have to create duplicate indices)
-				size_t com(size_t l, size_t r, std::string op) {
-					// Try for same type (not strictly needed as ancestor(l, l) = l, however this isn't something that needs to be memoized)
-					if (l == r) return l;
+					// I actually don't need to provide this information explicitly (see explanation below). However, it could be beneficial to do so
+				size_t com(size_t, size_t, std::string);
+				//size_t com(size_t, size_t, std::string, bool&);
+				//bool com(size_t, size_t, std::string, size_t&);
 
-					// Try for direct conversion
-					auto idx = key(l, r);
-					if (conv.count(idx) > 0) {							// If there is a defined conversion
-						auto convs = conv[idx];
+				// The key differentiator between a conversion relationship and an inheritance relationship is the presence of a converter
+					// Therefore, performing a `immDef` check for a converter (in the unselected type) should be enough to resolve the action
+						// Actually only a `convertible` check of (l, r) is needed (if they aren't convertible, then the return is an ancestor)
+					// This check would only need to be performed when t == l xor t == r (However, it would be simpler if a boolean flag was added)
 
-						if (findDef(convs[0], op) != NIL)				// Test the first precedence
-							return convs[0];
-
-						if (findDef(convs[1], op) != NIL)				// Test the second precedence
-							return convs[1];							// convs[1] defaults to 0 == Object.id
-					}
-
-					// Give common ancestor
-					return siblings.count(idx) == 0 ? siblings[idx] = ancestor(l, r) : siblings[idx];
-				}
-
-				size_t com(dust::impl::Type& l, dust::impl::Type& r, std::string op) {
-					return com(l.id, r.id, op);
-				}
+				size_t com(Type&, Type&, std::string);
 
 
 				// Temporary methods (may be expanded/grouped later)
-				Type getType(size_t idx) {
-					return{ idx, this };
-				}
+				TypeVisitor getType(size_t);
 
-				Type getType(std::string t) {
-					return getType(type_id[t]);
-				}
+				TypeVisitor getType(std::string);
 
-				impl::Type get(size_t idx) {
-					return types[idx];
-				}
+				Type get(size_t);
 
-				impl::Type get(std::string t) {
-					return get(type_id[t]);
-				}
+				Type get(std::string);
 
-				bool immDef(size_t idx, std::string op) {
-					return types[idx].ops.count(op);
-				}
+				bool immDef(size_t, std::string);
+
+				bool convertible(size_t, size_t);
 				
 				// Testing methods
 

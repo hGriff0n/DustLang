@@ -13,9 +13,9 @@ namespace dust {
 		};
 
 		struct Variable {
-			int type_id;
+			size_t type_id;			// == NIL unless statically typed
 			Value val;
-			// bool typ, let;
+			bool is_const;
 		};
 	}
 }

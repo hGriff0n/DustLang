@@ -14,7 +14,7 @@ namespace dust {
 
 		struct Type {
 			std::string name;
-			size_t id, parent;									//std::vector<int> parents for multiple inheritance
+			size_t id, parent;
 			std::map<std::string, Function> ops;
 			//std::map<std::string, impl::Value> fields;		// Replaces ops (Do I need to keep track of fields ???)
 																// Default values and typed/const variables ???

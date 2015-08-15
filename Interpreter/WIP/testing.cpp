@@ -12,16 +12,21 @@
 	// Systems for selecting the correct types and functions for program semantics
 
 // TODO:
-	// Update Dust documentation to reflect the recent work on the type system
+	// Is there anything else that TypeSystem should handle
+		// I'll need to add in checks for assigning nil in the future (for Type methods/members)
+	// Improve/Expand the TypeSystem temporary methods
+	// Determine whether a boolean flag should be used if a converter is selected in TypeSystem::Com
+		// It's not necessary to provide complete information. However it's nicer to work with.
+		// It's also possible to return the boolean and have the common type as the reference "flag"
 
 // Things to work on
-	// Some "feasibility studies" on multiple inheritance
+	// How can I define a general converter (specifically for Tables)
 	// Can I get inheritable (implicit) converters to work in the case of com operations (Way of establishing precedence)
 		// They can work easily in the case of function arguments and typed assignments
 	// Improving and consolidating the API
 	// Currently NIL type is an error code, but the idea is for it to have some meaning (ie. operations and values)
-	// Move function definitions into .cpp files
-	// Add/Improve Exception and Error support (or at least define entry points)
+	// Define entry, throw, and catch points for exceptions and error handling (The next chunk of dust is to add exceptions so I won't handle this now)
+	// After the rewrite is finished, move the dust documents into this project and update the documentation
 
 // I also need to merge my current work on dust semantics and syntax with the documents in DustParser (keed documentation intact)
 
@@ -48,7 +53,6 @@ class dust::EvalState {
 		}
 };
 
-size_t dispatch(dust::impl::TypeSystem::Type&, std::string, dust::impl::TypeSystem&, dust::EvalState&);
 size_t dispatch(size_t, std::string, dust::impl::TypeSystem&, dust::EvalState&);
 
 int main(int argc, const char* argv[]) {
@@ -80,6 +84,10 @@ int main(int argc, const char* argv[]) {
 	auto String = ts.newType("String");
 	String.addOp("_op+", [](EvalState& e) { return 4; });
 	String.addOp("_op/", [](EvalState& e) { return 4; });
+
+	auto Bool = ts.newType("Bool");				// 5
+	auto Table = ts.newType("Table");			// 6
+	auto Function = ts.newType("Function");		// 7
 	
 	/*
 	Conversion declarations
@@ -140,8 +148,4 @@ size_t dispatch(size_t t, std::string op, dust::impl::TypeSystem& ts, dust::Eval
 	ps(ts.get(d_type).name + "." + op);
 	
 	return ts.get(d_type).ops[op](e);
-}
-
-size_t dispatch(dust::impl::TypeSystem::Type& t, std::string op, dust::impl::TypeSystem& ts, dust::EvalState& e) {
-	return dispatch(t.id, op, ts, e);
 }
