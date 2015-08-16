@@ -94,10 +94,14 @@ namespace dust {
 		}
 
 		size_t TypeSystem::findDef(size_t t, std::string op) {
-			while (t != NIL && types[t].ops.count(op) == 0)			// && !immDef(t, op)
+			while (t != NIL && immDef(t, op) != t)
 				t = t > 0 ? types[t].parent : NIL;
 
 			return t;
+		}
+
+		size_t TypeSystem::immDef(size_t idx, std::string op) {
+			return types[idx].ops.count(op) > 0 ? idx : NIL;
 		}
 
 		size_t TypeSystem::com(size_t l, size_t r, std::string op) {
@@ -138,10 +142,6 @@ namespace dust {
 
 		Type TypeSystem::get(std::string t) {
 			return types[type_id[t]];
-		}
-
-		bool TypeSystem::immDef(size_t idx, std::string op) {
-			return types[idx].ops.count(op);
 		}
 
 		bool TypeSystem::convertible(size_t t1, size_t t2) {

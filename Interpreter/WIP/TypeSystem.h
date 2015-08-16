@@ -11,6 +11,7 @@ namespace dust {
 		class TypeSystem {
 			public:
 				// A visitor interface to the type records that allows modifications on individual types to be maintained after scope exit
+					// Possible security issues
 				struct TypeVisitor {
 					size_t id;
 					TypeSystem* ts;
@@ -25,7 +26,7 @@ namespace dust {
 				static const size_t NIL = -1;
 
 			private:
-				std::vector<impl::Type> types;							// Maintains type records, Indices are type_id
+				std::vector<impl::Type> types;							// Maintains type records, Indices are type_id (Could I maintain this as a tree, reduces O-cost of ancestor and isParentOf?)
 				std::map<convPair, std::array<size_t, 2>> conv;			// Tracks conversion precedence
 				std::map<convPair, size_t> siblings;					// Memoize the ancestor of two types
 				std::map<std::string, size_t> type_id;					// Associates name to type id
@@ -59,8 +60,12 @@ namespace dust {
 				TypeVisitor newType(std::string, TypeVisitor&);
 
 
-				// Inheritance Resolution (Find definition of a field in the inheritance tree given a starting type)
+				// Inheritance Resolution (returns NIL if no definition is found
+				// Find op definition in type or in parent(type)
 				size_t findDef(size_t, std::string);
+
+				// Find op definition in type without considering inheritance relationships
+				size_t immDef(size_t, std::string);
 
 
 				// Common Type Resolution (Find a type that defines op and that both l and r can be cast to)
@@ -79,17 +84,15 @@ namespace dust {
 
 
 				// Temporary methods (may be expanded/grouped later)
-				TypeVisitor getType(size_t);
+				TypeVisitor getType(size_t);			// Add fields
 
 				TypeVisitor getType(std::string);
 
-				Type get(size_t);
+				Type get(size_t);						// Evaluation
 
 				Type get(std::string);
 
-				bool immDef(size_t, std::string);
-
-				bool convertible(size_t, size_t);
+				bool convertible(size_t, size_t);		// Check for converter
 				
 				// Testing methods
 
