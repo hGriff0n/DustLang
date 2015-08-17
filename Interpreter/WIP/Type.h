@@ -9,6 +9,8 @@ namespace dust {
 	class EvalState;
 	typedef std::function<int(EvalState&)> Function;
 
+	// struct Variable;
+
 	namespace impl {
 		class TypeSystem;
 
@@ -16,7 +18,7 @@ namespace dust {
 			std::string name;
 			size_t id, parent;
 			std::map<std::string, Function> ops;
-			//std::map<std::string, impl::Value> fields;		// Replaces ops (Do I need to keep track of fields ???)
+			//std::map<std::string, impl::Variable> fields;		// Replaces ops (Do I need to keep track of fields ???)
 																// Default values and typed/const variables ???
 
 			Type(std::string t, size_t s) : Type(t, s, -1) {}

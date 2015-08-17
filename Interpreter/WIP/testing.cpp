@@ -7,26 +7,29 @@
 #define p(x) std::cout << (x)
 #define ps(x) p(x) << " :: "
 #define pl(x) p(x) << std::endl
+#define nl() pl("")
 
 // Current testing devoted to
-	// Systems for selecting the correct types and functions for program semantics
+	// Systems for working with (storing/extracting/passing) atoms, values, and variables
 
 // TODO:
-	// Is there anything else that TypeSystem should handle
-		// I'll need to add in checks for assigning nil in the future (for Type methods/members)
-	// Improve/Expand the TypeSystem temporary methods
-	// Determine whether a boolean flag should be used if a converter is selected in TypeSystem::Com
-		// It's not necessary to provide complete information. However it's nicer to work with.
-		// It's also possible to return the boolean and have the common type as the reference "flag"
+
 
 // Things to work on
 	// How can I define a general converter (specifically for Tables)
-	// Can I get inheritable (implicit) converters to work in the case of com operations (Way of establishing precedence)
-		// They can work easily in the case of function arguments and typed assignments
+		// I could just have every type define a converter to Table (wraps the value in a table) and have this definition automatically be added to new types
+			// Though if you think about it, this isn't all that different from hard-coding the selection in the evaluation (There's trade-offs of course)
+			// Moreover the converter can also be overwritten/rewritten to have lower precedence
+	// Consider moving converter precedence resolution to "first declaration" (currently "first definition")
 	// Improving and consolidating the API
 	// Currently NIL type is an error code, but the idea is for it to have some meaning (ie. operations and values)
 	// Define entry, throw, and catch points for exceptions and error handling (The next chunk of dust is to add exceptions so I won't handle this now)
+		// Add in checks for assigning nil in the future (for some Type methods/members)
 	// After the rewrite is finished, move the dust documents into this project and update the documentation
+
+// Other Stuff and Pipe Dreams
+	// Can I get inheritable (implicit) converters to work in the case of com operations (Way of establishing precedence)
+		// They can work easily in the case of function arguments and typed assignments
 
 // I also need to merge my current work on dust semantics and syntax with the documents in DustParser (keed documentation intact)
 
@@ -37,18 +40,18 @@ class dust::EvalState {
 
 	public:
 
-		impl::Type getType(std::string t) {
-			return ts.get(type_id[t]);
+		impl::TypeSystem getTS() {
+			return ts;
 		}
 
 		int dispatch(impl::Type& t, std::string op) {
 			auto ty = ts.findDef(t.id, op);
 
 			return 0;
-			//return ts._get(ty).ops[op](*this);					// I use this (similar) code in the current production !!!!!
+			//return ts.get(ty).ops[op](*this);					// I use this (similar) code in the current production !!!!!
 		}
 
-		impl::Type dispatch_(impl::Type t, std::string op) {
+		impl::Type dispatch_(impl::Type& t, std::string op) {
 			return ts.get(ts.findDef(t.id, op));
 		}
 };
@@ -97,7 +100,7 @@ int main(int argc, const char* argv[]) {
 	Int.addOp("Float", [](EvalState& e) { return 2; });
 	// Number.addOp("String", [](EvalState& e) { return 1; });		// Replace conversion Int -> String. Adds conversion Float -> String (Iff converters can be inherited, precedence issues)
 
-	pl("");
+	nl();
 	/*
 	Testing
 	*/
@@ -120,8 +123,8 @@ int main(int argc, const char* argv[]) {
 		pl(e);
 	}
 
-	pl("");
-	pl("");
+	nl();
+	nl();
 
 	// Testing Inheritance
 	try {

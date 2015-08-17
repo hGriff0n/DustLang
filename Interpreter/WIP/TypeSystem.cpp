@@ -1,11 +1,13 @@
 #include "TypeSystem.h"
+#include <cctype>
 
 namespace dust {
 	namespace impl {
 		using TypeVisitor = TypeSystem::TypeVisitor;
 
 		TypeVisitor& TypeVisitor::addOp(std::string op, Function f) {
-			if (ts->type_id.count(op) > 0)			// Check if the function is a converter
+			// Check if the function is a converter
+			if (ts->type_id.count(op) > 0)
 				ts->addConv(id, ts->type_id[op]);
 
 			ts->types[id].ops[op] = f;
@@ -53,12 +55,14 @@ namespace dust {
 			auto idx = key(from, to);
 			int sidx = 0;
 
-			// Assign a default value to the array ???
-			// if (conv.count(idx) == 0) conv[idx][1] = NIL;
+			// Assign a default value to the array
+			if (conv.count(idx) == 0) conv[idx][1] = NIL;
 
+			// Test for cases where the converter will have low precedence
 			if (conv[idx][1] == from) {
 				conv[idx][0] = conv[idx][1];
 				sidx = 1;
+
 			} else if (conv[idx][0] == from)
 				sidx = 1;
 
@@ -66,9 +70,13 @@ namespace dust {
 		}
 
 		TypeVisitor TypeSystem::newType(std::string t, size_t p) {
-			if (type_id.count(t) == 0) {							// If the type is new
+			// Test that t is a type identifier
+			if (!t.empty() && !std::isupper(t[0]))
+				throw std::string{ t + " is not a valid type identifier" };
+
+			// Test for new type definition
+			if (type_id.count(t) == 0) {
 				types.push_back({ t, types.size(), p });
-				//types.emplace_back(t, types.size(), p);
 
 				type_id[t] = types.size() - 1;						// Add a new name association
 
@@ -90,17 +98,17 @@ namespace dust {
 		}
 
 		TypeVisitor TypeSystem::newType(std::string t, TypeVisitor& p) {
-			return newType(t, p.id);
+			return newType(t, (size_t)p);
 		}
 
 		size_t TypeSystem::findDef(size_t t, std::string op) {
-			while (t != NIL && immDef(t, op) != t)
+			while (t != NIL && isDefd(t, op) == NIL)
 				t = t > 0 ? types[t].parent : NIL;
 
 			return t;
 		}
 
-		size_t TypeSystem::immDef(size_t idx, std::string op) {
+		size_t TypeSystem::isDefd(size_t idx, std::string op) {
 			return types[idx].ops.count(op) > 0 ? idx : NIL;
 		}
 
