@@ -1,6 +1,7 @@
-//#include "Type.h"
-//#include <vector>
 #include "TypeSystem.h"
+
+#include "Value.h"
+#include "stack.h"
 
 #include <iostream>
 
@@ -10,26 +11,33 @@
 #define nl() pl("")
 
 // Current testing devoted to
-	// Systems for working with (storing/extracting/passing) atoms, values, and variables
+	// Systems for implementing dynamic variable storage and recall
+	// Possibly also for testing the development of type_traits style classes
 
 // TODO:
+	// Define what I'm expecting from this phase of the project and what each part should accomplish
 
+	// String storage
+		// How this'll interact with stacks needs some more work at the moment
+	// Garbage collection
+		
+	// Atoms
+	// Values
+	// Stack interaction
+		// Modify the stack interface so that it is indexable (allowing the forceType function)
+	// Variables
+	// Encapsulation
+	// TypeSystem integration
+	// EvalState and expression evaluation
+	// AST Construction
+	// Integrate with the grammar
 
 // Things to work on
-	// How can I define a general converter (specifically for Tables)
-		// I could just have every type define a converter to Table (wraps the value in a table) and have this definition automatically be added to new types
-			// Though if you think about it, this isn't all that different from hard-coding the selection in the evaluation (There's trade-offs of course)
-			// Moreover the converter can also be overwritten/rewritten to have lower precedence
-	// Consider moving converter precedence resolution to "first declaration" (currently "first definition")
 	// Improving and consolidating the API
-	// Currently NIL type is an error code, but the idea is for it to have some meaning (ie. operations and values)
-	// Define entry, throw, and catch points for exceptions and error handling (The next chunk of dust is to add exceptions so I won't handle this now)
-		// Add in checks for assigning nil in the future (for some Type methods/members)
+	// Namespace naming for best code organization
 	// After the rewrite is finished, move the dust documents into this project and update the documentation
 
 // Other Stuff and Pipe Dreams
-	// Can I get inheritable (implicit) converters to work in the case of com operations (Way of establishing precedence)
-		// They can work easily in the case of function arguments and typed assignments
 
 // I also need to merge my current work on dust semantics and syntax with the documents in DustParser (keed documentation intact)
 
@@ -40,7 +48,7 @@ class dust::EvalState {
 
 	public:
 
-		impl::TypeSystem getTS() {
+		impl::TypeSystem& getTS() {
 			return ts;
 		}
 
@@ -58,6 +66,8 @@ class dust::EvalState {
 
 size_t dispatch(size_t, std::string, dust::impl::TypeSystem&, dust::EvalState&);
 
+std::string combine(dust::impl::str_record*, dust::impl::str_record*);
+
 int main(int argc, const char* argv[]) {
 	using namespace dust::impl;
 	using namespace dust;
@@ -68,77 +78,61 @@ int main(int argc, const char* argv[]) {
 	"Global" structures that will eventually be collected within EvalState
 	*/
 	TypeSystem ts;
+	//stack<Value> s{};
 
 	/*
-	Type declarations
+	Testing declarations
 	*/
-	auto Object = ts.getType("Object");
 
-	auto Number = ts.newType("Number");
-	Number.addOp("_op*", [](EvalState& e) { return 1; });
-
-	auto Int = ts.newType("Int", Number);
-	Int.addOp("_op+", [](EvalState& e) { return 2; });
-
-	auto Float = ts.newType("Float", Number);
-	Float.addOp("_op+", [](EvalState& e) { return 3; });
-	Float.addOp("_op*", [](EvalState& e) { return 3; });
-	
-	auto String = ts.newType("String");
-	String.addOp("_op+", [](EvalState& e) { return 4; });
-	String.addOp("_op/", [](EvalState& e) { return 4; });
-
-	auto Bool = ts.newType("Bool");				// 5
-	auto Table = ts.newType("Table");			// 6
-	auto Function = ts.newType("Function");		// 7
-	
-	/*
-	Conversion declarations
-	*/
-	Int.addOp("String", [](EvalState& e) { return 2; });
-	String.addOp("Int", [](EvalState& e) { return 4; });
-	Int.addOp("Float", [](EvalState& e) { return 2; });
-	// Number.addOp("String", [](EvalState& e) { return 1; });		// Replace conversion Int -> String. Adds conversion Float -> String (Iff converters can be inherited, precedence issues)
+	str_record* s1 = makeRecord("Hello");
+	str_record* s2 = makeRecord("Hello");
+	//str_record* s3 = set(nullptr, s1);
 
 	nl();
+
 	/*
 	Testing
-	*/
-
-	//* Testing common type
-	try {
-		ps("String + Int   ");
-		pl(dispatch(ts.com(String, Int, "_op+"), "_op+", ts, e));						// String._op+ (4)
-		ps("Int + String   ");
-		pl(dispatch(ts.com(Int, String, "_op+"), "_op+", ts, e));						// String._op+ (4)
-		ps("String * Int   ");
-		pl(dispatch(ts.com(String, Int, "_op*"), "_op*", ts, e));						// Number._op* (1)
-		ps("Int + Int      ");
-		pl(dispatch(ts.com(Int, Int, "_op+"), "_op+", ts, e));							// Int._op+ (2)
-		//ps("Float / Int    ");
-		//pl(dispatch(ts.com(Float, Int, "_op/"), "_op/", ts, e));						// Exception
-		ps("Float + String ");
-		pl(dispatch(ts.com(Float, String, "_op+"), "_op+", ts, e));						// Exception if Float -> String not defined
-	} catch (std::string& e) {
-		pl(e);
-	}
-
-	nl();
-	nl();
-
-	// Testing Inheritance
-	try {
-		ps("Int._op*       ");
-		pl(dispatch(Int, "_op*", ts, e));								// Number._op* (1)
-		ps("Float._op*     ");
-		pl(dispatch(Float, "_op*", ts, e));								// Float._op* (3)
-		ps("String._op*    ");
-		pl(dispatch(String, "_op*", ts, e));							// Exception
-
-	} catch (std::string& e) {
-		pl(e);
-	}
 	//*/
+
+	ps(s1);
+	pl(deref(s1));
+
+	//ps(s2);
+	//pl(deref(s2));
+
+	nl();
+
+	ps("Number Strings");
+	pl(num_records());
+
+	printAll();
+
+	nl();
+	nl();
+
+	s1 = set(s1, "World");
+	ps(s1);
+	pl(deref(s1));
+
+	nl();
+	ps("Number Strings");
+	pl(num_records());
+
+	printAll();
+
+	nl();
+	nl();
+
+	s2 = set(s2, combine(s2, s1));				// I want to be able to chain these
+	//s2 = set(s2, combine(s2, ", ", s1));
+	ps(s1);
+	pl(deref(s1));
+
+	nl();
+	ps("Number Strings");
+	pl(num_records());
+
+	printAll();
 
 	std::cin.get();
 }
@@ -151,4 +145,9 @@ size_t dispatch(size_t t, std::string op, dust::impl::TypeSystem& ts, dust::Eval
 	ps(ts.get(d_type).name + "." + op);
 	
 	return ts.get(d_type).ops[op](e);
+}
+
+
+std::string combine(dust::impl::str_record* s1, dust::impl::str_record* s2) {
+	return deref(s1) + deref(s2);
 }
