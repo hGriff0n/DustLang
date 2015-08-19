@@ -78,6 +78,7 @@ int main(int argc, const char* argv[]) {
 	"Global" structures that will eventually be collected within EvalState
 	*/
 	TypeSystem ts;
+	int* i = new int{ 5 };
 	//stack<Value> s{};
 
 	/*
@@ -131,8 +132,27 @@ int main(int argc, const char* argv[]) {
 	nl();
 	ps("Number Strings");
 	pl(num_records());
+	ps("Number Bins");
+	pl(num_bins());
+	nl();
 
 	printAll();
+
+	/*/
+	str_record* s4 = makeRecord("s4");
+	str_record* s5 = makeRecord("s5");
+	str_record* s6 = makeRecord("s6");
+	str_record* s7 = makeRecord("s7");
+
+	nl();
+	ps("Number Strings");
+	pl(num_records());
+	ps("Number Bins");
+	pl(num_bins());
+	nl();
+
+	printAll();
+	//*/
 
 	std::cin.get();
 }

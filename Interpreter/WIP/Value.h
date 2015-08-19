@@ -9,6 +9,8 @@ namespace dust {
 			double d;			// 8
 			str_record* s;		// 4
 			void* u;			// 4
+			// I can cast str_record* to void* (and vice versa)
+				// isString(u) iff type(u) == str_record*
 
 			Atom() {}
 			Atom(int v) : i{ v } {}

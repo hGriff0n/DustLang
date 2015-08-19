@@ -2,6 +2,8 @@
 
 #include <string>
 
+#define USE_BIN_STORAGE
+
 namespace dust {
 	namespace impl {
 		struct str_record;
@@ -17,6 +19,7 @@ namespace dust {
 
 		// DEBUG
 		int num_records();
+		int num_bins();
 		void num_refs(std::string);
 		void printAll();
 
