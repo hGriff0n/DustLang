@@ -5,10 +5,10 @@ Object												   Nil
   |------|
 Float   Int
 
-Float < Number		(Float is a child of Number)
-Int < Number
-Number < Object
 String < Object
+Number < Object
 Bool < Object
 Table < Object
 Function < Object
+Float < Number		(Float is a child of Number)
+Int < Number

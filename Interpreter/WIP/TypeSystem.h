@@ -2,8 +2,21 @@
 
 #include "Type.h"
 #include <vector>
+#include <array>
 
 #include <iostream>
+
+// TODO/Considerations
+	// Can I get inheritable (implicit) converters to work in the case of com operations (Way of establishing precedence)
+		// They can work easily in the case of function arguments and typed assignments
+	// How can I define a general converter (specifically for Tables)
+		// I could just have every type define a converter to Table (wraps the value in a table) and have this definition automatically be added to new types
+		// Though if you think about it, this isn't all that different from hard-coding the selection in the evaluation (There's trade-offs of course)
+		// Moreover the converter can also be overwritten/rewritten to have lower precedence
+	// Consider moving converter precedence resolution to "first declaration" (currently "first definition")
+	// Currently NIL type is an error code, but the idea is for it to have some meaning (ie. operations and values)
+	// Define entry, throw, and catch points for exceptions and error handling (The next chunk of dust is to add exceptions so I won't handle this now)
+		// Add in checks for assigning nil in the future (for some Type methods/members)
 
 namespace dust {
 	namespace impl {
@@ -60,6 +73,7 @@ namespace dust {
 
 				// Find op definition in type without considering inheritance relationships
 				size_t isDefd(size_t, std::string);
+			  //size_t findLoc(size_t, std::string);
 
 
 				// Common Type Resolution (Find a type that defines op and that both l and r can be cast to)
@@ -73,28 +87,10 @@ namespace dust {
 					if (dis_t == NIL)
 						throw SomeExceptionClassThatIveNotYetGottenAroundToDefining()
 
-					// Using convertible check (Doesn't distinguish between the two sides)
-						// This is the one I'm going to be using (Simpler and doesn't rely on a specific organization of values)
-						// I could possibly remove the "convertibile" check depending on how forceType handles inheritance
-						// Min: 2 bools, 0 func:							O(1), O(1)
-						// Max: 3 bools, 2 func:							O(1), O(1), O(...), O(?), O(?)
+					// Determine whether com selected a converter and perform conversions
 					if ((com_t == l ^ com_t == r) && ts.convertible(l, r))
-						forceType(-1, com_t);					// The name is a placeholder (Maybe move to the typesystem ???)
+						forceType(-1, com_t);					// The name is a placeholder (Maybe move to be a TypeSystem method ???)
 						forceType(-2, com_t);					// Forces the value at the given index to have the given type by calling a converter if necessary
-
-					// Using isDefd check
-						// Min: 1 bools, 0 func:							O(1)
-						// Max: 5 bools, 1 func:							O(1), O(1), O(1), O(...), O(...), O(?)
-					if (l != r)
-						if (com_t == r && ts.isDefd(l, ts.get(r).name) != NIL)
-							forceType(LHS, com_t);											// LHS and RHS are constants that refer to specific stack indices
-						else if (com_t == l && ts.isDefd(r, ts.get(l).name) != NIL)
-							forceType(RHS, com_t);
-
-					// Algorithmic cost of convertible and isDefd is the same
-						// Convertible size is O(n!), n = number of types
-						// isDefd size is O(n), n = number of methods
-						// But they both only use map::count
 
 					return ts.get(dis_t).ops[op](e);
 				*/

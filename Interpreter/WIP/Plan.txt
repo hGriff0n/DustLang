@@ -1,6 +1,3 @@
-Make this into a "Document" describing the type system
-	Or make a similar document
-
 Type Structure
 	Contains range of acceptable values
 	Contains list of parents ???
@@ -10,99 +7,23 @@ Declare conversions between classes (and allow conversions to select with operat
 	Define conversion function
 		Have the conversion function be used by the program to convert between objects
 			Currently they are disjoint (ie. the conversion function is not acutally called for the conversion)
-			
-Inheritance Heirarchy
-	Single Inheritance
-		Simplest and Easiest method to implement and use
-			It's the current framework
-			Simple to reason about and (relatively) inexpensive
-		I can still allow "++ <type_list>" as valid syntax with semantics
-			The first type would be set as the type's parent
-			The rest of the types would be merged with the type (ignoring all multiply defined methods)
 
-	Multiple inheritance
-		There's not a real computational reason for not allowing multiple inheritance
-			The current system only really needs some modifications (ie. wrap the search loop in a ranged for, add some recursion) for it to work
-				Slightly more complex (and has the possibility to be much more expensive)
-			If I'm memoizing ancestors, the complexity hit is really reduced
-		There are some accuracy problems regarding selecting correct overloads (inherit the same method from multiple types)
-			Select the first type where the method is found
-			Select the last type where the method is found
-
-Operators vs Indexing
-	Indexing relies on inheritance
-		The question is finding out where the given field is defined (and if it's a valid operation)
-			Finding out if it's valid or not may be a problem if Nil is always indexable
-
-	Operators work on common types (currently 'com')
-		Common type is two types where one is convertable to another
-			The question is whether common type should catch inheritance relationships
-				Ie. Should I have to define a converter between Int and Float if Float would be a child of Int to allow 3 + 3.5 (Note: Int < Number and Float < Number)
-					Yes if I want 3 + 3.5 = 6.5 (Int can't be derived to Float, a child type; Float can be derived to Int, a parent type)
-					But if I want 3 + 3.5 = 6, then there is no need to define a converter due to the inheritance relationship (Only implemented in _com)
-						ancestor(Int, Float) = Int
-
-			Int -> Float means that Int is convertible to Float and therefore com(Int, Float) = Int
-				Float -> Int means that Float is convertible to Int
-					com(Int, Float) = Int unless Int -> Float is redefined due to precedence resolution
-
-		com Procedure:
-			Part 1: Check if they are the same type
-				Simple and quick optimization (moreover, very likely to occur)
-			Part 2: Check for converters
-				Look for a -> b or b <- a and return the "to" type
-				If both are found, use precedence resolution
-			Part 3: Return common ancestor
-				Roundabout way of returning Part 1
-				Slightly more expensive (I also don't want to remember that ancestor(l, l) = l)
-
-			Precedence Resolution: First defined converter
-				I could instead use a first declared approach (this isn't as subject to the problems involved in first defined)
-					This completely resolves the problem with reassigning the converter
-
-		Methods
-			lub(l, r) finds the common type of l and r
-			com(l, r, op) finds the common type of l and r where op is defined
-			In notes, I've suggested "s.call(com(l, r, op)[op])" for selecting the function to call
-				This could be shortened to "s.call(com(l, r, op))" if lub returns the function to call
-				Can extend this with variadics to perform "interface" checking
-				This might have problems when I go to implement function definitions
-
-		Precedence
-			Int and Float should both be convertible to each other
-			But 3.5 + 3 should always be 6.5 and not 6 (ie. Float has higher precedence)
-
-			I'm going to use an "order of declaration" approach
-				The first parsed conversion function establishes the common type (the 'to' type)
-				This has some complications when reordering "require" statements (if different files declare conversion functions to and from two types)
-					This can be worked around through "best practice" (maintain any conversion functions between two classes to one file)
-					This still leaves open the problem of decoupled conversions (ie. two types are convertible but neither's file requires the other)
-						It might be useful to enable a "forward-declaration" style syntax
-							The only hurdle would be allowing reassignment of Type identifiers (in select cases?)
-							Otherwise the current semantics and syntax would allow the feature wholeheartedly
-						Indexing forward declared types is already well-defined by the language.
-
-				What if the converter function is "overruled" or rewritten
-					"Rolling" precedence (ie. the redefinition would switch the result of lub)
-						Under this method, reassigning the conversion function (ie. x = x) would also trigger this behavior (Good or not?)
-						It's also really easy to abuse (much along the same lines as the require statements)
-
-		Converters
-			Converters are functions that specify a conversion from one type to another
-				Converters are declared as a method in the from type's table
-				The method name is, naturally, the to type (this does entail a slight bending of the grammar)
-			Converters are not inherited (for the purposes of determining common type)
-				It is possible that they could be inherited for other instances (but it's concievable that this won't be true)
-					It would be possible to explicitly invoke a converter from a parent type (the question is over implicit invokations)
-				There's no accurate way of establishing precedence between inherited converters
-				There's also a degree of computational explosion that is involved in even finding a correct converter
-					Declared converter to declared type (Part 2 of current common type resoultion)
-					Inherited converter to declared type
-					Declared converter to parent type
-					Inherited converter to parent type
-				
 TypeTraits style class
 
 Registers
 
 Redesigned State class
+
+Everything I do for strings should, ideally, be usable for tables/userdata/etc.
+
+Garbage Collection system
+	This is going to integrate with the string/table/etc. storage systems
+		If only because that is the easiest way of ensuring that the Garbage Collecter can work on those systems
+
+String storage
+	Reference counted (particularly for literals)
+		There's at most one actual instance of the string in memory for any number of instances for the string in code
+		I have a working model for this already, the only problem is adding/removing references (especially in regards to temporaries)
+
+	Immutable (?)
+		Modifying a string should create a new instance (unless the current instance is the only)
