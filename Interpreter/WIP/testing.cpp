@@ -17,8 +17,6 @@
 // TODO:
 	// Define what I'm expecting from this phase of the project and what each part should accomplish
 
-	// String storage
-		// How this'll interact with stacks needs some more work at the moment
 	// Garbage collection
 		
 	// Atoms
@@ -66,8 +64,6 @@ class dust::EvalState {
 
 size_t dispatch(size_t, std::string, dust::impl::TypeSystem&, dust::EvalState&);
 
-std::string combine(dust::impl::str_record*, dust::impl::str_record*);
-
 int main(int argc, const char* argv[]) {
 	using namespace dust::impl;
 	using namespace dust;
@@ -78,7 +74,6 @@ int main(int argc, const char* argv[]) {
 	"Global" structures that will eventually be collected within EvalState
 	*/
 	TypeSystem ts;
-	int* i = new int{ 5 };
 	//stack<Value> s{};
 
 	/*
@@ -87,72 +82,81 @@ int main(int argc, const char* argv[]) {
 
 	str_record* s1 = makeRecord("Hello");
 	str_record* s2 = makeRecord("Hello");
-	//str_record* s3 = set(nullptr, s1);
+	str_record* tr = set(nullptr, ", ");				// temporary register
 
+	//test();
 	nl();
 
 	/*
 	Testing
 	//*/
 
+	// "Hello" + ", " + "World!" + "Hello"
+	// s2 = makeRecord("Hello")
+
+	// tr = set(nullptr, ", ")
+	// s2 = combine(s2, tr)
+	// tr = delRef(tr)
+
+	// tr = set(tr, "World!")					// Is explicitly deleting tr absolutely necessary?
+	// s2 = combine(s2, tr)						// set will reuse memory if the passed record is the only reference (but not if the new string already has a record)
+	// tr = delRef(tr)							// delRef immediately adds the record to GC stack for allocation purposes (set relies on the garbage collector to collect the old records)
+
+	// tr = set(tr, "Hello")
+	// s2 = combine(s2, tr)
+	// tr = delRef(tr)
+
+	// s2 = "Hello"
 	ps(s1);
 	pl(deref(s1));
-
-	//ps(s2);
-	//pl(deref(s2));
+	ps(s2);
+	pl(deref(s2));
+	ps(tr);
+	pl(deref(tr));
 
 	nl();
-
-	ps("Number Strings");
-	pl(num_records());
-
 	printAll();
-
-	nl();
 	nl();
 
-	s1 = set(s1, "World");
+	// s2 + ", "
+	s2 = combine(s2, tr);
+	tr = delRef(tr);
+
 	ps(s1);
 	pl(deref(s1));
+	ps(s2);
+	pl(deref(s2));
 
 	nl();
-	ps("Number Strings");
-	pl(num_records());
-
 	printAll();
-
-	nl();
 	nl();
 
-	s2 = set(s2, combine(s2, s1));				// I want to be able to chain these
-	//s2 = set(s2, combine(s2, ", ", s1));
+	// s2 + "World!"
+	tr = set(tr, "World!");
+	s2 = combine(s2, tr);
+	tr = delRef(tr);				// However, s3 is not "actually" deleted
+
 	ps(s1);
 	pl(deref(s1));
+	ps(s2);
+	pl(deref(s2));
 
 	nl();
-	ps("Number Strings");
-	pl(num_records());
-	ps("Number Bins");
-	pl(num_bins());
-	nl();
-
 	printAll();
-
-	/*/
-	str_record* s4 = makeRecord("s4");
-	str_record* s5 = makeRecord("s5");
-	str_record* s6 = makeRecord("s6");
-	str_record* s7 = makeRecord("s7");
-
-	nl();
-	ps("Number Strings");
-	pl(num_records());
-	ps("Number Bins");
-	pl(num_bins());
 	nl();
 
+	// s2 + "Hello"
+	tr = set(tr, "Hello");
+	s2 = combine(s2, tr);
+	tr = delRef(tr);				// Doesn't invalidate s1
+
+	ps(s1);
+	pl(deref(s1));
+	ps(s2);
+	pl(deref(s2));
+
+	nl();
 	printAll();
-	//*/
 
 	std::cin.get();
 }
@@ -165,9 +169,4 @@ size_t dispatch(size_t t, std::string op, dust::impl::TypeSystem& ts, dust::Eval
 	ps(ts.get(d_type).name + "." + op);
 	
 	return ts.get(d_type).ops[op](e);
-}
-
-
-std::string combine(dust::impl::str_record* s1, dust::impl::str_record* s2) {
-	return deref(s1) + deref(s2);
 }
