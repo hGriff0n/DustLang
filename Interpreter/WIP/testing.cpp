@@ -80,9 +80,8 @@ int main(int argc, const char* argv[]) {
 	Testing declarations
 	*/
 
-	str_record* s1 = makeRecord("Hello");
-	str_record* s2 = makeRecord("Hello");
-	str_record* tr = set(nullptr, ", ");				// temporary register
+	str_record* s1 = loadRef("Hello");
+	str_record* s2 = loadRef("Hello");
 
 	//test();
 	nl();
@@ -92,19 +91,40 @@ int main(int argc, const char* argv[]) {
 	//*/
 
 	// "Hello" + ", " + "World!" + "Hello"
-	// s2 = makeRecord("Hello")
 
-	// tr = set(nullptr, ", ")
+	// USING STANDARD STORAGE AS TEMPORARIES
+	// s2 = loadRef("Hello")
+	
+	// tr = setRef(nullptr, ", ")
 	// s2 = combine(s2, tr)
 	// tr = delRef(tr)
+	
+	// tr = setRef(tr, "World!")					// Is explicitly deleting tr absolutely necessary?
+	// s2 = combine(s2, tr)							// set will reuse memory if the passed record is the only reference (but not if the new string already has a record)
+	// tr = delRef(tr)								// delRef immediately adds the record to GC stack for allocation purposes (set relies on the garbage collector to collect the old records)
 
-	// tr = set(tr, "World!")					// Is explicitly deleting tr absolutely necessary?
-	// s2 = combine(s2, tr)						// set will reuse memory if the passed record is the only reference (but not if the new string already has a record)
-	// tr = delRef(tr)							// delRef immediately adds the record to GC stack for allocation purposes (set relies on the garbage collector to collect the old records)
-
-	// tr = set(tr, "Hello")
+	// tr = setRef(tr, "Hello")
 	// s2 = combine(s2, tr)
+
 	// tr = delRef(tr)
+
+	// USING TEMPORARY REGISTERS
+	// s2 = loadRef("Hello")
+
+	// tr = tempRef(", ")
+	// s2 = combine(s2, tr)
+
+	// tr = setTemp(tr, "World!")
+	// s2 = combine(s2, tr)
+
+	// tr = setTemp(tr, "Hello")
+	// s2 = combine(s2, tr)
+
+	// flushTemporaries()
+	// tr = nullptr
+
+#ifndef USE_EXP_TEMPS
+	str_record* tr = setRef(nullptr, ", ");				// temporary register
 
 	// s2 = "Hello"
 	ps(s1);
@@ -132,7 +152,7 @@ int main(int argc, const char* argv[]) {
 	nl();
 
 	// s2 + "World!"
-	tr = set(tr, "World!");
+	tr = setRef(tr, "World!");
 	s2 = combine(s2, tr);
 	tr = delRef(tr);				// However, s3 is not "actually" deleted
 
@@ -146,7 +166,7 @@ int main(int argc, const char* argv[]) {
 	nl();
 
 	// s2 + "Hello"
-	tr = set(tr, "Hello");
+	tr = setRef(tr, "Hello");
 	s2 = combine(s2, tr);
 	tr = delRef(tr);				// Doesn't invalidate s1
 
@@ -157,6 +177,71 @@ int main(int argc, const char* argv[]) {
 
 	nl();
 	printAll();
+	
+
+	// "Hello" + ", " + "World!" + "Hello"
+	// s1 = loadRef("Hello")
+	// tr = tempRef(", ")								// The basic difference between ref and temp is that ref's are stored
+	// combine(s1, tr)									// Temp's are maintained. ref operations conditionally modify in-place
+	// setTemp(tr, "World!")							// Temp operations always modify in-place (guarantee no outside refs)
+	// combine(s1, tr)
+	// setTemp(tr, "Hello")
+	// combine(s1, tr)
+	// tr = flushTemporaries()
+
+#else
+	str_record* tr = tempRef(", ");
+
+	ps(s1);
+	pl(deref(s1));
+	ps(s2);
+	pl(deref(s2));
+	ps(tr);
+	pl(deref(tr));
+
+	nl();
+	printAll();
+	nl();
+
+	s2 = combine(s2, tr);
+
+	ps(s1);
+	pl(deref(s1));
+	ps(s2);
+	pl(deref(s2));
+
+	nl();
+	printAll();
+	nl();
+
+	setTemp(tr, "World!");
+	s2 = combine(s2, tr);
+
+	ps(s1);
+	pl(deref(s1));
+	ps(s2);
+	pl(deref(s2));
+
+	nl();
+	printAll();
+	nl();
+
+	setTemp(tr, "Hello");
+	s2 = combine(s2, tr);
+
+	ps(s1);
+	pl(deref(s1));
+	ps(s2);
+	pl(deref(s2));
+
+	nl();
+	printAll();
+	nl();
+
+	flushTemporaries();
+	tr = nullptr;
+	
+#endif
 
 	std::cin.get();
 }

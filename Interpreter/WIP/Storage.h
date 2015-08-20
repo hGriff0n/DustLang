@@ -3,6 +3,7 @@
 #include <string>
 
 //#define USE_GC_STACK
+//#define USE_EXP_TEMPS
 
 namespace dust {
 	namespace impl {
@@ -10,15 +11,24 @@ namespace dust {
 		str_record* nxt_record();
 		//str_record* init(str_record*, std::string, size_t);
 
-		str_record* makeRecord(std::string);
-		str_record* set(str_record*, str_record*);
-		str_record* set(str_record*, std::string);
+		str_record* loadRef(std::string);
+		str_record* setRef(str_record*, str_record*);
+		str_record* setRef(str_record*, std::string);
 		str_record* combine(str_record*, str_record*);
 
 		std::string deref(str_record*);
 
 		void incRef(str_record*);
 		void decRef(str_record*);
+
+		// TEMPORARIES
+#ifdef USE_EXP_TEMPS
+		str_record* tempRef(std::string);
+		void setTemp(str_record*, std::string);
+		void flushTemporaries();
+#endif
+
+		// ALT TEMPORARIES
 		str_record* delRef(str_record*);
 
 		// DEBUG
