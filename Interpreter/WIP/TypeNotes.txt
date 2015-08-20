@@ -15,7 +15,8 @@ Variables in dust are dynamically typed
 			's' is the static type of the variable
 
 		Dust static typing primarily works by providing an assurance that the variable holds a usable value (ie. not nil)
-			There is no current push to use this typing information to perform code optimizations (the language is formost dynamic)
+			There is no current push to use this typing information to perform code optimizations (the language is foremost dynamic)
+			Static typing variables (not in function declarations) could throw an error if the variable was uninitialized
 
 		Statically typed variables can naturally hold values of any types a, where a <= s
 			Currently, this is performed by having both Variable and Value maintain a type_id field
