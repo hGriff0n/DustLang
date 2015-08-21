@@ -1,6 +1,18 @@
 #include "TypeSystem.h"
 
-#include "Value.h"
+#define USE_GC
+//#define USE_TEST_GC
+
+#ifdef USE_GC
+	#include "GC.h"
+#else
+	#ifdef USE_TEST_GC
+		#include "_GC.h"
+	#else
+		#include "Value.h"
+	#endif
+#endif
+
 #include "stack.h"
 
 #include <iostream>
@@ -17,7 +29,19 @@
 // TODO:
 	// Define what I'm expecting from this phase of the project and what each part should accomplish
 
-	// Garbage collection
+	// Garbage collection / Encapsulate Storage in a class
+		// Have a system for speciying "open" slots
+			// Decide which GC model to use as the baseline (both can perform the same)
+				// May even include both with a preprocessor define to switch between the two
+			// Generate the basic structures and methods that'd allow the garbage collector to work
+		// Implement basic garbage collection
+			// Stop-the-world processing, gather all unused references in one go
+			// Possible to only run if there's less than x number of open slots on the stack
+		// Implement a incremental collecter
+			// Possibly even add a tag to switch between the two (or split into seperate functions)
+		// Generalize and improve the interface for future additions
+			// Maybe move the main GC class to a templated storage structure that encapsulates these precedings
+			// Then create a new GC class that combines the storage structures into one interface
 		
 	// Atoms
 	// Values
@@ -67,6 +91,9 @@ size_t dispatch(size_t, std::string, dust::impl::TypeSystem&, dust::EvalState&);
 int main(int argc, const char* argv[]) {
 	using namespace dust::impl;
 	using namespace dust;
+#ifdef USE_TEST_GC
+	using namespace dust::test;
+#endif
 
 	EvalState e;
 
@@ -74,58 +101,28 @@ int main(int argc, const char* argv[]) {
 	"Global" structures that will eventually be collected within EvalState
 	*/
 	TypeSystem ts;
-	//stack<Value> s{};
+
+	// impl::GC is less reliant on pointers
+	// test::GC has a simpler implementation
+
+	GC gc;
 
 	/*
 	Testing declarations
 	*/
 
-	str_record* s1 = loadRef("Hello");
-	str_record* s2 = loadRef("Hello");
-
+	auto s1 = gc.loadRef("Hello");
+	auto s2 = gc.loadRef("Hello");
+	
 	//test();
 	nl();
 
 	/*
 	Testing
 	//*/
-
-	// "Hello" + ", " + "World!" + "Hello"
-
-	// USING STANDARD STORAGE AS TEMPORARIES
-	// s2 = loadRef("Hello")
-	
-	// tr = setRef(nullptr, ", ")
-	// s2 = combine(s2, tr)
-	// tr = delRef(tr)
-	
-	// tr = setRef(tr, "World!")					// Is explicitly deleting tr absolutely necessary?
-	// s2 = combine(s2, tr)							// set will reuse memory if the passed record is the only reference (but not if the new string already has a record)
-	// tr = delRef(tr)								// delRef immediately adds the record to GC stack for allocation purposes (set relies on the garbage collector to collect the old records)
-
-	// tr = setRef(tr, "Hello")
-	// s2 = combine(s2, tr)
-
-	// tr = delRef(tr)
-
-	// USING TEMPORARY REGISTERS
-	// s2 = loadRef("Hello")
-
-	// tr = tempRef(", ")
-	// s2 = combine(s2, tr)
-
-	// tr = setTemp(tr, "World!")
-	// s2 = combine(s2, tr)
-
-	// tr = setTemp(tr, "Hello")
-	// s2 = combine(s2, tr)
-
-	// flushTemporaries()
-	// tr = nullptr
-
 #ifndef USE_EXP_TEMPS
-	str_record* tr = setRef(nullptr, ", ");				// temporary register
-
+	auto tr = gc.setRef(nullptr, ", ");
+	
 	// s2 = "Hello"
 	ps(s1);
 	pl(deref(s1));
@@ -135,12 +132,12 @@ int main(int argc, const char* argv[]) {
 	pl(deref(tr));
 
 	nl();
-	printAll();
+	gc.printAll();
 	nl();
 
 	// s2 + ", "
-	s2 = combine(s2, tr);
-	tr = delRef(tr);
+	s2 = gc.combine(s2, tr);
+	tr = gc.delRef(tr);
 
 	ps(s1);
 	pl(deref(s1));
@@ -148,13 +145,13 @@ int main(int argc, const char* argv[]) {
 	pl(deref(s2));
 
 	nl();
-	printAll();
+	gc.printAll();
 	nl();
 
 	// s2 + "World!"
-	tr = setRef(tr, "World!");
-	s2 = combine(s2, tr);
-	tr = delRef(tr);				// However, s3 is not "actually" deleted
+	tr = gc.setRef(tr, "World!");
+	s2 = gc.combine(s2, tr);
+	tr = gc.delRef(tr);
 
 	ps(s1);
 	pl(deref(s1));
@@ -162,35 +159,20 @@ int main(int argc, const char* argv[]) {
 	pl(deref(s2));
 
 	nl();
-	printAll();
+	gc.printAll();
 	nl();
 
 	// s2 + "Hello"
-	tr = setRef(tr, "Hello");
-	s2 = combine(s2, tr);
-	tr = delRef(tr);				// Doesn't invalidate s1
+	tr = gc.setRef(tr, "Hello");
+	s2 = gc.combine(s2, tr);
+	tr = gc.delRef(tr);
 
 	ps(s1);
 	pl(deref(s1));
 	ps(s2);
 	pl(deref(s2));
-
-	nl();
-	printAll();
-	
-
-	// "Hello" + ", " + "World!" + "Hello"
-	// s1 = loadRef("Hello")
-	// tr = tempRef(", ")								// The basic difference between ref and temp is that ref's are stored
-	// combine(s1, tr)									// Temp's are maintained. ref operations conditionally modify in-place
-	// setTemp(tr, "World!")							// Temp operations always modify in-place (guarantee no outside refs)
-	// combine(s1, tr)
-	// setTemp(tr, "Hello")
-	// combine(s1, tr)
-	// tr = flushTemporaries()
-
 #else
-	str_record* tr = tempRef(", ");
+	auto tr = gc.tempRef(", ");
 
 	ps(s1);
 	pl(deref(s1));
@@ -199,11 +181,7 @@ int main(int argc, const char* argv[]) {
 	ps(tr);
 	pl(deref(tr));
 
-	nl();
-	printAll();
-	nl();
-
-	s2 = combine(s2, tr);
+	s2 = gc.combine(s2, tr);
 
 	ps(s1);
 	pl(deref(s1));
@@ -211,11 +189,11 @@ int main(int argc, const char* argv[]) {
 	pl(deref(s2));
 
 	nl();
-	printAll();
+	gc.printAll();
 	nl();
 
-	setTemp(tr, "World!");
-	s2 = combine(s2, tr);
+	gc.setTemp(tr, "World!");
+	s2 = gc.combine(s2, tr);
 
 	ps(s1);
 	pl(deref(s1));
@@ -223,25 +201,25 @@ int main(int argc, const char* argv[]) {
 	pl(deref(s2));
 
 	nl();
-	printAll();
+	gc.printAll();
 	nl();
 
-	setTemp(tr, "Hello");
-	s2 = combine(s2, tr);
+	gc.setTemp(tr, "Hello");
+	s2 = gc.combine(s2, tr);
 
 	ps(s1);
 	pl(deref(s1));
 	ps(s2);
 	pl(deref(s2));
 
-	nl();
-	printAll();
-	nl();
-
-	flushTemporaries();
+	gc.flushTemporaries();
 	tr = nullptr;
-	
+
 #endif
+
+	nl();
+	gc.printAll();
+	pl(gc.collected());
 
 	std::cin.get();
 }
