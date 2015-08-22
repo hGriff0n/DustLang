@@ -30,17 +30,13 @@
 	// Define what I'm expecting from this phase of the project and what each part should accomplish
 
 	// Garbage collection / Encapsulate Storage in a class
-		// Have a system for speciying "open" slots
-			// Decide which GC model to use as the baseline (both can perform the same)
-				// May even include both with a preprocessor define to switch between the two
-			// Generate the basic structures and methods that'd allow the garbage collector to work
 		// Implement basic garbage collection
-			// Stop-the-world processing, gather all unused references in one go
 			// Possible to only run if there's less than x number of open slots on the stack
-		// Implement a incremental collecter
+				// It's trivially simple to implement this, but is it useful?
+		// Implement a incremental collector
 			// Possibly even add a tag to switch between the two (or split into seperate functions)
 		// Generalize and improve the interface for future additions
-			// Maybe move the main GC class to a templated storage structure that encapsulates these precedings
+			// Maybe change RuntimeStorage to a templated structure that encapsulates these precedings
 			// Then create a new GC class that combines the storage structures into one interface
 		
 	// Atoms
@@ -87,6 +83,7 @@ class dust::EvalState {
 };
 
 size_t dispatch(size_t, std::string, dust::impl::TypeSystem&, dust::EvalState&);
+void debugPrint(dust::impl::GC&);
 
 int main(int argc, const char* argv[]) {
 	using namespace dust::impl;
@@ -101,10 +98,6 @@ int main(int argc, const char* argv[]) {
 	"Global" structures that will eventually be collected within EvalState
 	*/
 	TypeSystem ts;
-
-	// impl::GC is less reliant on pointers
-	// test::GC has a simpler implementation
-
 	GC gc;
 
 	/*
@@ -113,113 +106,59 @@ int main(int argc, const char* argv[]) {
 
 	auto s1 = gc.loadRef("Hello");
 	auto s2 = gc.loadRef("Hello");
-	
-	//test();
+	auto s3 = gc.loadRef("need");
+	auto s4 = gc.loadRef("records");
+	auto s5 = gc.loadRef("allocator");
+	auto s6 = gc.loadRef("garbage");
+	auto s7 = gc.loadRef("with");
+	decltype(s7) s8 = nullptr;
+
+	auto t1 = gc.tempRef("Hello");
+	auto t2 = gc.tempRef(" :: ");
+
+
 	nl();
 
 	/*
 	Testing
 	//*/
-#ifndef USE_EXP_TEMPS
-	auto tr = gc.setRef(nullptr, ", ");
+
+	// What do I need to test
+		// That the garbage collector can mark unreferenced records (no "delRef")
+		// The unreferenced records are used by the allocater to initialize new records
+		// The garbage collector does not interfere with execution
+
+	debugPrint(gc);
+	// Proof-of-concept testing
+
+	// Testing that the garbage collector collects no records when there are no records to collect
+	std::printf("Running garbage collector... Collected %d records\n", gc.run());
+	debugPrint(gc);
+
+
+	// Testing that the garbage collector still collects no records when there are none to collect
+	s2 = gc.setRef(s2, "Nothing here");
+
+	std::printf("Running garbage collector... Collected %d records\n", gc.run());
+	debugPrint(gc);
+
+
+	// Testing that the garbage collector will collect records when there are some to collect
+	decRef(s4);						// "records" still has a field in the registry
 	
-	// s2 = "Hello"
-	ps(s1);
-	pl(deref(s1));
-	ps(s2);
-	pl(deref(s2));
-	ps(tr);
-	pl(deref(tr));
+	std::printf("Running garbage collector... Collected %d records\n", gc.run());
+	debugPrint(gc);
 
-	nl();
-	gc.printAll();
-	nl();
 
-	// s2 + ", "
-	s2 = gc.combine(s2, tr);
-	tr = gc.delRef(tr);
+	// Testing that new allocations take advantage of the freed space
+	s8 = gc.loadRef("Equality Check");
 
-	ps(s1);
-	pl(deref(s1));
-	ps(s2);
-	pl(deref(s2));
+	p("Allocated using collected memory: ");
+	pl(s8 == s4);
 
-	nl();
-	gc.printAll();
-	nl();
+	debugPrint(gc);
 
-	// s2 + "World!"
-	tr = gc.setRef(tr, "World!");
-	s2 = gc.combine(s2, tr);
-	tr = gc.delRef(tr);
-
-	ps(s1);
-	pl(deref(s1));
-	ps(s2);
-	pl(deref(s2));
-
-	nl();
-	gc.printAll();
-	nl();
-
-	// s2 + "Hello"
-	tr = gc.setRef(tr, "Hello");
-	s2 = gc.combine(s2, tr);
-	tr = gc.delRef(tr);
-
-	ps(s1);
-	pl(deref(s1));
-	ps(s2);
-	pl(deref(s2));
-#else
-	auto tr = gc.tempRef(", ");
-
-	ps(s1);
-	pl(deref(s1));
-	ps(s2);
-	pl(deref(s2));
-	ps(tr);
-	pl(deref(tr));
-
-	s2 = gc.combine(s2, tr);
-
-	ps(s1);
-	pl(deref(s1));
-	ps(s2);
-	pl(deref(s2));
-
-	nl();
-	gc.printAll();
-	nl();
-
-	gc.setTemp(tr, "World!");
-	s2 = gc.combine(s2, tr);
-
-	ps(s1);
-	pl(deref(s1));
-	ps(s2);
-	pl(deref(s2));
-
-	nl();
-	gc.printAll();
-	nl();
-
-	gc.setTemp(tr, "Hello");
-	s2 = gc.combine(s2, tr);
-
-	ps(s1);
-	pl(deref(s1));
-	ps(s2);
-	pl(deref(s2));
-
-	gc.flushTemporaries();
-	tr = nullptr;
-
-#endif
-
-	nl();
-	gc.printAll();
-	pl(gc.collected());
+	// Shakedown tests
 
 	std::cin.get();
 }
@@ -232,4 +171,12 @@ size_t dispatch(size_t t, std::string op, dust::impl::TypeSystem& ts, dust::Eval
 	ps(ts.get(d_type).name + "." + op);
 	
 	return ts.get(d_type).ops[op](e);
+}
+
+void debugPrint(dust::impl::GC& gc) {
+	nl();
+	gc.printAll();
+	p("Num Collected Records: ");
+	pl(gc.collected());
+	nl();
 }

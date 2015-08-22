@@ -18,41 +18,34 @@ namespace dust {
 	namespace impl {
 		struct str_record;
 
-		// This is std::array
-		template <typename T, size_t MAX_NUM>
-		struct bin {
-			T* store, *open;
-
-			bin() {
-				store = new T[MAX_NUM];
-				open = store;
-			}
-
-			int num_records() { return open - store; }
-			bool full() { return num_records() == MAX_NUM; }
-			T* end() { return store + MAX_NUM; }
-		};
-
 		// class RuntimeEnviron ???
+		// class Allocater								// I can even implement the C++ Allocator interface (Might simplify the code, I would likely seperate this from the temporaries)
 
 		// template <typename T>
 		class RuntimeStorage {
 			private:
-				static const int BIN_SIZE = 128;
-
-				std::vector<bin<str_record, BIN_SIZE>> s_store;
-				std::unordered_map<std::string, str_record*> registry;				// Technically, the registry is the only structure I really need
-				std::stack<str_record*> open;
-				size_t curr = 0;
-
 			protected:
+				std::vector<str_record*> store;					// can modify to std::array<str_record*, X> if needed
+				std::unordered_map<std::string, str_record*> registry;
+
+				// Might want to change to instead hold the open indices of store
+					// Then the gc can delete the reference when it finds them instead of hoping for reuse
+					// Might have to modify str_record* to store it's location in store (if I don't want to use explicit temporaries, ie. delRef)
+				std::stack<str_record*> open;
+
+
+				// FOR USE BY THE GARBAGE COLLECTOR (Not needed if open stays as protected)
+				int lastIndex();
+				void mark_free(str_record*);
+				void try_mark_free(str_record*);
+
 			public:
 				RuntimeStorage();
-				
+
 				// STRING RECORDS
 				// CREATION AND DELETION
 				str_record* nxt_record();
-				str_record* delRef(str_record*);				// Current Method of implementing temporary records
+				str_record* delRef(str_record*);				// Current Method of implementing temporary records. Some problems with Garbage Collection
 
 				// INITIALIZATION
 				str_record* loadRef(std::string);
@@ -60,25 +53,22 @@ namespace dust {
 				str_record* setRef(str_record*, std::string);
 				str_record* combine(str_record*, str_record*);
 
-				// TEMPORARIES
+				// EXPLICIT TEMPORARIES
 #ifdef USE_EXP_TEMPS
 				str_record* tempRef(std::string);
 				void setTemp(str_record*, std::string);
-				void flushTemporaries();
+				void delTemps();
 #endif
-
-				// FOR USE BY THE GARBAGE COLLECTOR
-				// Some method of getting the store to work on
-				// void mark_free(str_record*);
 
 				// Debug functions
 				int num_records();
-				int num_bins();
+				int num_refs(std::string);
 				int collected();
-				//void num_refs(std::string);
 				void printAll();
 		};
+
 		
+		// Should I move these into RuntimeStorage
 		void incRef(str_record*);
 		void decRef(str_record*);
 		std::string deref(str_record*);
@@ -90,6 +80,19 @@ namespace dust {
 				GC();
 
 				int run();
+				int stopWorld();
+				int incrParse();
+		};
+
+
+		class _GC {
+			private:
+				RuntimeStorage& storage;
+
+			public:
+				// _GC();
+				// _GC& target(RuntimeStorage&);
+				// int run();
 		};
 
 	}
