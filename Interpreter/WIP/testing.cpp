@@ -18,7 +18,6 @@
 
 // TODO:
 	// Garbage collection/String storage
-		// Improve the implementation
 		// Improve the interface (esp organization)
 		// Generalize the interface
 			// Possibly template RuntimeStorage (generalize for tables and userdata)
