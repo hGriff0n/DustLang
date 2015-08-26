@@ -67,6 +67,7 @@ namespace dust {
 				void addTemp(str_record*, str_record*);					// Add two temporaries
 				void addTemp(str_record*, std::string);					// Add a string to the temporary
 
+				void delTemp(str_record*);								// Necessary because str_record's destructor is "hidden"
 
 				// REFERENCE COUNTING
 				void incRef(size_t);
