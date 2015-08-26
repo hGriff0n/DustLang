@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Storage.h"
-
 namespace dust {
 	namespace impl {
+		struct str_record;
+
 		union Atom {
 			int i;				// 4
 			double d;			// 8
