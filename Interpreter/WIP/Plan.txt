@@ -17,13 +17,3 @@ Redesigned State class
 Everything I do for strings should, ideally, be usable for tables/userdata/etc.
 
 Garbage Collection system
-	This is going to integrate with the string/table/etc. storage systems
-		If only because that is the easiest way of ensuring that the Garbage Collecter can work on those systems
-
-String storage
-	Reference counted (particularly for literals)
-		There's at most one actual instance of the string in memory for any number of instances for the string in code
-		I have a working model for this already, the only problem is adding/removing references (especially in regards to temporaries)
-
-	Immutable (?)
-		Modifying a string should create a new instance (unless the current instance is the only)

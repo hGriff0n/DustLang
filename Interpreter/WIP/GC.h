@@ -1,66 +1,80 @@
 #pragma once
 
-#include <string>
-#define USE_EXP_TEMPS
-
 #include <vector>
 #include <unordered_map>
-#include <stack>
+#include <string>
 #include <set>
+#include <functional>
 
-#define INT_STACK
+auto pop(std::set<size_t, std::greater<size_t>>&);
 
-template <typename T>
-T pop(std::stack<T>& s) {
-	auto ret = s.top();
-	s.pop();
-	return ret;
-}
+// TODO/Considerations
+	// Change open from an std::set to an std::vector
+		// Then have GC::run call std::sort on the vector once the garbage collection has run
+		// I could move the "#include <functional> into the .cpp file
+		// The sorted vector may perform better than the set as the set must maintain order on insertion
+	// Have RuntimeStorage implement the C++ Allocater interface
+	// Determine the actual usefulness of temporaries as currently implemented
+	// Consider decoupling GC and RuntimeStorage
+		// I can possibly generalize the garbage collecter with an interface similar to _GC
 
 namespace dust {
 	namespace impl {
 		struct str_record;
 
-		// class RuntimeEnviron ???
-		// class Allocater								// I can even implement the C++ Allocator interface (Might simplify the code, I would likely seperate this from the temporaries)
-
-		// template <typename T>
 		class RuntimeStorage {
 			private:
 			protected:
-				std::vector<str_record*> store;					// can modify to std::array<str_record*, X> if needed
-				std::unordered_map<std::string, str_record*> registry;
-				
-				std::stack<size_t> open;
-				//std::set<size_t, std::greater<size_t>> open;
+				std::vector<str_record*> store;
+				std::unordered_map<std::string, size_t> registry;
+				std::set<size_t, std::greater<size_t>> open;
 
-				// FOR USE BY THE GARBAGE COLLECTOR (Not needed if open stays as protected)
 				size_t lastIndex();
-
 				void mark_free(size_t);
 				void try_mark_free(size_t);
-				bool isCollectableRecord(size_t);
+
+				bool isCollectableResource(size_t);
+				bool validIndex(size_t);
+
+				size_t nxt_record(std::string);
 
 			public:
-			str_record* test(size_t idx) { return store[idx]; }
 				RuntimeStorage();
+				//using temporary = str_record*;
 
-				// STRING RECORDS
-				// CREATION AND DELETION
-				str_record* nxt_record();
+				// INITIALIZATION/MODIFICATION
+				size_t loadRef(std::string);							// New string (may return an old record)
 
-				// INITIALIZATION
-				str_record* loadRef(std::string);
-				str_record* setRef(str_record*, str_record*);
-				str_record* setRef(str_record*, std::string);
-				str_record* combine(str_record*, str_record*);	// Only pass temporaries as the second argument
+				size_t setRef(size_t, size_t);							// Assign a ref
+				size_t setRef(size_t, str_record*);						// Assign a temporary
+				size_t setRef(size_t, std::string);						// Assign a string
 
-				// EXPLICIT TEMPORARIES
-#ifdef USE_EXP_TEMPS
-				str_record* tempRef(std::string);
-				void setTemp(str_record*, std::string);
-				void delTemps();
-#endif
+				size_t combine(size_t, size_t);							// Add two refs (may reuse memory ???)
+				size_t combine(size_t, std::string);					// Add a ref and a string
+				size_t combine(std::string, std::string);				// Add two strings (???)
+																		//size_t combine(size_t, str_record*);
+
+				// TEMPORARIES
+				str_record* tempRef(std::string);						// Generate a temporary
+				str_record* tempRef(str_record*);						// Generate a temporary
+				str_record* tempRef(size_t);							// Generate a temporary
+
+				void setTemp(str_record*, str_record*);					// Set a temporary
+				void setTemp(str_record*, size_t);						// Set a temporary
+				void setTemp(str_record*, std::string);					// Set a temporary
+
+				void addTemp(str_record*, size_t);						// Add a ref to a temporary
+				void addTemp(str_record*, str_record*);					// Add two temporaries
+				void addTemp(str_record*, std::string);					// Add a string to the temporary
+
+
+				// REFERENCE COUNTING
+				void incRef(size_t);
+				void decRef(size_t);
+
+				// EXTRACTION
+				std::string deref(str_record*);
+				std::string deref(size_t);
 
 				// Debug functions
 				int num_records();
@@ -69,17 +83,10 @@ namespace dust {
 				void printAll();
 		};
 
-		
-		// Should I move these into RuntimeStorage
-		void incRef(str_record*);
-		void decRef(str_record*);
-		std::string deref(str_record*);
-		bool isDelRef(str_record*);
-
-
+		//*/
 		class GC : public RuntimeStorage {
 			private:
-				size_t c_idx = 0, c_end = 0;
+				int c_idx = 0, c_end = 0;
 
 			protected:
 				size_t getIncr();
@@ -92,17 +99,16 @@ namespace dust {
 				int incrParse();
 		};
 
+		//*/
+
 
 		class _GC {
 			private:
-				RuntimeStorage& storage;
-
 			public:
 				// _GC();
-				// _GC& target(RuntimeStorage&);
+				// int run(RuntimeStorage&);
 				// int run();
 		};
 
 	}
-
 }

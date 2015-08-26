@@ -1,7 +1,6 @@
 #include "TypeSystem.h"
 
-#define INT_STACK
-
+#define USE_TEST_GC
 #include "GC.h"
 #include "Value.h"
 
@@ -18,17 +17,12 @@
 	// Possibly also for testing the development of type_traits style classes
 
 // TODO:
-	// Define what I'm expecting from this phase of the project and what each part should accomplish
-
-	// Garbage collection / Encapsulate Storage in a class
-		// Possibly change from passing around str_record* to size_t (the index where the record is stored)
-			// Slightly easier error handling (internal details can't be accessed anyways right now)
-			// That'll have to be done in a seperate file (after the move to stack<size_t> is complete)
-		// Possibly have the "open" slots sorted (low->high)
-			// Compact the string storage
-		// Generalize and improve the interface for future additions
-			// Maybe change RuntimeStorage to a templated structure that encapsulates these precedings
-			// Then create a new GC class that combines the storage structures into one interface
+	// Garbage collection/String storage
+		// Improve the implementation
+		// Improve the interface (esp organization)
+		// Generalize the interface
+			// Possibly template RuntimeStorage (generalize for tables and userdata)
+			// Possibly move GC from inheriting from RuntimeStorage to "targeting" a RuntimeStorage
 		
 	// Atoms
 	// Values
@@ -79,9 +73,6 @@ void debugPrint(dust::impl::GC&);
 int main(int argc, const char* argv[]) {
 	using namespace dust::impl;
 	using namespace dust;
-#ifdef USE_TEST_GC
-	using namespace dust::test;
-#endif
 
 	EvalState e;
 
@@ -102,11 +93,7 @@ int main(int argc, const char* argv[]) {
 	auto s5 = gc.loadRef("allocator");
 	auto s6 = gc.loadRef("garbage");
 	auto s7 = gc.loadRef("with");
-	decltype(s7) s8 = nullptr;
-
-	auto t1 = gc.tempRef("Hello");
-	auto t2 = gc.tempRef(" :: ");
-
+	size_t s8 = -1;
 
 	nl();
 
@@ -135,8 +122,8 @@ int main(int argc, const char* argv[]) {
 
 
 	// Testing that the garbage collector will collect records when there are some to collect
-	decRef(s4);
-	
+	gc.decRef(s4);
+
 	std::printf("Running garbage collector... Collected %d records\n", gc.run());			// s1, s2, s3, s5, s6, s7
 	debugPrint(gc);
 
@@ -146,6 +133,7 @@ int main(int argc, const char* argv[]) {
 
 	debugPrint(gc);
 
+
 	// Testing behavior of incrParse collector (currently takes 4 elements)
 
 	s4 = gc.loadRef("Hello");
@@ -153,34 +141,44 @@ int main(int argc, const char* argv[]) {
 	std::printf("Running garbage collector... Collected %d records\n", gc.run());			// s1, s2, s3, s4, s5, s6, s7, s8
 	debugPrint(gc);
 
-	decRef(s3);
-	decRef(s4);
-	decRef(s5);
 
+	gc.decRef(s3);
+	gc.decRef(s4);
+	gc.decRef(s5);
+
+	// IncrParse is taking too long
 	std::printf("Running incrParse collector... Collected %d records\n", gc.run(true));		// s1, s2, s3, s4, s5, s6, s7, s8
 	debugPrint(gc);
 
-	incRef(s4);
+
+	gc.incRef(s4);
 
 	std::printf("Running incrParse collector... Collected %d records\n", gc.run(true));		// s1, s2, s5, s6, s7, s8
 	debugPrint(gc);
 
 
 	// Shakedown tests
-	s4 = gc.combine(s4, t1);
-	s5 = gc.combine(s5, t2);			// s5 is deleted here (only if I use the size_t isCollectableRecord)
+	auto t1 = gc.tempRef(s4);
+	gc.addTemp(t1, "Hello");
+	s4 = gc.setRef(s4, t1);
+	
+	gc.setTemp(t1, s5);
+	gc.addTemp(t1, " :: ");
+	s5 = gc.setRef(s5, t1);
+
+	gc.delTemp(t1);
 
 	std::printf("Running garbage collector... Collected %d records\n", gc.run());			// s1, s2, s4, s5, s6, s7, s8
 	debugPrint(gc);
 
-	decRef(s2);
-	decRef(s4);
-	
+
+	gc.decRef(s2);
+	gc.decRef(s4);
+
 	std::printf("Running garbage collector... Collected %d records\n", gc.run());			// s1, s5, s6, s7, s8
 	debugPrint(gc);
-	gc.delTemps();
 
-	
+
 	s2 = gc.loadRef("Allocation");
 	debugPrint(gc);
 
