@@ -6,6 +6,9 @@
 #include <vector>
 #include <unordered_map>
 #include <stack>
+#include <set>
+
+#define INT_STACK
 
 template <typename T>
 T pop(std::stack<T>& s) {
@@ -27,31 +30,30 @@ namespace dust {
 			protected:
 				std::vector<str_record*> store;					// can modify to std::array<str_record*, X> if needed
 				std::unordered_map<std::string, str_record*> registry;
-
-				// Might want to change to instead hold the open indices of store
-					// Then the gc can delete the reference when it finds them instead of hoping for reuse
-					// Might have to modify str_record* to store it's location in store (if I don't want to use explicit temporaries, ie. delRef)
-				std::stack<str_record*> open;
-
+				
+				std::stack<size_t> open;
+				//std::set<size_t, std::greater<size_t>> open;
 
 				// FOR USE BY THE GARBAGE COLLECTOR (Not needed if open stays as protected)
-				int lastIndex();
-				void mark_free(str_record*);
-				void try_mark_free(str_record*);
+				size_t lastIndex();
+
+				void mark_free(size_t);
+				void try_mark_free(size_t);
+				bool isCollectableRecord(size_t);
 
 			public:
+			str_record* test(size_t idx) { return store[idx]; }
 				RuntimeStorage();
 
 				// STRING RECORDS
 				// CREATION AND DELETION
 				str_record* nxt_record();
-				str_record* delRef(str_record*);				// Current Method of implementing temporary records. Some problems with Garbage Collection
 
 				// INITIALIZATION
 				str_record* loadRef(std::string);
 				str_record* setRef(str_record*, str_record*);
 				str_record* setRef(str_record*, std::string);
-				str_record* combine(str_record*, str_record*);
+				str_record* combine(str_record*, str_record*);	// Only pass temporaries as the second argument
 
 				// EXPLICIT TEMPORARIES
 #ifdef USE_EXP_TEMPS
@@ -72,14 +74,20 @@ namespace dust {
 		void incRef(str_record*);
 		void decRef(str_record*);
 		std::string deref(str_record*);
+		bool isDelRef(str_record*);
 
 
 		class GC : public RuntimeStorage {
 			private:
+				size_t c_idx = 0, c_end = 0;
+
+			protected:
+				size_t getIncr();
+
 			public:
 				GC();
 
-				int run();
+				int run(bool = false);
 				int stopWorld();
 				int incrParse();
 		};

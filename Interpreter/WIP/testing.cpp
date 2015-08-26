@@ -1,20 +1,11 @@
 #include "TypeSystem.h"
 
-#define USE_GC
-//#define USE_TEST_GC
+#define INT_STACK
 
-#ifdef USE_GC
-	#include "GC.h"
-#else
-	#ifdef USE_TEST_GC
-		#include "_GC.h"
-	#else
-		#include "Value.h"
-	#endif
-#endif
+#include "GC.h"
+#include "Value.h"
 
 #include "stack.h"
-
 #include <iostream>
 
 #define p(x) std::cout << (x)
@@ -30,11 +21,11 @@
 	// Define what I'm expecting from this phase of the project and what each part should accomplish
 
 	// Garbage collection / Encapsulate Storage in a class
-		// Implement basic garbage collection
-			// Possible to only run if there's less than x number of open slots on the stack
-				// It's trivially simple to implement this, but is it useful?
-		// Implement a incremental collector
-			// Possibly even add a tag to switch between the two (or split into seperate functions)
+		// Possibly change from passing around str_record* to size_t (the index where the record is stored)
+			// Slightly easier error handling (internal details can't be accessed anyways right now)
+			// That'll have to be done in a seperate file (after the move to stack<size_t> is complete)
+		// Possibly have the "open" slots sorted (low->high)
+			// Compact the string storage
 		// Generalize and improve the interface for future additions
 			// Maybe change RuntimeStorage to a templated structure that encapsulates these precedings
 			// Then create a new GC class that combines the storage structures into one interface
@@ -132,34 +123,68 @@ int main(int argc, const char* argv[]) {
 	// Proof-of-concept testing
 
 	// Testing that the garbage collector collects no records when there are no records to collect
-	std::printf("Running garbage collector... Collected %d records\n", gc.run());
+	std::printf("Running garbage collector... Collected %d records\n", gc.run());			// s1, s2, s3, s4, s5, s6, s7
 	debugPrint(gc);
 
 
 	// Testing that the garbage collector still collects no records when there are none to collect
 	s2 = gc.setRef(s2, "Nothing here");
 
-	std::printf("Running garbage collector... Collected %d records\n", gc.run());
+	std::printf("Running garbage collector... Collected %d records\n", gc.run());			// s1, s2, s3, s4, s5, s6, s7
 	debugPrint(gc);
 
 
 	// Testing that the garbage collector will collect records when there are some to collect
-	decRef(s4);						// "records" still has a field in the registry
+	decRef(s4);
 	
-	std::printf("Running garbage collector... Collected %d records\n", gc.run());
+	std::printf("Running garbage collector... Collected %d records\n", gc.run());			// s1, s2, s3, s5, s6, s7
 	debugPrint(gc);
 
 
 	// Testing that new allocations take advantage of the freed space
-	s8 = gc.loadRef("Equality Check");
-
-	p("Allocated using collected memory: ");
-	pl(s8 == s4);
+	s8 = gc.loadRef("Equality Check");														// s1, s2, s3, s5, s6, s7, s8
 
 	debugPrint(gc);
 
-	// Shakedown tests
+	// Testing behavior of incrParse collector (currently takes 4 elements)
 
+	s4 = gc.loadRef("Hello");
+
+	std::printf("Running garbage collector... Collected %d records\n", gc.run());			// s1, s2, s3, s4, s5, s6, s7, s8
+	debugPrint(gc);
+
+	decRef(s3);
+	decRef(s4);
+	decRef(s5);
+
+	std::printf("Running incrParse collector... Collected %d records\n", gc.run(true));		// s1, s2, s3, s4, s5, s6, s7, s8
+	debugPrint(gc);
+
+	incRef(s4);
+
+	std::printf("Running incrParse collector... Collected %d records\n", gc.run(true));		// s1, s2, s5, s6, s7, s8
+	debugPrint(gc);
+
+
+	// Shakedown tests
+	s4 = gc.combine(s4, t1);
+	s5 = gc.combine(s5, t2);			// s5 is deleted here (only if I use the size_t isCollectableRecord)
+
+	std::printf("Running garbage collector... Collected %d records\n", gc.run());			// s1, s2, s4, s5, s6, s7, s8
+	debugPrint(gc);
+
+	decRef(s2);
+	decRef(s4);
+	
+	std::printf("Running garbage collector... Collected %d records\n", gc.run());			// s1, s5, s6, s7, s8
+	debugPrint(gc);
+	gc.delTemps();
+
+	
+	s2 = gc.loadRef("Allocation");
+	debugPrint(gc);
+
+	//std::cout << "Finished tests";
 	std::cin.get();
 }
 
@@ -176,7 +201,7 @@ size_t dispatch(size_t t, std::string op, dust::impl::TypeSystem& ts, dust::Eval
 void debugPrint(dust::impl::GC& gc) {
 	nl();
 	gc.printAll();
-	p("Num Collected Records: ");
+	p("Available Records: ");
 	pl(gc.collected());
 	nl();
 }

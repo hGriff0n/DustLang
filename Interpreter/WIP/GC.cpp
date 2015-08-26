@@ -1,6 +1,7 @@
 #include "GC.h"
 
 #include <array>
+#include <algorithm>
 #include <iostream>
 
 namespace dust {
@@ -18,29 +19,11 @@ namespace dust {
 		RuntimeStorage::RuntimeStorage() {}
 
 		str_record* RuntimeStorage::nxt_record() {
-			if (!open.empty()) return pop(open);
-
-			store.emplace_back(new str_record{});
+			if (!open.empty())
+				return store[pop(open)] = new str_record{};
+			
+			store.push_back(new str_record{});
 			return store.back();
-		}
-
-		// Might remove depending on how I implement garbage collection.
-		// If I move to a delete-allocate model, I'd have to store the index where the record is stored for this to be worthwhile
-		// With the current model, this method works fine. The real consideration is the efficacy of explicit temporaries when evaluating ASTs.
-		// If the explicit temporary system is usable, then I believe I should move to the delete-allocate model (and remove this method).
-		str_record* RuntimeStorage::delRef(str_record* r) {
-			decRef(r);
-
-			if (r->numRefs == 0) {
-				registry.erase(r->s);
-
-				mark_free(r);
-
-				// Uncomment if I change open to instead store the index where r existed
-				// delete r;
-			}
-
-			return r = nullptr;
 		}
 
 		str_record* RuntimeStorage::loadRef(std::string s) {
@@ -75,15 +58,9 @@ namespace dust {
 		}
 
 		str_record* RuntimeStorage::combine(str_record* r1, str_record* r2) {
-			// Modify the string in-place if r1 is the last reference
-			// what if registry.count(r1->s + r2->s) > 0 ???
-			if (r1->numRefs == 1) {
-				registry.erase(r1->s);
-				r1->s += r2->s;
-				return registry[r1->s] = r1;
+			if (isDelRef(r1) || isDelRef(r2)) throw std::string{ "Deleted Record Exception" };
 
-			} else
-				return setRef(r1, r1->s + r2->s);
+			return setRef(r1, r1->s + r2->s);
 		}
 
 #ifdef USE_EXP_TEMPS
@@ -123,64 +100,77 @@ namespace dust {
 			return open.size();
 		}
 
-		int RuntimeStorage::lastIndex() {
+		size_t RuntimeStorage::lastIndex() {
 			return store.size();
 		}
 
-		void RuntimeStorage::mark_free(str_record* r) {
-			if (!r) throw std::string{ "Nullptr exception" };
-			open.push(r);
+		void RuntimeStorage::mark_free(size_t idx) {
+			// if (!store[idx]) throw std::string{"Deleted Record exception"};
+			registry.erase(store[idx]->s);
+			delete store[idx];
+			store[idx] = nullptr;
+			open.push(idx);
 		}
 
-		void RuntimeStorage::try_mark_free(str_record* r) {
-			if (r && r->numRefs == 0) mark_free(r);
+		void RuntimeStorage::try_mark_free(size_t idx) {
+			if (isCollectableRecord(idx)) mark_free(idx);
+		}
+
+		bool RuntimeStorage::isCollectableRecord(size_t idx) {
+			return store[idx] && store[idx]->numRefs <= 0;
 		}
 
 
 		void incRef(str_record* r) {
-			if (!r) throw std::string{ "Nullptr exception" };
+			if (isDelRef(r)) throw std::string{ "Deleted Record exception" };
 			r->numRefs++;
 		}
 		void decRef(str_record* r) {
-			if (!r) throw std::string{ "Nullptr exception" };
+			if (isDelRef(r)) throw std::string{ "Deleted Record exception" };
 			r->numRefs--;
 		}
 		std::string deref(str_record* r) {
-			if (!r) throw std::string{ "Nullptr exception" };
+			if (isDelRef(r)) throw std::string{ "Deleted Record exception" };			// I cannot rely on r == nullptr (especially as the gc can't assign every reference)
 			return r->s;
+		}
+		bool isDelRef(str_record* r) {
+			return !r || r->numRefs == -572662307 || r->numRefs < 0;
 		}
 
 
 		GC::GC() {}
 
-		int GC::run() {
-			return stopWorld();
-			//return incrParse();
+		int GC::run(bool f) {
+			return f ? incrParse() : stopWorld();
 		}
-		
+
 		int GC::stopWorld() {
-			int idx = 0, end = lastIndex(), total = 0;
+			size_t idx = 0, end = lastIndex();
+			int start = open.size();
 
-			//static const int NO_RUN = 20;
-			//if (end - NO_RUN <= idx) return 0;
+			// static const int NO_RUN = 20;
+			// if (start >= NO_RUN) return 0;
 
-			auto b = store.begin();
+			while (idx != end)
+				try_mark_free(idx++);
 
-			while (idx != end) {
-				if ((*b)->numRefs <= 0) {
-					registry.erase((*b)->s);
-					mark_free(*b);				// delete (*b); mark_free(idx);
-					++total;
-				}
+			return open.size() - start;
+		}
 
-				++b; ++idx;
-			}
-
-			return total;
+		size_t GC::getIncr() {
+			return std::min(c_idx + std::min((size_t)32, lastIndex() / 4), lastIndex());
 		}
 
 		int GC::incrParse() {
-			return 0;
+			if (c_end == lastIndex()) c_idx = 0;
+			c_end = getIncr();
+
+			int start = open.size();
+
+			while (c_idx != c_end)
+				try_mark_free(c_idx++);
+
+			return open.size() - start;
 		}
 
 	}
