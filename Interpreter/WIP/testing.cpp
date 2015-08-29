@@ -1,8 +1,9 @@
 #include "TypeSystem.h"
 
-#define USE_TEST_GC
 #include "GC.h"
-#include "Value.h"
+
+#include "Init.h"
+#include "TypeTraits.h"
 
 #include "stack.h"
 #include <iostream>
@@ -17,22 +18,44 @@
 	// Possibly also for testing the development of type_traits style classes
 
 // TODO:
-	// Garbage collection/String storage
-		// Improve the interface (esp organization)
-		// Generalize the interface
-			// Possibly template RuntimeStorage (generalize for tables and userdata)
-			// Possibly move GC from inheriting from RuntimeStorage to "targeting" a RuntimeStorage
-		
-	// Atoms
-	// Values
+	// Stack
+		// Stack for storing values to be used in calculations
+		// Have the stack be indexable (from the front and the back, necessary for the forceType function
+		// Various other stuff (focus on robustness and usability)
+
 	// Stack interaction
-		// Modify the stack interface so that it is indexable (allowing the forceType function)
+		// Store Values on the stack
+		// Modify Values on the stack ?
+
+	// GC interaction
+		// Have pushing and popping call correct tags
+			// inc- and decRef if the Value is a String (I'm not sure how this'll work though)
+
+	// TypeSystem interaction
+		// Have conversions use converters to convert
+		// Ensure com and dispatch work on Values
+		// Maybe even add invokable functions
+			// Be able to run "Hello " + 3;
+
 	// Variables
-	// Encapsulation
-	// TypeSystem integration
-	// EvalState and expression evaluation
-	// AST Construction
-	// Integrate with the grammar
+		// Maintain different typing from Value
+		// Ensure Values can be assigned to Variables
+			// Ensure Variable's typing remains independent from Value's
+		// Constant checking
+			// Throw errors if the constant flag is set
+
+	// TypeSystem 
+		// Type checking
+			// Be able to store sub-types as-is
+			// Call converters if necessary
+			// Throw errors otherwise
+
+	// Encapsulation (Start moving all the functions into EvalState)
+
+
+	// Expression evaluation
+	// AST Construction Framework
+	// Grammar integration (AST)
 
 // Things to work on
 	// Improving and consolidating the API
@@ -40,6 +63,11 @@
 	// After the rewrite is finished, move the dust documents into this project and update the documentation
 
 // Other Stuff and Pipe Dreams
+	// Generalize RuntimeStorage and move the Garbage Collecter to "targeting" Storage (instead of inheriting)
+		// Strings would have a different RuntimeStorage instance than tables, userdata, etc. (though most of the functions can be reused)
+		// Perform these changes at the same time if I perform them at all
+			// Generalizing the Garbage Collecter to "target" storage does not exactly require generalizing Storage however
+	// Contrive of a better way of getting dust type from c++ type
 
 // I also need to merge my current work on dust semantics and syntax with the documents in DustParser (keed documentation intact)
 
@@ -47,11 +75,16 @@ class dust::EvalState {
 	private:
 		std::map<std::string, int> type_id;
 		impl::TypeSystem ts;
+		impl::GC gc;
 
 	public:
 
 		impl::TypeSystem& getTS() {
 			return ts;
+		}
+
+		impl::GC& getGC() {
+			return gc;
 		}
 
 		int dispatch(impl::Type& t, std::string op) {
@@ -66,126 +99,146 @@ class dust::EvalState {
 		}
 };
 
-size_t dispatch(size_t, std::string, dust::impl::TypeSystem&, dust::EvalState&);
-void debugPrint(dust::impl::GC&);
+using namespace dust;
+
+size_t dispatch(size_t, std::string, impl::TypeSystem&, EvalState&);
+void debugPrint(impl::GC&);
+void printValue(impl::Value&, impl::GC&, impl::TypeSystem&);
+
+void initConversions(impl::TypeSystem&);
+void convert(impl::Value&, size_t, impl::TypeSystem&);
+
+void to_int(impl::Value&, impl::GC&);
+void to_float(impl::Value&, impl::GC&);
+void to_bool(impl::Value&, impl::GC&);
+void to_string(impl::Value&, impl::GC&);
+
+template <typename T>
+impl::Value make_value(T, impl::GC&);
+impl::Value make_value(const char* s, impl::GC&);
+
+template <typename T>
+void assign_value(impl::Value&, T, impl::GC&);
+
+
+// Type Traits specializations
+template<> int TypeTraits<int>::get(const impl::Value& v, impl::GC& gc) {
+	try {
+		if (v.type_id == TypeTraits<double>::id)
+			return v.val.d;
+
+		else if (v.type_id == TypeTraits<int>::id || v.type_id == TypeTraits<bool>::id)
+			return v.val.i;
+
+		else if (v.type_id == TypeTraits<std::string>::id)
+			return std::stoi(gc.deref(v.val.i));
+	} catch (...) {}
+
+	throw std::string{ "Not convertible to Int" };
+}
+
+template<> double TypeTraits<double>::get(const impl::Value& v, impl::GC& gc) {
+	try {
+		if (v.type_id == TypeTraits<double>::id)
+			return v.val.d;
+
+		else if (v.type_id == TypeTraits<int>::id || v.type_id == TypeTraits<bool>::id)
+			return v.val.i;
+
+		else if (v.type_id == TypeTraits<std::string>::id) {
+			return std::stod(gc.deref(v.val.i));
+		}
+	} catch (...) {}
+
+	throw std::string{ "Not convertible to Float" };
+}
+
+template<> std::string TypeTraits<std::string>::get(const impl::Value& v, impl::GC& gc) {
+	if (v.type_id == TypeTraits<std::string>::id)
+		return gc.deref(v.val.i);
+
+	else if (v.type_id == TypeTraits<bool>::id)
+		return v.val.i ? "true" : "false";
+
+	else if (v.type_id == TypeTraits<int>::id)
+		return std::to_string(v.val.i);
+
+	else if (v.type_id == TypeTraits<double>::id)
+		return std::to_string(v.val.d);
+
+	throw std::string{ "Not convertible to String" };
+}
+
+template<> impl::Value TypeTraits<std::string>::make(std::string s, impl::GC& gc) {
+	return{ gc.loadRef(s), TypeTraits<std::string>::id };
+}
+
 
 int main(int argc, const char* argv[]) {
-	using namespace dust::impl;
-	using namespace dust;
+	using namespace impl;
 
 	EvalState e;
-
 	/*
 	"Global" structures that will eventually be collected within EvalState
 	*/
 	TypeSystem ts;
 	GC gc;
 
+	initTypeSystem(ts);
+	initConversions(ts);
+
 	/*
 	Testing declarations
 	*/
 
-	auto s1 = gc.loadRef("Hello");
-	auto s2 = gc.loadRef("Hello");
-	auto s3 = gc.loadRef("need");
-	auto s4 = gc.loadRef("records");
-	auto s5 = gc.loadRef("allocator");
-	auto s6 = gc.loadRef("garbage");
-	auto s7 = gc.loadRef("with");
-	size_t s8 = -1;
-
-	nl();
+	auto v1 = make_value(3.2, gc);
+	auto v2 = make_value(3, gc);
+	auto v3 = make_value("Hello", gc);
 
 	/*
-	Testing
-	//*/
+	Testing worksheet
+	*/
 
-	// What do I need to test
-		// That the garbage collector can mark unreferenced records (no "delRef")
-		// The unreferenced records are used by the allocater to initialize new records
-		// The garbage collector does not interfere with execution
+	printValue(v1, gc, ts);						// FLOAT :: 3.200000
 
-	debugPrint(gc);
-	// Proof-of-concept testing
+	//TypeTraits<int>::to(v1, gc);
+	to_int(v1, gc);
+	printValue(v1, gc, ts);						// INT :: 3
 
-	// Testing that the garbage collector collects no records when there are no records to collect
-	std::printf("Running garbage collector... Collected %d records\n", gc.run());			// s1, s2, s3, s4, s5, s6, s7
-	debugPrint(gc);
+	// convert to float
+	to_float(v1, gc);
+	printValue(v1, gc, ts);						// FLOAT :: 3.000000
 
+	// convert to bool
+	to_bool(v1, gc);
+	printValue(v1, gc, ts);						// BOOL :: true
 
-	// Testing that the garbage collector still collects no records when there are none to collect
-	s2 = gc.setRef(s2, "Nothing here");
+	to_int(v1, gc);
 
-	std::printf("Running garbage collector... Collected %d records\n", gc.run());			// s1, s2, s3, s4, s5, s6, s7
-	debugPrint(gc);
+	// convert to string
+	to_string(v1, gc);							// STRING :: 3
+	printValue(v1, gc, ts);
 
+	// convert to int
+	to_int(v1, gc);
+	printValue(v1, gc, ts);						// INT :: 3 (Currently gives 0 as the gc is not hooked up correctly yet)
 
-	// Testing that the garbage collector will collect records when there are some to collect
-	gc.decRef(s4);
+	// assign "World" to v3
+	assign_value(v3, "World", gc);
+	std::printf("Running Garbage Collecter. Collected %d references\n", gc.run());
 
-	std::printf("Running garbage collector... Collected %d records\n", gc.run());			// s1, s2, s3, s5, s6, s7
-	debugPrint(gc);
-
-
-	// Testing that new allocations take advantage of the freed space
-	s8 = gc.loadRef("Equality Check");														// s1, s2, s3, s5, s6, s7, s8
-
-	debugPrint(gc);
-
-
-	// Testing behavior of incrParse collector (currently takes 4 elements)
-
-	s4 = gc.loadRef("Hello");
-
-	std::printf("Running garbage collector... Collected %d records\n", gc.run());			// s1, s2, s3, s4, s5, s6, s7, s8
-	debugPrint(gc);
-
-
-	gc.decRef(s3);
-	gc.decRef(s4);
-	gc.decRef(s5);
-
-	// IncrParse is taking too long
-	std::printf("Running incrParse collector... Collected %d records\n", gc.run(true));		// s1, s2, s3, s4, s5, s6, s7, s8
-	debugPrint(gc);
-
-
-	gc.incRef(s4);
-
-	std::printf("Running incrParse collector... Collected %d records\n", gc.run(true));		// s1, s2, s5, s6, s7, s8
-	debugPrint(gc);
-
-
-	// Shakedown tests
-	auto t1 = gc.tempRef(s4);
-	gc.addTemp(t1, "Hello");
-	s4 = gc.setRef(s4, t1);
-	
-	gc.setTemp(t1, s5);
-	gc.addTemp(t1, " :: ");
-	s5 = gc.setRef(s5, t1);
-
-	gc.delTemp(t1);
-
-	std::printf("Running garbage collector... Collected %d records\n", gc.run());			// s1, s2, s4, s5, s6, s7, s8
-	debugPrint(gc);
-
-
-	gc.decRef(s2);
-	gc.decRef(s4);
-
-	std::printf("Running garbage collector... Collected %d records\n", gc.run());			// s1, s5, s6, s7, s8
-	debugPrint(gc);
-
-
-	s2 = gc.loadRef("Allocation");
-	debugPrint(gc);
+	try {
+		to_int(v3, gc);
+	} catch (std::string& e) {
+		pl(e);
+	}
 
 	//std::cout << "Finished tests";
 	std::cin.get();
 }
 
-size_t dispatch(size_t t, std::string op, dust::impl::TypeSystem& ts, dust::EvalState& e) {
+
+size_t dispatch(size_t t, std::string op, impl::TypeSystem& ts, EvalState& e) {
 	auto d_type = ts.findDef(t, op);
 
 	if (d_type == ts.NIL) throw std::string{ "Dispatch Error: " + ts.get(t).name + "." + op + " is not defined" };
@@ -195,10 +248,72 @@ size_t dispatch(size_t t, std::string op, dust::impl::TypeSystem& ts, dust::Eval
 	return ts.get(d_type).ops[op](e);
 }
 
-void debugPrint(dust::impl::GC& gc) {
-	nl();
-	gc.printAll();
-	p("Available Records: ");
-	pl(gc.collected());
-	nl();
+
+void printValue(impl::Value& v, impl::GC& gc, impl::TypeSystem& ts) {
+	ps(ts.getName(v.type_id));
+	pl(TypeTraits<std::string>::get(v, gc));
+}
+
+
+void initConversions(impl::TypeSystem& ts) {
+	using namespace dust;
+
+	ts.getType("Int").addOp("String", [](EvalState& e) { return 3; });
+	ts.getType("Int").addOp("Float", [](EvalState& e) { return 3; });
+
+	//ts.getType("Int").addOp("String", [](CallStack& c) { c.push(pop_string(c)); return 1; });
+	//ts.getType("Int").addOp("Float", [](CallStack& c) { c.push(pop_int(c)); return 1; });
+}
+
+
+void to_int(impl::Value& v, impl::GC& gc) {
+	if (v.type_id == TypeTraits<std::string>::id) gc.decRef(v.val.i);
+
+	v.val.i = TypeTraits<int>::get(v, gc);
+	v.type_id = TypeTraits<int>::id;
+}
+
+void to_float(impl::Value& v, impl::GC& gc) {
+	if (v.type_id == TypeTraits<std::string>::id) gc.decRef(v.val.i);
+
+	v.val.d = TypeTraits<double>::get(v, gc);
+	v.type_id = TypeTraits<double>::id;
+}
+
+void to_bool(impl::Value& v, impl::GC& gc) {
+	if (v.type_id == TypeTraits<std::string>::id) gc.decRef(v.val.i);
+	
+	v.val.i = TypeTraits<int>::get(v, gc);
+	v.type_id = TypeTraits<bool>::id;
+}
+
+void to_string(impl::Value& v, impl::GC& gc) {
+	if (v.type_id == TypeTraits<std::string>::id) gc.decRef(v.val.i);
+
+	v.val.i = gc.loadRef(TypeTraits<std::string>::get(v, gc));
+	v.type_id = TypeTraits<std::string>::id;
+}
+
+
+void convert(impl::Value& v, size_t id, impl::TypeSystem& ts) {
+	ps(ts.getName(v.type_id) + " -> " + ts.getName(id));
+	pl(ts.convertible(v.type_id, id));
+}
+
+
+template <typename T>
+impl::Value make_value(T val, impl::GC& gc) {
+	return TypeTraits<T>::make(val, gc);
+}
+
+impl::Value make_value(const char* s, impl::GC& gc) {
+	return TypeTraits<std::string>::make(s, gc);
+}
+
+
+template <typename T>
+void assign_value(impl::Value& v, T val, impl::GC& gc) {
+	if (v.type_id == TypeTraits<std::string>::id) gc.decRef(v.val.i);
+
+	v = make_value(val, gc);
 }
