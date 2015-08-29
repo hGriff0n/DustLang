@@ -10,6 +10,17 @@ namespace dust {
 	namespace impl {
 		struct str_record;
 
+		/*
+		template <typename s, typename k = s>
+		class RuntimeStorage {
+			private:
+			protected:
+				std::vector<s> store;
+				std::unordered_map<k, size_t> registry;
+				std::vector<size_t> open;
+				...
+		}
+		*/
 		class RuntimeStorage {
 			private:
 			protected:
@@ -31,7 +42,9 @@ namespace dust {
 				//using temporary = str_record*;
 
 				// INITIALIZATION/MODIFICATION
-				size_t loadRef(std::string);							// New string (may return an old record)
+				//size_t loadRef(size_t);								// New reference
+				size_t loadRef(std::string);
+				//size_t loadRef(str_record*);
 
 				size_t setRef(size_t, size_t);							// Assign a ref
 				size_t setRef(size_t, str_record*);						// Assign a temporary
@@ -42,17 +55,17 @@ namespace dust {
 				//size_t combine(size_t, str_record*);
 
 				// TEMPORARIES
-				str_record* tempRef(std::string);						// Generate a temporary
-				str_record* tempRef(str_record*);						// Generate a temporary
 				str_record* tempRef(size_t);							// Generate a temporary
+				str_record* tempRef(std::string);
+				str_record* tempRef(str_record*);
 
-				void setTemp(str_record*, str_record*);					// Set a temporary
 				void setTemp(str_record*, size_t);						// Set a temporary
-				void setTemp(str_record*, std::string);					// Set a temporary
+				void setTemp(str_record*, std::string);
+				void setTemp(str_record*, str_record*);
 
-				void addTemp(str_record*, size_t);						// Add a ref to a temporary
-				void addTemp(str_record*, str_record*);					// Add two temporaries
-				void addTemp(str_record*, std::string);					// Add a string to the temporary
+				void appTemp(str_record*, size_t);						// Append to a temporary
+				void appTemp(str_record*, std::string);
+				void appTemp(str_record*, str_record*);
 
 				void delTemp(str_record*);								// Necessary because str_record's destructor is "hidden"
 
@@ -61,8 +74,8 @@ namespace dust {
 				void decRef(size_t);
 
 				// EXTRACTION
-				std::string deref(str_record*);
 				std::string deref(size_t);
+				std::string deref(str_record*);
 
 				// Debug functions
 				int num_records();

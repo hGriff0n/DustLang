@@ -134,17 +134,17 @@ namespace dust {
 			t->s = s;
 		}
 
-		void RuntimeStorage::addTemp(str_record* t, size_t s) {
+		void RuntimeStorage::appTemp(str_record* t, size_t s) {
 			if (!validIndex(s)) throw std::string{ "Invalid Record Access" };
-			addTemp(t, store[s]->s);
+			appTemp(t, store[s]->s);
 		}
 
-		void RuntimeStorage::addTemp(str_record* t, str_record* s) {
+		void RuntimeStorage::appTemp(str_record* t, str_record* s) {
 			if (!s) throw std::string{ "Nullptr Exception" };
-			addTemp(t, s->s);
+			appTemp(t, s->s);
 		}
 
-		void RuntimeStorage::addTemp(str_record* t, std::string s) {
+		void RuntimeStorage::appTemp(str_record* t, std::string s) {
 			if (!t) throw std::string{ "Nullptr Exception" };
 			t->s += s;
 		}
