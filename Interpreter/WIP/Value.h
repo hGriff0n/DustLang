@@ -2,25 +2,30 @@
 
 namespace dust {
 	namespace impl {
-		struct str_record;
-
 		union Atom {
 			int i;				// 4
 			double d;			// 8
-			str_record* s;		// 4
 			void* u;			// 4
-			// I can cast str_record* to void* (and vice versa)
-				// isString(u) iff type(u) == str_record*
 
 			Atom() {}
 			Atom(int v) : i{ v } {}
 			Atom(double v) : d{ v } {}
-			Atom(str_record* v) : s{ v } {}
+			Atom(size_t v) : i{ static_cast<int>(v) } {}
 			Atom(void* v) : u{ v }{}
 			Atom(const Atom& copy) {
 				*this = copy;
 			}
 		};
+
+		/*
+		Atom type
+		INT		|	i
+		BOOL	|	i
+		STRING	|	i
+		FLOAT	|	d
+		NIL		|	u
+		...
+		*/
 
 		struct Value {
 			Atom val;

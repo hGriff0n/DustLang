@@ -119,6 +119,10 @@ namespace dust {
 
 				// Temporary/Ungrouped Methods (may be expanded/grouped later)
 				bool convertible(size_t, size_t);		// Check for converter
+				bool isChildType(size_t, size_t);
+
+				std::string getName(size_t);
+				size_t getId(std::string);
 
 				// void forceType(int, size_t);			// Would also need a stack to be passed
 		};

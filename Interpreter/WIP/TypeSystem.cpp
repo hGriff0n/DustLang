@@ -155,5 +155,17 @@ namespace dust {
 		bool TypeSystem::convertible(size_t t1, size_t t2) {
 			return conv.count(key(t1, t2));
 		}
+
+		bool TypeSystem::isChildType(size_t t1, size_t t2) {
+			return isParentOf(t2, t1);
+		}
+
+		std::string TypeSystem::getName(size_t t) {
+			return types[t].name;
+		}
+
+		size_t TypeSystem::getId(std::string t) {
+			return type_id[t];
+		}
 	}
 }
