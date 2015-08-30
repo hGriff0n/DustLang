@@ -50,10 +50,6 @@ namespace dust {
 				size_t setRef(size_t, str_record*);						// Assign a temporary
 				size_t setRef(size_t, std::string);						// Assign a string
 
-				size_t combine(size_t, size_t);							// Add two refs (may reuse memory ???)
-				size_t combine(size_t, std::string);					// Add a ref and a string
-				//size_t combine(size_t, str_record*);
-
 				// TEMPORARIES
 				str_record* tempRef(size_t);							// Generate a temporary
 				str_record* tempRef(std::string);

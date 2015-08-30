@@ -1,10 +1,14 @@
 #include "Stack.h"
-#include "TypeTraits.h"
+#include "Value.h"
+
+#define MIN_STACK_SIZE 20
 
 namespace dust {
 	namespace impl {
 
-		Stack::Stack() {}
+		Stack::Stack() {
+			reserve(MIN_STACK_SIZE);
+		}
 
 		int Stack::normalize(int& idx) {
 			return idx = idx < 0 ? idx + s.size() : idx;
@@ -49,6 +53,14 @@ namespace dust {
 
 		size_t Stack::size() {
 			return s.size();
+		}
+
+		void Stack::reserve(size_t space) {
+			s.reserve(space);
+		}
+
+		void Stack::settop(int idx) {
+			s.resize(normalize(idx));
 		}
 
 		bool Stack::empty() {

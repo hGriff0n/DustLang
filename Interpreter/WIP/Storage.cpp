@@ -92,16 +92,6 @@ namespace dust {
 			return idx;
 		}
 
-		size_t RuntimeStorage::combine(size_t s1, size_t s2) {
-			if (!validIndex(s2)) throw std::string{ "Invalid Record Access" };
-			return combine(s1, store[s2]->s);
-		}
-
-		size_t RuntimeStorage::combine(size_t s1, std::string s2) {
-			if (!validIndex(s1)) throw std::string{ "Invalid Record Access" };
-			return setRef(s1, store[s1]->s + s2);
-		}
-
 		str_record* RuntimeStorage::tempRef(std::string s) {
 			auto ret = new str_record{};
 			setTemp(ret, s);
