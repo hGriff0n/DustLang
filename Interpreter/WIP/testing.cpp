@@ -5,6 +5,8 @@
 #include "Init.h"
 #include "TypeTraits.h"
 
+#include "Stack.h"
+
 #include "stack.h"
 #include <iostream>
 
@@ -18,24 +20,19 @@
 	// Possibly also for testing the development of type_traits style classes
 
 // TODO:
-	// Stack
-		// Stack for storing values to be used in calculations
-		// Have the stack be indexable (from the front and the back, necessary for the forceType function
-		// Various other stuff (focus on robustness and usability)
-
-	// Stack interaction
-		// Store Values on the stack
-		// Modify Values on the stack ?
-
 	// GC interaction
-		// Have pushing and popping call correct tags
-			// inc- and decRef if the Value is a String (I'm not sure how this'll work though)
+		// Pop values from the stack, modify them, push them onto the stack
+		// Generate a generic framework for popping values from the stack
 
 	// TypeSystem interaction
 		// Have conversions use converters to convert
 		// Ensure com and dispatch work on Values
 		// Maybe even add invokable functions
 			// Be able to run "Hello " + 3;
+
+	// Possibly wrap the current CallStack
+		// Could provide a more feature-rich API
+		// Automatically handle interactions with the GC, etc.
 
 	// Variables
 		// Maintain different typing from Value
@@ -108,17 +105,21 @@ void printValue(impl::Value&, impl::GC&, impl::TypeSystem&);
 void initConversions(impl::TypeSystem&);
 void convert(impl::Value&, size_t, impl::TypeSystem&);
 
+// Convert Value to the type
 void to_int(impl::Value&, impl::GC&);
 void to_float(impl::Value&, impl::GC&);
 void to_bool(impl::Value&, impl::GC&);
 void to_string(impl::Value&, impl::GC&);
 
+// Make a Value
 template <typename T>
 impl::Value make_value(T, impl::GC&);
 impl::Value make_value(const char* s, impl::GC&);
 
+// Assign a Value
 template <typename T>
 void assign_value(impl::Value&, T, impl::GC&);
+void assign_value(impl::Value&, impl::Value&, impl::GC&);
 
 
 // Type Traits specializations
@@ -174,6 +175,21 @@ template<> impl::Value TypeTraits<std::string>::make(std::string s, impl::GC& gc
 }
 
 
+// Stack specializations
+template <typename T>
+void push(impl::Stack&, T, impl::GC&);
+void push(impl::Stack&, impl::Value&, impl::GC&);
+
+template <typename T>
+T pop(impl::Stack&, impl::GC&, int = -1);
+impl::Value pop(impl::Stack&, impl::GC&, int = -1);
+
+// In-place pop
+template <typename T>
+void pop(impl::Stack&, T&, impl::GC&, int = -1);
+
+size_t pop_ref(impl::Stack&, impl::GC&, int = -1);
+
 int main(int argc, const char* argv[]) {
 	using namespace impl;
 
@@ -191,46 +207,42 @@ int main(int argc, const char* argv[]) {
 	Testing declarations
 	*/
 
-	auto v1 = make_value(3.2, gc);
-	auto v2 = make_value(3, gc);
-	auto v3 = make_value("Hello", gc);
+	Stack c;
+	auto v1 = make_value("World!", gc);
 
 	/*
 	Testing worksheet
 	*/
 
-	printValue(v1, gc, ts);						// FLOAT :: 3.200000
+	push(c, 3, gc);
+	push(c, 3.2, gc);
+	push(c, "Hello", gc);
+	c.push(make_value("3", gc));
+	push(c, v1, gc);								// World! | Hello | Hello | 3.2 | 3
 
-	//TypeTraits<int>::to(v1, gc);
-	to_int(v1, gc);
-	printValue(v1, gc, ts);						// INT :: 3
+	c.swap();										// 3 | World! | Hello | 3.2 | 3
 
-	// convert to float
-	to_float(v1, gc);
-	printValue(v1, gc, ts);						// FLOAT :: 3.000000
+	//assign_value(c.at(), "World!", gc);
+	//assign_value(c.at(-2), c.at(-1), gc);
 
-	// convert to bool
-	to_bool(v1, gc);
-	printValue(v1, gc, ts);						// BOOL :: true
+	int s = pop<int>(c, gc);						// World! | Hello | 3.2 | 3
 
-	to_int(v1, gc);
+	c.swap();										// Hello | World! | 3.2 | 3
+	std::string t;
+	pop(c, t, gc);
 
-	// convert to string
-	to_string(v1, gc);							// STRING :: 3
-	printValue(v1, gc, ts);
-
-	// convert to int
-	to_int(v1, gc);
-	printValue(v1, gc, ts);						// INT :: 3 (Currently gives 0 as the gc is not hooked up correctly yet)
-
-	// assign "World" to v3
-	assign_value(v3, "World", gc);
-	std::printf("Running Garbage Collecter. Collected %d references\n", gc.run());
+	printValue(c.pop(-3), gc, ts);
+	//printValue(c.pop(), gc, ts);			// These should decrement the references (They don't)
+	pl(pop<std::string>(c, gc));			// This decrements the reference however
+	pl(pop<double>(c, gc, 0));
+	
+	//printValue(c.pop(0), gc, ts);			// These should decrement the references
+	//printValue(pop(c, gc, 0), gc, ts);
 
 	try {
-		to_int(v3, gc);
-	} catch (std::string& e) {
-		pl(e);
+		c.pop();
+	} catch (std::out_of_range& e) {
+		std::cout << e.what();
 	}
 
 	//std::cout << "Finished tests";
@@ -316,4 +328,49 @@ void assign_value(impl::Value& v, T val, impl::GC& gc) {
 	if (v.type_id == TypeTraits<std::string>::id) gc.decRef(v.val.i);
 
 	v = make_value(val, gc);
+}
+
+void assign_value(impl::Value& v, impl::Value& a, impl::GC& gc) {
+	if (v.type_id == TypeTraits<std::string>::id) gc.decRef(v.val.i);
+	if (a.type_id == TypeTraits<std::string>::id) gc.incRef(a.val.i);
+
+	v = a;
+}
+
+
+
+template <typename T>
+void push(impl::Stack& s, T val, impl::GC& gc) {
+	s.push(make_value(val, gc));
+}
+
+void push(impl::Stack& s, impl::Value& val, impl::GC& gc) {
+	if (val.type_id == TypeTraits<std::string>::id) gc.incRef(val.val.i);
+	
+	s.push(val);
+}
+
+
+template <typename T>
+T pop(impl::Stack& s, impl::GC& gc, int idx) {
+	auto v = s.pop(idx);
+	
+	if (v.type_id == TypeTraits<std::string>::id) gc.decRef(v.val.i);
+
+	return TypeTraits<T>::get(v, gc);
+}
+
+impl::Value pop(impl::Stack& s, impl::GC& gc, int idx) {
+	return s.pop(idx);
+}
+
+template <typename T>
+void pop(impl::Stack& s, T& val, impl::GC& gc, int idx) {
+	val = pop<T>(s, gc, idx);
+}
+
+size_t pop_ref(impl::Stack& s, impl::GC& gc, int idx) {
+	if (s.at(idx).type_id != TypeTraits<std::string>::id) throw std::logic_error{ "No reference to Object" };
+
+	return s.pop(idx).val.i;
 }

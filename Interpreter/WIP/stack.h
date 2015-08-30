@@ -2,50 +2,30 @@
 
 #include <vector>
 
-// Might rename (I want to include methods that aren't very analagous to "stack")
-template <typename T>
-class stack {
-	private:
-		std::vector<T> s;
-		//int top = -1;
+namespace dust {
+	namespace impl {
+		struct Value;
 
-		template <typename Iter>
-		void swap(Iter& a, Iter& b) {
-			std::iter_swap(a, b);
-		}
+		class Stack {
+			private:
+			std::vector<Value> s;
 
-	public:
-		void push(T obj) {
-			s.emplace_back(obj);					//++top;
-		}
+			protected:
+				int normalize(int& idx);
+				bool invalidIndex(int idx);
 
-		T pop() {
-			T ret = s.back();					//T ret = s[top--];
-			s.pop_back();
-			return ret;
-		}
+			public:
+				Stack();
 
-		T top() {
-			return s.back();
-		}
+				void push(Value&);
+				void before(Value&, int);
+				void after(Value&, int);
+				Value pop(int = -1);
+				void swap(int = -1, int = -2);
+				Value& at(int = -1);
+				size_t size();
+				bool empty();
+		};
 
-		T peek() {
-			return s.end() - 2;
-		}
-
-		bool empty() {
-			return s.empty();
-		}
-
-		int size() {
-			return s.size();
-		}
-
-
-		// Not exactly "stack" operations
-		void swap() {
-			swap(s.end() - 2, s.end() - 1);
-		}
-
-		std::vector<T> get() { return s; }
-};
+	}
+}

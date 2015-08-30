@@ -1,6 +1,6 @@
 #include "Init.h"
 #include "TypeSystem.h"
-#include "GC.h"
+//#include "GC.h"
 
 #include "TypeTraits.h"
 
