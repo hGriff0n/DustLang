@@ -52,22 +52,11 @@ namespace dust {
 
 
 			// Stack management (lua functions)
-			// Checks the type of the value at the given index
-			template <typename T>
-			bool is(int idx = -1) {
-				return Stack::at(idx).type_id == TypeTraits<T>::id;
-			}
-
 			// Copies the value at the given index
 			void copy(int idx = -1) {
-				push(Stack::at(idx));
+				push(Stack::at(idx));			// Relies on CallStack::push behavior
 			}
 			
-			// Inserts the top at the given index
-			void insert(int idx = -1) {
-				Stack::before(pop(), idx);
-			}
-
 			// Replaces the value at the given index with the top
 			void replace(int idx = -1) {
 				auto& v = Stack::at(idx);

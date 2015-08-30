@@ -1,5 +1,4 @@
 #include "Stack.h"
-#include "Value.h"
 
 #define MIN_STACK_SIZE 20
 
@@ -20,6 +19,10 @@ namespace dust {
 		
 		void Stack::push(Value& v) {
 			s.push_back(v);
+		}
+
+		void Stack::insert(int idx) {
+			before(pop(), idx);
 		}
 
 		void Stack::before(Value& v, int bef) {
