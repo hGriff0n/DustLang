@@ -67,13 +67,14 @@ namespace dust {
 			}
 
 
-			// Others
-			// For quicker String operations
+			// Other Functions
+			// For quicker String operations (particularly equality testing)
 				// Should this convert the object if it is not a string
-			size_t pop_ref(int idx = -1) {
-				if (Stack::at(idx).type_id != TypeTraits<std::string>::id) throw std::logic_error{ "Object at index is not a String" };
+			size_t pop_ref(bool decRef = false) {
+				if (!is<std::string>(-1)) throw std::logic_error{ "Object at given idx is not a String" };
+				if (decRef) gc.decRef(at(-1).val.i);
 
-				return pop(idx).val.i;
+				return pop(-1).val.i;
 			}
 
 			// Shorter pop

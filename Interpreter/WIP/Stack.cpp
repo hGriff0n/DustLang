@@ -58,6 +58,10 @@ namespace dust {
 			return s.size();
 		}
 
+		void Stack::clear() {
+			s.clear();
+		}
+
 		void Stack::reserve(size_t space) {
 			s.reserve(space);
 		}

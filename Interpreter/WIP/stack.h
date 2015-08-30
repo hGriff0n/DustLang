@@ -37,6 +37,7 @@ namespace dust {
 				}
 
 				bool empty();
+				void clear();
 				size_t size();
 				void settop(int);
 				void reserve(size_t);
