@@ -5,7 +5,8 @@
 #include "Init.h"
 #include "TypeTraits.h"
 
-#include "Stack.h"
+//#include "Stack.h"
+#include "CallStack.h"
 
 #include "stack.h"
 #include <iostream>
@@ -20,9 +21,8 @@
 	// Possibly also for testing the development of type_traits style classes
 
 // TODO:
-	// GC interaction
-		// Pop values from the stack, modify them, push them onto the stack
-		// Generate a generic framework for popping values from the stack
+	// Extend the current Stack with CallStack
+		// Some other API functions
 
 	// TypeSystem interaction
 		// Have conversions use converters to convert
@@ -30,9 +30,11 @@
 		// Maybe even add invokable functions
 			// Be able to run "Hello " + 3;
 
-	// Possibly wrap the current CallStack
-		// Could provide a more feature-rich API
-		// Automatically handle interactions with the GC, etc.
+	// Consider merging CallStack and Stack
+		// CallStack would remain an extension of Stack but would have a TypeSystem& member
+		// Would only convert objects automatically if a converter is defined, etc.
+		// Do I want this (especially in regards to defining converters)
+		// But at the same time I'll need it for dispatch and calling converters
 
 	// Variables
 		// Maintain different typing from Value
@@ -105,16 +107,6 @@ void printValue(impl::Value&, impl::GC&, impl::TypeSystem&);
 void initConversions(impl::TypeSystem&);
 void convert(impl::Value&, size_t, impl::TypeSystem&);
 
-// Convert Value to the type
-void to_int(impl::Value&, impl::GC&);
-void to_float(impl::Value&, impl::GC&);
-void to_bool(impl::Value&, impl::GC&);
-void to_string(impl::Value&, impl::GC&);
-
-// Make a Value
-template <typename T>
-impl::Value make_value(T, impl::GC&);
-impl::Value make_value(const char* s, impl::GC&);
 
 // Assign a Value
 template <typename T>
@@ -176,24 +168,31 @@ template<> impl::Value TypeTraits<std::string>::make(std::string s, impl::GC& gc
 
 
 // Stack specializations
-template <typename T>
-void push(impl::Stack&, T, impl::GC&);
-void push(impl::Stack&, impl::Value&, impl::GC&);
-
-template <typename T>
-T pop(impl::Stack&, impl::GC&, int = -1);
-impl::Value pop(impl::Stack&, impl::GC&, int = -1);
-
-// In-place pop
-template <typename T>
-void pop(impl::Stack&, T&, impl::GC&, int = -1);
-
-size_t pop_ref(impl::Stack&, impl::GC&, int = -1);
+// void push_ref(impl::Stack&, size_t, int = -1);			// ???
 
 int main(int argc, const char* argv[]) {
 	using namespace impl;
 
 	EvalState e;
+
+	// The big question is how converters are going to be implemented (particularly automatic conversions)
+		// Raw conversions are easy enough to access that I can implement converters for basic types
+		// But difficult enough that converters should be the default method of converting
+		
+		// What if I take advantage of the Stack/CallStack relationship?
+			// Move the current CallStack API to Stack
+			// Move the templates to 
+
+		// Define a "Transfer type"
+			// Create a type that is returned by CallStack::pop
+
+		// Declare basic type methods as constant
+			// Int -> String cannot be modified, etc.
+			// In this formulation the converter and the raw conversion are one in the same
+				// Converters are also really for the benefit of dust code (not for the C++ API)
+				// C++ API only needs to know (and can really only store) a certain number of types
+					// I can add functions/structures to allow a more "dust" style of interacting in C++
+
 	/*
 	"Global" structures that will eventually be collected within EvalState
 	*/
@@ -207,42 +206,49 @@ int main(int argc, const char* argv[]) {
 	Testing declarations
 	*/
 
-	Stack c;
-	auto v1 = make_value("World!", gc);
-
+	CallStack c(gc);
+	auto v1 = TypeTraits<std::string>::make("World!", gc);
+	
 	/*
 	Testing worksheet
 	*/
 
-	push(c, 3, gc);
-	push(c, 3.2, gc);
-	push(c, "Hello", gc);
-	c.push(make_value("3", gc));
-	push(c, v1, gc);								// World! | Hello | Hello | 3.2 | 3
+	c.push(3);
+	c.push(3.2);
+	c.push("Hello");
+	c.push("3");
+	c.swap();
+	c.push(v1);												// "World!" | "Hello" | "3" | 3.2 | 3
 
-	c.swap();										// 3 | World! | Hello | 3.2 | 3
+	c.copy(-3);												// "3" | "World!" | "Hello" | "3" | 3.2 | 3
 
-	//assign_value(c.at(), "World!", gc);
-	//assign_value(c.at(-2), c.at(-1), gc);
+	auto s = (std::string)c;
+	pl(s);
+	c.push(s);												// "3" | "World!" | "Hello" | "3" | 3.2 | 3
 
-	int s = pop<int>(c, gc);						// World! | Hello | 3.2 | 3
+	ps("Is idx 1 a String");
+	pl(c.is<std::string>(1));
 
-	c.swap();										// Hello | World! | 3.2 | 3
-	std::string t;
-	pop(c, t, gc);
+	c.reserve(15);
 
-	printValue(c.pop(-3), gc, ts);
-	//printValue(c.pop(), gc, ts);			// These should decrement the references (They don't)
-	pl(pop<std::string>(c, gc));			// This decrements the reference however
-	pl(pop<double>(c, gc, 0));
+	c.replace(-4);											// "World!" | "Hello" | "3" | 3.2 | 3
+	c.push(33);
+	c.copy();												// 33 | 33 | "World!" | "Hello" | "3" | 3.2 | 3
+	c.insert(-4);											// 33 | "World!" | "Hello" | 33 | "3" | 3.2 | 3
+	c.pop(-4);
+
+	c.settop(5);											// "World!" | "Hello" | "3" | 3.2 | 3
+	c.push((std::string)c + " " + c.pop<std::string>());	// "Hello World!" | "3" | 3.2 | 3
 	
-	//printValue(c.pop(0), gc, ts);			// These should decrement the references
-	//printValue(pop(c, gc, 0), gc, ts);
+	pl(c.pop<std::string>());
+	auto i = c.pop<int>();
+	c.pop();
+	c.pop();
 
 	try {
 		c.pop();
 	} catch (std::out_of_range& e) {
-		std::cout << e.what();
+		pl(e.what());
 	}
 
 	//std::cout << "Finished tests";
@@ -273,53 +279,15 @@ void initConversions(impl::TypeSystem& ts) {
 	ts.getType("Int").addOp("String", [](EvalState& e) { return 3; });
 	ts.getType("Int").addOp("Float", [](EvalState& e) { return 3; });
 
-	//ts.getType("Int").addOp("String", [](CallStack& c) { c.push(pop_string(c)); return 1; });
-	//ts.getType("Int").addOp("Float", [](CallStack& c) { c.push(pop_int(c)); return 1; });
-}
-
-
-void to_int(impl::Value& v, impl::GC& gc) {
-	if (v.type_id == TypeTraits<std::string>::id) gc.decRef(v.val.i);
-
-	v.val.i = TypeTraits<int>::get(v, gc);
-	v.type_id = TypeTraits<int>::id;
-}
-
-void to_float(impl::Value& v, impl::GC& gc) {
-	if (v.type_id == TypeTraits<std::string>::id) gc.decRef(v.val.i);
-
-	v.val.d = TypeTraits<double>::get(v, gc);
-	v.type_id = TypeTraits<double>::id;
-}
-
-void to_bool(impl::Value& v, impl::GC& gc) {
-	if (v.type_id == TypeTraits<std::string>::id) gc.decRef(v.val.i);
-	
-	v.val.i = TypeTraits<int>::get(v, gc);
-	v.type_id = TypeTraits<bool>::id;
-}
-
-void to_string(impl::Value& v, impl::GC& gc) {
-	if (v.type_id == TypeTraits<std::string>::id) gc.decRef(v.val.i);
-
-	v.val.i = gc.loadRef(TypeTraits<std::string>::get(v, gc));
-	v.type_id = TypeTraits<std::string>::id;
+	//ts.getType("Int").addOp("String", [](CallStack& c) { c.push((std::string)c); return 1; });
+	//ts.getType("Int").addOp("Float", [](CallStack& c) { c.push((int)c); return 1; });
+	//ts.getType("String").addOp("_op=", [](CallStack& c) { c.push(c.pop_ref() == c.pop_ref()); return 1; });
 }
 
 
 void convert(impl::Value& v, size_t id, impl::TypeSystem& ts) {
 	ps(ts.getName(v.type_id) + " -> " + ts.getName(id));
 	pl(ts.convertible(v.type_id, id));
-}
-
-
-template <typename T>
-impl::Value make_value(T val, impl::GC& gc) {
-	return TypeTraits<T>::make(val, gc);
-}
-
-impl::Value make_value(const char* s, impl::GC& gc) {
-	return TypeTraits<std::string>::make(s, gc);
 }
 
 
@@ -335,42 +303,4 @@ void assign_value(impl::Value& v, impl::Value& a, impl::GC& gc) {
 	if (a.type_id == TypeTraits<std::string>::id) gc.incRef(a.val.i);
 
 	v = a;
-}
-
-
-
-template <typename T>
-void push(impl::Stack& s, T val, impl::GC& gc) {
-	s.push(make_value(val, gc));
-}
-
-void push(impl::Stack& s, impl::Value& val, impl::GC& gc) {
-	if (val.type_id == TypeTraits<std::string>::id) gc.incRef(val.val.i);
-	
-	s.push(val);
-}
-
-
-template <typename T>
-T pop(impl::Stack& s, impl::GC& gc, int idx) {
-	auto v = s.pop(idx);
-	
-	if (v.type_id == TypeTraits<std::string>::id) gc.decRef(v.val.i);
-
-	return TypeTraits<T>::get(v, gc);
-}
-
-impl::Value pop(impl::Stack& s, impl::GC& gc, int idx) {
-	return s.pop(idx);
-}
-
-template <typename T>
-void pop(impl::Stack& s, T& val, impl::GC& gc, int idx) {
-	val = pop<T>(s, gc, idx);
-}
-
-size_t pop_ref(impl::Stack& s, impl::GC& gc, int idx) {
-	if (s.at(idx).type_id != TypeTraits<std::string>::id) throw std::logic_error{ "No reference to Object" };
-
-	return s.pop(idx).val.i;
 }
