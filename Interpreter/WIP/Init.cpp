@@ -12,9 +12,11 @@ void initTypeSystem(TypeSystem& ts) {
 
 	auto Number = ts.newType("Number");
 	Number.addOp("_op*", [](EvalState& e) { return 1; });
+	Number.addOp("_op%", [](EvalState& e) { return 1; });
 
 	auto Int = ts.newType("Int", Number);
 	Int.addOp("_op+", [](EvalState& e) { return 2; });
+	Int.addOp("_op/", [](EvalState& e) { return 2; });
 
 	auto Float = ts.newType("Float", Number);
 	Float.addOp("_op+", [](EvalState& e) { return 3; });
@@ -22,7 +24,7 @@ void initTypeSystem(TypeSystem& ts) {
 
 	auto String = ts.newType("String");
 	String.addOp("_op+", [](EvalState& e) { return 4; });
-	String.addOp("_op/", [](EvalState& e) { return 4; });
+	String.addOp("_op-", [](EvalState& e) { return 4; });
 
 	auto Bool = ts.newType("Bool");
 	auto Table = ts.newType("Table");

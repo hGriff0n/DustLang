@@ -1,5 +1,6 @@
 #pragma once
 
+
 namespace dust {
 	namespace impl {
 		union Atom {
@@ -27,6 +28,7 @@ namespace dust {
 		...
 		*/
 
+
 		struct Value {
 			Atom val;
 			size_t type_id;
@@ -34,6 +36,8 @@ namespace dust {
 			Value() {}
 			Value(Atom v, size_t t) : val{ v }, type_id{ t } {}
 			Value(const Value& v) : val{ v.val }, type_id{ v.type_id } {}
+
+			operator size_t() { return type_id; }
 		};
 
 		struct Variable {

@@ -21,14 +21,9 @@
 	// Possibly also for testing the development of type_traits style classes
 
 // TODO:
-	// Extend the current Stack with CallStack
-		// Some other API functions
-
-	// TypeSystem interaction
-		// Have conversions use converters to convert
-		// Ensure com and dispatch work on Values
-		// Maybe even add invokable functions
-			// Be able to run "Hello " + 3;
+	// Consider adding basic evaluation capabilities
+		// Test invokable functions
+			// ie. "Hello " + 3 = "Hello 3"
 
 	// Consider merging CallStack and Stack
 		// CallStack would remain an extension of Stack but would have a TypeSystem& member
@@ -179,9 +174,8 @@ int main(int argc, const char* argv[]) {
 		// Raw conversions are easy enough to access that I can implement converters for basic types
 		// But difficult enough that converters should be the default method of converting
 		
-		// What if I take advantage of the Stack/CallStack relationship?
+		// Modify the Stack/CallStack relationship
 			// Move the current CallStack API to Stack
-			// Move the templates to 
 
 		// Define a "Transfer type"
 			// Create a type that is returned by CallStack::pop
@@ -189,9 +183,17 @@ int main(int argc, const char* argv[]) {
 		// Declare basic type methods as constant
 			// Int -> String cannot be modified, etc.
 			// In this formulation the converter and the raw conversion are one in the same
-				// Converters are also really for the benefit of dust code (not for the C++ API)
+				// Converters are really only for the benefit of dust code (not for the C++ API)
+					// Basically a converter is a special function that ensures that the data on the stack is a value of the correct type
+					// The normal C++ API does not need this capability as is (It is perfectly valid, and actually better, for the programmer to work with the basic types)
+						// But since a converter is a normal function, the capability still exists for a programmer to convert between non-basic types
+						// Basic types being int, bool, double, std::string, void*
 				// C++ API only needs to know (and can really only store) a certain number of types
 					// I can add functions/structures to allow a more "dust" style of interacting in C++
+
+		// Have the current method be the standard and converters are optional (for API development)
+			// This is explained more above
+			// This still leaves the question of how best to implement functions (calling won't be part of CallStack)
 
 	/*
 	"Global" structures that will eventually be collected within EvalState
@@ -251,6 +253,41 @@ int main(int argc, const char* argv[]) {
 		pl(e.what());
 	}
 
+	c.push("Hello");
+	c.push("Hello");										// "Hello" | "Hello"
+	c.push(c.pop_ref(true) == c.pop_ref(true));				// true
+	pl(c.pop<std::string>());
+
+	c.clear();
+	c.push(3);				// 0 -> Int
+	c.push(3.2);			// 1 -> Float
+	c.push("Hello");		// 2 -> String
+
+	auto Number = ts.getType("Number");
+	auto Int = ts.getType("Int");
+	auto Float = ts.getType("Float");
+	auto String = ts.getType("String");
+
+	nl();
+	// Test com works properly
+	pl(ts.getName(ts.com(c.at(0), c.at(1), "_op*")));			// Float: Int -> Float and Float._op*
+	pl(ts.getName(ts.com(c.at(0), c.at(1), "_op/")));			// Float: Int -> Float and Float._op*
+	pl(ts.getName(ts.com(c.at(0), c.at(0), "_op*")));			// Int: Same type
+	pl(ts.getName(ts.com(c.at(0), c.at(), "_op+")));			// String: Int -> String and String._op+
+	pl(ts.getName(ts.com(c.at(0), c.at(), "_op/")));			// Int: String -> Int and Int._op/
+
+	nl();
+	// Test dispatch works properly
+	pl(dispatch(c.at(0), "_op+", ts, e));							// Int._op+
+	pl(dispatch(c.at(0), "_op*", ts, e));							// Number._op*
+	try {
+		pl(dispatch(c.at(), "_op*", ts, e));
+	} catch (std::string& e) {
+		pl(e);
+	}
+	pl(dispatch(ts.com(c.at(0), c.at(1), "_op*"), "_op*", ts, e));		// Float._op*
+	pl(dispatch(ts.com(c.at(0), c.at(1), "_op%"), "_op%", ts, e));		// Number._op%
+
 	//std::cout << "Finished tests";
 	std::cin.get();
 }
@@ -274,14 +311,21 @@ void printValue(impl::Value& v, impl::GC& gc, impl::TypeSystem& ts) {
 
 
 void initConversions(impl::TypeSystem& ts) {
-	using namespace dust;
+	auto Int = ts.getType("Int");
+	auto Float = ts.getType("Float");
+	auto String = ts.getType("String");
 
-	ts.getType("Int").addOp("String", [](EvalState& e) { return 3; });
-	ts.getType("Int").addOp("Float", [](EvalState& e) { return 3; });
 
+	// Initialize Conversions
+	Int.addOp("String", [](EvalState& e) { return 2; });
+	Int.addOp("Float", [](EvalState& e) { return 2; });
+
+	String.addOp("Int", [](EvalState& e) { return 2; });
+	//Float.addOp("Int", [](EvalState& e) { return 3; });
+	
 	//ts.getType("Int").addOp("String", [](CallStack& c) { c.push((std::string)c); return 1; });
 	//ts.getType("Int").addOp("Float", [](CallStack& c) { c.push((int)c); return 1; });
-	//ts.getType("String").addOp("_op=", [](CallStack& c) { c.push(c.pop_ref() == c.pop_ref()); return 1; });
+	//ts.getType("String").addOp("_op=", [](CallStack& c) { c.push(c.pop_ref(true) == c.pop_ref(true)); return 1; });
 }
 
 
