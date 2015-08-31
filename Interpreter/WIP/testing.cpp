@@ -1,12 +1,8 @@
-#include "TypeSystem.h"
-
-#include "GC.h"
-
 #include "Init.h"
-#include "TypeTraits.h"
 
-//#include "Stack.h"
+#include "TypeSystem.h"
 #include "CallStack.h"
+//#include "EvalState.h"
 
 #include "stack.h"
 #include <iostream>
@@ -24,6 +20,7 @@
 	// Consider adding basic evaluation capabilities
 		// Test invokable functions
 			// ie. "Hello " + 3 = "Hello 3"
+		// add a "push_ref" method to CallStack ???
 
 	// Consider merging CallStack and Stack
 		// CallStack would remain an extension of Stack but would have a TypeSystem& member
@@ -64,34 +61,6 @@
 	// Contrive of a better way of getting dust type from c++ type
 
 // I also need to merge my current work on dust semantics and syntax with the documents in DustParser (keed documentation intact)
-
-class dust::EvalState {
-	private:
-		std::map<std::string, int> type_id;
-		impl::TypeSystem ts;
-		impl::GC gc;
-
-	public:
-
-		impl::TypeSystem& getTS() {
-			return ts;
-		}
-
-		impl::GC& getGC() {
-			return gc;
-		}
-
-		int dispatch(impl::Type& t, std::string op) {
-			auto ty = ts.findDef(t.id, op);
-
-			return 0;
-			//return ts.get(ty).ops[op](*this);					// I use this (similar) code in the current production !!!!!
-		}
-
-		impl::Type dispatch_(impl::Type& t, std::string op) {
-			return ts.get(ts.findDef(t.id, op));
-		}
-};
 
 using namespace dust;
 
@@ -169,6 +138,8 @@ int main(int argc, const char* argv[]) {
 	using namespace impl;
 
 	EvalState e;
+	_EvalState _e;
+	initState(_e);
 
 	// The big question is how converters are going to be implemented (particularly automatic conversions)
 		// Raw conversions are easy enough to access that I can implement converters for basic types
@@ -198,8 +169,9 @@ int main(int argc, const char* argv[]) {
 	/*
 	"Global" structures that will eventually be collected within EvalState
 	*/
-	TypeSystem ts;
 	GC gc;
+	TypeSystem ts;
+	CallStack c{ gc };
 
 	initTypeSystem(ts);
 	initConversions(ts);
@@ -208,12 +180,13 @@ int main(int argc, const char* argv[]) {
 	Testing declarations
 	*/
 
-	CallStack c(gc);
 	auto v1 = TypeTraits<std::string>::make("World!", gc);
 	
 	/*
 	Testing worksheet
 	*/
+
+	_e.push("Hello");
 
 	c.push(3);
 	c.push(3.2);
@@ -268,13 +241,15 @@ int main(int argc, const char* argv[]) {
 	auto Float = ts.getType("Float");
 	auto String = ts.getType("String");
 
+
 	nl();
 	// Test com works properly
 	pl(ts.getName(ts.com(c.at(0), c.at(1), "_op*")));			// Float: Int -> Float and Float._op*
-	pl(ts.getName(ts.com(c.at(0), c.at(1), "_op/")));			// Float: Int -> Float and Float._op*
+	pl(ts.getName(ts.com(c.at(0), c.at(1), "_op/")));			// Number: Common ancestor and Number._op/
 	pl(ts.getName(ts.com(c.at(0), c.at(0), "_op*")));			// Int: Same type
 	pl(ts.getName(ts.com(c.at(0), c.at(), "_op+")));			// String: Int -> String and String._op+
 	pl(ts.getName(ts.com(c.at(0), c.at(), "_op/")));			// Int: String -> Int and Int._op/
+
 
 	nl();
 	// Test dispatch works properly
@@ -287,6 +262,7 @@ int main(int argc, const char* argv[]) {
 	}
 	pl(dispatch(ts.com(c.at(0), c.at(1), "_op*"), "_op*", ts, e));		// Float._op*
 	pl(dispatch(ts.com(c.at(0), c.at(1), "_op%"), "_op%", ts, e));		// Number._op%
+
 
 	//std::cout << "Finished tests";
 	std::cin.get();
