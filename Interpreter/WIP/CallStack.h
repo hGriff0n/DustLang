@@ -12,23 +12,15 @@ namespace dust {
 
 		protected:
 		public:
-			CallStack(impl::GC& g) : gc{ g } {}
+			CallStack(impl::GC&);
 
 			// Push values onto the stack
 			template <typename T>
 			void push(T val) {
-				Stack::push(TypeTraits<T>::make(val, gc));
+				Stack::push(TypeTraits<T>::make(val, gc));				// Something is wrong with TypeTraits<std::string>::make (I'm able to "solve" it by "forward declaring" the string specialization, C4506)
 			}
-
-			void push(const char* val) {
-				push<std::string>(val);
-			}
-
-			void push(impl::Value val) {
-				if (val.type_id == TypeTraits<std::string>::id) gc.incRef(val.val.i);
-
-				Stack::push(val);
-			}
+			void push(const char*);
+			void push(impl::Value);
 
 
 			// Pop values from the stack
@@ -41,9 +33,7 @@ namespace dust {
 				return TypeTraits<T>::get(v, gc);
 			}
 
-			impl::Value pop(int idx = -1) {
-				return Stack::pop(idx);
-			}
+			impl::Value pop(int = -1);
 
 			template <typename T>
 			void pop(T& val, int idx = -1) {
@@ -53,29 +43,16 @@ namespace dust {
 
 			// Stack management (lua functions)
 			// Copies the value at the given index
-			void copy(int idx = -1) {
-				push(Stack::at(idx));			// Relies on CallStack::push behavior
-			}
+			void copy(int = -1);
 			
 			// Replaces the value at the given index with the top
-			void replace(int idx = -1) {
-				auto& v = Stack::at(idx);
-
-				if (v.type_id == TypeTraits<std::string>::id) gc.decRef(v.val.i);
-
-				v = pop();
-			}
+			void replace(int = -1);
 
 
 			// Other Functions
 			// For quicker String operations (particularly equality testing)
 				// Should this convert the object if it is not a string
-			size_t pop_ref(bool decRef = false) {
-				if (!is<std::string>(-1)) throw std::logic_error{ "Object at given idx is not a String" };
-				if (decRef) gc.decRef(at(-1).val.i);
-
-				return pop(-1).val.i;
-			}
+			size_t pop_ref(bool = false);
 
 			// Shorter pop
 			template <typename T>
