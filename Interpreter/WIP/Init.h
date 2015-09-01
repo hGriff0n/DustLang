@@ -14,4 +14,4 @@ namespace dust {
 }
 
 void initTypeSystem(dust::impl::TypeSystem&);
-//void initTypeTraits(dust::impl::TypeSystem&);
+void initConversions(dust::impl::TypeSystem&);

@@ -4,6 +4,11 @@
 #include "Stack.h"
 #include "GC.h"
 
+// Specialization of TypeTraits<std::string>::make as I now have access to dust::impl::GC
+template<> dust::impl::Value TypeTraits<std::string>::make(std::string s, dust::impl::GC& gc) {
+	return{ gc.loadRef(s), TypeTraits<std::string>::id };
+}
+
 namespace dust {
 
 	class CallStack : public impl::Stack {
