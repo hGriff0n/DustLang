@@ -27,7 +27,9 @@ struct TypeTraits{
 	}
 
 	// Create an object of type T from its dust representation
-	static T get(const dust::impl::Value&, dust::impl::GC&);
+	static T get(const dust::impl::Value& v, dust::impl::GC& gc) {
+		 throw std::string{ "Attempt to use get method for undefined TypeTraits class" };
+	}
 };
 
 
