@@ -6,6 +6,7 @@
 namespace dust {
 	class EvalState : public CallStack {
 		private:
+			std::map<std::string, impl::Variable> vars;
 			impl::TypeSystem ts;
 			impl::GC gc;
 
@@ -15,10 +16,9 @@ namespace dust {
 		public:
 			EvalState() : ts{}, gc{}, CallStack{ gc } {}
 
-			//EvalState& callOp(std::string);		// Allow immediate access of computation results
-			void call(std::string);
-			void callOp(std::string);				// Temporary methods until I determine how functions and tables will be implemented
-			void callMethod(std::string);
+			EvalState& call(std::string);
+			EvalState& callOp(std::string);				// Temporary methods until I determine how functions and tables will be implemented
+			EvalState& callMethod(std::string);
 			friend void initState(EvalState&);
 	};
 

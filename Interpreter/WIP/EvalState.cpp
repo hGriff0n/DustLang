@@ -20,12 +20,12 @@ namespace dust {
 	}
 
 	// Free functions
-	void EvalState::call(std::string fn) {
-		
+	EvalState& EvalState::call(std::string fn) {
+		return *this;
 	}
 
 	// Operators
-	void EvalState::callOp(std::string fn) {
+	EvalState& EvalState::callOp(std::string fn) {
 		if (fn.at(0) == '_' && fn.at(2) == 'u') return callMethod(fn);
 		if (fn.at(0) != '_' || fn.at(2) != 'p') throw std::string{ "Bad API Call: Attempt to callOp on a non-operator" };
 
@@ -45,10 +45,11 @@ namespace dust {
 		auto rets = ts.get(dis_t).ops[fn](*this);
 
 		std::cout << fn << ": " << rets << std::endl;
+		return *this;
 	}
 
 	// Methods
-	void EvalState::callMethod(std::string fn) {
+	EvalState& EvalState::callMethod(std::string fn) {
 		auto dis_t = ts.findDef(at().type_id, fn);
 
 		if (dis_t == ts.NIL) throw std::string{ "Dispatch error: Method " + fn + " is not defined for objects of type " + ts.getName(dis_t) };
@@ -56,6 +57,7 @@ namespace dust {
 		auto rets = ts.get(dis_t).ops[fn](*this);
 
 		std::cout << fn << ": " << rets << std::endl;
+		return *this;
 	}
 
 }
