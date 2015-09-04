@@ -15,3 +15,4 @@ namespace dust {
 
 void initTypeSystem(dust::impl::TypeSystem&);
 void initConversions(dust::impl::TypeSystem&);
+void initOperations(dust::impl::TypeSystem&);

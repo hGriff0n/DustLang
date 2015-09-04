@@ -4,6 +4,7 @@
 
 #include "stack.h"
 #include <iostream>
+#include <sstream>
 
 #define p(x) std::cout << (x)
 #define ps(x) p(x) << " :: "
@@ -16,25 +17,21 @@
 
 // TODO:
 	// Consider adding basic evaluation capabilities
-		// Test invokable functions
-			// ie. "Hello " + "World!" = "Hello World!"
-			// How to call member functions and non member functions
-				// Also how to call operators (slightly different semantics from member functions)
 		// add a "push_ref" method to CallStack ???
-		// include "GC.h" in TypeTraits.h and define the specializations there ??? 
+		// Change () from _op to _ou or something else (it's semantics don't really agree with other _op)
+		// Implement converters and operators (so that the old code should work)
 
-	// Consider merging CallStack and Stack
-		// CallStack would remain an extension of Stack but would have a TypeSystem& member
-		// Would only convert objects automatically if a converter is defined, etc.
-		// Do I want this (especially in regards to defining converters)
-		// But at the same time I'll need it for dispatch and calling converters
+	// Reduce TypeTraits specialization errors
+		// include "GC.h" in TypeTraits.h and move the specializations to TypeTraits.h ???
 
 	// Variables
-		// Maintain different typing from Value
+		// EvalState can store and access variables
 		// Ensure Values can be assigned to Variables
 			// Ensure Variable's typing remains independent from Value's
 		// Constant checking
 			// Throw errors if the constant flag is set
+		// Static type checking
+			// Perhaps also add static querying (ie. is static type?)
 
 	// TypeSystem 
 		// Type checking
@@ -42,12 +39,18 @@
 			// Call converters if necessary
 			// Throw errors otherwise
 
-	// Encapsulation (Start moving all the functions into EvalState)
-
 
 	// Expression evaluation
 	// AST Construction Framework
 	// Grammar integration (AST)
+		// Organize files into sub-folders
+		// Merge Backend-Rewrite into master (delete TypeSystem branch)
+		// Organize namespaces (Use better namespace divisions)
+
+	// Step Back and Determine Where I Am
+		// Comment all of the current code
+		// Go over and update documentation
+		// Update the "ToDo" list to prioritize important/simple improvements and updates
 
 // Things to work on
 	// Improving and consolidating the API
@@ -126,6 +129,13 @@ template<> std::string TypeTraits<std::string>::get(const impl::Value& v, impl::
 	throw std::string{ "Not convertible to String" };
 }
 
+template<> bool TypeTraits<bool>::get(const impl::Value& v, impl::GC& gc) {
+	if (v.type_id == TypeTraits<bool>::id)
+		return v.val.i;
+
+	throw std::string{ "Not convertible to Bool" };
+}
+
 
 // Stack specializations
 // void push_ref(impl::Stack&, size_t, int = -1);			// ???
@@ -136,68 +146,37 @@ int main(int argc, const char* argv[]) {
 	EvalState e;
 	initState(e);
 
-	// The big question is how converters are going to be implemented (particularly automatic conversions)
-		// Converters are nothing more than special functions
-			// Moreover converters are really only for the benefit of dust code (not for API development)
-				// The converter ensures that the data on the stack is interpreted in a certain way
-					// Also modifies the data if necessary
-				// The API needs to be able to access the data as-is in order for the converters to work properly
-					// Thusly the API only needs to know (and store) a small subset of types
-			// I can add functions/structures to the C++ API in order to emulate dust
-				// Moreover converters are little more than dust functions
-					// ie. They can be called by the API
-
-
 	/*
 	Testing declarations
 	*/
 
-
+	// For now
+		// I'm just going to have special functions for each possibility
+			// callOp, callMethod, call (free)
+		// I can figure out how to implement this stuff in a singular interface later once I've determined the mechanics for tables and functions
 	
 	/*
 	Testing worksheet
 	*/
 
-	// "Hello" + " " + "World!"
-	e.push(" World!");
-	e.push("Hello");
+	int a, b;
+	std::string input, op;
 
-	//e.push("_op+");
-	//e.call();
-	e.call("_op+");
-	
-	pl(e.pop<std::string>());				// Hello World!
+	while (std::getline(std::cin, input)) {
+		if (input == "exit") break;
 
-	//auto Number = ts.getType("Number");
-	//auto Int = ts.getType("Int");
-	//auto Float = ts.getType("Float");
-	//auto String = ts.getType("String");
+		std::istringstream{ input } >> a >> op >> b;
+		e.push(b);
+		e.push(a);
+		e.callOp("_op" + op);
 
-
-	nl();
-	// Test com works properly
-	//pl(ts.getName(ts.com(c.at(0), c.at(1), "_op*")));			// Float: Int -> Float and Float._op*
-	//pl(ts.getName(ts.com(c.at(0), c.at(1), "_op/")));			// Number: Common ancestor and Number._op/
-	//pl(ts.getName(ts.com(c.at(0), c.at(0), "_op*")));			// Int: Same type
-	//pl(ts.getName(ts.com(c.at(0), c.at(), "_op+")));			// String: Int -> String and String._op+
-	//pl(ts.getName(ts.com(c.at(0), c.at(), "_op/")));			// Int: String -> Int and Int._op/
-
-
-	nl();
-	// Test dispatch works properly
-	//pl(dispatch(c.at(0), "_op+", ts, e));							// Int._op+
-	//pl(dispatch(c.at(0), "_op*", ts, e));							// Number._op*
-	//try {
-	//	pl(dispatch(c.at(), "_op*", ts, e));
-	//} catch (std::string& e) {
-	//	pl(e);
-	//}
-	//pl(dispatch(ts.com(c.at(0), c.at(1), "_op*"), "_op*", ts, e));		// Float._op*
-	//pl(dispatch(ts.com(c.at(0), c.at(1), "_op%"), "_op%", ts, e));		// Number._op%
-
+		p("> ");
+		pl(e.pop<int>());
+		nl();
+	}
 
 	//std::cout << "Finished tests";
-	std::cin.get();
+	//std::cin.get();
 }
 
 
@@ -225,15 +204,101 @@ void initConversions(impl::TypeSystem& ts) {
 
 
 	// Initialize Conversions
-	Int.addOp("String", [](EvalState& e) { return 2; });
-	Int.addOp("Float", [](EvalState& e) { return 2; });
-
-	String.addOp("Int", [](EvalState& e) { return 2; });
 	//Float.addOp("Int", [](EvalState& e) { return 3; });
 	
-	//ts.getType("Int").addOp("String", [](CallStack& c) { c.push((std::string)c); return 1; });
-	//ts.getType("Int").addOp("Float", [](CallStack& c) { c.push((int)c); return 1; });
-	//ts.getType("String").addOp("_op=", [](CallStack& c) { c.push(c.pop_ref(true) == c.pop_ref(true)); return 1; });
+	Int.addOp("String", [](EvalState& e) { e.push((std::string)e); return 1; });
+	Int.addOp("Float", [](EvalState& e) { e.push((double)e); return 1; });
+	
+	String.addOp("Int", [](EvalState& e) { e.push((int)e); return 1; });
+}
+
+void initOperations(impl::TypeSystem& ts) {
+	auto Object = ts.getType("Object");
+	auto Int = ts.getType("Int");
+	auto Float = ts.getType("Float");
+	auto String = ts.getType("String");
+	auto Bool = ts.getType("Bool");
+	
+	//! -
+	//^ * / + - % < = > <= != >=
+
+	Object.addOp("_op<=", [](EvalState& e) {
+		e.copy(-2);
+		e.copy(-2);
+		e.callOp("_op=");
+		
+		auto eq = (bool)e;
+		if (!eq) {
+			e.callOp("_op<");
+			return 1;
+		}
+		
+		e.pop();
+		e.pop();
+		e.push(eq);
+		
+		return 1;
+	});
+	Object.addOp("_op>=", [](EvalState& e) {
+		e.copy(-2);
+		e.copy(-2);
+		e.callOp("_op=");
+
+		auto eq = (bool)e;
+		if (!eq) {
+			e.callOp("_op>");
+			return 1;
+		}
+
+		e.pop();
+		e.pop();
+		e.push(eq);
+
+		return 1;
+	});
+	Object.addOp("_op!=", [](EvalState& e) {
+		e.callOp("_op=");
+		e.callOp("_ou!");
+		return 1;
+	});
+
+	Int.addOp("_op+", [](EvalState& e) { e.push((int)e + (int)e); return 1; });
+	Int.addOp("_op/", [](EvalState& e) { e.push((double)e / (double)e); return 1; });		// Could be moved to Number
+	Int.addOp("_op-", [](EvalState& e) { e.push((int)e - (int)e); return 1; });
+	Int.addOp("_op*", [](EvalState& e) { e.push((int)e * (int)e); return 1; });
+	Int.addOp("_op^", [](EvalState& e) {
+		auto base = (double)e;
+		e.push(pow(base, (double)e));
+		return 1;
+	});											// Could be moved to Number
+	Int.addOp("_op%", [](EvalState& e) { e.push((int)e % (int)e); return 1; });
+	Int.addOp("_op<", [](EvalState& e) { e.push((int)e < (int)e); return 1; });		// 
+	Int.addOp("_op=", [](EvalState& e) { e.push((int)e == (int)e); return 1; });
+	Int.addOp("_op>", [](EvalState& e) { e.push((int)e > (int)e); return 1; });
+	Int.addOp("_ou-", [](EvalState& e) { e.push(-(int)e); return 1; });
+
+
+	String.addOp("_op+", [](EvalState& e) { e.push((std::string)e + e.pop<std::string>(-2)); return 1; });			// Why is Int._op- correct then???
+	String.addOp("_op=", [](EvalState& e) { e.push(e.pop_ref(true) == e.pop_ref(true)); return 1; });
+
+
+	Float.addOp("_op+", [](EvalState& e) { e.push((double)e + (double)e); return 1; });
+	Float.addOp("_op/", [](EvalState& e) { e.push((double)e / (double)e); return 1; });
+	Float.addOp("_op-", [](EvalState& e) { e.push((double)e - (double)e); return 1; });
+	Float.addOp("_op*", [](EvalState& e) { e.push((double)e * (double)e); return 1; });
+	Float.addOp("_op^", [](EvalState& e) {
+		auto base = (double)e;
+		e.push(pow(base, (double)e));
+		return 1;
+	});
+	Float.addOp("_op<", [](EvalState& e) { e.push((double)e < (double)e); return 1; });		// 
+	Float.addOp("_op=", [](EvalState& e) { e.push((double)e == (double)e); return 1; });
+	Float.addOp("_op>", [](EvalState& e) { e.push((double)e >(double)e); return 1; });
+	Float.addOp("_ou-", [](EvalState& e) { e.push(-(double)e); return 1; });
+	Float.addOp("_ou-", [](EvalState& e) { e.push(-(double)e); return 1; });
+
+	Bool.addOp("_op=", [](EvalState& e) { return 1; });
+	Bool.addOp("_ou!", [](EvalState& e) { e.push(!(bool)e);  return 1; });
 }
 
 
