@@ -106,3 +106,16 @@ Common Type and Operator dispatch
 				Guaranteed to return Object or a child type of Object
 			Current implementation is to memoize this result for future lookup
 				This also reuses the key I have to create to perform the Converter Search
+
+Converters and Data Conversions (Need to rework this to provide a better explanation of Converters)
+	Converters are nothing more than special functions
+		Moreover converters are really only for the benefit of dust code (not for API development)
+			The converter ensures that the data on the stack is interpreted in a certain way
+				Also modifies the data if necessary
+				The API needs to be able to access the data as-is in order for the converters to work properly
+					Thusly the API only needs to know (and store) a small subset of types
+			I can add functions/structures to the C++ API in order to emulate dust
+				Moreover converters are little more than dust functions
+					ie. They can be called by the API
+
+	Converters can only be defined for types (they cannot be defined for individual tables/objects)
