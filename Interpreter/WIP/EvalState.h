@@ -32,6 +32,8 @@ namespace dust {
 			// Variable flags
 			void mark_constant(std::string);
 			void set_typing(std::string, size_t);
+			bool isConst(std::string);
+			bool isStatic(std::string);
 
 			friend void initState(EvalState&);
 	};

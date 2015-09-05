@@ -23,7 +23,6 @@ namespace dust {
 	// Convert the element to var.type_id if possible because var is statically typed
 		// Is only called if var.type_id != ts.Nil and at(idx).type_id is not a child of var.type_id
 	void EvalState::staticTyping(impl::Variable& var, bool isConst) {
-		// Need to better word this error message
 		if (!ts.convertible(var.type_id, at().type_id)) throw std::string{ "No converter from the assigned value to the variable's static type" };
 
 		callMethod(ts.getName(var.type_id));
@@ -41,18 +40,22 @@ namespace dust {
 	// Assign the top value on the stack to the given variable with the given flags
 	void EvalState::setVar(std::string name, bool isConst, bool isTyped) {
 		if (vars.count(name) == 0) return newVar(name, isConst, isTyped);					// If the variable doesn't already exist
-
 		auto& var = vars[name];
-		if (var.is_const) throw std::string{ "Attempt to reassign a constant variable" };		// If the variable is marked "constant"
 
-		if (var.type_id != ts.NIL && !ts.isChildType(at().type_id, var.type_id))				// If the variable is statically typed
+		// If the variable is marked "constant"
+		if (var.is_const) throw std::string{ "Attempt to reassign a constant variable" };
+
+		// If the variable is statically typed
+		if (var.type_id != ts.NIL && !ts.isChildType(at().type_id, var.type_id))
 			return staticTyping(var, isConst);
 
-		if (var.val.type_id == TypeTraits<std::string>::id) gc.decRef(var.val.val.i);				// Remove the variables current value and give it the new one
+		// Remove the variables current value and give it the new one
+		if (var.val.type_id == TypeTraits<std::string>::id) gc.decRef(var.val.val.i);
 		var.val = pop();
 		if (var.val.type_id == TypeTraits<std::string>::id) gc.incRef(var.val.val.i);
 
-		var.is_const = isConst;																	// Ensure the isConst and type_id flags are current
+		// Ensure the isConst and type_id flags are current
+		var.is_const = isConst;
 		if (isTyped) var.type_id = var.val.type_id;
 	}
 
@@ -70,7 +73,7 @@ namespace dust {
 	void EvalState::set_typing(std::string var, size_t typ) {
 		if (vars.count(var) == 0) return;					// Temporary. Haven't determined what should happen in these circumstances
 
-		if (typ != ts.NIL) {
+		if (typ != ts.NIL) {								// If the variable is being statically typed
 			if (!ts.convertible(vars[var].type_id, typ)) throw std::string{ "No converter from the current value to the given type" };
 
 			getVar(var);
@@ -80,6 +83,14 @@ namespace dust {
 		}
 
 		vars[var].type_id = typ;
+	}
+
+	bool EvalState::isConst(std::string var) {
+		return vars[var].is_const;
+	}
+
+	bool EvalState::isStatic(std::string var) {
+		return vars[var].type_id != ts.NIL;
 	}
 
 
