@@ -19,8 +19,57 @@ namespace dust {
 		swap(idx, -1);
 	}
 
+
+	// Convert the element to var.type_id if possible because var is statically typed
+		// Is only called if var.type_id != ts.Nil and at(idx).type_id is not a child of var.type_id
+	void EvalState::staticTyping(impl::Variable& var, bool isConst) {
+		// Need to better word this error message
+		if (!ts.convertible(var.type_id, at().type_id)) throw std::string{ "Attempt to assign value to a typed variable when the value cannot be converted to the variable's type" };
+
+		callMethod(ts.getName(var.type_id));
+		var.val = pop();
+		var.is_const = isConst;
+	}
+
+	// Create and set a new Variable
+	void EvalState::newVar(std::string name, bool isConst, bool isTyped) {
+		auto& var = vars[name] = impl::Variable{ pop(), ts.NIL, isConst };
+
+		if (isTyped) var.type_id = var.val.type_id;
+	}
+
+	// Assign the top value on the stack to the given variable with the given flags
+	void EvalState::setVar(std::string name, bool isConst, bool isTyped) {
+		if (vars.count(name) == 0) return newVar(name, isConst, isTyped);					// If the variable doesn't already exist
+
+		auto& var = vars[name];
+		if (var.is_const) throw std::string{ "Attempt to reassign a constant variable" };		// If the variable is marked "constant"
+
+		if (var.type_id != ts.NIL && !ts.isChildType(at().type_id, var.type_id))				// If the variable is statically typed
+			return staticTyping(var, isConst);
+
+		if (var.val.type_id == TypeTraits<std::string>::id) gc.decRef(var.val.val.i);				// Remove the variables current value and give it the new one
+		var.val = pop();
+		if (var.val.type_id == TypeTraits<std::string>::id) gc.incRef(var.val.val.i);
+
+		var.is_const = isConst;																	// Ensure the isConst and type_id flags are current
+		if (isTyped) var.type_id = var.val.type_id;
+	}
+
+	// Push the variable onto the stack (0 if it doesn't exist)
+	void EvalState::getVar(std::string var) {
+		if (vars.count(var) == 0) return push(0);			// Temporary as nil is not implemented
+		push(vars[var].val);
+	}
+
+
 	// Free functions
 	EvalState& EvalState::call(std::string fn) {
+		if (fn == "type")
+			push((int)(pop().type_id));
+		else if (fn == "typename")
+			push(ts.getName(pop().type_id));
+
 		return *this;
 	}
 
@@ -44,7 +93,7 @@ namespace dust {
 
 		auto rets = ts.get(dis_t).ops[fn](*this);
 
-		std::cout << fn << ": " << rets << std::endl;
+		//std::cout << fn << ": " << rets << std::endl;
 		return *this;
 	}
 
@@ -56,7 +105,7 @@ namespace dust {
 
 		auto rets = ts.get(dis_t).ops[fn](*this);
 
-		std::cout << fn << ": " << rets << std::endl;
+		//std::cout << fn << ": " << rets << std::endl;
 		return *this;
 	}
 

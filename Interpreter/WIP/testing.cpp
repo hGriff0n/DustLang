@@ -16,29 +16,17 @@
 	// Possibly also for testing the development of type_traits style classes
 
 // TODO:
-	// Consider adding basic evaluation capabilities
-		// add a "push_ref" method to CallStack ???
-		// Change () from _op to _ou or something else (it's semantics don't really agree with other _op)
-		// Implement converters and operators (so that the old code should work)
-
-	// Reduce TypeTraits specialization errors
-		// include "GC.h" in TypeTraits.h and move the specializations to TypeTraits.h ???
-
 	// Variables
-		// EvalState can store and access variables
-		// Ensure Values can be assigned to Variables
-			// Ensure Variable's typing remains independent from Value's
-		// Constant checking
-			// Throw errors if the constant flag is set
-		// Static type checking
-			// Perhaps also add static querying (ie. is static type?)
+		// Improve the interface for getting/setting/using variables
+		// Move settop from Stack to CallStack (so that it can appropriately decrement references)
+			// The current method is a guaranteed memory-leak
 
 	// TypeSystem 
-		// Type checking
+		// Type checking (???)
 			// Be able to store sub-types as-is
 			// Call converters if necessary
 			// Throw errors otherwise
-
+		// perhaps add static and constant querying abilities
 
 	// Expression evaluation
 	// AST Construction Framework
@@ -46,11 +34,16 @@
 		// Organize files into sub-folders
 		// Merge Backend-Rewrite into master (delete TypeSystem branch)
 		// Organize namespaces (Use better namespace divisions)
+		// Reduce TypeTraits specialization errors
+			// include "GC.h" in TypeTraits.h and move the specializations to TypeTraits.h ???
+
 
 	// Step Back and Determine Where I Am
 		// Comment all of the current code
 		// Go over and update documentation
 		// Update the "ToDo" list to prioritize important/simple improvements and updates
+		// Consider changing name of _op() due to semantical differences
+		// Consider adding a push_ref method to CallStack (roughly mirrors pop_ref)
 
 // Things to work on
 	// Improving and consolidating the API
@@ -150,17 +143,32 @@ int main(int argc, const char* argv[]) {
 	Testing declarations
 	*/
 
-	// For now
-		// I'm just going to have special functions for each possibility
-			// callOp, callMethod, call (free)
-		// I can figure out how to implement this stuff in a singular interface later once I've determined the mechanics for tables and functions
-	
+
 	/*
 	Testing worksheet
 	*/
 
+	e.push(3);
+	e.setVar("t", false, true);
+	e.push("4");
+	try {
+		e.setVar("t");
+		e.getVar("t");
+		pl(e.pop<std::string>());
+	} catch (std::string& e) {
+		pl(e);
+	}
+	
+	e.push(true);
+	try {
+		e.setVar("t");
+	} catch (std::string& e) {
+		pl(e);
+	}
+
 	int a, b;
 	std::string input, op;
+	nl();
 
 	while (std::getline(std::cin, input)) {
 		if (input == "exit") break;
@@ -168,10 +176,10 @@ int main(int argc, const char* argv[]) {
 		std::istringstream{ input } >> a >> op >> b;
 		e.push(b);
 		e.push(a);
-		e.callOp("_op" + op);
 
 		p("> ");
-		pl(e.pop<int>());
+		pl((int)e.callOp("_op" + op));
+		//pl(e.callOp("_op" + op).pop<int>());
 		nl();
 	}
 
@@ -202,14 +210,15 @@ void initConversions(impl::TypeSystem& ts) {
 	auto Float = ts.getType("Float");
 	auto String = ts.getType("String");
 
-
-	// Initialize Conversions
-	//Float.addOp("Int", [](EvalState& e) { return 3; });
-	
+	// Initialize Conversions	
 	Int.addOp("String", [](EvalState& e) { e.push((std::string)e); return 1; });
 	Int.addOp("Float", [](EvalState& e) { e.push((double)e); return 1; });
+
+	Float.addOp("String", [](EvalState& e) { e.push((std::string)e); return 1; });
+	Float.addOp("Int", [](EvalState& e) { e.push((int)e); return 1; });
 	
 	String.addOp("Int", [](EvalState& e) { e.push((int)e); return 1; });
+	String.addOp("Float", [](EvalState& e) { e.push((float)e); return 1; });
 }
 
 void initOperations(impl::TypeSystem& ts) {
