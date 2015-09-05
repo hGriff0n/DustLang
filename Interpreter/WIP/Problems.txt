@@ -38,3 +38,5 @@ How will I handle table indexing and assignment?
 
 	I think the solution for this problem will be in _nindex and _index
 		However does this work for assignments as well as access
+
+There's still the problem of how to get every type to automatically convert to tables

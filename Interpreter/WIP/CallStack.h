@@ -25,7 +25,7 @@ namespace dust {
 				Stack::push(TypeTraits<T>::make(val, gc));				// Something is wrong with TypeTraits<std::string>::make (I'm able to "solve" it by "forward declaring" the string specialization, C4506)
 			}
 			void push(const char*);
-			void push(impl::Value);
+			void push(impl::Value);	// impl::Value& ???
 
 
 			// Pop values from the stack

@@ -118,7 +118,10 @@ namespace dust {
 
 
 				// Temporary/Ungrouped Methods (may be expanded/grouped later)
-				bool convertible(size_t, size_t);		// Check for converter
+				// Checks if there is a converter between t1 and t2
+				bool convertible(size_t, size_t);
+				
+				// Checks if t1 is a child of t2
 				bool isChildType(size_t, size_t);
 
 				std::string getName(size_t);
