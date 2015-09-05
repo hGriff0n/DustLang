@@ -12,6 +12,10 @@ namespace dust {
 				virtual std::string to_string() =0;
 
 				static std::string node_type;
+
+				virtual std::string print_string(std::string buf) {
+					return buf + "+- " + node_type + "\n";
+				}
 		};
 
 		template <class Node>
@@ -21,20 +25,48 @@ namespace dust {
 
 			public:
 				EvalState& eval(EvalState& e) {
+					// throw std::string{ "Attempt to evaluate a List node" };
+
 					for (auto i = begin(); i != end(); ++i)
 						(*i)->eval(e);
 
 					return e;
 				}
 
-				// Assuming elems is constructed left->right
+				//*
+				// Assuming sub-nodes are stored right->left
+					// List(a, b, c) => List.elems = { c, b, a }
 				auto rbegin() { return elems.begin(); }
 				auto rend() { return elems.end(); }
 				auto begin() { return elems.rbegin(); }
 				auto end() { return elems.rend(); }
+
+				/*/
+				// Assuming sub-nodes are stored left->right
+					// List(a, b, c) => List.elems = { a, b, c }
+				auto rbegin() { return elems.rbegin(); }
+				auto rend() { return elems.rend(); }
+				auto begin() { return elems.begin(); }
+				auto end() { return elems.end(); }
+				//*/
+
 				size_t size() { return elems.size(); }
+				List& add(Node* n) {
+					elems.push_back(n);
+					return *this;
+				}
 
 				std::string to_string() { return ""; }
+
+				virtual std::string print_string(std::string buf) {
+					std::string ret = buf + "+- " + node_type + "\n";
+					buf += " ";
+
+					for (auto i = begin(); i != end(); ++i)
+						ret += (*i)->print_string(buf);
+
+					return ret;
+				}
 
 				static std::string node_type;
 		};
@@ -46,6 +78,10 @@ namespace dust {
 			public:
 				EvalState& eval(EvalState& e) { return e; }
 				std::string to_string() { return msg; }
+
+				virtual std::string print_string(std::string buf) {
+					return buf + "+- " + node_type + " " + msg + "\n";
+				}
 
 				static std::string node_type;
 		};
@@ -80,11 +116,15 @@ namespace dust {
 
 				// Possibly temporary implementation
 				std::string to_string() {
-					return (id == TypeTraits<int>::id ? "Int " :
-							id == TypeTraits<double>::id ? "Float " :
-							id == TypeTraits<bool>::id ? "Bool " :
-							id == TypeTraits<std::string>::id ? "String " :
-							"Nil ") + val;
+					return (id == TypeTraits<int>::id ? " Int " :
+							id == TypeTraits<double>::id ? " Float " :
+							id == TypeTraits<bool>::id ? " Bool " :
+							id == TypeTraits<std::string>::id ? " String " :
+							" Nil ") + val;
+				}
+
+				virtual std::string print_string(std::string buf) {
+					return buf + "+- " + node_type + to_string() + "\n";
 				}
 
 				static std::string node_type;
@@ -111,6 +151,13 @@ namespace dust {
 
 				std::string to_string() { return op; }
 
+				virtual std::string print_string(std::string buf) {
+					std::string s = buf + "+- " + node_type + " " + op + "\n";
+					s += l->print_string(buf + " ");
+					s += r->print_string(buf + " ");
+					return s;
+				}
+
 				static std::string node_type;
 		};
 
@@ -127,6 +174,10 @@ namespace dust {
 				}
 
 				std::string to_string() { return name; }
+
+				virtual std::string print_string(std::string buf) {
+					return buf + "+- " + node_type + " " + name + "\n";
+				}
 
 				static std::string node_type;
 		};
@@ -165,7 +216,7 @@ namespace dust {
 
 					// Perform assignments. Compound if necessary
 					while (r_var != l_var) {
-						if (compound) (*r_var)->eval(e).call( op);
+						if (compound) (*r_var)->eval(e).callOp(op);
 						e.setVar((*r_var++)->to_string());
 					}
 
@@ -174,13 +225,19 @@ namespace dust {
 
 				std::string to_string() { return op; }
 
+				virtual std::string print_string(std::string buf) {
+					std::string s = buf + "+- " + node_type + " " + op + "\n";
+					s += vars->print_string(buf + " ") + vals->print_string(buf + " ");
+					return s;
+				}
+
 				static std::string node_type;
 		};
 
 
 		std::string ASTNode::node_type = "ASTNode";
 		std::string Debug::node_type = "Debug";
-		template<class T> std::string List<T>::node_type = "<" + T::node_Type + ">";
+		template<class T> std::string List<T>::node_type = "List<" + T::node_type + ">";
 		std::string Literal::node_type = "Literal";
 		std::string Operator::node_type = "Operator";
 		std::string VarName::node_type = "Variable";
@@ -193,22 +250,3 @@ namespace dust {
 	//	return std::make_shared<T>(args...);
 	//}
 }
-
-/*/
-Old AST pretty print
-
-template <class T>
-void print(T* ast) {
-	print(ast, "|");
-}
-
-template <class T>
-void print(T* ast, std::string buffer) {
-	std::cout << buffer << "+- " << T::node_type << " " << ast->to_string() << std::endl;
-	buffer += " ";
-
-	for (auto& n : *ast)
-		print(n, buffer);
-}
-
-//*/

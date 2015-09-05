@@ -17,11 +17,14 @@
 
 // TODO:
 	// AST Construction Framework
-		// Get the current AST construction working
-			// Need a way to construct the "List" nodes
-			// Recursive evaluation working as well
-			// Change AST and AST construction to use smart pointers ???
-		// Make ASTs printable
+		// Work on the construction of list nodes
+			// Other nodes are constructed left->right
+			// Lists are constructed right->left
+			// I can change this by fiddling with the begin/rbegin methods to enable assignment to be correct
+				// Is assignment "correct" ???
+		// Add the ability for Assignment nodes to mark variables constant and static
+		// Change AST and AST construction to use smart pointers ???
+		// Consider removing the node_type member of the Node classes (Variable templates (they can be reassigned) ???)
 		// Make Stack into a generic structure ??? (current AST construction expects this)
 			// CallStack would change to public impl::Stack<impl::Value>
 			// Would have to move "is<T>" into CallStack
@@ -137,8 +140,11 @@ template<> bool TypeTraits<bool>::get(const impl::Value& v, impl::GC& gc) {
 }
 
 
-// Stack specializations
-// void push_ref(impl::Stack&, size_t, int = -1);			// ???
+template <typename T>
+void print(T* ast) {
+	std::cout << ast->print_string("|") << std::endl;
+}
+
 
 int main(int argc, const char* argv[]) {
 	using namespace impl;
@@ -151,22 +157,40 @@ int main(int argc, const char* argv[]) {
 	Testing declarations
 	*/
 
-	Literal l{ "3", TypeTraits<int>::id }, r{ "4", TypeTraits<int>::id };
-	VarName v{ "a" };
-	Operator o1{ "_op+", &l, &r }, o2{ "_op*", &l, &v };
+	Literal l{ "3", TypeTraits<int>::id },
+			r{ "3.5", TypeTraits<double>::id };
+	VarName var_a{ "a" },
+			var_b{ "b" };
+	Operator o1{ "_op+", &l, &r },
+			 o2{ "_op*", &l, &var_a };
+	
+	//List<Literal> ls_a{ l }, ls_b{ r }, ls_all{ r, l };
+	List<ASTNode> ls_a, ls_b, ls_all;
+	ls_a.add(&l);
+	ls_b.add(&r);
+	ls_all.add(&l).add(&r);
+	//ls_all.add(&r).add(&l);
 
-	l.eval(e);
-	e.setVar(v.to_string());
-	v.eval(e);
-	pl((int)e);			// 3
+	//List<VarName> vars_a{ var_a }, vars_b{ var_b }, all_vars{ a, b };
+	List<VarName> vars_a, vars_b, all_vars;
+	vars_a.add(&var_a);
+	vars_b.add(&var_b);
+	all_vars.add(&var_b).add(&var_a);
+	//all_vars.add(&var_a).add(&var_b);
 
-	nl();
-	o1.eval(e);
-	pl((int)e);			// 7
+	Assign set_a1{ &vars_a, &ls_a, "" },
+		   set_b{ &vars_b, &ls_a, "" },
+		   set_a2{ &vars_a, &ls_b, "+" },
+		   set_all{ &all_vars, &ls_all, "*" };
 
-	nl();
-	o2.eval(e);
-	pl((int)e);			// 9
+	Operator o3{ "_op-", &set_b, &var_a };
+
+	print(&var_a);
+	print(&var_b);
+	print(&l);
+	print(&ls_a);
+	print(&set_all);
+	print(&o3);
 
 	/*
 	Testing worksheet
@@ -191,17 +215,6 @@ int main(int argc, const char* argv[]) {
 
 	//std::cout << "Finished tests";
 	//std::cin.get();
-}
-
-
-size_t dispatch(size_t t, std::string op, impl::TypeSystem& ts, EvalState& e) {
-	auto d_type = ts.findDef(t, op);
-
-	if (d_type == ts.NIL) throw std::string{ "Dispatch Error: " + ts.get(t).name + "." + op + " is not defined" };
-
-	ps(ts.get(d_type).name + "." + op);
-	
-	return ts.get(d_type).ops[op](e);
 }
 
 
