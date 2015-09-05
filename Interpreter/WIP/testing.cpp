@@ -1,8 +1,8 @@
 #include "Init.h"
 
-#include "EvalState.h"
+//#include "EvalState.h"
+#include "AST.h"
 
-#include "stack.h"
 #include <iostream>
 #include <sstream>
 
@@ -16,21 +16,19 @@
 	// Possibly also for testing the development of type_traits style classes
 
 // TODO:
-	// TypeSystem (This should take no more than a few hours)
-		// Type checking (???)
-			// Be able to store sub-types as-is
-			// Call converters if necessary
-			// Throw errors otherwise
-		// perhaps add static and constant querying abilities
-
 	// AST Construction Framework
-		// Make Stack into a generic structure ???
-		// Adapt the AST structures to what's needed
-		// Also take advantage of the new capabilities and methods
+		// Get the current AST construction working
+			// Need a way to construct the "List" nodes
+			// Recursive evaluation working as well
+			// Change AST and AST construction to use smart pointers ???
+		// Make ASTs printable
+		// Make Stack into a generic structure ??? (current AST construction expects this)
+			// CallStack would change to public impl::Stack<impl::Value>
+			// Would have to move "is<T>" into CallStack
 
 	// Grammar integration (AST)
-		// Rename "Calculator.h" to "Grammar.h"
 		// Need to adjust the typedef "AST" struct in Calculator.h
+		// Adjust the parsing actions to account for the changes in AST structure
 		// Be able to pass all tests using the loop in old_main
 
 	// Cleaning
@@ -42,6 +40,9 @@
 		// Improve method declarations to improve developability
 		// Add a push_ref method ???
 		// Simplify and reduce the process of decrementing references
+		// Focus the API (reduce unecessary functions)
+		// Error and Exception throwing
+		// Comments and Code Organization
 
 	// Step Back and Determine Where I Am
 		// Comment all of the current code
@@ -49,6 +50,7 @@
 		// Update the "ToDo" list to prioritize important/simple improvements and updates
 		// Consider changing name of _op() due to semantical differences
 		// Consider adding a push_ref method to CallStack (roughly mirrors pop_ref)
+		// What if a type inherits from String ???
 
 // Things to work on
 	// Improving and consolidating the API
@@ -140,6 +142,7 @@ template<> bool TypeTraits<bool>::get(const impl::Value& v, impl::GC& gc) {
 
 int main(int argc, const char* argv[]) {
 	using namespace impl;
+	using namespace interpreter;
 
 	EvalState e;
 	initState(e);
@@ -148,6 +151,22 @@ int main(int argc, const char* argv[]) {
 	Testing declarations
 	*/
 
+	Literal l{ "3", TypeTraits<int>::id }, r{ "4", TypeTraits<int>::id };
+	VarName v{ "a" };
+	Operator o1{ "_op+", &l, &r }, o2{ "_op*", &l, &v };
+
+	l.eval(e);
+	e.setVar(v.to_string());
+	v.eval(e);
+	pl((int)e);			// 3
+
+	nl();
+	o1.eval(e);
+	pl((int)e);			// 7
+
+	nl();
+	o2.eval(e);
+	pl((int)e);			// 9
 
 	/*
 	Testing worksheet
