@@ -16,6 +16,8 @@ namespace dust {
 				virtual void before(Value&, int);
 				virtual void after(Value&, int);
 
+				std::vector<Value>& stack();
+
 			public:
 				Stack();
 
@@ -39,7 +41,6 @@ namespace dust {
 				bool empty();
 				void clear();
 				size_t size();
-				void settop(int);
 				void reserve(size_t);
 		};
 

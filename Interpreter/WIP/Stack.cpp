@@ -33,6 +33,8 @@ namespace dust {
 			s.insert(s.begin() + normalize(aft) + 1, v);
 		}
 
+		std::vector<Value>& Stack::stack() { return s; }
+
 		Value Stack::pop(int idx) {
 			if (invalidIndex(normalize(idx))) throw std::out_of_range{ "Invalid index to CallStack" };
 
@@ -64,10 +66,6 @@ namespace dust {
 
 		void Stack::reserve(size_t space) {
 			s.reserve(space);
-		}
-
-		void Stack::settop(int idx) {
-			s.resize(normalize(idx));
 		}
 
 		bool Stack::empty() {

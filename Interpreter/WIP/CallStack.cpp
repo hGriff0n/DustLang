@@ -22,6 +22,13 @@ namespace dust {
 		push(Stack::at(idx));
 	}
 
+	void CallStack::settop(int idx) {
+		for (int i = size(); i > normalize(idx); --i) {
+			if (at().type_id == TypeTraits<std::string>::id) gc.decRef(at().val.i);
+			pop();
+		}
+	}
+
 	void CallStack::replace(int idx) {
 		auto& v = Stack::at(idx);
 

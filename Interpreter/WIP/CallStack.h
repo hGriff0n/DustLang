@@ -53,6 +53,9 @@ namespace dust {
 			// Replaces the value at the given index with the top
 			void replace(int = -1);
 
+			// 
+			void settop(int);
+
 
 			// Other Functions
 			// For quicker String operations (particularly equality testing)
