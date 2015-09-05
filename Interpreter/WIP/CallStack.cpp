@@ -1,4 +1,5 @@
 #include "CallStack.h"
+#include <algorithm>
 
 namespace dust {
 
@@ -23,10 +24,17 @@ namespace dust {
 	}
 
 	void CallStack::settop(int idx) {
-		for (int i = size(); i > normalize(idx); --i) {
-			if (at().type_id == TypeTraits<std::string>::id) gc.decRef(at().val.i);
-			pop();
-		}
+		idx = std::max(normalize(idx), 0);
+
+		if (idx > size())
+			while (size() < idx)
+				push(0);
+
+		else
+			for (int i = size(); i > idx; --i) {
+				if (at().type_id == TypeTraits<std::string>::id) gc.decRef(at().val.i);
+				pop();
+			}
 	}
 
 	void CallStack::replace(int idx) {
