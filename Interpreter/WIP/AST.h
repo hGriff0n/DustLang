@@ -33,7 +33,6 @@ namespace dust {
 					return e;
 				}
 
-				//*
 				// Assuming sub-nodes are stored right->left
 					// List(a, b, c) => List.elems = { c, b, a }
 				auto rbegin() { return elems.begin(); }
@@ -41,19 +40,16 @@ namespace dust {
 				auto begin() { return elems.rbegin(); }
 				auto end() { return elems.rend(); }
 
-				/*/
-				// Assuming sub-nodes are stored left->right
-					// List(a, b, c) => List.elems = { a, b, c }
-				auto rbegin() { return elems.rbegin(); }
-				auto rend() { return elems.rend(); }
-				auto begin() { return elems.begin(); }
-				auto end() { return elems.end(); }
-				//*/
-
 				size_t size() { return elems.size(); }
 				List& add(Node* n) {
 					elems.push_back(n);
 					return *this;
+				}
+
+				template <class... Ns>
+				List& add(Node* n, Ns... ns) {
+					add(ns...);
+					return add(n);
 				}
 
 				std::string to_string() { return ""; }
@@ -187,9 +183,10 @@ namespace dust {
 				List<VarName>* vars;
 				List<ASTNode>* vals;
 				std::string op;
+				bool setConst, setStatic;
 
 			public:
-				Assign(List<VarName>* l, List<ASTNode>* r, std::string o) : vars{ l }, vals{ r }, op{ "_op" + o } {}
+				Assign(List<VarName>* l, List<ASTNode>* r, std::string o, bool c = false, bool s = false) : vars{ l }, vals{ r }, op{ "_op" + o }, setConst{ c }, setStatic{ s } {}
 
 				EvalState& eval(EvalState& e) {
 					auto r_var = vars->rbegin(), l_var = vars->rend();
@@ -217,7 +214,7 @@ namespace dust {
 					// Perform assignments. Compound if necessary
 					while (r_var != l_var) {
 						if (compound) (*r_var)->eval(e).callOp(op);
-						e.setVar((*r_var++)->to_string());
+						e.setVar((*r_var++)->to_string(), setConst, setStatic);
 					}
 
 					return (*vars->begin())->eval(e);

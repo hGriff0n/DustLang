@@ -17,14 +17,7 @@
 
 // TODO:
 	// AST Construction Framework
-		// Work on the construction of list nodes
-			// Other nodes are constructed left->right
-			// Lists are constructed right->left
-			// I can change this by fiddling with the begin/rbegin methods to enable assignment to be correct
-				// Is assignment "correct" ???
-		// Add the ability for Assignment nodes to mark variables constant and static
 		// Change AST and AST construction to use smart pointers ???
-		// Consider removing the node_type member of the Node classes (Variable templates (they can be reassigned) ???)
 		// Make Stack into a generic structure ??? (current AST construction expects this)
 			// CallStack would change to public impl::Stack<impl::Value>
 			// Would have to move "is<T>" into CallStack
@@ -168,19 +161,21 @@ int main(int argc, const char* argv[]) {
 	List<ASTNode> ls_a, ls_b, ls_all;
 	ls_a.add(&l);
 	ls_b.add(&r);
-	ls_all.add(&l).add(&r);
-	//ls_all.add(&r).add(&l);
+	//ls_all.add(&l, &r);
+	ls_all.add(&r, &l);
 
 	//List<VarName> vars_a{ var_a }, vars_b{ var_b }, all_vars{ a, b };
 	List<VarName> vars_a, vars_b, all_vars;
 	vars_a.add(&var_a);
 	vars_b.add(&var_b);
-	all_vars.add(&var_b).add(&var_a);
-	//all_vars.add(&var_a).add(&var_b);
+	//all_vars.add(&var_b, &var_a);
+	all_vars.add(&var_a, &var_b);
 
 	Assign set_a1{ &vars_a, &ls_a, "" },
 		   set_b{ &vars_b, &ls_a, "" },
 		   set_a2{ &vars_a, &ls_b, "+" },
+		   set_ac{ &vars_a, &ls_b, "", true },
+		   set_as{ &vars_a, &ls_a, "", false, true },
 		   set_all{ &all_vars, &ls_all, "*" };
 
 	Operator o3{ "_op-", &set_b, &var_a };
@@ -191,6 +186,15 @@ int main(int argc, const char* argv[]) {
 	print(&ls_a);
 	print(&set_all);
 	print(&o3);
+
+	set_a1.eval(e);
+	e.pop();
+	var_a.eval(e);
+	pl((int)e);
+	set_as.eval(e);
+	pl((int)e);
+	set_a2.eval(e);
+	pl((int)e);
 
 	/*
 	Testing worksheet
