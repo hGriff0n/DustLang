@@ -24,7 +24,7 @@ namespace dust {
 		// Is only called if var.type_id != ts.Nil and at(idx).type_id is not a child of var.type_id
 	void EvalState::staticTyping(impl::Variable& var, bool isConst) {
 		// Need to better word this error message
-		if (!ts.convertible(var.type_id, at().type_id)) throw std::string{ "Attempt to assign value to a typed variable when the value cannot be converted to the variable's type" };
+		if (!ts.convertible(var.type_id, at().type_id)) throw std::string{ "No converter from the assigned value to the variable's static type" };
 
 		callMethod(ts.getName(var.type_id));
 		var.val = pop();
@@ -60,6 +60,26 @@ namespace dust {
 	void EvalState::getVar(std::string var) {
 		if (vars.count(var) == 0) return push(0);			// Temporary as nil is not implemented
 		push(vars[var].val);
+	}
+
+	void EvalState::mark_constant(std::string var) {
+		if (vars.count(var) == 0) return;					// Temporary. Haven't determined what should happen in these circumstances
+		vars[var].is_const = !vars[var].is_const;
+	}
+
+	void EvalState::set_typing(std::string var, size_t typ) {
+		if (vars.count(var) == 0) return;					// Temporary. Haven't determined what should happen in these circumstances
+
+		if (typ != ts.NIL) {
+			if (!ts.convertible(vars[var].type_id, typ)) throw std::string{ "No converter from the current value to the given type" };
+
+			getVar(var);
+			callMethod(ts.getName(typ));
+			if (vars[var].val.type_id == TypeTraits<std::string>::id) gc.decRef(vars[var].val.val.i);
+			vars[var].val = pop();
+		}
+
+		vars[var].type_id = typ;
 	}
 
 

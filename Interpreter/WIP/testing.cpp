@@ -16,27 +16,32 @@
 	// Possibly also for testing the development of type_traits style classes
 
 // TODO:
-	// Variables
-		// Improve the interface for getting/setting/using variables
-		// Move settop from Stack to CallStack (so that it can appropriately decrement references)
-			// The current method is a guaranteed memory-leak
-
-	// TypeSystem 
+	// TypeSystem (This should take no more than a few hours)
 		// Type checking (???)
 			// Be able to store sub-types as-is
 			// Call converters if necessary
 			// Throw errors otherwise
 		// perhaps add static and constant querying abilities
 
-	// Expression evaluation
 	// AST Construction Framework
+		// Make Stack into a generic structure ???
+		// Adapt the AST structures to what's needed
+		// Also take advantage of the new capabilities and methods
+
 	// Grammar integration (AST)
+		// Rename "Calculator.h" to "Grammar.h"
+		// Need to adjust the typedef "AST" struct in Calculator.h
+		// Be able to pass all tests using the loop in old_main
+
+	// Cleaning
 		// Organize files into sub-folders
 		// Merge Backend-Rewrite into master (delete TypeSystem branch)
 		// Organize namespaces (Use better namespace divisions)
 		// Reduce TypeTraits specialization errors
 			// include "GC.h" in TypeTraits.h and move the specializations to TypeTraits.h ???
-
+		// Improve method declarations to improve developability
+		// Add a push_ref method ???
+		// Simplify and reduce the process of decrementing references
 
 	// Step Back and Determine Where I Am
 		// Comment all of the current code
@@ -147,24 +152,6 @@ int main(int argc, const char* argv[]) {
 	/*
 	Testing worksheet
 	*/
-
-	e.push(3);
-	e.setVar("t", false, true);
-	e.push("4");
-	try {
-		e.setVar("t");
-		e.getVar("t");
-		pl(e.pop<std::string>());
-	} catch (std::string& e) {
-		pl(e);
-	}
-	
-	e.push(true);
-	try {
-		e.setVar("t");
-	} catch (std::string& e) {
-		pl(e);
-	}
 
 	int a, b;
 	std::string input, op;

@@ -29,6 +29,10 @@ namespace dust {
 			void setVar(std::string, bool = false, bool = false);
 			void getVar(std::string);
 
+			// Variable flags
+			void mark_constant(std::string);
+			void set_typing(std::string, size_t);
+
 			friend void initState(EvalState&);
 	};
 
