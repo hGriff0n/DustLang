@@ -1,0 +1,14 @@
+  |-----------------------------------------------------|
+Object												   Nil
+  |------------|-------|-------|--------|
+ Number      String   Bool   Table   Function
+  |------|
+Float   Int
+
+String < Object
+Number < Object
+Bool < Object
+Table < Object
+Function < Object
+Float < Number		(Float is a child of Number)
+Int < Number

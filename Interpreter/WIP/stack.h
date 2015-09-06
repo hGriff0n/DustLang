@@ -2,46 +2,82 @@
 
 #include <vector>
 
-// Might rename (I want to include methods that aren't very analagous to "stack")
-template <typename T>
-class stack {
-	private:
-		std::vector<T> s;
-		//int top = -1;
+namespace dust {
 
-		template <typename Iter>
-		void swap(Iter& a, Iter& b) {
-			std::iter_swap(a, b);
-		}
+		template <typename Value>
+		class Stack {
+			private:
+				static const size_t MIN_STACK_SIZE = 20;
+				std::vector<Value> s;
 
-	public:
-		void push(T obj) {
-			s.emplace_back(obj);					//++top;
-		}
+			protected:
+				int normalize(int& idx) {
+					return idx = idx < 0 ? idx + s.size() : idx;
+				}
+				bool invalidIndex(int idx) {
+					return idx < 0 || idx > (int)s.size();
+				}
 
-		T pop() {
-			T ret = s.back();					//T ret = s[top--];
-			s.pop_back();
-			return ret;
-		}
+				virtual void before(Value& v, int bef) {
+					s.insert(s.begin() + normalize(bef), v);
+				}
+				virtual void after(Value& v, int bef) {
+					s.insert(s.begin() + normalize(bef) + 1, v);
+				}
 
-		T top() {
-			return s.back();
-		}
+				std::vector<Value>& stack() {
+					return s;
+				}
 
-		bool empty() {
-			return s.empty();
-		}
+			public:
+				Stack() {
+					reserve(MIN_STACK_SIZE);
+				}
 
-		int size() {
-			return s.size();
-		}
+				virtual void push(Value& v) {
+					s.push_back(v);
+				}
 
+				virtual Value pop(int idx = -1) {
+					if (invalidIndex(normalize(idx))) throw std::out_of_range{ "Invalid index to Stack::pop" };
 
-		// Not exactly "stack" operations
-		void swap() {
-			swap(s.end() - 2, s.end() - 1);
-		}
+					auto ret = s[idx];
+					s.erase(s.begin() + idx);
+					return ret;
+				}
 
-		std::vector<T> get() { return s; }
-};
+				// References the value at the given index
+				virtual Value& at(int idx = -1) {
+					if (invalidIndex(normalize(idx))) throw std::out_of_range{ "Invalid index to Stack::at" };
+
+					return s[idx];
+				}
+
+				// Inserts the top at the given index
+				virtual void insert(int idx = -1) {
+					before(pop(), idx);
+				}
+
+				// Swaps the values at the given index
+				void swap(int idx1 = -1, int idx2 = -2) {
+					if (invalidIndex(normalize(idx1)) || invalidIndex(normalize(idx2))) 
+						throw std::out_of_range{ "Invalid index to Stack::swap" };
+
+					std::swap(s[idx1], s[idx2]);
+				}
+
+				bool empty() {
+					return s.empty();
+				}
+				void clear() {
+					s.clear();
+				}
+				size_t size() {
+					return s.size();
+				}
+				void reserve(size_t space) {
+					s.reserve(space);
+				}
+		};
+
+}

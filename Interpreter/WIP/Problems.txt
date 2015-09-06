@@ -1,0 +1,42 @@
+How will functions work
+	Particularly members vs. free vs. operators
+	My current idea
+		Try operators (due to the special behavior and typing requirements
+		Try member functions
+		Try table functions   (The implementation of table and member function lookup might be unifiable, lookup rules)
+		Try free functions
+		Try nil functions
+		Throw exception
+			It may be possible then that a.x() ~ x(a) (but not the reverse)
+
+I might have to reconsider how I'm implementing objects/values/type system
+	It was problems with inheritance and automatic "reducing" typing
+		However, for the majority of the types that have inheritance, this "reduction" is nothing more than reduced scoping when accessing variables/methods
+			This method of reduction is easily (or will be) served by current mechanics and rationale
+			Reducing to Object (currently) removes all variables (works with all types and all implementations)
+		The remaining question is how do basic types (such as Int, Float, and String) interact with the object heirarchy
+			Their values are not stored in a table but in direct memory
+			It would be very useful to define some operators for Int and Float in Number
+		However there are still many aspects that need to be solved beforehand
+			How is table indexing to work if a reference to the initial table is needed
+				This is with the assumption that the indexed field may, itself, be a table that can be indexed
+				ie. 5.abs() should use the same framework as a.b.abs() and a.b().abs()
+			How is intra-table referencing supposed to work (this isn't as necessary for immediate implementations, but the framework is still important for the future)
+			The mechanisms for how functions will handle this reduction still need to be sorted out
+	
+How will I handle table indexing and assignment?
+	i.4: 3; print(i.4); i[a]: i.4() + 3;
+
+	The AST should end up something like this
+	assign{ ":", i, [] }
+	assign{ ":", index{ i, 4 }, 3 }
+	call{ print, index{ i, 4 } }
+	asign{ ":", index{ i, a }, call{ _op+, call{ _op(), index{ i, 4 } }, 3 }
+
+	The problem is how to maintain a reference so that a table's field can be assigned 
+		while not adversely affecting other aspects of program evaluation
+
+	I think the solution for this problem will be in _nindex and _index
+		However does this work for assignments as well as access
+
+There's still the problem of how to get every type to automatically convert to tables
