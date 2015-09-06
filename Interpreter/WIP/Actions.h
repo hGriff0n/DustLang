@@ -3,12 +3,10 @@
 #include "Grammar.h"
 
 namespace dust {
-	namespace impl {
+	namespace interpreter {
 		/*
 		*  Parser Actions
 		*/
-
-		using namespace interpreter;				// This declaration doesn't escape this namespace (does it escape the file though
 
 		template <typename Rule>
 		struct action : nothing<Rule> {};
@@ -67,7 +65,7 @@ namespace dust {
 		template <> struct action<op_3> : OpAction {};
 		template <> struct action<op_4> : OpAction {};
 
-		// I'm not sure if this is correct
+		// Assignment Operators don't follow the same structure as Operators
 		template <> struct action<op_5> {
 			static void apply(const input& in, AST& ast) {
 				ast.push(makeNode<Assign>(in.string().substr(1)));
@@ -93,11 +91,11 @@ namespace dust {
 
 
 		// Expression Actions
-		// Consider formalizing a shift-reduce framework here
+		template <typename Node>
 		struct ee_actions {
 			static void apply(input& in, AST& ast) {
 				if (ast.size() >= 3) {
-					if (std::dynamic_pointer_cast<Operator>(ast.at(-2))) {
+					if (std::dynamic_pointer_cast<Node>(ast.at(-2))) {
 						// stack: ..., {lhs}, {op}, {rhs}
 
 						auto rhs = ast.pop();							// Doesn't check that rhs or lhs is valid
@@ -111,17 +109,17 @@ namespace dust {
 
 						// stack: ..., {op}
 					} else
-						throw std::string{ "Parsing error: Attempt to construct Operator node without an operator" };
+						throw std::string{ "Parsing error: Attempt to construct " + Node::node_type + " node without an operator" };
 				} else
-					throw std::string{ "Parsing error: Attempt to construct Operator node with less than 3 nodes on the stack" };
+					throw std::string{ "Parsing error: Attempt to construct " + Node::node_type + " node with less than 3 nodes on the stack" };
 			}
 		};
 
-		template <> struct action<ee_1> : ee_actions {};
-		template <> struct action<ee_2> : ee_actions {};
-		template <> struct action<ee_3> : ee_actions {};
-		template <> struct action<ee_4> : ee_actions {};
-		template <> struct action<ee_5> : ee_actions {};				// This uses Assignment nodes, not Operator nodes. ee_acctions uses Operators
+		template <> struct action<ee_1> : ee_actions<Operator> {};
+		template <> struct action<ee_2> : ee_actions<Operator> {};
+		template <> struct action<ee_3> : ee_actions<Operator> {};
+		template <> struct action<ee_4> : ee_actions<Operator> {};
+		template <> struct action<ee_5> : ee_actions<Assign> {};				// ee_5 is Assignmnet, which needs and uses Assignment nodes. ee_acctions requires Operator nodes
 
 
 		// List Actions
@@ -172,4 +170,7 @@ namespace dust {
 			}
 		};
 	}
+
+	template <typename Rule>
+	struct action : interpreter::action<Rule> {};
 }

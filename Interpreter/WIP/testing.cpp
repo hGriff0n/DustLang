@@ -1,14 +1,13 @@
 #include "Init.h"
-
-//#include "EvalState.h"
-#include "AST.h"
+#include "Actions.h"
 
 #include <iostream>
-#include <sstream>
+
+#include <pegtl/analyze.hh>
 
 #define p(x) std::cout << (x)
 #define ps(x) p(x) << " :: "
-#define pl(x) p(x) << std::endl
+#define pl(x) p(x) << "\n"
 #define nl() pl("")
 
 // Current testing devoted to
@@ -18,8 +17,7 @@
 // TODO:
 	// Grammar integration (AST)
 		// Adjust the parsing actions to account for the changes in AST structure
-		// Maybe adjust the grammar to greater utilize the changes in AST structure
-		// Be able to pass all tests using the loop in old_main
+			// Pass all evaluation tests
 
 	// Cleaning
 		// Organize files into sub-folders
@@ -57,11 +55,8 @@
 
 // I also need to merge my current work on dust semantics and syntax with the documents in DustParser (keed documentation intact)
 
-using namespace dust;
 
-size_t dispatch(size_t, std::string, impl::TypeSystem&, EvalState&);
-void debugPrint(impl::GC&);
-void printValue(impl::Value&, impl::GC&, impl::TypeSystem&);
+using namespace dust;
 
 void convert(impl::Value&, size_t, impl::TypeSystem&);
 
@@ -72,7 +67,7 @@ void assign_value(impl::Value&, impl::Value&, impl::GC&);
 
 
 // Type Traits specializations
-	// Moving these definitions to CallStack.h causes a LNK2005 error
+// Moving these definitions to CallStack.h causes a LNK2005 error
 template<> int TypeTraits<int>::get(const impl::Value& v, impl::GC& gc) {
 	try {
 		if (v.type_id == TypeTraits<double>::id)
@@ -132,46 +127,51 @@ void print(ostream& s, std::shared_ptr<interpreter::ASTNode>& ast) {
 	(s << ast->print_string("|") << "\n").flush();
 }
 
-int main(int argc, const char* argv[]) {
-	using namespace impl;
-	using namespace interpreter;
+// a, b: 3
+// a = 0		|	3
+// b = 3		|	0
 
+// a, b: 3, 5
+// a = 3		|	3
+// b = 5		|	5
+
+// a, b: 3, 5, 7
+// a = 5		|	3
+// b = 7		|	5
+
+int main(int argc, const char* argv[]) {
+	std::cout << "Analyzing `dust::grammar`.....\n";
+	pegtl::analyze<grammar>();
+	std::cout << "\n" << std::endl;
+
+	interpreter::AST parse_tree;
 	EvalState e;
+
 	initState(e);
 
-	/*
-	Testing declarations
-	*/
+	std::string input;
 
-	/*
-	Testing worksheet
-	*/
+	std::cout << "> ";
+	while (std::getline(std::cin, input) && input != "exit") {
+		try {
+			pegtl::parse<grammar, action>(input, input, parse_tree);
 
-	int a, b;
-	std::string input, op;
-	nl();
+			print(std::cout, parse_tree.at());
+			parse_tree.pop()->eval(e);
 
-	while (std::getline(std::cin, input)) {
-		if (input == "exit") break;
+			// Need to make a generic way here
+			std::cout << ":: " << (std::string)e << std::endl;
+		} catch (pegtl::parse_error& e) {
+			std::cout << e.what() << std::endl;
+		} catch (std::out_of_range& e) {
+			std::cout << e.what() << std::endl;
+		} catch (std::string& e) {
+			std::cout << e << std::endl;
+		}
 
-		std::istringstream{ input } >> a >> op >> b;
-		e.push(b);
-		e.push(a);
-
-		p("> ");
-		pl((int)e.callOp("_op" + op));
-		//pl(e.callOp("_op" + op).pop<int>());
-		nl();
+		parse_tree.clear();
+		std::cout << "> ";
 	}
-
-	//std::cout << "Finished tests";
-	//std::cin.get();
-}
-
-
-void printValue(impl::Value& v, impl::GC& gc, impl::TypeSystem& ts) {
-	ps(ts.getName(v.type_id));
-	pl(TypeTraits<std::string>::get(v, gc));
 }
 
 
@@ -186,7 +186,7 @@ void initConversions(impl::TypeSystem& ts) {
 
 	Float.addOp("String", [](EvalState& e) { e.push((std::string)e); return 1; });
 	Float.addOp("Int", [](EvalState& e) { e.push((int)e); return 1; });
-	
+
 	String.addOp("Int", [](EvalState& e) { e.push((int)e); return 1; });
 	String.addOp("Float", [](EvalState& e) { e.push((float)e); return 1; });
 }
@@ -197,7 +197,7 @@ void initOperations(impl::TypeSystem& ts) {
 	auto Float = ts.getType("Float");
 	auto String = ts.getType("String");
 	auto Bool = ts.getType("Bool");
-	
+
 	//! -
 	//^ * / + - % < = > <= != >=
 
@@ -205,17 +205,17 @@ void initOperations(impl::TypeSystem& ts) {
 		e.copy(-2);
 		e.copy(-2);
 		e.callOp("_op=");
-		
+
 		auto eq = (bool)e;
 		if (!eq) {
 			e.callOp("_op<");
 			return 1;
 		}
-		
+
 		e.pop();
 		e.pop();
 		e.push(eq);
-		
+
 		return 1;
 	});
 	Object.addOp("_op>=", [](EvalState& e) {
@@ -253,7 +253,7 @@ void initOperations(impl::TypeSystem& ts) {
 	Int.addOp("_op%", [](EvalState& e) { e.push((int)e % (int)e); return 1; });
 	Int.addOp("_op<", [](EvalState& e) { e.push((int)e < (int)e); return 1; });		// 
 	Int.addOp("_op=", [](EvalState& e) { e.push((int)e == (int)e); return 1; });
-	Int.addOp("_op>", [](EvalState& e) { e.push((int)e > (int)e); return 1; });
+	Int.addOp("_op>", [](EvalState& e) { e.push((int)e >(int)e); return 1; });
 	Int.addOp("_ou-", [](EvalState& e) { e.push(-(int)e); return 1; });
 
 
