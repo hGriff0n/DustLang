@@ -1,4 +1,3 @@
-#include "Init.h"
 #include "Actions.h"
 
 #include <iostream>
@@ -21,8 +20,6 @@
 		// Add a push_ref method ???
 		// Focus the API (reduce unecessary functions)
 		// Clean and Organize AST.h
-		// Reduce type::Traits specialization errors
-			// include "GC.h" in TypeTraits.h and move the specializations to TypeTraits.h ???
 		// Error and Exception throwing
 		// Comments and Code Organization
 		// Merge Backend-Rewrite into master (delete TypeSystem branch)
@@ -60,62 +57,6 @@ template <typename T>
 void assign_value(impl::Value&, T, impl::GC&);
 void assign_value(impl::Value&, impl::Value&, impl::GC&);
 
-
-// Type Traits specializations
-// Moving these definitions to CallStack.h causes a LNK2005 error
-template<> int type::Traits<int>::get(const impl::Value& v, impl::GC& gc) {
-	try {
-		if (v.type_id == type::Traits<double>::id)
-			return v.val.d;
-
-		else if (v.type_id == type::Traits<int>::id || v.type_id == type::Traits<bool>::id)
-			return v.val.i;
-
-		else if (v.type_id == type::Traits<std::string>::id)
-			return std::stoi(gc.deref(v.val.i));
-	} catch (...) {}
-
-	throw std::string{ "Not convertible to Int" };
-}
-
-template<> double type::Traits<double>::get(const impl::Value& v, impl::GC& gc) {
-	try {
-		if (v.type_id == type::Traits<double>::id)
-			return v.val.d;
-
-		else if (v.type_id == type::Traits<int>::id || v.type_id == type::Traits<bool>::id)
-			return v.val.i;
-
-		else if (v.type_id == type::Traits<std::string>::id) {
-			return std::stod(gc.deref(v.val.i));
-		}
-	} catch (...) {}
-
-	throw std::string{ "Not convertible to Float" };
-}
-
-template<> std::string type::Traits<std::string>::get(const impl::Value& v, impl::GC& gc) {
-	if (v.type_id == type::Traits<std::string>::id)
-		return gc.deref(v.val.i);
-
-	else if (v.type_id == type::Traits<bool>::id)
-		return v.val.i ? "true" : "false";
-
-	else if (v.type_id == type::Traits<int>::id)
-		return std::to_string(v.val.i);
-
-	else if (v.type_id == type::Traits<double>::id)
-		return std::to_string(v.val.d);
-
-	throw std::string{ "Not convertible to String" };
-}
-
-template<> bool type::Traits<bool>::get(const impl::Value& v, impl::GC& gc) {
-	if (v.type_id == type::Traits<bool>::id)
-		return v.val.i;
-
-	throw std::string{ "Not convertible to Bool" };
-}
 
 template <class ostream>
 void print(ostream& s, std::shared_ptr<parse::ASTNode>& ast) {
@@ -156,112 +97,6 @@ int main(int argc, const char* argv[]) {
 		parse_tree.clear();
 		std::cout << "> ";
 	}
-}
-
-
-void initConversions(type::TypeSystem& ts) {
-	auto Int = ts.getType("Int");
-	auto Float = ts.getType("Float");
-	auto String = ts.getType("String");
-
-	// Initialize Conversions	
-	Int.addOp("String", [](EvalState& e) { e.push((std::string)e); return 1; });
-	Int.addOp("Float", [](EvalState& e) { e.push((double)e); return 1; });
-
-	Float.addOp("String", [](EvalState& e) { e.push((std::string)e); return 1; });
-	Float.addOp("Int", [](EvalState& e) { e.push((int)e); return 1; });
-
-	String.addOp("Int", [](EvalState& e) { e.push((int)e); return 1; });
-	String.addOp("Float", [](EvalState& e) { e.push((float)e); return 1; });
-}
-
-void initOperations(type::TypeSystem& ts) {
-	auto Object = ts.getType("Object");
-	auto Int = ts.getType("Int");
-	auto Float = ts.getType("Float");
-	auto String = ts.getType("String");
-	auto Bool = ts.getType("Bool");
-
-	//! -
-	//^ * / + - % < = > <= != >=
-
-	Object.addOp("_op<=", [](EvalState& e) {
-		e.copy(-2);
-		e.copy(-2);
-		e.callOp("_op=");
-
-		auto eq = (bool)e;
-		if (!eq) {
-			e.callOp("_op<");
-			return 1;
-		}
-
-		e.pop();
-		e.pop();
-		e.push(eq);
-
-		return 1;
-	});
-	Object.addOp("_op>=", [](EvalState& e) {
-		e.copy(-2);
-		e.copy(-2);
-		e.callOp("_op=");
-
-		auto eq = (bool)e;
-		if (!eq) {
-			e.callOp("_op>");
-			return 1;
-		}
-
-		e.pop();
-		e.pop();
-		e.push(eq);
-
-		return 1;
-	});
-	Object.addOp("_op!=", [](EvalState& e) {
-		e.callOp("_op=");
-		e.callOp("_ou!");
-		return 1;
-	});
-
-	Int.addOp("_op+", [](EvalState& e) { e.push((int)e + (int)e); return 1; });
-	Int.addOp("_op/", [](EvalState& e) { e.push((double)e / (double)e); return 1; });		// Could be moved to Number
-	Int.addOp("_op-", [](EvalState& e) { e.push((int)e - (int)e); return 1; });
-	Int.addOp("_op*", [](EvalState& e) { e.push((int)e * (int)e); return 1; });
-	Int.addOp("_op^", [](EvalState& e) {
-		auto base = (double)e;
-		e.push(pow(base, (double)e));
-		return 1;
-	});											// Could be moved to Number
-	Int.addOp("_op%", [](EvalState& e) { e.push((int)e % (int)e); return 1; });
-	Int.addOp("_op<", [](EvalState& e) { e.push((int)e < (int)e); return 1; });		// 
-	Int.addOp("_op=", [](EvalState& e) { e.push((int)e == (int)e); return 1; });
-	Int.addOp("_op>", [](EvalState& e) { e.push((int)e >(int)e); return 1; });
-	Int.addOp("_ou-", [](EvalState& e) { e.push(-(int)e); return 1; });
-
-
-	String.addOp("_op+", [](EvalState& e) { e.push((std::string)e + e.pop<std::string>(-2)); return 1; });			// Why is Int._op- correct then???
-	String.addOp("_op=", [](EvalState& e) { e.push(e.pop_ref(true) == e.pop_ref(true)); return 1; });
-
-
-	Float.addOp("_op+", [](EvalState& e) { e.push((double)e + (double)e); return 1; });
-	Float.addOp("_op/", [](EvalState& e) { e.push((double)e / (double)e); return 1; });
-	Float.addOp("_op-", [](EvalState& e) { e.push((double)e - (double)e); return 1; });
-	Float.addOp("_op*", [](EvalState& e) { e.push((double)e * (double)e); return 1; });
-	Float.addOp("_op^", [](EvalState& e) {
-		auto base = (double)e;
-		e.push(pow(base, (double)e));
-		return 1;
-	});
-	Float.addOp("_op<", [](EvalState& e) { e.push((double)e < (double)e); return 1; });		// 
-	Float.addOp("_op=", [](EvalState& e) { e.push((double)e == (double)e); return 1; });
-	Float.addOp("_op>", [](EvalState& e) { e.push((double)e >(double)e); return 1; });
-	Float.addOp("_ou-", [](EvalState& e) { e.push(-(double)e); return 1; });
-	Float.addOp("_ou-", [](EvalState& e) { e.push(-(double)e); return 1; });
-
-	Bool.addOp("_op=", [](EvalState& e) { return 1; });
-	Bool.addOp("_ou!", [](EvalState& e) { e.push(!(bool)e);  return 1; });
 }
 
 

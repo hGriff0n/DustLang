@@ -4,6 +4,66 @@
 #include "TypeSystem.h"
 
 namespace dust {
+	void initTypeSystem(dust::type::TypeSystem&);
+	void initConversions(dust::type::TypeSystem&);
+	void initOperations(dust::type::TypeSystem&);
+
+	namespace type {
+		// Type Traits specializations (Could I move these into TypeTraits.h ???)
+		template<> int Traits<int>::get(const impl::Value& v, impl::GC& gc) {
+			try {
+				if (v.type_id == Traits<double>::id)
+					return v.val.d;
+
+				else if (v.type_id == Traits<int>::id)
+					return v.val.i;
+
+				else if (v.type_id == Traits<std::string>::id)
+					return std::stoi(gc.deref(v.val.i));
+			} catch (...) {}
+
+			throw std::string{ "Not convertible to Int" };
+		}
+
+		template<> double Traits<double>::get(const impl::Value& v, impl::GC& gc) {
+			try {
+				if (v.type_id == Traits<double>::id)
+					return v.val.d;
+
+				else if (v.type_id == Traits<int>::id)
+					return v.val.i;
+
+				else if (v.type_id == Traits<std::string>::id) {
+					return std::stod(gc.deref(v.val.i));
+				}
+			} catch (...) {}
+
+			throw std::string{ "Not convertible to Float" };
+		}
+
+		template<> std::string Traits<std::string>::get(const impl::Value& v, impl::GC& gc) {
+			if (v.type_id == Traits<std::string>::id)
+				return gc.deref(v.val.i);
+
+			else if (v.type_id == Traits<bool>::id)
+				return v.val.i ? "true" : "false";
+
+			else if (v.type_id == Traits<int>::id)
+				return std::to_string(v.val.i);
+
+			else if (v.type_id == Traits<double>::id)
+				return std::to_string(v.val.d);
+
+			throw std::string{ "Not convertible to String" };
+		}
+
+		template<> bool type::Traits<bool>::get(const impl::Value& v, impl::GC& gc) {
+			if (v.type_id == Traits<bool>::id)
+				return v.val.i;
+
+			throw std::string{ "Not convertible to Bool" };
+		}
+	}
 
 	class EvalState : public impl::CallStack {
 		private:

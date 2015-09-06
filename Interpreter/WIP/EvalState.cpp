@@ -1,5 +1,4 @@
 #include "EvalState.h"
-#include "Init.h"
 
 #include <iostream>
 
@@ -140,4 +139,125 @@ namespace dust {
 		return *this;
 	}
 
+
+	void initTypeSystem(type::TypeSystem& ts) {
+		auto Object = ts.getType("Object");
+		auto Number = ts.newType("Number");
+		auto Int = ts.newType("Int", Number);
+		auto Float = ts.newType("Float", Number);
+		auto String = ts.newType("String");
+		auto Bool = ts.newType("Bool");
+		auto Table = ts.newType("Table");
+		auto Function = ts.newType("Function");
+
+		// Initialize type::Traits id's
+		type::Traits<int>::id = Int;
+		type::Traits<double>::id = Float;
+		type::Traits<std::string>::id = String;
+		type::Traits<bool>::id = Bool;
+	}
+	void initConversions(type::TypeSystem& ts) {
+		auto Int = ts.getType("Int");
+		auto Float = ts.getType("Float");
+		auto String = ts.getType("String");
+
+		// Initialize Conversions	
+		Int.addOp("String", [](EvalState& e) { e.push((std::string)e); return 1; });
+		Int.addOp("Float", [](EvalState& e) { e.push((double)e); return 1; });
+
+		Float.addOp("String", [](EvalState& e) { e.push((std::string)e); return 1; });
+		Float.addOp("Int", [](EvalState& e) { e.push((int)e); return 1; });
+
+		String.addOp("Int", [](EvalState& e) { e.push((int)e); return 1; });
+		String.addOp("Float", [](EvalState& e) { e.push((float)e); return 1; });
+	}
+
+	void initOperations(type::TypeSystem& ts) {
+		auto Object = ts.getType("Object");
+		auto Int = ts.getType("Int");
+		auto Float = ts.getType("Float");
+		auto String = ts.getType("String");
+		auto Bool = ts.getType("Bool");
+
+		//! -
+		//^ * / + - % < = > <= != >=
+
+		Object.addOp("_op<=", [](EvalState& e) {
+			e.copy(-2);
+			e.copy(-2);
+			e.callOp("_op=");
+
+			auto eq = (bool)e;
+			if (!eq) {
+				e.callOp("_op<");
+				return 1;
+			}
+
+			e.pop();
+			e.pop();
+			e.push(eq);
+
+			return 1;
+		});
+		Object.addOp("_op>=", [](EvalState& e) {
+			e.copy(-2);
+			e.copy(-2);
+			e.callOp("_op=");
+
+			auto eq = (bool)e;
+			if (!eq) {
+				e.callOp("_op>");
+				return 1;
+			}
+
+			e.pop();
+			e.pop();
+			e.push(eq);
+
+			return 1;
+		});
+		Object.addOp("_op!=", [](EvalState& e) {
+			e.callOp("_op=");
+			e.callOp("_ou!");
+			return 1;
+		});
+
+		Int.addOp("_op+", [](EvalState& e) { e.push((int)e + (int)e); return 1; });
+		Int.addOp("_op/", [](EvalState& e) { e.push((double)e / (double)e); return 1; });		// Could be moved to Number
+		Int.addOp("_op-", [](EvalState& e) { e.push((int)e - (int)e); return 1; });
+		Int.addOp("_op*", [](EvalState& e) { e.push((int)e * (int)e); return 1; });
+		Int.addOp("_op^", [](EvalState& e) {
+			auto base = (double)e;
+			e.push(pow(base, (double)e));
+			return 1;
+		});											// Could be moved to Number
+		Int.addOp("_op%", [](EvalState& e) { e.push((int)e % (int)e); return 1; });
+		Int.addOp("_op<", [](EvalState& e) { e.push((int)e < (int)e); return 1; });		// 
+		Int.addOp("_op=", [](EvalState& e) { e.push((int)e == (int)e); return 1; });
+		Int.addOp("_op>", [](EvalState& e) { e.push((int)e >(int)e); return 1; });
+		Int.addOp("_ou-", [](EvalState& e) { e.push(-(int)e); return 1; });
+
+
+		String.addOp("_op+", [](EvalState& e) { e.push((std::string)e + e.pop<std::string>(-2)); return 1; });			// Why is Int._op- correct then???
+		String.addOp("_op=", [](EvalState& e) { e.push(e.pop_ref(true) == e.pop_ref(true)); return 1; });
+
+
+		Float.addOp("_op+", [](EvalState& e) { e.push((double)e + (double)e); return 1; });
+		Float.addOp("_op/", [](EvalState& e) { e.push((double)e / (double)e); return 1; });
+		Float.addOp("_op-", [](EvalState& e) { e.push((double)e - (double)e); return 1; });
+		Float.addOp("_op*", [](EvalState& e) { e.push((double)e * (double)e); return 1; });
+		Float.addOp("_op^", [](EvalState& e) {
+			auto base = (double)e;
+			e.push(pow(base, (double)e));
+			return 1;
+		});
+		Float.addOp("_op<", [](EvalState& e) { e.push((double)e < (double)e); return 1; });		// 
+		Float.addOp("_op=", [](EvalState& e) { e.push((double)e == (double)e); return 1; });
+		Float.addOp("_op>", [](EvalState& e) { e.push((double)e >(double)e); return 1; });
+		Float.addOp("_ou-", [](EvalState& e) { e.push(-(double)e); return 1; });
+		Float.addOp("_ou-", [](EvalState& e) { e.push(-(double)e); return 1; });
+
+		Bool.addOp("_op=", [](EvalState& e) { return 1; });
+		Bool.addOp("_ou!", [](EvalState& e) { e.push(!(bool)e);  return 1; });
+	}
 }
