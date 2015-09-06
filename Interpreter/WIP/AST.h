@@ -12,6 +12,9 @@ namespace dust {
 			public:
 				virtual EvalState& eval(EvalState&) =0;
 				virtual std::string to_string() =0;
+				virtual void addChild(std::shared_ptr<ASTNode>& c) {
+					throw std::string{ "Attempt to add a child to " + node_type };
+				}
 
 				static std::string node_type;
 
@@ -23,14 +26,10 @@ namespace dust {
 		template <class Node>
 		class List : public ASTNode {
 			private:
-				//std::vector<Node*> elems;
 				std::vector<std::shared_ptr<Node>> elems;
 
 			public:
-				template <class... Ns>
-				List(Ns... ns) {
-					add(ns...);
-				}
+				List() {}
 
 				EvalState& eval(EvalState& e) {
 					// throw std::string{ "Attempt to evaluate a List node" };
@@ -41,31 +40,23 @@ namespace dust {
 					return e;
 				}
 
-				// Assuming sub-nodes are stored right->left
-					// List(a, b, c) => List.elems = { c, b, a }
-				auto rbegin() { return elems.begin(); }
-				auto rend() { return elems.end(); }
-				auto begin() { return elems.rbegin(); }
-				auto end() { return elems.rend(); }
+				// Assuming sub-nodes are stored left->right
+					// List(a, b, c) => List.elems = { a, b, c }
+				auto rbegin() { return elems.rbegin(); }
+				auto rend() { return elems.rend(); }
+				auto begin() { return elems.begin(); }
+				auto end() { return elems.end(); }
 
 				size_t size() { return elems.size(); }
+				
+				
 				List& add(std::shared_ptr<Node>& n) {
-				//List& add(Node* n) {
 					if (n) elems.push_back(n);
 					return *this;
 				}
 
-				List& add() {
-					return *this;
-				}
-
-				template <class... Ns>
-				List& add(std::shared_ptr<ASTNode>& n, Ns... ns) {
-				//List& add(Node* n, Ns... ns) {
-					//add(ns...);
-					//return add(std::dynamic_pointer_cast<Node>(n));			// add(nullptr) if n is not castable to a shared_ptr<Node>
-					add(std::dynamic_pointer_cast<Node>(n));
-					return add(ns...);
+				void addChild(std::shared_ptr<ASTNode>& c) {
+					add(std::dynamic_pointer_cast<Node>(c));
 				}
 
 				std::string to_string() { return ""; }
@@ -144,14 +135,11 @@ namespace dust {
 
 		class Operator : public ASTNode {
 			private:
-				//ASTNode *l, *r;
 				std::shared_ptr<ASTNode> l, r;
 				std::string op;
 
 			public:
-				//Operator(std::string o, ASTNode* lhs, ASTNode* rhs = nullptr) : l{ lhs }, r{ rhs }, op{ o } {}
-				Operator(std::string o, std::shared_ptr<ASTNode>& lhs) : l{ lhs }, r{ nullptr }, op{ o } {}
-				Operator(std::string o, std::shared_ptr<ASTNode>& lhs, std::shared_ptr<ASTNode>& rhs) : l{ lhs }, r{ rhs }, op{ o } {}
+				Operator(std::string o) : l{ nullptr }, r{ nullptr }, op{ o } {}
 
 				EvalState& eval(EvalState& e) {
 					l->eval(e);
@@ -171,6 +159,12 @@ namespace dust {
 				}
 
 				static std::string node_type;
+
+				void addChild(std::shared_ptr<ASTNode>& c) {
+					if (!l) l.swap(c);
+					else if (!r) r.swap(c);
+					else throw std::string{ "Dust does not currently support ternary operators" };
+				}
 		};
 
 		class VarName : public ASTNode {
@@ -200,23 +194,18 @@ namespace dust {
 			typedef std::shared_ptr<ASTNode> arg_type;
 
 			private:
-				//List<VarName>* vars;
-				//List<ASTNode>* vals;
 				std::shared_ptr<var_type> vars;
 				std::shared_ptr<val_type> vals;
 				std::string op;
 				bool setConst, setStatic;
 
-				Assign(std::shared_ptr<var_type>& l, std::shared_ptr<val_type>& r, std::string o, bool c, bool s) : vars{ l }, vals{ r }, op{ "_op" + o }, setConst{ c }, setStatic{ s } {
-					if (!l) throw std::string{ "Attempt to construct Assign node without a var_list" };
-					if (!r) throw std::string{ "Attempt to construct Assign node without a val_list" };
-				}
-
 			public:
-				//Assign(List<VarName>* l, List<ASTNode>* r, std::string o, bool c = false, bool s = false) : vars{ l }, vals{ r }, op{ "_op" + o }, setConst{ c }, setStatic{ s } {}
-				Assign(arg_type& l, arg_type& r, std::string o, bool c = false, bool s = false) : Assign{ std::dynamic_pointer_cast<var_type>(l), std::dynamic_pointer_cast<val_type>(r), o, c, s } {}
+				Assign(std::string o, bool c = false, bool s = false) : op{ "_op" + o }, setConst{ c }, setStatic{ s }, vars{ nullptr }, vals{ nullptr } {}
 
 				EvalState& eval(EvalState& e) {
+					if (!vars) throw std::string{ "Attempt to use Assign node without a linked var_list" };
+					if (!vals) throw std::string{ "Attempt to use Assign node without a linked expr_list" };
+
 					auto r_var = vars->rbegin(), l_var = vars->rend();
 					auto l_val = vals->begin(), r_val = vals->end();
 					auto var_s = vars->size(), val_s = vals->size();
@@ -255,6 +244,20 @@ namespace dust {
 				}
 
 				static std::string node_type;
+
+				void addChild(std::shared_ptr<ASTNode>& c) {
+					if (!vars) {
+						vars.swap(std::dynamic_pointer_cast<var_type>(c));
+						if (vars) return;
+					}
+
+					if (!vals) {
+						vals.swap(std::dynamic_pointer_cast<val_type>(c));
+						if (vals) return;
+					}
+
+					if (vars && vals) throw std::string{ "Assignment is a binary operation" };
+				}
 		};
 
 

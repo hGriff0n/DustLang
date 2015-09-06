@@ -17,8 +17,8 @@
 
 // TODO:
 	// Grammar integration (AST)
-		// Need to adjust the typedef "AST" struct in Calculator.h
 		// Adjust the parsing actions to account for the changes in AST structure
+		// Maybe adjust the grammar to greater utilize the changes in AST structure
 		// Be able to pass all tests using the loop in old_main
 
 	// Cleaning
@@ -31,6 +31,7 @@
 		// Add a push_ref method ???
 		// Simplify and reduce the process of decrementing references
 		// Focus the API (reduce unecessary functions)
+		// Clean and Organize AST.h
 		// Error and Exception throwing
 		// Comments and Code Organization
 
@@ -141,32 +142,6 @@ int main(int argc, const char* argv[]) {
 	/*
 	Testing declarations
 	*/
-
-	auto hello = makeNode<Literal>("Hello", TypeTraits<std::string>::id);
-	auto world = makeNode<Literal>(" World!", TypeTraits<std::string>::id);
-	auto add = makeNode<Operator>("_op+", hello, world);
-
-	// The old code uses addChild to set the sub-nodes
-	// But the old code still stores the nodes in a std::vector<std::shared_ptr<ASTNode>>
-
-	add->eval(e);
-	pl((std::string)e);
-
-	nl();
-	print(std::cout, add);
-
-	auto var_a = makeNode<VarName>("a");
-	auto var_b = makeNode<VarName>("b");
-	auto list = makeNode<List<VarName>>(var_a, hello, var_b);			// "Ignores" hello (as it's not a VarName)
-	auto vals = makeNode<List<ASTNode>>(var_a, hello, var_b);			// Doesn't ignore hello (as it is a ASTNode)
-
-	auto as = makeNode<Assign>(list, vals, "");
-
-	try {
-		auto sa = makeNode<Assign>(vals, list, "");						// Throws an exception as vals is not a List<VarName>
-	} catch (std::string& e) {
-		pl(e);
-	}
 
 	/*
 	Testing worksheet

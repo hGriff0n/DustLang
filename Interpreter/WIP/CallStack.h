@@ -13,7 +13,6 @@ template<> dust::impl::Value TypeTraits<std::string>::make(std::string s, dust::
 namespace dust {
 
 	class CallStack : public impl::Stack<impl::Value> {
-	//class CallStack : public impl::Stack {
 		private:
 			impl::GC& gc;
 
