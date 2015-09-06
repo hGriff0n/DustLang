@@ -42,10 +42,10 @@ namespace dust {
 
 				// Assuming sub-nodes are stored left->right
 					// List(a, b, c) => List.elems = { a, b, c }
-				auto rbegin() { return elems.rbegin(); }
-				auto rend() { return elems.rend(); }
-				auto begin() { return elems.begin(); }
-				auto end() { return elems.end(); }
+				auto rbegin() { return elems.begin(); }
+				auto rend() { return elems.end(); }
+				auto begin() { return elems.rbegin(); }
+				auto end() { return elems.rend(); }
 
 				size_t size() { return elems.size(); }
 				
@@ -202,7 +202,9 @@ namespace dust {
 				bool setConst, setStatic;
 
 			public:
-				Assign(std::string o, bool c = false, bool s = false) : op{ "_op" + o }, setConst{ c }, setStatic{ s }, vars{ nullptr }, vals{ nullptr } {}
+				Assign(std::string o, bool c = false, bool s = false) : setConst{ c }, setStatic{ s }, vars{ nullptr }, vals{ nullptr } {
+					op = o.size() ? "_op" + o : o;
+				}
 
 				EvalState& eval(EvalState& e) {
 					if (!vars) throw std::string{ "Attempt to use Assign node without a linked var_list" };
@@ -211,7 +213,6 @@ namespace dust {
 					auto r_var = vars->rbegin(), l_var = vars->rend();
 					auto l_val = vals->begin(), r_val = vals->end();
 					auto var_s = vars->size(), val_s = vals->size();
-					bool compound = op.size() - 3;
 
 					// This code is currently not suited to multiple returns and the splat operator
 
@@ -232,11 +233,11 @@ namespace dust {
 
 					// Perform assignments. Compound if necessary
 					while (r_var != l_var) {
-						if (compound) (*r_var)->eval(e).callOp(op);
+						if (op.size()) (*r_var)->eval(e).callOp(op);
 						e.setVar((*r_var++)->to_string(), setConst, setStatic);
 					}
 
-					return (*vars->begin())->eval(e);
+					return (*vars->rbegin())->eval(e);
 				}
 
 				std::string to_string() { return op; }
