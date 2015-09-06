@@ -18,6 +18,9 @@ namespace dust {
 				impl::GC& gc;
 
 			protected:
+				void try_incRef(impl::Value&);
+				void try_decRef(impl::Value&);
+
 			public:
 				CallStack(impl::GC&);
 
@@ -35,7 +38,7 @@ namespace dust {
 				T pop(int idx = -1) {
 					auto v = Stack::pop(idx);
 
-					if (v.type_id == type::Traits<std::string>::id) gc.decRef(v.val.i);
+					try_decRef(v);
 
 					return type::Traits<T>::get(v, gc);
 				}
@@ -63,6 +66,7 @@ namespace dust {
 				// For quicker String operations (particularly equality testing)
 					// Should this convert the object if it is not a string
 				size_t pop_ref(bool decRef = false);
+				// A push_ref method is not really useful (the implementation is also slightly convoluted)
 
 				// Shorter pop
 				template <typename T>

@@ -6,12 +6,20 @@ namespace dust {
 
 		CallStack::CallStack(impl::GC& g) : gc{ g } {}
 
+		void CallStack::try_incRef(impl::Value& val) {
+			if (val.type_id == type::Traits<std::string>::id) gc.incRef(val.val.i);
+		}
+
+		void CallStack::try_decRef(impl::Value& val) {
+			if (val.type_id == type::Traits<std::string>::id) gc.decRef(val.val.i);
+		}
+
 		void CallStack::push(const char* val) {
 			push<std::string>(val);
 		}
 
 		void CallStack::push(impl::Value val) {
-			if (val.type_id == type::Traits<std::string>::id) gc.incRef(val.val.i);
+			try_incRef(val);
 
 			Stack::push(val);
 		}
@@ -33,7 +41,7 @@ namespace dust {
 
 			else
 				for (int i = size(); i > idx; --i) {
-					if (at().type_id == type::Traits<std::string>::id) gc.decRef(at().val.i);
+					try_decRef(at());
 					pop();
 				}
 		}
@@ -41,7 +49,7 @@ namespace dust {
 		void CallStack::replace(int idx) {
 			auto& v = Stack::at(idx);
 
-			if (v.type_id == type::Traits<std::string>::id) gc.decRef(v.val.i);
+			try_decRef(v);
 
 			v = pop();
 		}
@@ -52,5 +60,6 @@ namespace dust {
 
 			return pop(-1).val.i;
 		}
+
 	}
 }

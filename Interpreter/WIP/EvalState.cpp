@@ -49,9 +49,9 @@ namespace dust {
 			return staticTyping(var, isConst);
 
 		// Remove the variables current value and give it the new one
-		if (var.val.type_id == type::Traits<std::string>::id) gc.decRef(var.val.val.i);
+		try_decRef(var.val);
 		var.val = pop();
-		if (var.val.type_id == type::Traits<std::string>::id) gc.incRef(var.val.val.i);
+		try_incRef(var.val);
 
 		// Ensure the isConst and type_id flags are current
 		var.is_const = isConst;
@@ -77,7 +77,7 @@ namespace dust {
 
 			getVar(var);
 			callMethod(ts.getName(typ));
-			if (vars[var].val.type_id == type::Traits<std::string>::id) gc.decRef(vars[var].val.val.i);
+			try_decRef(vars[var].val);
 			vars[var].val = pop();
 		}
 
