@@ -2,6 +2,8 @@
 
 #include "EvalState.h"
 
+#include <memory>
+
 namespace dust {
 	namespace interpreter {
 
@@ -21,9 +23,15 @@ namespace dust {
 		template <class Node>
 		class List : public ASTNode {
 			private:
-				std::vector<Node*> elems;
+				//std::vector<Node*> elems;
+				std::vector<std::shared_ptr<Node>> elems;
 
 			public:
+				template <class... Ns>
+				List(Ns... ns) {
+					add(ns...);
+				}
+
 				EvalState& eval(EvalState& e) {
 					// throw std::string{ "Attempt to evaluate a List node" };
 
@@ -41,15 +49,23 @@ namespace dust {
 				auto end() { return elems.rend(); }
 
 				size_t size() { return elems.size(); }
-				List& add(Node* n) {
-					elems.push_back(n);
+				List& add(std::shared_ptr<Node>& n) {
+				//List& add(Node* n) {
+					if (n) elems.push_back(n);
+					return *this;
+				}
+
+				List& add() {
 					return *this;
 				}
 
 				template <class... Ns>
-				List& add(Node* n, Ns... ns) {
-					add(ns...);
-					return add(n);
+				List& add(std::shared_ptr<ASTNode>& n, Ns... ns) {
+				//List& add(Node* n, Ns... ns) {
+					//add(ns...);
+					//return add(std::dynamic_pointer_cast<Node>(n));			// add(nullptr) if n is not castable to a shared_ptr<Node>
+					add(std::dynamic_pointer_cast<Node>(n));
+					return add(ns...);
 				}
 
 				std::string to_string() { return ""; }
@@ -128,11 +144,14 @@ namespace dust {
 
 		class Operator : public ASTNode {
 			private:
-				ASTNode *l, *r;
+				//ASTNode *l, *r;
+				std::shared_ptr<ASTNode> l, r;
 				std::string op;
 
 			public:
-				Operator(std::string o, ASTNode* lhs, ASTNode* rhs = nullptr) : l{ lhs }, r{ rhs }, op{ o } {}
+				//Operator(std::string o, ASTNode* lhs, ASTNode* rhs = nullptr) : l{ lhs }, r{ rhs }, op{ o } {}
+				Operator(std::string o, std::shared_ptr<ASTNode>& lhs) : l{ lhs }, r{ nullptr }, op{ o } {}
+				Operator(std::string o, std::shared_ptr<ASTNode>& lhs, std::shared_ptr<ASTNode>& rhs) : l{ lhs }, r{ rhs }, op{ o } {}
 
 				EvalState& eval(EvalState& e) {
 					l->eval(e);
@@ -148,10 +167,7 @@ namespace dust {
 				std::string to_string() { return op; }
 
 				virtual std::string print_string(std::string buf) {
-					std::string s = buf + "+- " + node_type + " " + op + "\n";
-					s += l->print_string(buf + " ");
-					s += r->print_string(buf + " ");
-					return s;
+					return buf + "+- " + node_type + " " + op + "\n" + l->print_string(buf + " ") + r->print_string(buf + " ");
 				}
 
 				static std::string node_type;
@@ -179,14 +195,26 @@ namespace dust {
 		};
 
 		class Assign : public ASTNode {
+			typedef List<VarName> var_type;
+			typedef List<ASTNode> val_type;
+			typedef std::shared_ptr<ASTNode> arg_type;
+
 			private:
-				List<VarName>* vars;
-				List<ASTNode>* vals;
+				//List<VarName>* vars;
+				//List<ASTNode>* vals;
+				std::shared_ptr<var_type> vars;
+				std::shared_ptr<val_type> vals;
 				std::string op;
 				bool setConst, setStatic;
 
+				Assign(std::shared_ptr<var_type>& l, std::shared_ptr<val_type>& r, std::string o, bool c, bool s) : vars{ l }, vals{ r }, op{ "_op" + o }, setConst{ c }, setStatic{ s } {
+					if (!l) throw std::string{ "Attempt to construct Assign node without a var_list" };
+					if (!r) throw std::string{ "Attempt to construct Assign node without a val_list" };
+				}
+
 			public:
-				Assign(List<VarName>* l, List<ASTNode>* r, std::string o, bool c = false, bool s = false) : vars{ l }, vals{ r }, op{ "_op" + o }, setConst{ c }, setStatic{ s } {}
+				//Assign(List<VarName>* l, List<ASTNode>* r, std::string o, bool c = false, bool s = false) : vars{ l }, vals{ r }, op{ "_op" + o }, setConst{ c }, setStatic{ s } {}
+				Assign(arg_type& l, arg_type& r, std::string o, bool c = false, bool s = false) : Assign{ std::dynamic_pointer_cast<var_type>(l), std::dynamic_pointer_cast<val_type>(r), o, c, s } {}
 
 				EvalState& eval(EvalState& e) {
 					auto r_var = vars->rbegin(), l_var = vars->rend();
@@ -223,15 +251,14 @@ namespace dust {
 				std::string to_string() { return op; }
 
 				virtual std::string print_string(std::string buf) {
-					std::string s = buf + "+- " + node_type + " " + op + "\n";
-					s += vars->print_string(buf + " ") + vals->print_string(buf + " ");
-					return s;
+					return buf + "+- " + node_type + " " + op + "\n" + vars->print_string(buf + " ") + vals->print_string(buf + " ");
 				}
 
 				static std::string node_type;
 		};
 
 
+		// Have to move into the .cpp file
 		std::string ASTNode::node_type = "ASTNode";
 		std::string Debug::node_type = "Debug";
 		template<class T> std::string List<T>::node_type = "List<" + T::node_type + ">";
@@ -241,9 +268,11 @@ namespace dust {
 		std::string Assign::node_type = "Assignment";
 	}
 
-	// If I move to smart pointers
-	//template <class T, typename... Args>
-	//auto makeNode(Args... args) {
-	//	return std::make_shared<T>(args...);
-	//}
+	// shared_ptr<List<VarName>> cannot be used to initialize a Assign node using makeNode (for some reason)
+	// makeNode has to return a shared_ptr<ASTNode> that can then be cast to the shared_ptr<List<VarName>>
+		// Note: std::dynamic_cast returns a nullptr if the shared_ptr cannot be cast to the desired type
+	template <class T, typename... Args>
+	std::shared_ptr<interpreter::ASTNode> makeNode(Args&... args) {
+		return std::make_shared<T>(args...);
+	}
 }

@@ -17,8 +17,7 @@
 
 // TODO:
 	// AST Construction Framework
-		// Change AST and AST construction to use smart pointers ???
-		// Make Stack into a generic structure ??? (current AST construction expects this)
+		// Make Stack into a generic structure ??? (current AST construction (in Grammar.h) expects this)
 			// CallStack would change to public impl::Stack<impl::Value>
 			// Would have to move "is<T>" into CallStack
 
@@ -132,12 +131,10 @@ template<> bool TypeTraits<bool>::get(const impl::Value& v, impl::GC& gc) {
 	throw std::string{ "Not convertible to Bool" };
 }
 
-
-template <typename T>
-void print(T* ast) {
-	std::cout << ast->print_string("|") << std::endl;
+template <class ostream>
+void print(ostream& s, std::shared_ptr<interpreter::ASTNode>& ast) {
+	(s << ast->print_string("|") << "\n").flush();
 }
-
 
 int main(int argc, const char* argv[]) {
 	using namespace impl;
@@ -150,51 +147,31 @@ int main(int argc, const char* argv[]) {
 	Testing declarations
 	*/
 
-	Literal l{ "3", TypeTraits<int>::id },
-			r{ "3.5", TypeTraits<double>::id };
-	VarName var_a{ "a" },
-			var_b{ "b" };
-	Operator o1{ "_op+", &l, &r },
-			 o2{ "_op*", &l, &var_a };
-	
-	//List<Literal> ls_a{ l }, ls_b{ r }, ls_all{ r, l };
-	List<ASTNode> ls_a, ls_b, ls_all;
-	ls_a.add(&l);
-	ls_b.add(&r);
-	//ls_all.add(&l, &r);
-	ls_all.add(&r, &l);
+	auto hello = makeNode<Literal>("Hello", TypeTraits<std::string>::id);
+	auto world = makeNode<Literal>(" World!", TypeTraits<std::string>::id);
+	auto add = makeNode<Operator>("_op+", hello, world);
 
-	//List<VarName> vars_a{ var_a }, vars_b{ var_b }, all_vars{ a, b };
-	List<VarName> vars_a, vars_b, all_vars;
-	vars_a.add(&var_a);
-	vars_b.add(&var_b);
-	//all_vars.add(&var_b, &var_a);
-	all_vars.add(&var_a, &var_b);
+	// The old code uses addChild to set the sub-nodes
+	// But the old code still stores the nodes in a std::vector<std::shared_ptr<ASTNode>>
 
-	Assign set_a1{ &vars_a, &ls_a, "" },
-		   set_b{ &vars_b, &ls_a, "" },
-		   set_a2{ &vars_a, &ls_b, "+" },
-		   set_ac{ &vars_a, &ls_b, "", true },
-		   set_as{ &vars_a, &ls_a, "", false, true },
-		   set_all{ &all_vars, &ls_all, "*" };
+	add->eval(e);
+	pl((std::string)e);
 
-	Operator o3{ "_op-", &set_b, &var_a };
+	nl();
+	print(std::cout, add);
 
-	print(&var_a);
-	print(&var_b);
-	print(&l);
-	print(&ls_a);
-	print(&set_all);
-	print(&o3);
+	auto var_a = makeNode<VarName>("a");
+	auto var_b = makeNode<VarName>("b");
+	auto list = makeNode<List<VarName>>(var_a, hello, var_b);			// "Ignores" hello (as it's not a VarName)
+	auto vals = makeNode<List<ASTNode>>(var_a, hello, var_b);			// Doesn't ignore hello (as it is a ASTNode)
 
-	set_a1.eval(e);
-	e.pop();
-	var_a.eval(e);
-	pl((int)e);
-	set_as.eval(e);
-	pl((int)e);
-	set_a2.eval(e);
-	pl((int)e);
+	auto as = makeNode<Assign>(list, vals, "");
+
+	try {
+		auto sa = makeNode<Assign>(vals, list, "");						// Throws an exception as vals is not a List<VarName>
+	} catch (std::string& e) {
+		pl(e);
+	}
 
 	/*
 	Testing worksheet
