@@ -43,39 +43,39 @@ namespace dust {
 
 				// INITIALIZATION/MODIFICATION
 				//size_t loadRef(size_t);								// New reference
-				size_t loadRef(std::string);
+				size_t loadRef(std::string s);
 				//size_t loadRef(str_record*);
 
-				size_t setRef(size_t, size_t);							// Assign a ref
-				size_t setRef(size_t, str_record*);						// Assign a temporary
-				size_t setRef(size_t, std::string);						// Assign a string
+				size_t setRef(size_t idx, size_t s);							// Assign a ref
+				size_t setRef(size_t idx, str_record* s);						// Assign a temporary
+				size_t setRef(size_t idx, std::string s);						// Assign a string
 
 				// TEMPORARIES
-				str_record* tempRef(size_t);							// Generate a temporary
-				str_record* tempRef(std::string);
-				str_record* tempRef(str_record*);
+				str_record* tempRef(size_t s);							// Generate a temporary
+				str_record* tempRef(std::string s);
+				str_record* tempRef(str_record* s);
 
-				void setTemp(str_record*, size_t);						// Set a temporary
-				void setTemp(str_record*, std::string);
-				void setTemp(str_record*, str_record*);
+				void setTemp(str_record* t, size_t s);						// Set a temporary
+				void setTemp(str_record* t, std::string s);
+				void setTemp(str_record* t, str_record* s);
 
-				void appTemp(str_record*, size_t);						// Append to a temporary
-				void appTemp(str_record*, std::string);
-				void appTemp(str_record*, str_record*);
+				void appTemp(str_record* t, size_t s);						// Append to a temporary
+				void appTemp(str_record* t, std::string s);
+				void appTemp(str_record* t, str_record* s);
 
-				void delTemp(str_record*);								// Necessary because str_record's destructor is "hidden"
+				void delTemp(str_record* t);								// Necessary because str_record's destructor is "hidden"
 
 				// REFERENCE COUNTING
-				void incRef(size_t);
-				void decRef(size_t);
+				void incRef(size_t r);
+				void decRef(size_t r);
 
 				// EXTRACTION
-				std::string deref(size_t);
-				std::string deref(str_record*);
+				std::string deref(size_t idx);
+				std::string deref(str_record* s);
 
 				// Debug functions
 				int num_records();
-				int num_refs(std::string);
+				int num_refs(std::string s);
 				int collected();
 				void printAll();
 		};
