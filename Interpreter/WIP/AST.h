@@ -5,22 +5,18 @@
 #include <memory>
 
 namespace dust {
-	namespace interpreter {
+	namespace parse {
 
 		class ASTNode {
 			private:
 			public:
 				virtual EvalState& eval(EvalState&) =0;
 				virtual std::string to_string() =0;
-				virtual void addChild(std::shared_ptr<ASTNode>& c) {
-					throw std::string{ "Attempt to add a child to " + node_type };
-				}
+				virtual void addChild(std::shared_ptr<ASTNode>& c);
 
 				static std::string node_type;
 
-				virtual std::string print_string(std::string buf) {
-					return buf + "+- " + node_type + "\n";
-				}
+				virtual std::string print_string(std::string buf);
 		};
 
 		template <class Node>
@@ -79,14 +75,13 @@ namespace dust {
 				std::string msg;
 
 			public:
-				Debug(std::string m) : msg{ m } {}
+				Debug(std::string _msg);
 
-				EvalState& eval(EvalState& e) { return e; }
-				std::string to_string() { return msg; }
+				EvalState& eval(EvalState& e);
+				std::string to_string();
 
-				virtual std::string print_string(std::string buf) {
-					return buf + "+- " + node_type + " " + msg + "\n";
-				}
+				// Do I need to have this here
+				virtual std::string print_string(std::string buf);
 
 				static std::string node_type;
 		};
@@ -97,40 +92,15 @@ namespace dust {
 				size_t id;
 			
 			public:
-				Literal(std::string v, size_t t) : val{ v }, id{ t } {}
+				Literal(std::string _val, size_t t);
 
 				// Based off of the old ast implementation
-				EvalState& eval(EvalState& e) {
-					if (id == TypeTraits<int>::id)
-						e.push(std::stoi(val));
-
-					else if (id == TypeTraits<double>::id)
-						e.push(std::stod(val));
-
-					else if (id == TypeTraits<bool>::id)
-						e.push<bool>(std::stoi(val));
-
-					else if (id == TypeTraits<std::string>::id)
-						e.push(val);
-
-					else
-						throw std::string{ "No literal" };
-
-					return e;
-				}
+				EvalState& eval(EvalState& e);
 
 				// Possibly temporary implementation
-				std::string to_string() {
-					return (id == TypeTraits<int>::id ? " Int " :
-							id == TypeTraits<double>::id ? " Float " :
-							id == TypeTraits<bool>::id ? " Bool " :
-							id == TypeTraits<std::string>::id ? " String " :
-							" Nil ") + val;
-				}
+				std::string to_string();
 
-				virtual std::string print_string(std::string buf) {
-					return buf + "+- " + node_type + to_string() + "\n";
-				}
+				virtual std::string print_string(std::string buf);
 
 				static std::string node_type;
 		};
@@ -141,34 +111,19 @@ namespace dust {
 				std::string op;
 
 			public:
-				Operator(std::string o) : l{ nullptr }, r{ nullptr }, op{ o } {}
+				Operator(std::string o);
 
-				EvalState& eval(EvalState& e) {
-					l->eval(e);
+				EvalState& eval(EvalState& e);
 
-					// Binary operator
-					if (r ? r->eval(e), true : false)
-						e.swap();					// Current Binary operator evalutation expects stack: ..., rhs, lhs
-
-					e.callOp(op);
-					return e;
-				}
-
-				std::string to_string() { return op; }
+				std::string to_string();
 
 				// Access violation reading memory address 0
 					// Unary operators have r == nullptr
-				virtual std::string print_string(std::string buf) {
-					return buf + "+- " + node_type + " " + op + "\n" + l->print_string(buf + " ") + (r ? r->print_string(buf + " ") : "");
-				}
+				virtual std::string print_string(std::string buf);
 
 				static std::string node_type;
 
-				void addChild(std::shared_ptr<ASTNode>& c) {
-					if (!l) l.swap(c);
-					else if (!r) r.swap(c);
-					else throw std::string{ "Dust does not currently support ternary operators" };
-				}
+				void addChild(std::shared_ptr<ASTNode>& c);
 		};
 
 		class VarName : public ASTNode {
@@ -176,18 +131,13 @@ namespace dust {
 				std::string name;
 
 			public:
-				VarName(std::string var) : name{ var } {}
+				VarName(std::string var);
 
-				EvalState& eval(EvalState& e) {
-					e.getVar(name);
-					return e;
-				}
+				EvalState& eval(EvalState& e);
 
-				std::string to_string() { return name; }
+				std::string to_string();
 
-				virtual std::string print_string(std::string buf) {
-					return buf + "+- " + node_type + " " + name + "\n";
-				}
+				virtual std::string print_string(std::string buf);
 
 				static std::string node_type;
 		};
@@ -204,83 +154,27 @@ namespace dust {
 				bool setConst, setStatic;
 
 			public:
-				Assign(std::string o, bool c = false, bool s = false) : setConst{ c }, setStatic{ s }, vars{ nullptr }, vals{ nullptr } {
-					op = o.size() ? "_op" + o : o;
-				}
+				Assign(std::string _op, bool _const = false, bool _static = false);
 
-				EvalState& eval(EvalState& e) {
-					if (!vars) throw std::string{ "Attempt to use Assign node without a linked var_list" };
-					if (!vals) throw std::string{ "Attempt to use Assign node without a linked expr_list" };
+				EvalState& eval(EvalState& e);
 
-					auto r_var = vars->rbegin(), l_var = vars->rend();
-					auto l_val = vals->begin(), r_val = vals->end();
-					auto var_s = vars->size(), val_s = vals->size();
+				std::string to_string();
 
-					// This code is currently not suited to multiple returns and the splat operator
-
-					// More values than variables. Readjust val
-					while (val_s > var_s) {
-						--r_val; --val_s;
-					}
-
-					// Evaluate expression list (left -> right)
-					while (l_val != r_val)
-						(*l_val++)->eval(e);
-
-					// More variables than values. Push nils
-						// Might change to copy() depending on compound assignment semantics
-					while (var_s > val_s) {
-						e.push(0); --var_s;
-					}
-
-					// Perform assignments. Compound if necessary
-					while (r_var != l_var) {
-						if (op.size()) (*r_var)->eval(e).callOp(op);
-						e.setVar((*r_var++)->to_string(), setConst, setStatic);
-					}
-
-					return (*vars->rbegin())->eval(e);
-				}
-
-				std::string to_string() { return op; }
-
-				virtual std::string print_string(std::string buf) {
-					return buf + "+- " + node_type + " " + op + "\n" + vars->print_string(buf + " ") + vals->print_string(buf + " ");
-				}
+				virtual std::string print_string(std::string buf);
 
 				static std::string node_type;
 
-				void addChild(std::shared_ptr<ASTNode>& c) {
-					if (!vars) {
-						vars.swap(std::dynamic_pointer_cast<var_type>(c));
-						if (vars) return;
-					}
-
-					if (!vals) {
-						vals.swap(std::dynamic_pointer_cast<val_type>(c));
-						if (vals) return;
-					}
-
-					if (vars && vals) throw std::string{ "Assignment is a binary operation" };
-				}
+				void addChild(std::shared_ptr<ASTNode>& c);
 		};
 
-
-		// Have to move into the .cpp file
-		std::string ASTNode::node_type = "ASTNode";
-		std::string Debug::node_type = "Debug";
 		template<class T> std::string List<T>::node_type = "List<" + T::node_type + ">";
-		std::string Literal::node_type = "Literal";
-		std::string Operator::node_type = "Operator";
-		std::string VarName::node_type = "Variable";
-		std::string Assign::node_type = "Assignment";
 	}
 
 	// shared_ptr<List<VarName>> cannot be used to initialize a Assign node using makeNode (for some reason)
 	// makeNode has to return a shared_ptr<ASTNode> that can then be cast to the shared_ptr<List<VarName>>
 		// Note: std::dynamic_cast returns a nullptr if the shared_ptr cannot be cast to the desired type
 	template <class T, typename... Args>
-	std::shared_ptr<interpreter::ASTNode> makeNode(Args&... args) {
+	std::shared_ptr<parse::ASTNode> makeNode(Args&... args) {
 		return std::make_shared<T>(args...);
 	}
 }
