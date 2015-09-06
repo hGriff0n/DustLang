@@ -3,7 +3,6 @@
 #include <vector>
 
 namespace dust {
-	namespace impl {
 
 		template <typename Value>
 		class Stack {
@@ -81,5 +80,4 @@ namespace dust {
 				}
 		};
 
-	}
 }
