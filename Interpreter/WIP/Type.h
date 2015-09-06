@@ -8,7 +8,9 @@ namespace dust {
 	class EvalState;
 	typedef std::function<int(EvalState&)> Function;
 
-	namespace impl {
+	// namespace impl { struct Value; }
+
+	namespace type {
 		// struct Value;
 		class TypeSystem;
 

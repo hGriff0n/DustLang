@@ -19,7 +19,7 @@
 		// Add in checks for assigning nil in the future (for some Type methods/members)
 
 namespace dust {
-	namespace impl {
+	namespace type {
 
 		class TypeSystem {
 			public:
@@ -33,7 +33,7 @@ namespace dust {
 					public:
 						TypeVisitor(size_t i, TypeSystem* self) : id{ i }, ts{ self } {}
 
-						TypeVisitor& addOp(std::string, Function);
+						TypeVisitor& addOp(std::string op, Function f);
 					
 						operator size_t();
 				};
@@ -41,7 +41,7 @@ namespace dust {
 				static const size_t NIL = -1;
 
 			private:
-				std::vector<impl::Type> types;							// Maintains type records, Indices are type_id (Could I maintain this as a tree, reduces O-cost of ancestor and isParentOf?)
+				std::vector<Type> types;								// Maintains type records, Indices are type_id (Could I maintain this as a tree, reduces O-cost of ancestor and isParentOf?)
 				std::map<convPair, std::array<size_t, 2>> conv;			// Tracks conversion precedence
 				std::map<convPair, size_t> siblings;					// Memoize the ancestor of two types
 				std::map<std::string, size_t> type_id;					// Associates name to type id
@@ -69,65 +69,47 @@ namespace dust {
 
 				// Inheritance Resolution (returns NIL if no definition is found
 				// Find op definition in type or in parent(type)
-				size_t findDef(size_t, std::string);
+				size_t findDef(size_t t, std::string fn);
 
 				// Find op definition in type without considering inheritance relationships
-				size_t isDefd(size_t, std::string);
+				size_t isDefd(size_t t, std::string fn);
 			  //size_t findLoc(size_t, std::string);
 
 
 				// Common Type Resolution (Find a type that defines op and that both l and r can be cast to)
-				size_t com(size_t, size_t, std::string);
+				size_t com(size_t l, size_t r, std::string op);
 
-				/* Example 'dispatch' that performs converter resolution using the current API
-				dispatch(size_t l, size_t r, std::string op)
-					auto com_t = ts.com(l, r, op)
-					auto dis_t = ts.findDef(com_t, op)
-					
-					if (dis_t == NIL)
-						throw SomeExceptionClassThatIveNotYetGottenAroundToDefining()
-
-					// Determine whether com selected a converter and perform conversions
-					if ((com_t == l ^ com_t == r) && ts.convertible(l, r))
-						forceType(-1, com_t);					// The name is a placeholder (Maybe move to be a TypeSystem method ???)
-						forceType(-2, com_t);					// Forces the value at the given index to have the given type by calling a converter if necessary
-
-					return ts.get(dis_t).ops[op](e);
-				*/
-
-				size_t com(Type&, Type&, std::string);
+				size_t com(Type& l, Type& r, std::string op);
 
 
 				// Type Definition methods
 				// Create a type visitor to a new type with an optional parent
-				TypeVisitor newType(std::string);
+				TypeVisitor newType(std::string t);
 
-				TypeVisitor newType(std::string, Type&);
+				TypeVisitor newType(std::string t, Type& p);
 
-				TypeVisitor newType(std::string, TypeVisitor&);
+				TypeVisitor newType(std::string t, TypeVisitor& p);
 
 				// Gets a type visitor to a predefined type
-				TypeVisitor getType(size_t);
+				TypeVisitor getType(size_t t);
 
-				TypeVisitor getType(std::string);
+				TypeVisitor getType(std::string t);
 				
 				// Get the implementation type (for eval, etc.)
-				Type get(size_t);
+				Type get(size_t t);
 
-				Type get(std::string);
+				Type get(std::string t);
 
 
 				// Temporary/Ungrouped Methods (may be expanded/grouped later)
 				// Checks if there is a converter between t1 and t2
-				bool convertible(size_t, size_t);
+				bool convertible(size_t t1, size_t t2);
 				
 				// Checks if t1 is a child of t2
-				bool isChildType(size_t, size_t);
+				bool isChildType(size_t t1, size_t t2);
 
-				std::string getName(size_t);
-				size_t getId(std::string);
-
-				// void forceType(int, size_t);			// Would also need a stack to be passed
+				std::string getName(size_t t);
+				size_t getId(std::string t);
 		};
 	}
 }

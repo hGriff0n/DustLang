@@ -2,7 +2,7 @@
 #include <cctype>
 
 namespace dust {
-	namespace impl {
+	namespace type {
 		using TypeVisitor = TypeSystem::TypeVisitor;
 
 		TypeVisitor& TypeVisitor::addOp(std::string op, Function f) {
@@ -101,15 +101,15 @@ namespace dust {
 			return newType(t, (size_t)p);
 		}
 
-		size_t TypeSystem::findDef(size_t t, std::string op) {
-			while (t != NIL && isDefd(t, op) == NIL)
+		size_t TypeSystem::findDef(size_t t, std::string fn) {
+			while (t != NIL && isDefd(t, fn) == NIL)
 				t = t > 0 ? types[t].parent : NIL;
 
 			return t;
 		}
 
-		size_t TypeSystem::isDefd(size_t idx, std::string op) {
-			return types[idx].ops.count(op) > 0 ? idx : NIL;
+		size_t TypeSystem::isDefd(size_t t, std::string fn) {
+			return types[t].ops.count(fn) > 0 ? t : NIL;
 		}
 
 		size_t TypeSystem::com(size_t l, size_t r, std::string op) {
@@ -136,16 +136,16 @@ namespace dust {
 			return com(l.id, r.id, op);
 		}
 
-		TypeVisitor TypeSystem::getType(size_t idx) {
-			return{ idx, this };
+		TypeVisitor TypeSystem::getType(size_t t) {
+			return{ t, this };
 		}
 
 		TypeVisitor TypeSystem::getType(std::string t) {
 			return{ type_id[t], this };
 		}
 
-		Type TypeSystem::get(size_t idx) {
-			return types[idx];
+		Type TypeSystem::get(size_t t) {
+			return types[t];
 		}
 
 		Type TypeSystem::get(std::string t) {
