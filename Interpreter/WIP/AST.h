@@ -156,8 +156,10 @@ namespace dust {
 
 				std::string to_string() { return op; }
 
+				// Access violation reading memory address 0
+					// Unary operators have r == nullptr
 				virtual std::string print_string(std::string buf) {
-					return buf + "+- " + node_type + " " + op + "\n" + l->print_string(buf + " ") + r->print_string(buf + " ");
+					return buf + "+- " + node_type + " " + op + "\n" + l->print_string(buf + " ") + (r ? r->print_string(buf + " ") : "");
 				}
 
 				static std::string node_type;
