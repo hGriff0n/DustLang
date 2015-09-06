@@ -16,11 +16,6 @@
 	// Possibly also for testing the development of type_traits style classes
 
 // TODO:
-	// AST Construction Framework
-		// Make Stack into a generic structure ??? (current AST construction (in Grammar.h) expects this)
-			// CallStack would change to public impl::Stack<impl::Value>
-			// Would have to move "is<T>" into CallStack
-
 	// Grammar integration (AST)
 		// Need to adjust the typedef "AST" struct in Calculator.h
 		// Adjust the parsing actions to account for the changes in AST structure

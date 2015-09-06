@@ -24,7 +24,7 @@ namespace dust {
 	}
 
 	void CallStack::settop(int idx) {
-		idx = std::max(normalize(idx), 0);
+		idx = (size_t)std::max(normalize(idx), 0);
 
 		if (idx > size())
 			while (size() < idx)

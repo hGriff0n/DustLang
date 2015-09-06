@@ -1,6 +1,7 @@
 #pragma once
 
 #include "TypeTraits.h"
+#include "Value.h"
 #include "Stack.h"
 #include "GC.h"
 
@@ -11,7 +12,8 @@ template<> dust::impl::Value TypeTraits<std::string>::make(std::string s, dust::
 
 namespace dust {
 
-	class CallStack : public impl::Stack {
+	class CallStack : public impl::Stack<impl::Value> {
+	//class CallStack : public impl::Stack {
 		private:
 			impl::GC& gc;
 
@@ -66,6 +68,11 @@ namespace dust {
 			template <typename T>
 			explicit operator T() {
 				return pop<T>(-1);
+			}
+
+			// Checks the type of the value at the given index
+			template<typename T> bool is(int idx = -1) {
+				return at(idx).type_id == TypeTraits<T>::id;
 			}
 
 	};
