@@ -79,6 +79,8 @@ namespace dust {
 				std::string msg;
 
 			public:
+				Debug(std::string m) : msg{ m } {}
+
 				EvalState& eval(EvalState& e) { return e; }
 				std::string to_string() { return msg; }
 

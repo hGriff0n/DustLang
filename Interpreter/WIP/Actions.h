@@ -8,6 +8,8 @@ namespace dust {
 		*  Parser Actions
 		*/
 
+		using namespace interpreter;				// This declaration doesn't escape this namespace (does it escape the file though
+
 		template <typename Rule>
 		struct action : nothing<Rule> {};
 
@@ -15,26 +17,26 @@ namespace dust {
 		template <> struct action<body> {
 			static void apply(const input& in, AST& ast) {
 				// Should I perform escaping here or at eval?
-				ast.push(makeNode<Literal>(in.string(), ValType::STRING));
+				ast.push(makeNode<Literal>(in.string(), TypeTraits<std::string>::id));
 			}
 		};
 
 		// Literal Actions
 		template <> struct action<decimal> {
 			static void apply(const input& in, AST& ast) {
-				ast.push(makeNode<Literal>(in.string(), ValType::FLOAT));
+				ast.push(makeNode<Literal>(in.string(), TypeTraits<double>::id));
 			}
 		};
 
 		template <> struct action<integer> {
 			static void apply(const input& in, AST& ast) {
-				ast.push(makeNode<Literal>(in.string(), ValType::INT));
+				ast.push(makeNode<Literal>(in.string(), TypeTraits<int>::id));
 			}
 		};
 
 		template <> struct action<boolean> {
 			static void apply(const input& in, AST& ast) {
-				ast.push(makeNode<Literal>("1", ValType::BOOL));
+				ast.push(makeNode<Literal>("1", TypeTraits<bool>::id));
 			}
 		};
 
@@ -42,38 +44,50 @@ namespace dust {
 		// Identifier Actions
 		template <> struct action<var_id> {
 			static void apply(input& in, AST& ast) {
-				ast.push(makeNode<Variable>(in.string()));
+				ast.push(makeNode<VarName>(in.string()));
 			}
 		};
 
 
 		// Operator Actions
-		template <typename T>
 		struct OpAction {
 			static void apply(const input& in, AST& ast) {
-				ast.push(makeNode<T>(in.string()));
+				ast.push(makeNode<Operator>("_op" + in.string()));
 			}
 		};
 
-		template <> struct action<op_0> : OpAction<UnOp> {};
-		template <> struct action<op_1> : OpAction<BinOp> {};
-		template <> struct action<op_2> : OpAction<BinOp> {};
-		template <> struct action<op_3> : OpAction<BinOp> {};
-		template <> struct action<op_4> : OpAction<BinOp> {};
-		template <> struct action<op_5> : OpAction<Assignment> {};
+		template <> struct action<op_0> {
+			static void apply(const input& in, AST& ast) {
+				ast.push(makeNode<Operator>("_ou" + in.string()));
+			}
+		};
+
+		template <> struct action<op_1> : OpAction {};
+		template <> struct action<op_2> : OpAction {};
+		template <> struct action<op_3> : OpAction {};
+		template <> struct action<op_4> : OpAction {};
+
+		// I'm not sure if this is correct
+		template <> struct action<op_5> {
+			static void apply(const input& in, AST& ast) {
+				ast.push(makeNode<Assign>(in.string().substr(1)));
+			}
+		};
 
 		// Atomic Actions
 		template <> struct action<unary> {
-			// See ee_actions for reasoning?
 			static void apply(input& in, AST& ast) {
 				if (ast.size() >= 2) {
-					auto operand = ast.pop();
+					if (std::dynamic_pointer_cast<Operator>(ast.at(-2)))
+						// stack: ..., {op}, {operand}
 
-					if (ast.top()->token_type() == TokenType::Operator)
-						ast.top()->addChild(operand);
+						ast.at(-2)->addChild(ast.pop());
+
+						// stack: ..., {op}
 					else
-						ast.push(operand);
-				}
+						throw std::string{ "Parsing error: Attempt to construct Operator node without an operator" };
+				} else
+					throw std::string{ "Parsing error: Attempt to construct Operator node with less than 2 nodes on the stack" };
 			}
 		};
 
@@ -82,17 +96,24 @@ namespace dust {
 		// Consider formalizing a shift-reduce framework here
 		struct ee_actions {
 			static void apply(input& in, AST& ast) {
-				// stack: ..., {lhs}, {op}, {rhs}
 				if (ast.size() >= 3) {
-					auto rhs = ast.pop();							// Don't check that the rhs is valid
-					auto op = ast.pop();							// Don't check that the operator is valid
-																	// Don't check that the lhs is valid
+					if (std::dynamic_pointer_cast<Operator>(ast.at(-2))) {
+						// stack: ..., {lhs}, {op}, {rhs}
 
-					op->addChild(rhs).addChild(ast.pop());				// Current ordering expected by operators
-																		//op->addChild(ast.pop()).addChild(rhs);			// If I change the ordering
-					ast.push(op);
-				}
-				// stack: ..., {op}
+						auto rhs = ast.pop();							// Doesn't check that rhs or lhs is valid
+						auto op = ast.pop();							// However, rhs and lhs are guaranteed to be ASTNode's, which operator accepts
+																		// Guaranteed to be an operator
+
+						op->addChild(ast.pop());						// Current ordering expected by operators (lhs, rhs)
+						op->addChild(rhs);
+						
+						ast.push(op);
+
+						// stack: ..., {op}
+					} else
+						throw std::string{ "Parsing error: Attempt to construct Operator node without an operator" };
+				} else
+					throw std::string{ "Parsing error: Attempt to construct Operator node with less than 3 nodes on the stack" };
 			}
 		};
 
@@ -100,34 +121,34 @@ namespace dust {
 		template <> struct action<ee_2> : ee_actions {};
 		template <> struct action<ee_3> : ee_actions {};
 		template <> struct action<ee_4> : ee_actions {};
-		template <> struct action<ee_5> : ee_actions {};
+		template <> struct action<ee_5> : ee_actions {};				// This uses Assignment nodes, not Operator nodes. ee_acctions uses Operators
 
 
 		// List Actions
-		template <TokenType t, bool only = false> struct list_actions {
+		template <class type>
+		struct list_actions {
 			static void apply(input& in, AST& ast) {
-				auto list = makeNode<List>(t);
-				bool typed = false;
+				auto list = makeNode<List<type>>();
 
-				//if (ast.top()->to_string() == ",") ast.pop();				// Old code to handle two commas on stack top
-
-				if (ast.top()->to_string() != ",")
+				if (ast.at()->to_string() != ",")
 					ast.push(makeNode<Debug>(","));
 
-				while (!ast.empty() && ast.top()->to_string() == ",") {
+				while (!ast.empty() && ast.at()->to_string() == ",") {
 					ast.pop();
-					if (!only || ast.top()->token_type() == t) list->addChild(ast.pop());
-					else typed = true;
+					if (std::dynamic_pointer_cast<type>(ast.at()))
+						list->addChild(ast.pop());
+					else
+						throw std::string{ "Parsing error: Attempt to construct heterogenous list" };		// or should i just quit execution here ???
 				}
 
-				if (typed) ast.push(makeNode<Debug>(","));
+//				if (typed) ast.push(makeNode<Debug>(","));
 
 				ast.push(list);
 			}
 		};
 
-		template <> struct action<var_list> : list_actions<TokenType::Variable, true> {};
-		template <> struct action<expr_list> : list_actions<TokenType::Expr> {};
+		template <> struct action<var_list> : list_actions<VarName> {};
+		template <> struct action<expr_list> : list_actions<ASTNode> {};
 		//template <> struct action<arg_list> : list_actions<TokenType::Arg, true> {};
 		//template <> struct action<tbl_list> : list_actions<TokenType::Field> {};			// true?
 
