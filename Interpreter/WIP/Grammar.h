@@ -11,12 +11,12 @@
 // For quick testing of grammar, pegjs.org/online
 
 namespace dust {
-	namespace interpreter {
+	namespace parse {
 		using namespace pegtl;
 		using eps = pegtl::success;
 		template <typename Cond, typename Then, typename Else>
 		using if_else = pegtl::if_then_else<Cond, Then, Else>;
-		using AST = impl::Stack<std::shared_ptr<ASTNode>>;			// Would STATE be a better name
+		using AST = Stack<std::shared_ptr<ASTNode>>;			// Would STATE be a better name
 
 
 		// Rule Templates
@@ -108,5 +108,5 @@ namespace dust {
 	}
 
 	// Grammar Token
-	struct grammar : pegtl::must<interpreter::expr> {};
+	struct grammar : pegtl::must<parse::expr> {};
 }

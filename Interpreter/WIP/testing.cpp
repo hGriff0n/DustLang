@@ -15,23 +15,17 @@
 	// Possibly also for testing the development of type_traits style classes
 
 // TODO:
-	// Grammar integration (AST)
-		// Adjust the parsing actions to account for the changes in AST structure
-			// Pass all evaluation tests
-
 	// Cleaning
-		// Organize files into sub-folders
-		// Merge Backend-Rewrite into master (delete TypeSystem branch)
-		// Organize namespaces (Use better namespace divisions)
-		// Reduce TypeTraits specialization errors
-			// include "GC.h" in TypeTraits.h and move the specializations to TypeTraits.h ???
-		// Improve method declarations to improve developability
-		// Add a push_ref method ???
 		// Simplify and reduce the process of decrementing references
+		// Remove Init.h (merge with EvalState.h ???)
+		// Add a push_ref method ???
 		// Focus the API (reduce unecessary functions)
 		// Clean and Organize AST.h
+		// Reduce type::Traits specialization errors
+			// include "GC.h" in TypeTraits.h and move the specializations to TypeTraits.h ???
 		// Error and Exception throwing
 		// Comments and Code Organization
+		// Merge Backend-Rewrite into master (delete TypeSystem branch)
 
 	// Step Back and Determine Where I Am
 		// Comment all of the current code
@@ -40,6 +34,7 @@
 		// Consider changing name of _op() due to semantical differences
 		// Consider adding a push_ref method to CallStack (roughly mirrors pop_ref)
 		// What if a type inherits from String ???
+		// Organize files into sub-folders
 
 // Things to work on
 	// Improving and consolidating the API
@@ -58,7 +53,7 @@
 
 using namespace dust;
 
-void convert(impl::Value&, size_t, impl::TypeSystem&);
+void convert(impl::Value&, size_t, type::TypeSystem&);
 
 // Assign a Value
 template <typename T>
@@ -68,30 +63,30 @@ void assign_value(impl::Value&, impl::Value&, impl::GC&);
 
 // Type Traits specializations
 // Moving these definitions to CallStack.h causes a LNK2005 error
-template<> int TypeTraits<int>::get(const impl::Value& v, impl::GC& gc) {
+template<> int type::Traits<int>::get(const impl::Value& v, impl::GC& gc) {
 	try {
-		if (v.type_id == TypeTraits<double>::id)
+		if (v.type_id == type::Traits<double>::id)
 			return v.val.d;
 
-		else if (v.type_id == TypeTraits<int>::id || v.type_id == TypeTraits<bool>::id)
+		else if (v.type_id == type::Traits<int>::id || v.type_id == type::Traits<bool>::id)
 			return v.val.i;
 
-		else if (v.type_id == TypeTraits<std::string>::id)
+		else if (v.type_id == type::Traits<std::string>::id)
 			return std::stoi(gc.deref(v.val.i));
 	} catch (...) {}
 
 	throw std::string{ "Not convertible to Int" };
 }
 
-template<> double TypeTraits<double>::get(const impl::Value& v, impl::GC& gc) {
+template<> double type::Traits<double>::get(const impl::Value& v, impl::GC& gc) {
 	try {
-		if (v.type_id == TypeTraits<double>::id)
+		if (v.type_id == type::Traits<double>::id)
 			return v.val.d;
 
-		else if (v.type_id == TypeTraits<int>::id || v.type_id == TypeTraits<bool>::id)
+		else if (v.type_id == type::Traits<int>::id || v.type_id == type::Traits<bool>::id)
 			return v.val.i;
 
-		else if (v.type_id == TypeTraits<std::string>::id) {
+		else if (v.type_id == type::Traits<std::string>::id) {
 			return std::stod(gc.deref(v.val.i));
 		}
 	} catch (...) {}
@@ -99,57 +94,46 @@ template<> double TypeTraits<double>::get(const impl::Value& v, impl::GC& gc) {
 	throw std::string{ "Not convertible to Float" };
 }
 
-template<> std::string TypeTraits<std::string>::get(const impl::Value& v, impl::GC& gc) {
-	if (v.type_id == TypeTraits<std::string>::id)
+template<> std::string type::Traits<std::string>::get(const impl::Value& v, impl::GC& gc) {
+	if (v.type_id == type::Traits<std::string>::id)
 		return gc.deref(v.val.i);
 
-	else if (v.type_id == TypeTraits<bool>::id)
+	else if (v.type_id == type::Traits<bool>::id)
 		return v.val.i ? "true" : "false";
 
-	else if (v.type_id == TypeTraits<int>::id)
+	else if (v.type_id == type::Traits<int>::id)
 		return std::to_string(v.val.i);
 
-	else if (v.type_id == TypeTraits<double>::id)
+	else if (v.type_id == type::Traits<double>::id)
 		return std::to_string(v.val.d);
 
 	throw std::string{ "Not convertible to String" };
 }
 
-template<> bool TypeTraits<bool>::get(const impl::Value& v, impl::GC& gc) {
-	if (v.type_id == TypeTraits<bool>::id)
+template<> bool type::Traits<bool>::get(const impl::Value& v, impl::GC& gc) {
+	if (v.type_id == type::Traits<bool>::id)
 		return v.val.i;
 
 	throw std::string{ "Not convertible to Bool" };
 }
 
 template <class ostream>
-void print(ostream& s, std::shared_ptr<interpreter::ASTNode>& ast) {
+void print(ostream& s, std::shared_ptr<parse::ASTNode>& ast) {
 	(s << ast->print_string("|") << "\n").flush();
 }
 
-// a, b: 3
-// a = 0		|	3
-// b = 3		|	0
-
-// a, b: 3, 5
-// a = 3		|	3
-// b = 5		|	5
-
-// a, b: 3, 5, 7
-// a = 5		|	3
-// b = 7		|	5
 
 int main(int argc, const char* argv[]) {
 	std::cout << "Analyzing `dust::grammar`.....\n";
 	pegtl::analyze<grammar>();
 	std::cout << "\n" << std::endl;
 
-	interpreter::AST parse_tree;
+	parse::AST parse_tree;
+	std::string input;
+	
 	EvalState e;
-
 	initState(e);
 
-	std::string input;
 
 	std::cout << "> ";
 	while (std::getline(std::cin, input) && input != "exit") {
@@ -175,7 +159,7 @@ int main(int argc, const char* argv[]) {
 }
 
 
-void initConversions(impl::TypeSystem& ts) {
+void initConversions(type::TypeSystem& ts) {
 	auto Int = ts.getType("Int");
 	auto Float = ts.getType("Float");
 	auto String = ts.getType("String");
@@ -191,7 +175,7 @@ void initConversions(impl::TypeSystem& ts) {
 	String.addOp("Float", [](EvalState& e) { e.push((float)e); return 1; });
 }
 
-void initOperations(impl::TypeSystem& ts) {
+void initOperations(type::TypeSystem& ts) {
 	auto Object = ts.getType("Object");
 	auto Int = ts.getType("Int");
 	auto Float = ts.getType("Float");
@@ -281,7 +265,7 @@ void initOperations(impl::TypeSystem& ts) {
 }
 
 
-void convert(impl::Value& v, size_t id, impl::TypeSystem& ts) {
+void convert(impl::Value& v, size_t id, type::TypeSystem& ts) {
 	ps(ts.getName(v.type_id) + " -> " + ts.getName(id));
 	pl(ts.convertible(v.type_id, id));
 }
@@ -289,14 +273,14 @@ void convert(impl::Value& v, size_t id, impl::TypeSystem& ts) {
 
 template <typename T>
 void assign_value(impl::Value& v, T val, impl::GC& gc) {
-	if (v.type_id == TypeTraits<std::string>::id) gc.decRef(v.val.i);
+	if (v.type_id == type::Traits<std::string>::id) gc.decRef(v.val.i);
 
 	v = make_value(val, gc);
 }
 
 void assign_value(impl::Value& v, impl::Value& a, impl::GC& gc) {
-	if (v.type_id == TypeTraits<std::string>::id) gc.decRef(v.val.i);
-	if (a.type_id == TypeTraits<std::string>::id) gc.incRef(a.val.i);
+	if (v.type_id == type::Traits<std::string>::id) gc.decRef(v.val.i);
+	if (a.type_id == type::Traits<std::string>::id) gc.incRef(a.val.i);
 
 	v = a;
 }

@@ -4,7 +4,7 @@
 #include "TypeTraits.h"
 
 using namespace dust;
-using namespace dust::impl;
+using namespace dust::type;
 
 void initTypeSystem(TypeSystem& ts) {
 	auto Object = ts.getType("Object");
@@ -16,10 +16,10 @@ void initTypeSystem(TypeSystem& ts) {
 	auto Table = ts.newType("Table");
 	auto Function = ts.newType("Function");
 
-	// Initialize TypeTraits id's
-	TypeTraits<int>::id = Int;
-	TypeTraits<double>::id = Float;
-	TypeTraits<std::string>::id = String;
-	TypeTraits<bool>::id = Bool;
+	// Initialize type::Traits id's
+	Traits<int>::id = Int;
+	Traits<double>::id = Float;
+	Traits<std::string>::id = String;
+	Traits<bool>::id = Bool;
 }
 

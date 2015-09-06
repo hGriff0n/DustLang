@@ -2,17 +2,22 @@
 
 // Use to declare initialization functions 
 
+#define EVAL
+
 namespace dust {
 	class EvalState;
 
 	namespace impl {
-		struct Type;
-		class TypeSystem;
 		class RuntimeStorage;
 		class GC;
 	}
+
+	namespace type {
+		struct Type;
+		class TypeSystem;
+	}
 }
 
-void initTypeSystem(dust::impl::TypeSystem&);
-void initConversions(dust::impl::TypeSystem&);
-void initOperations(dust::impl::TypeSystem&);
+void initTypeSystem(dust::type::TypeSystem&);
+void initConversions(dust::type::TypeSystem&);
+void initOperations(dust::type::TypeSystem&);

@@ -3,7 +3,7 @@
 #include "Grammar.h"
 
 namespace dust {
-	namespace interpreter {
+	namespace parse {
 		/*
 		*  Parser Actions
 		*/
@@ -15,26 +15,26 @@ namespace dust {
 		template <> struct action<body> {
 			static void apply(const input& in, AST& ast) {
 				// Should I perform escaping here or at eval?
-				ast.push(makeNode<Literal>(in.string(), TypeTraits<std::string>::id));
+				ast.push(makeNode<Literal>(in.string(), type::Traits<std::string>::id));
 			}
 		};
 
 		// Literal Actions
 		template <> struct action<decimal> {
 			static void apply(const input& in, AST& ast) {
-				ast.push(makeNode<Literal>(in.string(), TypeTraits<double>::id));
+				ast.push(makeNode<Literal>(in.string(), type::Traits<double>::id));
 			}
 		};
 
 		template <> struct action<integer> {
 			static void apply(const input& in, AST& ast) {
-				ast.push(makeNode<Literal>(in.string(), TypeTraits<int>::id));
+				ast.push(makeNode<Literal>(in.string(), type::Traits<int>::id));
 			}
 		};
 
 		template <> struct action<boolean> {
 			static void apply(const input& in, AST& ast) {
-				ast.push(makeNode<Literal>("1", TypeTraits<bool>::id));
+				ast.push(makeNode<Literal>("1", type::Traits<bool>::id));
 			}
 		};
 
@@ -136,7 +136,8 @@ namespace dust {
 					if (std::dynamic_pointer_cast<type>(ast.at()))
 						list->addChild(ast.pop());
 					else
-						throw std::string{ "Parsing error: Attempt to construct heterogenous list" };		// or should i just quit execution here ???
+						break;
+						//throw std::string{ "Parsing error: Attempt to construct heterogenous list" };		// or should i just quit execution here ???
 				}
 
 //				if (typed) ast.push(makeNode<Debug>(","));
@@ -172,5 +173,5 @@ namespace dust {
 	}
 
 	template <typename Rule>
-	struct action : interpreter::action<Rule> {};
+	struct action : parse::action<Rule> {};
 }
