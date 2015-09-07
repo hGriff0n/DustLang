@@ -26,15 +26,15 @@ namespace dust {
 			}
 		};
 
-		template <> struct action<integer> {
+		template <> struct action<boolean> {
 			static void apply(const input& in, AST& ast) {
-				ast.push(makeNode<Literal>(in.string(), type::Traits<int>::id));
+				ast.push(makeNode<Literal>(std::string{ in.string() == "true" ? "1" : "0" }, type::Traits<bool>::id));
 			}
 		};
 
-		template <> struct action<boolean> {
+		template <> struct action<integer> {
 			static void apply(const input& in, AST& ast) {
-				ast.push(makeNode<Literal>("1", type::Traits<bool>::id));
+				ast.push(makeNode<Literal>(in.string(), type::Traits<int>::id));
 			}
 		};
 

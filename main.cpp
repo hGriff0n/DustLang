@@ -1,69 +1,109 @@
-//#include "Dust.h"
-//#include <iostream>
+#include "Interpreter\Actions.h"
+
+#include "Interpreter\Testing\dustTests.h"
+#include <iostream>
+
+#include <pegtl/analyze.hh>
+
+#define p(x) std::cout << (x)
+#define ps(x) p(x) << " :: "
+#define pl(x) p(x) << "\n"
+#define nl() pl("")
+
+// Current testing devoted to
+	// Systems for implementing dynamic variable storage and recall
+	// Possibly also for testing the development of type_traits style classes
+
+// TODO:
+	// Step Back and Determine Where I Am
+		// Update the "ToDo" list to prioritize important/simple improvements and updates
+		// Escape string characters
+		// Consider changing name of _op() due to semantical differences
+		// Consider adding a push_ref method to CallStack (roughly mirrors pop_ref)
+		// What if a type inherits from String ???
+		// Go over and update documentation
+
+// Things to work on
+	// Improving and consolidating the API
+	// Namespace naming for best code organization
+	// After the rewrite is finished, move the dust documents into this project and update the documentation
+
+// Other Stuff and Pipe Dreams
+	// Generalize RuntimeStorage and move the Garbage Collecter to "targeting" Storage (instead of inheriting)
+		// Strings would have a different RuntimeStorage instance than tables, userdata, etc. (though most of the functions can be reused)
+		// Perform these changes at the same time if I perform them at all
+			// Generalizing the Garbage Collecter to "target" storage does not exactly require generalizing Storage however
+	// Contrive of a better way of getting dust type from c++ type
+
+// I also need to merge my current work on dust semantics and syntax with the documents in DustParser (keed documentation intact)
 
 
-#include "Lexer/Lexer.h"
-//#include "Parsers/Parser.h"
-//#include "Interpreter/Interpreter.h"
+using namespace dust;
 
-#define DUST_STAGE DustLexer
-#define bad_error(x)	\
-		std::cout << x;	\
-		std::cin.get();	\
-		exit(0)
-
-std::vector<std::ofstream> getLogs(std::_Iosb<int>::_Openmode open) {
-	std::vector<std::ofstream> ret{};
-
-	int num_logs = 10;
-	//std::cout << "Num logs: ";
-	//std::cin >> num_logs;
-
-	char curr = '0';
-	std::string def = "DustTestLog";
-
-	for ( int x = 0; x != num_logs; ++x )
-		ret.emplace_back(def + (curr++) + ".txt", open);			// the current system only allows 10 logs (there's not character '10')
-
-	return ret;
-}
-
-std::string filename(std::string input) {
-	return input;
-}
-
+// Assign a Value
 template <typename T>
-void advance(int& idx, std::vector<T>& vec) {
-	idx = (++idx) % vec.size();
+void assign_value(impl::Value&, T, impl::GC&);
+void assign_value(impl::Value&, impl::Value&, impl::GC&);
+
+
+template <class ostream>
+void print(ostream& s, std::shared_ptr<parse::ASTNode>& ast) {
+	(s << ast->print_string("|")).flush();
 }
 
 
-// LNK 2019: unresolved external symbol _WinMain@16 referenced in function :int __cdecl invoke_main(void)" (?invoid_main@@YAHXZ)
 int main(int argc, const char* argv[]) {
-	// Setup logging system
-	std::vector<std::ofstream> logs = getLogs(std::ios::trunc);
-	for ( auto& log : logs )
-		if ( !log.is_open() ) {
-			bad_error("Error opening log file");	// Need way of getting the specific log file
+	std::cout << "Analyzing `dust::grammar`.....\n";
+	pegtl::analyze<grammar>();
+	std::cout << "\n" << std::endl;
+
+	parse::AST parse_tree;
+	std::string input;
+	bool isResString;
+	
+	EvalState e;
+	initState(e);
+
+	std::cout << "> ";
+	while (std::getline(std::cin, input) && input != "exit") {
+		try {
+			pegtl::parse<grammar, action>(input, input, parse_tree);
+
+			print(std::cout, parse_tree.at());
+			isResString = parse_tree.pop()->eval(e).is<std::string>();
+
+			// Need to make a generic 'pop' here
+				// Or I can insist that printable equates to String convertible
+			std::cout << ":: "
+					  << (isResString ? "\"" : "")
+					  << (std::string)e
+				      << (isResString ? "\"" : "")
+				      << "\n" << std::endl;
+
+		} catch (pegtl::parse_error& e) {
+			std::cout << e.what() << std::endl;
+		} catch (std::out_of_range& e) {
+			std::cout << e.what() << std::endl;
+		} catch (std::string& e) {
+			std::cout << e << std::endl;
 		}
 
-
-	// Setup testing objects and repl loop
-	DustDev tester = DUST_STAGE{};
-	std::string input;
-	int curr_log = 0;
-
-
-	// Testing repl loop
-	while ( true ) {
-		std::cout << curr_log << "> ";
-		std::getline(std::cin, input);
-		
-		if ( input == "exit" ) break;
-		tester.run(filename(input)).log(logs[curr_log]);
-
-		advance(curr_log, logs);
+		parse_tree.clear();
+		std::cout << "> ";
 	}
+}
 
-	std::cout << "\nThe repl loop has been exited.";
+
+template <typename T>
+void assign_value(impl::Value& v, T val, impl::GC& gc) {
+	if (v.type_id == type::Traits<std::string>::id) gc.decRef(v.val.i);
+
+	v = make_value(val, gc);
+}
+
+void assign_value(impl::Value& v, impl::Value& a, impl::GC& gc) {
+	if (v.type_id == type::Traits<std::string>::id) gc.decRef(v.val.i);
+	if (a.type_id == type::Traits<std::string>::id) gc.incRef(a.val.i);
+
+	v = a;
 }
