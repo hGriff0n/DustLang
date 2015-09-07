@@ -9,26 +9,29 @@ Table Declaration
 
 	Note that entry_list does not function like multiple assignment
 		Inter-table referencing is permissable during declaration
+			Should it be?
 			ie. [ x: 3, y: x + 3 ] = [ x: 3, y: 6 ]
+
 		Could this mean that multiple assignment is permissable within a table ???
 			ie. [ x, y: 3, 6 ] = [ x: 3, y: 6 ]
 			It might be useful to restrict this to enable easier parsing of pattern matching
 				Allows the ':'/',' to differentiate between the two
 
 Table access
-	Table values are accessed through the '.' and '[]' characters
+	Table values are accessed through '.' and '[]'
 		Only Int and String literals can be indexed through '.'
 			The entire process of enabling '.' is basically a combination of
 				Converting the raw text to String or Int literals (adding "" if String)
 				Replacing the '.<literal>' with '[<literal>]'
 					This implies that '.' is entirely a syntactic sugar
-			Note: All numeric strings (ie. "1") require using '[]' (table.1 = table[1])
+			Note: All numeric strings (ie. "1") require using '[]' (table.1 => table[1] not table["1"])
 
 		Accessing a table with a variable can only be performed using '[]'
-			Using '.' syntax would translate to t.<var> = t["$var"]
+			Using '.' syntax would translate t.<var> to t["$var"]
 
 	It should be possible to restrict the types of keys and values within a table
-		ie. int_arr: [ _keys: Int, _val: Int ]			## int_arr: [ _keys: _vals: Int ]
+		int_arr: [ _keys: Int, _val: Int ]			## int_arr: [ _keys: _vals: Int ]
+		int_arr: [ _keys: \x -> x <- Int, _val: _keys ]
 
 
 Set Comprehension Syntax
@@ -42,7 +45,8 @@ Set Comprehension Syntax
 		This involves scoping/closure work however
 		Also possible to translate to [\ -> * | x in l, r in r, true] (currying)
 
-	Do these constructions implicitly work only on tables with integer keys (ie. spec)
+	Do these constructions implicitly work only on integer keys
+		Or can they be used on string keys (This doesn't make much sense though)
 
 Set Ranges
 	Syntax
@@ -50,7 +54,8 @@ Set Ranges
 
 	I'm using the same symbol for ranges and tables
 		Technically ranges are just converted to tables
-			They might be instead converted to generators (if they are accepted)
+			They might be instead converted to generators (if this formulation is accepted)
+				These would act similar to Haskell's lazy evaluation
 			The syntax is just an easy way to specify a large series of 
 
 	Semantics
@@ -67,6 +72,7 @@ Set Ranges
 		More complex steps increments can be specified by providing a lambda
 			Currently the lambda is passed the index where the value will be stored
 			ex. [1..28, \x -> ^2] = [1, 4, 9, 16, 25]
+				Or should this compute the first 28 squares ???
 		Ranges work on variables (don't require literals)
 			x: 5
 			[1..x] = [1, 2, 3, 4, 5]
@@ -89,7 +95,7 @@ Pattern Matching (Table specific syntax)
 		def add(t <- Table)
 			(\x, y -> x + y)(*t)			## Note that pattern matching (in this case) is just syntactical sugar
 
-		This pattern will only match arrays of size 0, 1, or 2 (provided a pattern is not provided for those)
+		The pattern will only match arrays of size 0, 1, or 2 (provided a pattern is not provided for those)
 			It could be possible to define some functions that would accept non-arrays but I don't know how that would be well defined/consistent
 			If an array of size 0 or 1 is passed, than the leftover "args" are assigned nil (much like normal function arg assignment)
 
@@ -114,28 +120,29 @@ Pattern Matching (Table specific syntax)
 		If I can enable the syntax in table arguments, I can enable it in variable assignment
 
 Interaction between tables and constant-ness (Metamethods and 'let' syntax)
-	Entries can be added but not changed (see NeatTricks memoize example)
-		Use 'let' fields								## Generalization of the constant declarization rules (they're not exactly defined though)
-			const_table: [ let x: 5	]
+	There's three different levels of constant-ness that can be contrived using tables
+		Entries can be added but not changed (see NeatTricks memoize example)
+			Use 'let' fields								## Generalization of the constant declarization rules (they're not exactly defined though)
+				const_table: [ let x: 5	]
 
-		For a more generalized (ie. table-wide) behavior
-			_nindex: \x,y -> y and (let self[x]: y)		## wouldn't this call _nindex ???
+			For a more generalized (ie. table-wide) behavior
+				_nindex: \x,y -> y and (let self[x]: y)		## wouldn't this call _nindex ???
 
-		Or disable reassignment
-			_index: \x -> self[x]						## const_table.x: 3 is const_table._index("x", 3) (maybe)
+			Or disable reassignment
+				_index: \x -> self[x]						## const_table.x: 3 is const_table._index("x", 3) (maybe)
 
-	Entries can be changed but not added
-		Disable assignment by redefining the _nindex metamethod
-			fixed_table: [
-				_nindex: \ -> nil					## fixed by proxy
-				_nindex: noAssign					## _newindex: nil (ie. is nil(x, y) valid syntax/semantics ???)
-			]
+		Entries can be changed but not added
+			Disable assignment by redefining the _nindex metamethod
+				fixed_table: [
+					_nindex: \ -> nil					## fixed by proxy
+					_nindex: noAssign					## _newindex: nil (ie. is nil(x, y) valid syntax/semantics ???)
+				]
 
-	Entries can not be added or changed
-		Use 'let' syntax (declare the table with let)	## This solution could also solve P1 behavior (most languages treat this as such)
-			let immutable_table: []						## I feel that this option is simpler and more consistent however
-		Disable reassignment and assignment by redefining _index and _nindex
-			This is a combination to the above "solutions" 
+		Entries can not be added or changed
+			Use 'let' syntax (declare the table with let)	## This solution could also solve P1 behavior (most languages treat this as such)
+				let immutable_table: []						## I feel that this option is simpler and more consistent however
+			Disable reassignment and assignment by redefining _index and _nindex
+				This is a combination to the above "solutions" 
 
 	Can possibly extract some of the specific details to some outside function/factory/flag/metatmethod
 		Automates the process of disabling _nindex/_index as shown in the first two solutions
@@ -173,8 +180,7 @@ Table functions
 	def replicate(item, n <- Int)
 		if n < 1 []											## I don't have to check if n exists!
 		elseif n = 1 [item]
-		else replicate(item, Int(n / 2)) + item + replicate(item, Int((n - 1) / 2))		## Int(n) = floor(n)
-		## else self(item, Int(n / 2)) + item + self(item, Int((n - 1) / 2))
+		else self(item, n / 2) + item + self(item, (n - 1) / 2)		## Int(n) = floor(n), Int converter gets called automatically
 
 	has: \t,v -> t ^ v
 	map: \t,fn -> [fn(x) | x in t]
@@ -185,9 +191,8 @@ Table functions
 Metamethods
 	All syntactical operations basically boil down to calling specific functions, or metamethods
 		These functions can be modified/defined to enable certain behaviors to be associated with certain syntax (such as the addition of two Ints using '+')
-			In this case, the Int type table defines _op+ to do the addition (largely by forwarding to a system function)
+			In this case, the Int type table defines _op+ to do the addition
 			The question is how should metamethods be handled with regards to literals
-				My current idea is to translate '<literal>' to '<type>(<literal>)'
 				Or I could have the "metamethoding" solved purely at runtime (through scoping-esque prcesses)
 		All (default) metamethods are prepended by a single '_'
 
@@ -224,10 +229,7 @@ Table/Set operations
 		This means that [] + 3 = [] + [3]
 
 		Defining [] + 3 is easy, but how can I define 3 + []??
-			Case Int._op+ with a "type table" (intrusive and complex)
-				Int._op+: \o -> o <- Number and add(self, Int(o)) or o._op+(self)				## This isn't exactly a type table (this pattern could have a recur loop)
-				Int._op+: \o -> o ^ Int.add_types and add(self, Int(o)) or o._op+(self)			## Int.add_types is a type table
-			Add a global "type table" that defines precendence
+			Defining Table._op+ in a truly generic manner is the actual difficulty here
 
 	let l, t: [1, 2, 3, 4], [3, 4, 5, 6,]
 

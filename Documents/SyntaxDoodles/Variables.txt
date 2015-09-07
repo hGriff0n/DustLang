@@ -7,24 +7,28 @@ Assignment
 		In the case of multiple assignment, the value of the last assignment
 
 	Compound Assignment
-		let? <var>:<op> <value> is equivalent to let? <var>: <var> <op> <value>
+		let? <var>:<op> <expr> is equivalent to let? <var>: <var> <op> (<expr>)
 			ie. x:+ 5 = x: x + 5
 
-		The question is whether this can be used with var_list and expr_list
-			x, y:+ 5, 3		=> x, y: x + 5, y + 3
-			x, y:+ 5		=> x, y: x + 5, y + 5	or x, y: x + 5, y + nil
-				The first makes it a bit odd in relation to multiple assignment/function rules but I feel it is the more intuitive option
+		There's a small question as to the integration with multiple assignment when there are more variables than values
+			Consider "x, y:+ 5"
+				x, y: x + 5, y + 5
+				x, y: x + 5, y + nil			## Current implementation (switch nil with 0)
+
+			The first might be a bit odd to implement (also in regards to interaction with other semantics) but I feel it is the more intuitive option
 
 	Multiple Assignment
-		This is roughly similar to perform a sequence of assignments
+		This is roughly similar to perform a sequence of assignments (mapping the list of variables to the list of expressions)
 			The 'let' at the beginning is distributed to each "individual" assignment
 				Ie. every varable declared/assigned will be constant
 
-			The list of expressions are evaluated before the list of vars
-				This allows easy swap implementation (a, b: b, a)
+			The list of expressions are evaluated before the list of variables
+				This allows easy swap implementation			## a, b: b, a
 				What if the number of expressions > number of variables
-					The same question is asked in Functions/Function Argument Passing
-					This could be useful, but its expensive and wasteful
+					Current implementation is to execute only the number of expressions that can be assigned to a variable
+					It could be useful to execute all expressions, but possibly expensive and wasteful
+						The same question is asked in Functions/Function Argument Passing
+
 		Values are assigned to variables in a left-right order (splat notwithstanding)
 			The first value in the <expr_list> is assigned to the first variable in the <var_list>
 			It might be advantageous to think of these two items as being removed from their respective lists
@@ -37,18 +41,22 @@ Type Checking
 	Static Typing				## Be sure to adjust Function Type Checking/Type Testing with any syntax
 		let <var> <- <expr> | <type>
 
-		The interpreter now has the capability to assign a variable while statically typing
-			This is done by inferring the type of an expression
-			The old syntax of let <var> <- <type> is still viable
-				However it is likely to be deprecated in the future
-					Although it still has it's uses inside of function declarations
-				It invalidates the guarantee that a "typed" variable has a non-nil value
-					The small time inbetween typing and assigning, <var> = nil
+		See TypeNotes for more info on the benefits of static typing
+
+		All "static"-ally typed variables must hold a non-nil value
+			This is the main impetus behind the "let <var> <- <expr>" syntax
+				This allows the static typing to be inferred from the type of the executed expression
+
+			"let <var> <- <type>" is still a valid syntax
+				However, if <var> is unitialized (= nil), then this code will throw an exception
+				Note that "let <var> <- <expr>" => "<var>: <expr> and <var> <- type(<var>)"
 
 		Can I drop the let ???
+			Slight collision with constant syntax
 
-		Inheritance
-			If a var is statically typed, it will be able to hold values of any child type (but not a parent type, nil possible exception)
+		Possible Values (given static type a)
+			A statically typed variable can hold values of any type t, where t <= a or t -> a
+			Setting a to Nil is equivalent to removing static typing
 
 	Type Testing
 		Definite Syntaxes
@@ -90,11 +98,8 @@ Nil and nil
 	Nil is a special type inside of dust
 		It is the default type of all dust variables
 			Unless the variable has been statically typed, (var.is Nil) = true
-				If the variable is statically typed, then (var.is Nil) = false		## This includes function parameters (problems with default parameters)
-					Note: Type checking only occurs upon assignment/initialization	## var = nil until var: ... (where ... is of type(var))
-						Or should I rather automatically assign a default type value to the variable
-					This is largelly a syntactical failing							## No good syntax for performing both at once
-				Also note that literals cannot be of type Nil
+				If the variable is statically typed, then (var.is Nil) = false
+				Also note that literals cannot be of type Nil (excepting nil)
 			Coincides with the default value of all variables being nil
 
 		It is a weak type
@@ -105,12 +110,6 @@ Nil and nil
 					var can also access any Nil specific functions
 
 			Nil largely signifies the possible absence of a value
-
-	let x <- Int
-	print(x)							## outputs 'nil (print takes untyped arguments)
-
-	x: 5
-	x: nil								## error: Can't assign nil to a typed variable
 
 	Indexing a nil value does not inherently imply an error
 		For functions defined on Nil this is correct, useful, and well defined

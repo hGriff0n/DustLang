@@ -40,3 +40,5 @@ How will I handle table indexing and assignment?
 		However does this work for assignments as well as access
 
 There's still the problem of how to get every type to automatically convert to tables
+
+_op() has similar naming convention to binary operators but is not a binary operator

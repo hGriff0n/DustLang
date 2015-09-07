@@ -3,6 +3,7 @@ If we allow all types to define metamethods, it is possible to create the weird 
 
 Could I also define '_op^' for strings to performing indexing ???
 	String._op^: \x -> (x <- Int) and self[x] or Table(self) ^ x	## "Hello" ^ 3 = 'l'
+	This would entail that operators can take on values of different types
 
 Could I redefine table literals to expect an expr_list instead of a entry_list
 	Basically turns the table into a special type of block

@@ -60,19 +60,17 @@ Dust OOP
 
 Inheritence syntax
 	<type> ++ <type_list>
-		This does mean that dust supports multiple inheritance
-		This "imports" the definitions for any functions not already defined from the type_list
-			If function overloading is accepted, this will import alternate overloads
+		This syntax hints that dust supports multiple inheritance
+			However, dust is only able to support singular inheritance
+		
+		The question is whether the syntax should be changed or the semantics should be adapted
 
 	type Bar [
 		width: 3,
 		height: 4
 	] ++ Foo
 
-	Currently the '++' is a special syntax for types that specifies a child relationship to the type_list
-		I could make it so that ++ is an extensible syntax (depends on implementation of type inheritance)
-		I could just switch to + to perform the same semantics
-		Or just leave it be
+	The '++' is a special syntax for types that specifies a child relationship to the type_list
 
 
 Interfaces (If I ever implement them)
@@ -103,15 +101,8 @@ Everything's an object (ala Ruby)
 
 
 Convertible Types
-	Way to define the behavior of "" + 5 = "5"				## Int is automatically converted to a string
-		You can always defined _op+ to perform a string cast first			## String(...)
-
-	User defined converters
-		Method of the form "def <type>.<type>()"			## ie. Int.String defines the conversion from Int to String
-
-	This may/may not be implemented
-		The main use is to implicitly convert types in function calls
-		Otherwise you can always use casting inside of the function
+	Method of the form "def <type>.<type>()"			## ie. Int.String defines the conversion from Int to String
+	See section on Converters in TypeNotes (or whatever I change it to)
 
 
 For Function Overloading Dispatch

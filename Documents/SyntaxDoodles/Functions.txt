@@ -243,12 +243,24 @@ Way to capture a variable number of arguments without resorting to the splat ope
 				\t, *ct -> ct and ([t] + ct) or t
 
 'self' for functions
-	Could I appropriate the 'self' idiom to handle recursion in functions
-		There's alot of parallels to the use in tables and types and the proposed use here
-		However, this interferes with the current definitions of "Table Functions"
+	Much like self can be used in Type methods and in tables to refer to the "parent" object
+		self can be used in functions to refer to the function itself
+		This is mainly useful as a shorthand for recursion, especially in anonymous lambdas
+	
+	However, Function self interferes with the ability to access Table and Type self
+		It could be possible to use the '.' scoping syntax to alleviate this
+		However, general scoping rules should take care of most intersections
+			The only real problems would be if the Table/Type defines _op() or the function indexable
 
 	def factorial(n <- Int)
 		n < 2 and 1 or n * self(n - 1)
+	##  n < 2 and 1 or n * factorial(n - 1)
 
-	def factorial(n <- Int)
-		n < 2 and 2 or n * factorial(n - 1)
+
+	The problem with function self can be demonstrated here
+		math: [
+			let min_fact: 2,
+		]
+
+		def math.factorial(n <- Int)
+			n < self.min_fact and 1 or n * self(n - 1)
