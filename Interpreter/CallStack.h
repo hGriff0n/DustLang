@@ -5,7 +5,7 @@
 #include "Stack.h"
 #include "GC.h"
 
-// Specialization of type::Traits<std::string>::make as I now have access to dust::impl::GC
+// Can I move this specialization to EvalState.h ??? NO
 template<> dust::impl::Value dust::type::Traits<std::string>::make(std::string s, dust::impl::GC& gc) {
 	return{ gc.loadRef(s), dust::type::Traits<std::string>::id };
 }
@@ -27,16 +27,18 @@ namespace dust {
 				// Push values onto the stack
 				template <typename T>
 				void push(T val) {
-					Stack::push(type::Traits<T>::make(val, gc));				// Something is wrong with type::Traits<std::string>::make (I'm able to "solve" it by "forward declaring" the string specialization, C4506)
+					Stack::push(type::Traits<T>::make(val, gc));
 				}
+				
 				void push(const char* val);
+				
 				void push(impl::Value val);	// impl::Value& ???
 
 
 				// Pop values from the stack
 				template <typename T>
 				T pop(int idx = -1) {
-					auto v = Stack::pop(idx);
+					auto v = pop(idx);
 
 					try_decRef(v);
 
@@ -51,15 +53,16 @@ namespace dust {
 				}
 
 
-				// Stack management (lua functions)
+				// Stack management
+
 				// Copies the value at the given index
 				void copy(int idx = -1);
 
 				// Replaces the value at the given index with the top
 				void replace(int idx = -1);
 
-				// 
-				void settop(int idx);
+				// Resizes the stack to the given size
+				void settop(int siz);
 
 
 				// Other Functions
@@ -68,14 +71,15 @@ namespace dust {
 				size_t pop_ref(bool decRef = false);
 				// A push_ref method is not really useful (the implementation is also slightly convoluted)
 
-				// Shorter pop
+				// Overload cast operator to perform a pop
 				template <typename T>
 				explicit operator T() {
 					return pop<T>(-1);
 				}
 
 				// Checks the type of the value at the given index
-				template<typename T> bool is(int idx = -1) {
+				template<typename T>
+				bool is(int idx = -1) {
 					return at(idx).type_id == type::Traits<T>::id;
 				}
 

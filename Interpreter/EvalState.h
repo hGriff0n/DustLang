@@ -9,7 +9,7 @@ namespace dust {
 	void initOperations(dust::type::TypeSystem&);
 
 	namespace type {
-		// Type Traits specializations (Could I move these into TypeTraits.h ???)
+		// Traits conversion specializations (Could I move these into TypeTraits.h ???)
 		template<> int Traits<int>::get(const impl::Value& v, impl::GC& gc) {
 			try {
 				if (v.type_id == Traits<double>::id)
@@ -61,13 +61,13 @@ namespace dust {
 			if (v.type_id == Traits<bool>::id)
 				return v.val.i;
 
-			throw std::string{ "Not convertible to Bool" };
+			return true;
 		}
 	}
 
 	class EvalState : public impl::CallStack {
 		private:
-			std::map<std::string, impl::Variable> vars;		// Possibly temporary depending on how the global environment is implemented
+			std::map<std::string, impl::Variable> vars;		// Subject to change depending on how the global environment is implemented
 			type::TypeSystem ts;
 			impl::GC gc;
 

@@ -35,12 +35,7 @@ namespace dust {
 
 
 				EvalState& eval(EvalState& e) {
-					// throw std::string{ "Attempt to evaluate a List node" };
-
-					for (auto i = begin(); i != end(); ++i)
-						(*i)->eval(e);
-
-					return e;
+					throw std::string{ "Attempt to evaluate a List node" };
 				}
 				
 				std::string to_string() { return ""; }
