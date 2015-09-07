@@ -1,7 +1,19 @@
 #include "AST.h"
+#include <regex>
 
 namespace dust {
 	namespace parse {
+		std::string escape(std::string s) {
+			std::string ret = s;
+			
+			return ret;
+		}
+
+		std::string unescape(std::string s) {
+			static std::regex escape{ "\\\\\"" };		// Escape \"
+
+			return std::regex_replace(s, escape, "\"");
+		}
 
 		void ASTNode::addChild(std::shared_ptr<ASTNode>& c) {
 			throw std::string{ "Attempt to add a child to " + node_type };
@@ -41,8 +53,8 @@ namespace dust {
 			return (id == type::Traits<int>::id ? " Int " :
 				id == type::Traits<double>::id ? " Float " :
 				id == type::Traits<bool>::id ? " Bool " :
-				id == type::Traits<std::string>::id ? " String " :
-				" Nil ") + val;
+				id == type::Traits<std::string>::id ? " String \"" :
+				" Nil ") + val + (id == type::Traits<std::string>::id ? "\"" : "");
 		}
 		std::string Literal::print_string(std::string buf) {
 			return buf + "+- " + node_type + to_string() + "\n";

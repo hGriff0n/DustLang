@@ -14,8 +14,7 @@ namespace dust {
 		// Workspace
 		template <> struct action<body> {
 			static void apply(const input& in, AST& ast) {
-				// Should I perform escaping here or at eval?
-				ast.push(makeNode<Literal>(in.string(), type::Traits<std::string>::id));
+				ast.push(makeNode<Literal>(unescape(in.string()), type::Traits<std::string>::id));
 			}
 		};
 

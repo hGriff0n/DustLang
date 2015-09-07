@@ -10,14 +10,9 @@
 #define pl(x) p(x) << "\n"
 #define nl() pl("")
 
-// Current testing devoted to
-	// Systems for implementing dynamic variable storage and recall
-	// Possibly also for testing the development of type_traits style classes
-
 // TODO:
 	// Step Back and Determine Where I Am
 		// Update the "ToDo" list to prioritize important/simple improvements and updates
-		// Escape string characters
 		// Consider changing name of _op() due to semantical differences
 		// Consider adding a push_ref method to CallStack (roughly mirrors pop_ref)
 		// What if a type inherits from String ???
@@ -29,11 +24,10 @@
 	// After the rewrite is finished, move the dust documents into this project and update the documentation
 
 // Other Stuff and Pipe Dreams
-	// Generalize RuntimeStorage and move the Garbage Collecter to "targeting" Storage (instead of inheriting)
+	// Generalize Storage and move the Garbage Collecter to "targeting" Storage (instead of inheriting)
 		// Strings would have a different RuntimeStorage instance than tables, userdata, etc. (though most of the functions can be reused)
 		// Perform these changes at the same time if I perform them at all
 			// Generalizing the Garbage Collecter to "target" storage does not exactly require generalizing Storage however
-	// Contrive of a better way of getting dust type from c++ type
 
 // I also need to merge my current work on dust semantics and syntax with the documents in DustParser (keed documentation intact)
 
@@ -66,29 +60,33 @@ int main(int argc, const char* argv[]) {
 
 	std::cout << "> ";
 	while (std::getline(std::cin, input) && input != "exit") {
-		try {
-			pegtl::parse<grammar, action>(input, input, parse_tree);
+		if (input == "gc") {
+		
+		} else {
+			try {
+				pegtl::parse<grammar, action>(input, input, parse_tree);
 
-			print(std::cout, parse_tree.at());
-			isResString = parse_tree.pop()->eval(e).is<std::string>();
+				print(std::cout, parse_tree.at());
+				isResString = parse_tree.pop()->eval(e).is<std::string>();
 
-			// Need to make a generic 'pop' here
-				// Or I can insist that printable equates to String convertible
-			std::cout << ":: "
-					  << (isResString ? "\"" : "")
-					  << (std::string)e
-				      << (isResString ? "\"" : "")
-				      << "\n" << std::endl;
+				// Need to make a generic 'pop' here
+					// Or I can insist that printable equates to String convertible
+				std::cout << ":: "
+					<< (isResString ? "\"" : "")
+					<< (std::string)e
+					<< (isResString ? "\"" : "")
+					<< "\n" << std::endl;
 
-		} catch (pegtl::parse_error& e) {
-			std::cout << e.what() << std::endl;
-		} catch (std::out_of_range& e) {
-			std::cout << e.what() << std::endl;
-		} catch (std::string& e) {
-			std::cout << e << std::endl;
+			} catch (pegtl::parse_error& e) {
+				std::cout << e.what() << std::endl;
+			} catch (std::out_of_range& e) {
+				std::cout << e.what() << std::endl;
+			} catch (std::string& e) {
+				std::cout << e << std::endl;
+			}
+
+			parse_tree.clear();
 		}
-
-		parse_tree.clear();
 		std::cout << "> ";
 	}
 }

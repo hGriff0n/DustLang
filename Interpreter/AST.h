@@ -6,6 +6,8 @@
 
 namespace dust {
 	namespace parse {
+		std::string escape(std::string);
+		std::string unescape(std::string);
 
 		class ASTNode {
 			private:
