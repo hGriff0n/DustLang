@@ -1,6 +1,7 @@
 #include "Interpreter\Actions.h"
 
-#include "Interpreter\Testing\dustTests.h"
+//#include "Interpreter\Testing\Testing.h"
+#include "Testing.h"
 #include <iostream>
 
 #include <pegtl/analyze.hh>
@@ -10,27 +11,24 @@
 #define pl(x) p(x) << "\n"
 #define nl() pl("")
 
-// TODO:
-	// Step Back and Determine Where I Am
-		// Update the "ToDo" list to prioritize important/simple improvements and updates
-		// Consider changing name of _op() due to semantical differences
-		// Consider adding a push_ref method to CallStack (roughly mirrors pop_ref)
-		// What if a type inherits from String ???
-		// Go over and update documentation
+// TODO:		
+	// Update the PEGTL library if possible
 
 // Things to work on
 	// Improving and consolidating the API
-	// Namespace naming for best code organization
-	// After the rewrite is finished, move the dust documents into this project and update the documentation
+	// Improving and updating documentation
 
 // Other Stuff and Pipe Dreams
 	// Generalize Storage and move the Garbage Collecter to "targeting" Storage (instead of inheriting)
 		// Strings would have a different RuntimeStorage instance than tables, userdata, etc. (though most of the functions can be reused)
 		// Perform these changes at the same time if I perform them at all
 			// Generalizing the Garbage Collecter to "target" storage does not exactly require generalizing Storage however
+	// Consider changing name of _op() due to semantical differences
+	// Consider adding a push_ref method to CallStack (roughly mirrors pop_ref)
+	// Consider specializing the control template argument (see PEGTL for more)
+		// This would give me greater control over error messages and throwing from the parser stage
 
-// I also need to merge my current work on dust semantics and syntax with the documents in DustParser (keed documentation intact)
-
+// 
 
 using namespace dust;
 
@@ -58,12 +56,14 @@ int main(int argc, const char* argv[]) {
 	EvalState e;
 	initState(e);
 
+
 	std::cout << "> ";
 	while (std::getline(std::cin, input) && input != "exit") {
 		if (input == "gc") {
 		
 		} else {
 			try {
+				pl(input);
 				pegtl::parse<grammar, action>(input, input, parse_tree);
 
 				print(std::cout, parse_tree.at());
@@ -104,4 +104,10 @@ void assign_value(impl::Value& v, impl::Value& a, impl::GC& gc) {
 	if (a.type_id == type::Traits<std::string>::id) gc.incRef(a.val.i);
 
 	v = a;
+}
+
+void dust::test::run_tests(EvalState& e) {
+	Tester t{ e };
+
+	t.require_eval("3", "3");
 }

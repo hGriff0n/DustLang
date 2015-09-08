@@ -65,6 +65,10 @@ namespace dust {
 		}
 	}
 
+	namespace test {
+		class Tester;
+	}
+
 	class EvalState : public impl::CallStack {
 		private:
 			std::map<std::string, impl::Variable> vars;		// Subject to change depending on how the global environment is implemented
@@ -98,6 +102,7 @@ namespace dust {
 			bool isStatic(std::string var);
 
 			friend void initState(EvalState&);
+			friend class test::Tester;
 	};
 
 
