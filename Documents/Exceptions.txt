@@ -1,0 +1,91 @@
+All current thrown object messages
+
+base
+logic_error < base								|	For errors regarding program logic
+parse_error < base								|	For errors regarding parsing and ast construction
+runtime_error < base							|	For errors regarding api operative behavior
+dust_error < base								|	For errors regarding dust behavior and semantics
+
+===
+
+Runtime Errors
+	bad_api_call								|	For errors regarding api calls, etc.
+	stack_state_error							|	For errors regarding the state of the stack
+	storage_access_error						|	For errors regarding getting and setting data from Storage
+	conversion_error							|	For errors regarding value conversions
+
+	incomplete_node < bad_api_call				|	Attempt to evaluate node without key node data
+	bad_node_eval < bad_api_call				|	Faulty attempt to evaluate node
+	stack_type_error < stack_state_error		|	Object on the stack is an expected type
+	null_exception < storage_access_error		|	Attempt to use a nullptr str_record*
+
+Storage.cpp
+	Invalid Record Access																		|	storage_access_error
+	Nullptr Exception																			|	null_exception
+AST.cpp
+	Attempt to use assign node without linked var_list											|	incomplete_node
+	Attempt to use assign node without linked expr_list											|	incomplete_node
+EvalState.cpp
+	Bad API Call: Attempt to use callOp on a non-operator										|	bad_api_call
+AST.h
+	Attempt to evaluate a list node																|	bad_node_eval
+CallStack.cpp
+	Object at given idx is not a String															|	stack_type_error
+EvalState.h
+	Not convertible to _																		|	conversion_error
+
+===
+
+Dust Errors
+	dispatch_error								|	Method not found or other errors in dispatch/indexing
+	illegal_operation							|	Illegal or undefined operations
+	deprecated_operation						|	Past legal operations, Future illegal operations
+
+	unimplemented_operation < illegal_operation	|	Undefined operations
+	converter_not_found < dispatch_error		|	Converter not found
+
+AST.cpp
+	No literal can be constructed of the given type												|	dust_error
+	Dust does not currently support ternary operators											|	unimplemented_operation
+EvalState.cpp
+	No converter from the value to the variable's static type									|	converter_not_found
+	Attempt to reassign a constant variable														|	illegal_operation
+	No converter from the current value to the given type										|	converter_not_found
+	Dispatch error: Method is not defined for objects of type									|	dispatch_error
+
+===
+
+Parse Errors
+	missing_nodes								|	When an ast node cannot be constructed because of a general lack of nodes on the stack
+	operands_error								|	Attempt to call addChild which the Node cannot support
+	invalid_ast_construction					|	Attempt to construct an ast using nodes that the node cannot take (Needs work)
+
+	missing_node_x < missing nodes				|	When an ast node cannot be constructed because of the lack of a specific node
+
+AST.cpp
+	Attempt to add child to Node																|	operands_error
+	Assignment is a binary operation															|	operands_error
+Actions.h
+	// Parsing error: Attempt to construct heterogenous list									|	parse_error
+	Parsing error: Attempt to construct Operator node without an operator						|	missing_node_x
+	Parsing error: Attempt to construct _ node without an operator								|	missing_node_x
+	Parsing error: Attempt to construct Operator node with less than 2 nodes on the stack		|	missing_nodes
+	Parsing error: Attempt to construct _ node with less than 3 nodes on the stack				|	missing_nodes
+
+===
+
+Logic Error
+	out_of_bounds								|	Indexing out of bounds
+	illegal_operation							|	Attempt to call an illegal operation
+	syntax_error								|	Invalid dust syntax used in a C++ API call
+
+Stack.h	
+	Invalid index to _																			|	out_of_bounds
+TypeTraits.h
+	Attempt to use Traits::get for undefined C++ type											|	illegal_operation
+TypeSystem.cpp
+	_ is not a type identifier																	|	dust_error
+
+
+
+pegtl::parse_error

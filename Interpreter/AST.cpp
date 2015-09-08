@@ -45,7 +45,7 @@ namespace dust {
 				e.push(val);
 
 			else
-				throw std::string{ "No literal" };
+				throw std::string{ "No literal can be constructed of the given type" };
 
 			return e;
 		}
