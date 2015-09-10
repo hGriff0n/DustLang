@@ -1,6 +1,6 @@
 #include "EvalState.h"
+#include "Exceptions\dust.h"
 
-#include <iostream>
 
 namespace dust {
 
@@ -22,7 +22,8 @@ namespace dust {
 	// Convert the element to var.type_id if possible because var is statically typed
 		// Is only called if var.type_id != ts.Nil and at(idx).type_id is not a child of var.type_id
 	void EvalState::staticTyping(impl::Variable& var, bool isConst) {
-		if (!ts.convertible(var.type_id, at().type_id)) throw std::string{ "No converter from the assigned value to the variable's static type" };
+		if (!ts.convertible(var.type_id, at().type_id)) 
+			throw error::converter_not_found{ "No converter from from the assigned value to the variable's static type" };
 
 		callMethod(ts.getName(var.type_id));
 		var.val = pop();
@@ -42,7 +43,7 @@ namespace dust {
 		auto& var = vars[name];
 
 		// If the variable is marked "constant"
-		if (var.is_const) throw std::string{ "Attempt to reassign a constant variable" };
+		if (var.is_const) throw error::illegal_operation{ "Attempt to reassign a constant variable" };
 
 		// If the variable is statically typed
 		if (var.type_id != ts.NIL && !ts.isChildType(at().type_id, var.type_id))
@@ -73,7 +74,7 @@ namespace dust {
 		if (vars.count(var) == 0) return;					// Temporary. Haven't determined what should happen in these circumstances
 
 		if (typ != ts.NIL) {								// If the variable is being statically typed
-			if (!ts.convertible(vars[var].type_id, typ)) throw std::string{ "No converter from the current value to the given type" };
+			if (!ts.convertible(vars[var].type_id, typ)) throw error::converter_not_found{ "No converter from the current value to the given type" };
 
 			getVar(var);
 			callMethod(ts.getName(typ));
@@ -106,14 +107,14 @@ namespace dust {
 	// Operators
 	EvalState& EvalState::callOp(std::string fn) {
 		if (fn.at(0) == '_' && fn.at(2) == 'u') return callMethod(fn);
-		if (fn.at(0) != '_' || fn.at(2) != 'p') throw std::string{ "Bad API Call: Attempt to callOp on a non-operator" };
+		if (fn.at(0) != '_' || fn.at(2) != 'p') throw error::bad_api_call{ "Attempt to callOp on a non-operator" };
 
 		auto l = at(-2).type_id, r = at().type_id;
 		auto com_t = ts.com(l, r, fn);					// common type
 		auto dis_t = ts.findDef(com_t, fn);				// dispatch type (where fn is defined)
 
 		// This error isn't very explanatory though
-		if (dis_t == ts.NIL) throw std::string{ "Dispatch error: Method " + fn + " is not defined for objects of type " + ts.getName(dis_t) };
+		if (dis_t == ts.NIL) throw error::dispatch_error{ "Method " + fn + " is not defined for objects of type " + ts.getName(dis_t) };
 
 		// Determine whether com selected a converter and perform conversions
 		if ((com_t == l ^ com_t == r) && ts.convertible(l, r)) {
@@ -123,7 +124,6 @@ namespace dust {
 
 		auto rets = ts.get(dis_t).ops[fn](*this);
 
-		//std::cout << fn << ": " << rets << std::endl;
 		return *this;
 	}
 
@@ -135,7 +135,6 @@ namespace dust {
 
 		auto rets = ts.get(dis_t).ops[fn](*this);
 
-		//std::cout << fn << ": " << rets << std::endl;
 		return *this;
 	}
 

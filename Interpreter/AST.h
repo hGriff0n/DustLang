@@ -37,7 +37,7 @@ namespace dust {
 
 
 				EvalState& eval(EvalState& e) {
-					throw std::string{ "Attempt to evaluate a List node" };
+					throw error::bad_node_eval{ "Attempt to evaluate a List node" };
 				}
 				
 				std::string to_string() { return ""; }
@@ -148,6 +148,8 @@ namespace dust {
 				virtual std::string print_string(std::string buf);
 				void addChild(std::shared_ptr<ASTNode>& c);
 		};
+
+		// class Keyword : public ASTNode {};
 
 		template<class T> std::string List<T>::node_type = "List<" + T::node_type + ">";
 	}

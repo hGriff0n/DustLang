@@ -19,3 +19,9 @@ Could I redefine table literals to expect an expr_list instead of a entry_list
 		x, y: 3, 5
 		t: [ y: x + 3, x: z: y ]			## t: [ y: x + 3, z: y, x: z ] (only 3 characters shorter)
 		print t				## outputs [y, 6], [x, 6], [z, 6]
+
+Multiple comparators
+	Take use of the work on multiple assignment to enable multiple comparisons to be performed as part of one expression
+
+	"i = 0 and j = 2" => "i, j = 0, 2"
+	"i = 0 and i = j" => "i, i = 0, j"

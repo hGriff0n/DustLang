@@ -1,4 +1,5 @@
 #include "TypeSystem.h"
+#include "Exceptions\logic.h"
 #include <cctype>
 
 namespace dust {
@@ -72,7 +73,7 @@ namespace dust {
 		TypeVisitor TypeSystem::newType(std::string t, size_t p) {
 			// Test that t is a type identifier
 			if (!t.empty() && !std::isupper(t[0]))
-				throw std::string{ t + " is not a valid type identifier" };
+				throw error::syntax_error{ t + " is not a valid dust type identifier" };
 
 			// Test for new type definition
 			if (type_id.count(t) == 0) {

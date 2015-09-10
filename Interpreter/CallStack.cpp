@@ -55,7 +55,7 @@ namespace dust {
 		}
 
 		size_t CallStack::pop_ref(bool decRef) {
-			if (!is<std::string>(-1)) throw std::logic_error{ "Object at given idx is not a String" };
+			if (!is<std::string>(-1)) throw error::stack_type_error{ "Object at given idx is not a String" };
 			if (decRef) gc.decRef(at(-1).val.i);
 
 			return pop(-1).val.i;

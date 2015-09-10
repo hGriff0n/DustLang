@@ -5,6 +5,8 @@
 #include "Stack.h"
 #include "GC.h"
 
+#include "Exceptions\runtime.h"
+
 // Can I move this specialization to EvalState.h ??? NO
 template<> dust::impl::Value dust::type::Traits<std::string>::make(std::string s, dust::impl::GC& gc) {
 	return{ gc.loadRef(s), dust::type::Traits<std::string>::id };

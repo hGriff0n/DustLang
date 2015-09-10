@@ -1,7 +1,6 @@
 #include "Interpreter\Actions.h"
 
-//#include "Interpreter\Testing\Testing.h"
-#include "Testing.h"
+#include "Interpreter\Testing\Testing.h"
 #include <iostream>
 
 #include <pegtl/analyze.hh>
@@ -56,6 +55,10 @@ int main(int argc, const char* argv[]) {
 	EvalState e;
 	initState(e);
 
+	test::Tester t{ e };
+
+	t.require_eval("a: 2.2", 2.2);
+
 
 	std::cout << "> ";
 	while (std::getline(std::cin, input) && input != "exit") {
@@ -79,10 +82,8 @@ int main(int argc, const char* argv[]) {
 
 			} catch (pegtl::parse_error& e) {
 				std::cout << e.what() << std::endl;
-			} catch (std::out_of_range& e) {
+			} catch (error::base& e) {
 				std::cout << e.what() << std::endl;
-			} catch (std::string& e) {
-				std::cout << e << std::endl;
 			}
 
 			parse_tree.clear();

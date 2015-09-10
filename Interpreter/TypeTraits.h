@@ -4,6 +4,8 @@
 //#include "GC.h"				// Wouldn't need to include <string>
 #include <string>
 
+#include "Exceptions\logic.h"
+
 // type::Traits is currently only referenced in CallStack.h, Stack.h (id only), and testing.cpp
 	// Should I include "GC.h" here I can move the explicit specializations for get and the string specialization for make into this file
 	// Should reduce possibilities of future errors (though I still need to find out how the error occurred (for extensibility))
@@ -23,7 +25,7 @@ namespace dust {
 			}
 
 			static T get(const impl::Value& v, impl::GC& gc) {
-				throw std::string{ "Attempt to use get method for undefined C++ type" };
+				throw error::illegal_template{ "Attempt to use Traits<T>::get on undefined type T" };
 			}
 		};
 

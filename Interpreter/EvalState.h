@@ -22,7 +22,7 @@ namespace dust {
 					return std::stoi(gc.deref(v.val.i));
 			} catch (...) {}
 
-			throw std::string{ "Not convertible to Int" };
+			throw error::conversion_error{ "Not convertible to Int" };
 		}
 
 		template<> double Traits<double>::get(const impl::Value& v, impl::GC& gc) {
@@ -38,7 +38,7 @@ namespace dust {
 				}
 			} catch (...) {}
 
-			throw std::string{ "Not convertible to Float" };
+			throw error::conversion_error{ "Not convertible to Float" };
 		}
 
 		template<> std::string Traits<std::string>::get(const impl::Value& v, impl::GC& gc) {
@@ -54,7 +54,7 @@ namespace dust {
 			else if (v.type_id == Traits<double>::id)
 				return std::to_string(v.val.d);
 
-			throw std::string{ "Not convertible to String" };
+			throw error::conversion_error{ "Not convertible to String" };
 		}
 
 		template<> bool type::Traits<bool>::get(const impl::Value& v, impl::GC& gc) {

@@ -2,6 +2,8 @@
 
 #include "Grammar.h"
 
+#include "Exceptions\parsing.h"
+
 namespace dust {
 	namespace parse {
 		/*
@@ -82,9 +84,9 @@ namespace dust {
 
 						// stack: ..., {op}
 					else
-						throw std::string{ "Parsing error: Attempt to construct Operator node without an operator" };
+						throw error::missing_node_x{ "Attempt to construct Operator node without an operator" };
 				} else
-					throw std::string{ "Parsing error: Attempt to construct Operator node with less than 2 nodes on the stack" };
+					throw error::missing_nodes{ "Attempt to construct Operator node with less than 2 nodes on the stack" };
 			}
 		};
 
@@ -108,9 +110,9 @@ namespace dust {
 
 						// stack: ..., {op}
 					} else
-						throw std::string{ "Parsing error: Attempt to construct " + Node::node_type + " node without an operator" };
+						throw error::missing_node_x{ "Attempt to construct " + Node::node_type + " node without an operator" };
 				} else
-					throw std::string{ "Parsing error: Attempt to construct " + Node::node_type + " node with less than 3 nodes on the stack" };
+					throw error::missing_nodes{ "Attempt to construct " + Node::node_type + " node with less than 3 nodes on the stack" };
 			}
 		};
 

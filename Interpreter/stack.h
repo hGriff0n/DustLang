@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include "Exceptions\logic.h"
 
 namespace dust {
 
@@ -39,7 +40,7 @@ namespace dust {
 				}
 
 				virtual Value pop(int idx = -1) {
-					if (invalidIndex(normalize(idx))) throw std::out_of_range{ "Invalid index to Stack::pop" };
+					if (invalidIndex(normalize(idx))) throw error::out_of_bounds{ "Invalid index to Stack::pop" };
 
 					auto ret = s[idx];
 					s.erase(s.begin() + idx);
@@ -48,7 +49,7 @@ namespace dust {
 
 				// References the value at the given index
 				virtual Value& at(int idx = -1) {
-					if (invalidIndex(normalize(idx))) throw std::out_of_range{ "Invalid index to Stack::at" };
+					if (invalidIndex(normalize(idx))) throw error::out_of_bounds{ "Invalid index to Stack::at" };
 
 					return s[idx];
 				}
@@ -60,8 +61,8 @@ namespace dust {
 
 				// Swaps the values at the given index
 				void swap(int idx1 = -1, int idx2 = -2) {
-					if (invalidIndex(normalize(idx1)) || invalidIndex(normalize(idx2))) 
-						throw std::out_of_range{ "Invalid index to Stack::swap" };
+					if (invalidIndex(normalize(idx1)) || invalidIndex(normalize(idx2)))
+						throw error::out_of_bounds{ "Invalid index to Stack::swap" };
 
 					std::swap(s[idx1], s[idx2]);
 				}

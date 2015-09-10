@@ -1,6 +1,9 @@
 #include "AST.h"
 #include <regex>
 
+#include "Exceptions\parsing.h"
+#include "Exceptions\dust.h"
+
 namespace dust {
 	namespace parse {
 		std::string escape(std::string s) {
@@ -16,7 +19,7 @@ namespace dust {
 		}
 
 		void ASTNode::addChild(std::shared_ptr<ASTNode>& c) {
-			throw std::string{ "Attempt to add a child to " + node_type };
+			throw error::operands_error{ "Attempt to add child to node" };
 		}
 
 		std::string ASTNode::print_string(std::string buf) {
@@ -43,9 +46,8 @@ namespace dust {
 
 			else if (id == type::Traits<std::string>::id)
 				e.push(val);
-
-			else
-				throw std::string{ "No literal can be constructed of the given type" };
+			else 
+				throw error::dust_error{ "No literal can be constructed of the given type" };
 
 			return e;
 		}
@@ -78,7 +80,7 @@ namespace dust {
 		void Operator::addChild(std::shared_ptr<ASTNode>& c) {
 			if (!l) l.swap(c);
 			else if (!r) r.swap(c);
-			else throw std::string{ "Dust does not currently support ternary operators" };
+			else throw error::unimplemented_operation{ "Dust does not currently support ternary operators" };
 		}
 
 		VarName::VarName(std::string var) : name{ var } {}
@@ -95,8 +97,8 @@ namespace dust {
 			op = _op.size() ? "_op" + _op : _op;
 		}
 		EvalState& Assign::eval(EvalState& e) {
-			if (!vars) throw std::string{ "Attempt to use Assign node without a linked var_list" };
-			if (!vals) throw std::string{ "Attempt to use Assign node without a linked expr_list" };
+			if (!vars) throw error::incomplete_node{ "Attempt to use Assign node without a linked var_list" };
+			if (!vals) throw error::incomplete_node{ "Attempt to use Assign node without a linked expr_list" };
 
 			auto r_var = vars->rbegin(), l_var = vars->rend();
 			auto l_val = vals->begin(), r_val = vals->end();
@@ -143,7 +145,7 @@ namespace dust {
 				if (vals) return;
 			}
 
-			if (vars && vals) throw std::string{ "Assignment is a binary operation" };
+			if(vars && vals) throw error::operands_error{ "Assignment is a binary operation" };
 		}
 
 

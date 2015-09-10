@@ -1,5 +1,6 @@
 #include "Storage.h"
 
+#include "Exceptions\runtime.h"
 #include <iostream> // for "printAll" only
 
 auto pop(std::vector<size_t>& s) {
@@ -63,12 +64,12 @@ namespace dust {
 		}
 
 		size_t RuntimeStorage::setRef(size_t idx, size_t s) {
-			if (!validIndex(s)) throw std::string{ "Invalid Record Access" };		// idx will be checked in setRef(size_t, std::string)
+			if (!validIndex(s)) throw error::storage_access_error{ "Invalid Record Access" };		// idx will be checked in setRef(size_t, std::string)
 			return setRef(idx, store[s]->s);
 		}
 
 		size_t RuntimeStorage::setRef(size_t idx, str_record* s) {
-			if (!s) throw std::string{ "Nullptr Exception" };
+			if (!s) throw error::null_exception{ "Nullptr Exception" };
 			return setRef(idx, s->s);
 		}
 
