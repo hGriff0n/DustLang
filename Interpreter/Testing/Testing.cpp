@@ -1,5 +1,10 @@
 #include "Testing.h"
 
+#include "..\Exceptions\dust.h"
+#include "..\Exceptions\logic.h"
+#include "..\Exceptions\parsing.h"
+#include "..\Exceptions\runtime.h"
+
 #include <iostream>
 #include <iomanip>
 
@@ -23,8 +28,13 @@ namespace dust {
 			tree.pop()->eval(e);
 		}
 
-		decltype(std::cout)& printMsg(bool pass) {
+		decltype(std::cout)& Tester::printMsg(bool pass) {
 			return std::cout << "[" << (pass ? "O" : "X") << "] ";
+		}
+
+		void Tester::exitTest() {
+			std::cout << std::endl;
+			reset(e);
 		}
 
 		void Tester::require(const std::string& code, const std::string& test) {
@@ -37,15 +47,11 @@ namespace dust {
 			} catch (pegtl::parse_error& e) {
 				printMsg(false) << "Exception: \"" << e.what() << "\"\n";
 
-				goto r;
-			} catch (std::out_of_range& e) {
+				return exitTest();
+			} catch (error::base& e) {
 				printMsg(false) << "Exception: \"" << e.what() << "\"\n";
 
-				goto r;
-			} catch (std::string& e) {
-				printMsg(false) << "Exception: \"" << e << "\"\n";
-
-				goto r;
+				return exitTest();
 			}
 
 			//e.copy();
@@ -54,40 +60,7 @@ namespace dust {
 			else
 				printMsg(false) << " Failed Test " << std::setw(5) << num_tests << "\"" << test << "\" evaluated to false\n";
 
-		r:
-			std::cout << std::endl;
-			reset(e);
-		}
-
-		void Tester::require_eval(const std::string& code, const std::string& val) {
-			std::cout << "[|] Running Test " << std::setw(5) << ++num_tests << "input=\"" << code << "\"\n";
-
-			try {
-				evaluate(code);
-
-			} catch (pegtl::parse_error& e) {
-				printMsg(false) << "Exception: \"" << e.what() << "\"\n";
-
-				goto r;
-			} catch (std::out_of_range& e) {
-				printMsg(false) << "Exception: \"" << e.what() << "\"\n";
-
-				goto r;
-			} catch (std::string& e) {
-				printMsg(false) << "Exception: \"" << e << "\"\n";
-
-				goto r;
-			}
-
-			e.copy();
-			if (e.pop<std::string>() == val)
-				printMsg(true) << " Passed Test " << std::setw(5) << num_tests << e.pop<std::string>() << " was the top value on the stack\n";
-			else
-				printMsg(false) << " Failed Test " << std::setw(5) << num_tests << "Expected \"" << code << " = " << val << "\". Got \"" << code << " = " << e.pop<std::string>() << "\"\n";
-
-		r:
-			std::cout << std::endl;
-			reset(e);
+			exitTest();
 		}
 
 		void Tester::require_size(const std::string& code, size_t siz) {
@@ -99,15 +72,11 @@ namespace dust {
 			} catch (pegtl::parse_error& e) {
 				printMsg(false) << "Exception: \"" << e.what() << "\"\n";
 
-				goto r;
-			} catch (std::out_of_range& e) {
+				return exitTest();
+			} catch (error::base& e) {
 				printMsg(false) << "Exception: \"" << e.what() << "\"\n";
 
-				goto r;
-			} catch (std::string& e) {
-				printMsg(false) << "Exception: \"" << e << "\"\n";
-
-				goto r;
+				return exitTest();
 			}
 
 			if (e.size() == siz)
@@ -115,9 +84,7 @@ namespace dust {
 			else
 				printMsg(false) << " Failed Test " << std::setw(5) << num_tests << "Stack did not have size " << siz << " after execution\n";
 
-		r:
-			std::cout << std::endl;
-			reset(e);
+			exitTest();
 		}
 
 		void Tester::require_type(const std::string& code, const std::string& typ) {
@@ -129,15 +96,11 @@ namespace dust {
 			} catch (pegtl::parse_error& e) {
 				printMsg(false) << "Exception: \"" << e.what() << "\"\n";
 
-				goto r;
-			} catch (std::out_of_range& e) {
+				return exitTest();
+			} catch (error::base& e) {
 				printMsg(false) << "Exception: \"" << e.what() << "\"\n";
 
-				goto r;
-			} catch (std::string& e) {
-				printMsg(false) << "Exception: \"" << e << "\"\n";
-
-				goto r;
+				return exitTest();
 			}
 
 			if (e.ts.getName(e.pop().type_id) == typ)
@@ -145,9 +108,7 @@ namespace dust {
 			else
 				printMsg(false) << " Failed Test " << std::setw(5) << num_tests << "Top value on the stack did not have type " << typ << "\n";
 
-		r:
-			std::cout << std::endl;
-			reset(e);
+			exitTest();
 		}
 
 		void Tester::require_error(const std::string& code) {
@@ -156,19 +117,18 @@ namespace dust {
 			try {
 				evaluate(code);
 
+				printMsg(false) << " Failed Test " << std::setw(5) << num_tests << "\"" << code << "\" did not throw an exception\n";
+
 			} catch (...) {
 				printMsg(true) << " Passed Test " << std::setw(5) << num_tests << "\"" << code << "\" threw an exception\n";
-
-				goto r;
 			}
 
-			printMsg(false) << " Failed Test " << std::setw(5) << num_tests << "\"" << code << "\" did not throw an exception\n";
-
-		r:
-			std::cout << std::endl;
-			reset(e);
+			exitTest();
 		}
 	
+		void Tester::require_eval(const std::string& code, const char* result) {
+			return require_eval<std::string>(code, result);
+		}
 
 	}
 }

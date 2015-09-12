@@ -51,7 +51,7 @@ int main(int argc, const char* argv[]) {
 	parse::AST parse_tree;
 	std::string input;
 	bool isResString;
-	
+
 	EvalState e;
 	initState(e);
 
@@ -59,11 +59,10 @@ int main(int argc, const char* argv[]) {
 
 	t.require_eval("a: 2.2", 2.2);
 
-
 	std::cout << "> ";
 	while (std::getline(std::cin, input) && input != "exit") {
 		if (input == "gc") {
-		
+
 		} else {
 			try {
 				pl(input);
@@ -110,5 +109,6 @@ void assign_value(impl::Value& v, impl::Value& a, impl::GC& gc) {
 void dust::test::run_tests(EvalState& e) {
 	Tester t{ e };
 
-	t.require_eval("3", "3");
+	t.require_eval("3", 3);
+	t.require_eval("\"3\"", "3");
 }
