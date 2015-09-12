@@ -116,7 +116,7 @@ namespace dust {
 		auto dis_t = ts.findDef(com_t, fn);				// dispatch type (where fn is defined)
 
 		// This error isn't very explanatory though
-		if (dis_t == ts.NIL) throw error::dispatch_error{ "Method " + fn + " is not defined for objects of type " + ts.getName(dis_t) };
+		if (dis_t == ts.NIL) throw error::dispatch_error{ "Method " + fn + " is not defined for objects of type " + ts.getName(l) + " and " + ts.getName(r) };
 
 		// Determine whether com selected a converter and perform conversions
 		if ((com_t == l ^ com_t == r) && ts.convertible(l, r)) {
