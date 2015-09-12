@@ -8,7 +8,7 @@ namespace dust {
 	namespace parse {
 		std::string escape(std::string s) {
 			std::string ret = s;
-			
+
 			return ret;
 		}
 
@@ -46,7 +46,7 @@ namespace dust {
 
 			else if (id == type::Traits<std::string>::id)
 				e.push(val);
-			else 
+			else
 				throw error::dust_error{ "No literal can be constructed of the given type" };
 
 			return e;
@@ -145,7 +145,7 @@ namespace dust {
 				if (vals) return;
 			}
 
-			if(vars && vals) throw error::operands_error{ "Assignment is a binary operation" };
+			if (vars && vals) throw error::operands_error{ "Assignment is a binary operation" };
 		}
 
 

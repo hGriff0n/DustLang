@@ -34,7 +34,7 @@ namespace dust {
 						TypeVisitor(size_t i, TypeSystem* self) : id{ i }, ts{ self } {}
 
 						TypeVisitor& addOp(std::string op, Function f);
-					
+
 						operator size_t();
 				};
 
@@ -73,7 +73,7 @@ namespace dust {
 
 				// Find op definition in type without considering inheritance relationships
 				size_t isDefd(size_t t, std::string fn);
-			  //size_t findLoc(size_t, std::string);
+				//size_t findLoc(size_t, std::string);
 
 
 				// Common Type Resolution (Find a type that defines op and that both l and r can be cast to)
@@ -94,7 +94,7 @@ namespace dust {
 				TypeVisitor getType(size_t t);
 
 				TypeVisitor getType(std::string t);
-				
+
 				// Get the implementation type (for eval, etc.)
 				Type get(size_t t);
 
@@ -104,7 +104,7 @@ namespace dust {
 				// Temporary/Ungrouped Methods (may be expanded/grouped later)
 				// Checks if there is a converter between t1 and t2
 				bool convertible(size_t t1, size_t t2);
-				
+
 				// Checks if t1 is a child of t2
 				bool isChildType(size_t t1, size_t t2);
 

@@ -105,7 +105,7 @@ namespace dust {
 
 						op->addChild(ast.pop());						// Current ordering expected by operators (lhs, rhs)
 						op->addChild(rhs);
-						
+
 						ast.push(op);
 
 						// stack: ..., {op}
@@ -141,7 +141,7 @@ namespace dust {
 						//throw std::string{ "Parsing error: Attempt to construct heterogenous list" };		// or should i just quit execution here ???
 				}
 
-//				if (typed) ast.push(makeNode<Debug>(","));
+				// if (typed) ast.push(makeNode<Debug>(","));
 
 				ast.push(list);
 			}

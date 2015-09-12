@@ -83,7 +83,7 @@ namespace dust {
 			void newVar(std::string, bool, bool);
 
 		public:
-			EvalState() : ts{}, gc{}, CallStack{ gc }, vars{} {}
+			EvalState();
 
 			// Call functions
 			EvalState& call(std::string fn);

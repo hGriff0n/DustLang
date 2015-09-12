@@ -13,10 +13,10 @@ namespace dust {
 			private:
 			public:
 				static std::string node_type;
-				
+
 				virtual EvalState& eval(EvalState&) =0;
 				virtual std::string to_string() =0;
-				
+
 				virtual void addChild(std::shared_ptr<ASTNode>& c);
 				virtual std::string print_string(std::string buf);
 		};
@@ -39,7 +39,7 @@ namespace dust {
 				EvalState& eval(EvalState& e) {
 					throw error::bad_node_eval{ "Attempt to evaluate a List node" };
 				}
-				
+
 				std::string to_string() { return ""; }
 
 
@@ -86,7 +86,7 @@ namespace dust {
 			private:
 				std::string val;
 				size_t id;
-			
+
 			public:
 				Literal(std::string _val, size_t t);
 				static std::string node_type;

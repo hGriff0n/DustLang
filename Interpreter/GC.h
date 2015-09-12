@@ -20,7 +20,7 @@ namespace dust {
 			public:
 				GC();
 
-				int run(bool = false);
+				int run(bool f = false);
 				int stopWorld();
 				int incrParse();
 		};

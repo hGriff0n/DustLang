@@ -19,7 +19,8 @@ namespace dust {
 			size_t id, parent;
 			std::map<std::string, Function> ops;
 			//std::map<std::string, Value> fields;		// Replaces ops (Do I need to keep track of fields ???)
-																// Default values and typed/const variables ???
+				
+			// Default values and typed/const variables ???
 
 			Type(std::string t, size_t s) : Type(t, s, -1) {}
 			Type(std::string t, size_t s, size_t p) : name{ t }, id{ s }, parent{ p } {}

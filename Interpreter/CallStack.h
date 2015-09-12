@@ -31,9 +31,9 @@ namespace dust {
 				void push(T val) {
 					Stack::push(type::Traits<T>::make(val, gc));
 				}
-				
+
 				void push(const char* val);
-				
+
 				void push(impl::Value val);	// impl::Value& ???
 
 

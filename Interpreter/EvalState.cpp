@@ -12,17 +12,19 @@ namespace dust {
 
 	void EvalState::forceType(int idx, size_t type) {
 		if (at(idx).type_id == type) return;
-		
+
 		swap(idx, -1);
 		callMethod(ts.getName(type));				// Call the converter (if execution reaches here, the converter exists)
 		swap(idx, -1);
 	}
 
 
+	EvalState::EvalState() : ts{}, gc{}, CallStack{ gc }, vars{} {}
+
 	// Convert the element to var.type_id if possible because var is statically typed
 		// Is only called if var.type_id != ts.Nil and at(idx).type_id is not a child of var.type_id
 	void EvalState::staticTyping(impl::Variable& var, bool isConst) {
-		if (!ts.convertible(var.type_id, at().type_id)) 
+		if (!ts.convertible(var.type_id, at().type_id))
 			throw error::converter_not_found{ "No converter from from the assigned value to the variable's static type" };
 
 		callMethod(ts.getName(var.type_id));

@@ -12,7 +12,7 @@ namespace dust {
 			Atom(int v) : i{ v } {}
 			Atom(double v) : d{ v } {}
 			Atom(size_t v) : i{ static_cast<int>(v) } {}
-			Atom(void* v) : u{ v }{}
+			Atom(void* v) : u{ v } {}
 			Atom(const Atom& copy) {
 				*this = copy;
 			}
