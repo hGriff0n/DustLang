@@ -162,6 +162,7 @@ namespace dust {
 		}
 
 		std::string TypeSystem::getName(size_t t) {
+			if (t == NIL) return "Nil";
 			return types[t].name;
 		}
 
