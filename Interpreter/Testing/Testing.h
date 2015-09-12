@@ -7,57 +7,164 @@
 #include <iomanip>
 
 // TODO Improvements:
-	// Move "passing" code into the try blocks
-		// Reduces code complexity and "ugliness"
-	// Don't rely on string comparisons to test equality
-		// This will likely entail templates (move to .h)
-		// This is necessary for comparing Floats
-	// Add ability to query multiple assignments
 	// Add ability to assign "test arenas"
-	// Improve response message helpfulness
-		// Give some indication as to where the execution failed
-	// Possibly template the stream (either for the functions or for the class)
+	// Improve formatting (Especially for strings)
 	// Improve API
 
 namespace dust {
 	namespace test {
 
+		template <class Stream>
 		class Tester {
 			private:
 				EvalState& e;
 				parse::AST tree;
+				Stream& s;
 				std::function<void(EvalState&)> reset;
-				int num_tests = 0, num_pass = 0;
 
-				void evaluate(const std::string&);
-				decltype(std::cout)& printMsg(bool);
-				void exitTest();
+				static const int TESTING_WEIGHT = 30;
+
+				Stream& displayTestHeader(const std::string& code) {
+					s << "[|] Running Test " << std::setw(5) << ++num_tests;
+
+					if (code.size() > TESTING_WEIGHT - 8)
+						return s << "input=\"" + code + "\"\n\t    Testing ";
+					else
+						return s << std::setw(TESTING_WEIGHT) << ("input=\"" + code + "\"") << " Testing ";
+				}
+
+				void evaluate(const std::string& code) {
+					pegtl::parse<grammar, action>(code, code, tree);
+					tree.pop()->eval(e);
+				}
+				Stream& printMsg(bool pass) {
+					num_pass += pass;
+					return s << "[" << (pass ? "O" : "X") << "] ";
+				}
+				void exitTest() {
+					s << std::endl;
+					reset(e);
+				}
 
 			public:
-				Tester(EvalState&);
+				int num_tests = 0, num_pass = 0;
 
-				void initSuite(const std::string&, const std::string&, const std::function<void(EvalState&)>&);
-				void endSuite();
+				Tester(EvalState& _e, Stream& _s) : e{ _e }, s{ _s }, reset{ [](EvalState& e) { e.clear(); } } {
+					s << std::setiosflags(std::ios::left);
+				}
 
-				//void require(const std::string&, const std::vector<const std::string&>&);
+				void initSuite(const std::string& name, const std::string& desc, const std::function<void(EvalState&)>& init) {
 
-				void require(const std::string&, const std::string&);
-				void require_size(const std::string&, size_t);
-				void require_type(const std::string&, const std::string&);
-				void require_error(const std::string&);
+				}
+				void endSuite() {
 
+				}
+
+				// After executing the given code, the stack has the given number of elements
+				void require_size(const std::string& code, size_t siz) {
+					displayTestHeader(code) << "for stack size of " << siz << "\n";
+
+					try {
+						evaluate(code);
+
+					} catch (pegtl::parse_error& e) {
+						printMsg(false) << "Exception: \"" << e.what() << "\"\n";
+
+						return exitTest();
+					} catch (error::base& e) {
+						printMsg(false) << "Exception: \"" << e.what() << "\"\n";
+
+						return exitTest();
+					}
+
+					if (e.size() == siz)
+						printMsg(true) << " Passed Test " << std::setw(5) << num_tests << "Stack had size " << siz << " after execution\n";
+					else
+						printMsg(false) << " Failed Test " << std::setw(5) << num_tests << "Stack did not have size " << siz << " after execution\n";
+
+					exitTest();
+				}
+
+				// After executing the given code, the top item on the stack has the given type
+				void require_type(const std::string& code, const std::string& typ) {
+					displayTestHeader(code) << "for result of type " << typ << "\n";
+
+					try {
+						evaluate(code);
+
+					} catch (pegtl::parse_error& e) {
+						printMsg(false) << "Exception: \"" << e.what() << "\"\n";
+
+						return exitTest();
+					} catch (error::base& e) {
+						printMsg(false) << "Exception: \"" << e.what() << "\"\n";
+
+						return exitTest();
+					}
+
+					auto name = e.ts.getName(e.at().type_id);
+					(name == typ ? (printMsg(true) << " Passed Test ")
+								 : (printMsg(false) << " Failed Test "))
+						<< std::setw(5) << num_tests
+						<< "Result of " << e.pop<std::string>() << " had type " << name << "\n";
+
+					exitTest();
+				}
+
+				// While executing the given code, an exception is thrown
+				void require_error(const std::string& code) {
+					displayTestHeader(code) << "for exception during evaluation\n";
+
+					try {
+						evaluate(code);
+
+						printMsg(false) << " Failed Test " << std::setw(5) << num_tests << "\"" << code << "\" did not throw an exception\n";
+
+					} catch (...) {
+						printMsg(true) << " Passed Test " << std::setw(5) << num_tests << "\"" << code << "\" threw an exception\n";
+					}
+
+					exitTest();
+				}
+
+				// Executing the given code leaves a true value on top of the stack
+				void require_true(const std::string& code) {
+					displayTestHeader(code) << "for result of true\n";
+
+					try {
+						evaluate(code);
+
+					} catch (pegtl::parse_error& e) {
+						printMsg(false) << "Exception: \"" << e.what() << "\"\n";
+
+						return exitTest();
+					} catch (error::base& e) {
+						printMsg(false) << "Exception: \"" << e.what() << "\"\n";
+
+						return exitTest();
+					}
+
+					if (e.pop<bool>())
+						printMsg(true) << " Passed Test " << std::setw(5) << num_tests << "\"" << code << "\" evaluated to true\n";
+					else
+						printMsg(false) << " Failed Test " << std::setw(5) << num_tests << "\"" << code << "\" evaluated to false\n";
+
+					exitTest();
+				}
+
+				// After executing the given code, the top value on the stack is the given value
 				template <typename T>
 				void require_eval(const std::string& code, const T& val) {
-					std::cout << "[|] Running Test " << std::setw(5) << ++num_tests << "input=\"" << code << "\"\n";
+					displayTestHeader(code) << "for result of " << val << "\n";
 
 					try {
 						evaluate(code);
 
 						e.copy();
 						if (e.pop<T>() == val)
-							printMsg(true) << " Passed Test " << std::setw(5) << num_tests << e.pop<T>() << " was the top value on the stack\n";		// This e.pop<T> will never throw
+							printMsg(true) << " Passed Test " << std::setw(5) << num_tests << "Expression evaluated to " << e.pop<T>() << "\n";		// This e.pop<T> will never throw
 						else
-							printMsg(false) << " Failed Test " << std::setw(5) << num_tests << "Expected \"" << code << " = " << val << "\". Got \"" << code << " = " << e.pop<T>() << "\"\n";
+							printMsg(false) << " Failed Test " << std::setw(5) << num_tests << "Result of " << e.pop<std::string>() << " did not match the expected value of " << val << "\n";
 
 					} catch (pegtl::parse_error& e) {
 						printMsg(false) << "Exception: \"" << e.what() << "\"\n";
@@ -67,7 +174,29 @@ namespace dust {
 
 					exitTest();
 				}
-				void require_eval(const std::string& code, const char*);
+				void require_eval(const std::string& code, const char* result) {
+					return require_eval<std::string>(code, result);
+				}
+
+				// While executing the given code, an exception, of type 'Exception', is thrown
+				template <typename Exception>
+				void require_excep(const std::string& code) {
+					displayTestHeader(code) << "for exception of type Exception during evaluation\n";
+
+					try {
+						evaluate(code);
+
+						printMsg(false) << " Failed Test " << std::setw(5) << num_tests << "\"" << code << "\" did not throw an exception\n";
+
+					} catch (Exception& e) {
+						printMsg(true) << " Passed Test " << std::setw(5) << num_tests << "\"" << code << "\" threw the expected exception\n";
+
+					} catch (...) {
+						printMsg(false) << " Failed Test " << std::setw(5) << num_tests << "\"" << code << "\" threw an unexpected exception\n";
+					}
+
+					exitTest();
+				}
 		};
 
 		void run_tests(EvalState&);

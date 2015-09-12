@@ -66,6 +66,7 @@ namespace dust {
 	}
 
 	namespace test {
+		template <class Stream>
 		class Tester;
 	}
 
@@ -90,6 +91,9 @@ namespace dust {
 			EvalState& callOp(std::string fn);				// Temporary methods until I determine how functions and tables will be implemented
 			EvalState& callMethod(std::string fn);
 
+			// EvalState doesn't know about shared_ptr or ASTNode
+			//EvalState& eval(std::shared_ptr<parse::ASTNode>&);
+
 			// Set/Get Variables
 			void setVar(std::string name, bool isConst = false, bool isTyped = false);
 			void getVar(std::string var);
@@ -102,7 +106,7 @@ namespace dust {
 			bool isStatic(std::string var);
 
 			friend void initState(EvalState&);
-			friend class test::Tester;
+			template <class Stream> friend class test::Tester;
 	};
 
 

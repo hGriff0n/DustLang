@@ -11,7 +11,7 @@
 #define nl() pl("")
 
 // TODO:		
-	// Update the PEGTL library if possible
+// Update the PEGTL library if possible
 
 // Things to work on
 	// Improving and consolidating the API
@@ -26,6 +26,7 @@
 	// Consider adding a push_ref method to CallStack (roughly mirrors pop_ref)
 	// Consider specializing the control template argument (see PEGTL for more)
 		// This would give me greater control over error messages and throwing from the parser stage
+	// Way of formatting float -> string conversion ???
 
 // 
 
@@ -55,9 +56,9 @@ int main(int argc, const char* argv[]) {
 	EvalState e;
 	initState(e);
 
-	test::Tester t{ e };
-
-	t.require_eval("a: 2.2", 2.2);
+	//test::Tester t{ e };
+	//t.require_eval("a: 2.2", 2.2);
+	test::run_tests(e);
 
 	std::cout << "> ";
 	while (std::getline(std::cin, input) && input != "exit") {
@@ -65,19 +66,19 @@ int main(int argc, const char* argv[]) {
 
 		} else {
 			try {
-				pl(input);
 				pegtl::parse<grammar, action>(input, input, parse_tree);
 
 				print(std::cout, parse_tree.at());
 				isResString = parse_tree.pop()->eval(e).is<std::string>();
+				//isResString = e.eval(parse_tree.pop()).is<std::string>();
 
 				// Need to make a generic 'pop' here
-					// Or I can insist that printable equates to String convertible
+				// Or I can insist that printable equates to String convertible
 				std::cout << ":: "
 					<< (isResString ? "\"" : "")
 					<< (std::string)e
 					<< (isResString ? "\"" : "")
-					<< "\n" << std::endl;
+					<< "\n";
 
 			} catch (pegtl::parse_error& e) {
 				std::cout << e.what() << std::endl;
@@ -87,10 +88,9 @@ int main(int argc, const char* argv[]) {
 
 			parse_tree.clear();
 		}
-		std::cout << "> ";
+		std::cout << "\n> ";
 	}
 }
-
 
 template <typename T>
 void assign_value(impl::Value& v, T val, impl::GC& gc) {
@@ -107,8 +107,62 @@ void assign_value(impl::Value& v, impl::Value& a, impl::GC& gc) {
 }
 
 void dust::test::run_tests(EvalState& e) {
-	Tester t{ e };
+	Tester<decltype(std::cout)> t{ e, std::cout };
 
+	// Literals and Typing tests
 	t.require_eval("3", 3);
+	t.require_type("3", "Int");
+
 	t.require_eval("\"3\"", "3");
+	t.require_type("\"3\"", "String");
+
+	t.require_eval("3.3", 3.3);
+	t.require_type("3.3", "Float");
+
+	t.require_eval("true", true);
+	t.require_type("true", "Bool");
+
+	// Operator resolution tests
+	t.require_eval("3 + 3", 6);
+	t.require_eval("\"The answer is \" + (6.3 ^ 2)", "The answer is 39.690000");
+	t.require_error("3 + true");
+	t.require_eval("\"4\" + 3", "43");
+	t.require_eval("\"4\" - 3", 1);
+
+	// Test assignments
+	t.require_eval("a: 2", 2);
+	t.require_true("a = 2");
+
+	t.require_eval("a, b: 1, 2", 2);
+	t.require_true("a = 1");
+	t.require_true("b = 2");
+	//t.require_true("a + b = 3");
+	//t.require_true("a = 1 and b = 2");
+
+	t.require_eval("a, b: b, a", 1);
+	t.require_true("a = 2");
+	t.require_true("b = 1");
+
+	t.require_eval("a, b: 1, 2, 3", 2);
+	t.require_true("a = 1");
+	t.require_true("b = 2");
+
+	t.require_eval("a, b: 3", 0);
+	t.require_true("a = 3");
+	t.require_true("b = 0");
+
+	// Compound Operations
+	t.require_eval("a, b:+ 2, 2", 2);
+	t.require_true("a = 5");
+	t.require_true("b = 2");
+
+	t.require_eval("a, b:* 2", 0);
+	t.require_true("a = 10");
+	t.require_true("b = 0");
+
+	t.require_eval("a:= (b: 3) * 2 + 2 ^ 2", true);
+	t.require_true("a");
+	t.require_true("b = 3");
+
+	std::cout << "Passed " << t.num_pass << " tests out of a possible " << t.num_tests << " (" << std::setprecision(4) << ((float)t.num_pass / t.num_tests * 100) << "%)\n\n";
 }

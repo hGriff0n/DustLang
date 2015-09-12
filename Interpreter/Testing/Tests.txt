@@ -1,99 +1,76 @@
-## Include more mundane "3 + 3" expressions here (also don't delete any)
+## All tests rely on the previous tests, unless otherwise stated
 
-## Check basic operator/expression precedence
-3 + 3
-	e = 6
+## Test literals and typing
+3
+	e: 3
+	type: Int
 
-3 ^ 2 * 2
-	3 = 18.00
-
-3 + 3 * (3 + 3)
-	e = 21
-
-## Check type system
 3.3
-	e = 3.3
+	e: 3.3
+	type: Float
+
+"3"
+	e: "3"
+	type: String
 
 true
-	e = true
+	e: true
+	type: Bool
 
-"Hello, World!"
-	e = Hello, World!
+## Test operator resolution
 
-## Check assignments (Sprinkle other types in here)
-a: 1
-	a = 1
-	e = 1
-	
-a: 3 + (b:+ 1)
-	a = 4
-	b = 1
-	e = 4
-	
-a:^ a / 2
-	a = 16.00
-	e = 16.00
-	
-a:= a / -(b - (a: 4)) + a ^ (b: 2) - b / 2
-	a = false
-	b = 2
-	e = false
+3 + 3
+	e: 6
 
--- Bool + Int undefined, eval "a: 0" to run with no errors
-a, b: b, a + 1
-	a = 2
-	b = 1
-	e = 1
-	
-a, b: 3
-	a = 3
-	b = 0
-	e = 0
+"The answer is " + (6.3 ^ 2)
+	e: "The answer is 39.690000"
+
+3 + true
+	Exception: Method _op+ is not defined for objects of types Int and Bool
+
+"4" + 3
+	e: "43"
+
+"4" - 3
+	e: 1
+
+## Test assignments
+a: 2
+	e: 2
+	a: 2
+
+a, b: 1, 2
+	e: 2
+	a: 1
+	b: 2
+
+a, b: b, a
+	e: 1
+	a: 2
+	b: 1
 
 a, b: 1, 2, 3
-	a = 1
-	b = 2
-	e = 2
+	e: 2
+	a: 1
+	b: 2
 
-a, b:+ 2
-	a = 3
-	b = 2		// There's a good case that b should equal 4 after this expression
-	e = 2
+a, b: 3
+	e: 0			## should this evaluate to 3 ???
+	a: 3
+	b: 0
 
-a, b, c: 3 + b, 4 - a, b ^ a
-	a = 5
-	b = 5
-	c = 8.00
-	e = 8.00
+## Compound operations (have one massive chain)
+a, b:+ 2, 2				## These results are subject to change
+	e: 2
+	a: 5
+	b: 2
 
-a, b: 1, 2, (c: 3)
-	a = 1
-	b = 2
-	c = 8.00
-	e = 2
+a, b:* 2
+	e: 0
+	a: 10
+	b: 0
 
-a, b: c, d: 3, 4
-	a = 4
-	b = 0
-	c = 3
-	d = 4
-	e = 0
-
-a, b: (c, d: 3), 4
-	a = 0
-	b = 4
-	c = 3
-	d = 0
-	e = 4
-
-a, b: 3, (c, d: 3, 4)		## The old syntax is somewhat ambiguous (a, b: 3, c, (d: 3, 4) and a, b: 3, (c, d: 3, 4) are valid parses)
-	a = 3
-	b = 4
-	c = 3
-	d = 4
-	e = 4
-
-## Error tests
-a, 3, b: 1, 2, 3
-	parse = Variable a
-	exp = Parse Error
+a:= (b: 3) * 2 + 2 ^ 2
+	e: true
+	a: true
+	b: 3
