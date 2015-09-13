@@ -12,11 +12,44 @@
 // TODO Improvements:
 	// Improve sub testing support
 		// Particularly "Running Test #" (Add some tag information ???)
-	// Add ability to determine exception name (for use in require_excep)
-	// Improve formatting (Especially for strings)
 	// Improve API
 
 namespace dust {
+	namespace error {
+		template <class Exception>
+		struct name { static const std::string is; };
+
+		template <class Exception> const std::string name<Exception>::is = "This is not an exception!";
+		template<> const std::string name<base>::is = "base";
+
+		template<> const std::string name<dust_error>::is = "dust_error";
+		template<> const std::string name<dispatch_error>::is = "dispatch_error";
+		template<> const std::string name<converter_not_found>::is = "converter_not_found";
+		template<> const std::string name<illegal_operation>::is = "illegal_operation";
+		template<> const std::string name<unimplemented_operation>::is = "unimplemented_operation";
+
+		template<> const std::string name<logic_error>::is = "logic_error";
+		template<> const std::string name<out_of_bounds>::is = "out_of_bounds";
+		template<> const std::string name<illegal_template>::is = "illegal_template";
+		template<> const std::string name<syntax_error>::is = "syntax_error";
+
+		template<> const std::string name<parse_error>::is = "parse_error";
+		template<> const std::string name<missing_nodes>::is = "missing_nodes";
+		template<> const std::string name<missing_node_x>::is = "missing_node_x";
+		template<> const std::string name<operands_error>::is = "operands_error";
+		template<> const std::string name<invalid_ast_construction>::is = "invalid_ast_construction";
+
+		template<> const std::string name<runtime_error>::is = "runtime_error";
+		template<> const std::string name<bad_api_call>::is = "bad_api_call";
+		template<> const std::string name<bad_node_eval>::is = "bad_node_eval";
+		template<> const std::string name<incomplete_node>::is = "incomplete_node";
+		template<> const std::string name<stack_state_error>::is = "stack_state_error";
+		template<> const std::string name<stack_type_error>::is = "stack_type_error";
+		template<> const std::string name<storage_access_error>::is = "storage_access_error";
+		template<> const std::string name<null_exception>::is = "null_exception";
+		template<> const std::string name<conversion_error>::is = "conversion_error";
+	}
+
 	namespace test {
 
 		template <class Stream>
@@ -41,14 +74,16 @@ namespace dust {
 					pegtl::parse<grammar, action>(code, code, tree);
 					tree.pop()->eval(e);
 				}
+
 				Stream& printMsg(bool pass) {
 					num_pass += pass;
 					return s << buffer << "[" << (pass ? "O" : "X") << "] ";
 				}
+
 				void exitTest() {
-				s << std::endl;
-				reset(e);
-			}
+					s << std::endl;
+					reset(e);
+				}
 
 			protected:
 				std::string buffer;
@@ -183,7 +218,7 @@ namespace dust {
 				// While executing the given code, an exception, of type 'Exception', is thrown
 				template <typename Exception>
 				void require_excep(const std::string& code) {
-				displayTestHeader(code) << "for exception of type Exception\n";
+				displayTestHeader(code) << "for exception of type " << error::name<Exception>::is << "\n";
 
 				try {
 					evaluate(code);
@@ -202,8 +237,6 @@ namespace dust {
 			}
 		};
 
-		template <class Stream> const std::function<void(EvalState&)> Tester<Stream>::DEFAULT_RESET = [](EvalState& e) { e.clear(); };
-			
 		template <class Stream>
 		class TestOrganizer : public Tester<Stream> {
 			private:
@@ -271,6 +304,8 @@ namespace dust {
 		};
 
 		void run_tests(EvalState&);
+
+		template <class Stream> const std::function<void(EvalState&)> Tester<Stream>::DEFAULT_RESET = [](EvalState& e) { e.clear(); };
 
 	}
 }
