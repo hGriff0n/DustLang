@@ -9,9 +9,7 @@
 #include <iostream>
 #include <iomanip>
 
-// TODO Improvements:
-	// Improve sub testing support
-		// Particularly "Running Test #" (Add some tag information ???)
+// TODO Improvements
 	// Improve API
 
 namespace dust {
@@ -60,6 +58,7 @@ namespace dust {
 
 				static const int TESTING_WEIGHT = 30;
 				static const std::function<void(EvalState&)> DEFAULT_RESET;
+
 
 				Stream& displayTestHeader(const std::string& code) {
 					s << buffer << "[|] Running Test " << std::setw(5) << ++num_tests;
@@ -241,6 +240,7 @@ namespace dust {
 		class TestOrganizer : public Tester<Stream> {
 			private:
 				TestOrganizer<Stream>* sub_test = nullptr;
+				std::string curr_test;
 
 			public:			// These constructors will cause recursion ???
 				TestOrganizer(EvalState& _e, Stream& _s) : TestOrganizer(_e, _s, "") {}
@@ -250,7 +250,7 @@ namespace dust {
 				void init_sub_test(const std::string& msg) {
 					if (sub_test) return sub_test->init_sub_test(msg);
 
-					s << buffer << "<:: " <<  msg << " ::>\n";
+					s << buffer << "<:: " << (curr_test = msg) << " Testing ::>\n";
 					sub_test = new TestOrganizer<Stream>{ e, s, buffer + " " };
 				}
 
@@ -264,7 +264,7 @@ namespace dust {
 					num_tests += nt = sub_test->num_tests;
 					num_pass += np = sub_test->num_pass;
 
-					s << buffer << " Passed: " << np << " | Failed: " << (nt - np) << " | " 
+					s << buffer << " " << curr_test << " | Passed: " << np << " | Failed: " << (nt - np) << " | " 
 								<< np << " / " << nt << " Tests (" << std::setprecision(4) << ((float)np / nt * 100) << "%)\n\n";
 
 					delete sub_test;

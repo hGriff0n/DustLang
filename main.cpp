@@ -108,7 +108,7 @@ void dust::test::run_tests(EvalState& e) {
 	TestOrganizer<decltype(std::cout)> t{ e, std::cout };
 
 	// Literals and Typing tests
-	t.init_sub_test("Literals and Type System Testing");
+	t.init_sub_test("Literals and Type System");
 		t.require_eval("3", 3);
 		t.require_type("3", "Int");
 
@@ -123,7 +123,7 @@ void dust::test::run_tests(EvalState& e) {
 	t.close_sub_test();
 
 	// Operator resolution tests
-	t.init_sub_test("Operator Resolution Tests");
+	t.init_sub_test("Operator Resolution");
 		t.require_eval("3 + 3", 6);
 		t.require_eval("\"The answer is \" + (6.3 ^ 2)", "The answer is 39.690000");
 		t.require_error("3 + true");
@@ -133,7 +133,7 @@ void dust::test::run_tests(EvalState& e) {
 	t.close_sub_test();
 
 	// Test assignments
-	t.init_sub_test("Assignment Testing");
+	t.init_sub_test("Assignment");
 		t.require_eval("a: 2", 2);
 		t.require_true("a = 2");
 
@@ -156,7 +156,7 @@ void dust::test::run_tests(EvalState& e) {
 		t.require_true("b = 0");
 
 	// Compound Operations
-		t.init_sub_test("Compound Assignment Testing");
+		t.init_sub_test("Compound Assignment");
 			t.require_eval("a, b:+ 2, 2", 2);
 			t.require_true("a = 5");
 			t.require_true("b = 2");
@@ -169,6 +169,22 @@ void dust::test::run_tests(EvalState& e) {
 			t.require_true("a");
 			t.require_true("b = 3");
 		t.close_sub_test();
+	t.close_sub_test();
+
+	t.init_sub_test("Tricky Operations");
+		t.require_eval("3 + (a: 4)", 7);
+		t.require_true("a = 4");
+
+		t.require_eval("3 + a: 3", 7);
+
+		t.require_excep<error::missing_node_x>("a, b: 3, c: 4");
+		t.require_eval("a, b: 3, (c: 4)", 4);
+		t.require_true("a = 3");
+
+		t.require_eval("3 +-3", 0);
+
+		t.require_eval("(a: 3) + 3 * a", 12);
+		t.require_true("a = 3");
 	t.close_sub_test();
 
 	std::cout << "Passed: " << t.num_pass << " | Failed: " << (t.num_tests - t.num_pass) << " | " << t.num_pass << " / " << t.num_tests << " Tests (" << std::setprecision(4) << ((float)t.num_pass / t.num_tests * 100) << "%)\n\n";

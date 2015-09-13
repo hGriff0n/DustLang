@@ -74,3 +74,29 @@ a:= (b: 3) * 2 + 2 ^ 2
 	e: true
 	a: true
 	b: 3
+
+## Tricky Operations and Parses
+
+3 + (a: 4)
+	e: 7
+	a: 4
+
+3 + a: 3
+	e: 6
+
+a, b: 3, c: 4
+	Attempt to construct Assignment node without an operator				## Do I want this ???
+
+a, b: 3, (c: 4)
+	e: 4
+	a: 3
+	b: 4
+	c: 4
+
+3 + -3
+	e: 0
+
+(a: 3) + 3 * a
+	e: 12
+	a: 3
+	

@@ -43,6 +43,6 @@ namespace dust {
 				invalid_ast_construction(const std::string& _m) : parse_error{ _m } {}
 				~invalid_ast_construction() throw() {}
 		};
-
+		
 	}
 }

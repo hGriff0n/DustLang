@@ -140,7 +140,6 @@ namespace dust {
 		return *this;
 	}
 
-
 	void initTypeSystem(type::TypeSystem& ts) {
 		auto Object = ts.getType("Object");
 		auto Number = ts.newType("Number");
