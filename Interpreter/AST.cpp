@@ -122,11 +122,13 @@ namespace dust {
 			}
 
 			// Perform assignments. Compound if necessary
+			//auto last_var = r_var;
 			while (r_var != l_var) {
 				if (op.size()) (*r_var)->eval(e).callOp(op);
 				e.setVar((*r_var++)->to_string(), setConst, setStatic);
 			}
 
+			//return last_var->eval(e);
 			return (*vars->rbegin())->eval(e);
 
 		}

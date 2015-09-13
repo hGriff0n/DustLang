@@ -101,16 +101,15 @@ namespace dust {
 
 						auto rhs = ast.pop();							// Doesn't check that rhs or lhs is valid
 						auto op = ast.pop();							// However, rhs and lhs are guaranteed to be ASTNode's, which operator accepts
-																		// Guaranteed to be an operator
 
 						op->addChild(ast.pop());						// Current ordering expected by operators (lhs, rhs)
-						op->addChild(rhs);
+						op->addChild(rhs);								// Assignment::addChild handles the Assignment specific node checks
 
 						ast.push(op);
 
 						// stack: ..., {op}
 					} else
-						throw error::missing_node_x{ "Attempt to construct " + Node::node_type + " node without an operator" };
+						throw error::missing_node_x{ "Attempt to construct " + Node::node_type + " node without a empty " + Node::node_type + " node" };
 				} else
 					throw error::missing_nodes{ "Attempt to construct " + Node::node_type + " node with less than 3 nodes on the stack" };
 			}
