@@ -18,14 +18,15 @@ namespace dust {
 			return std::regex_replace(s, escape, "\"");
 		}
 
+		// ASTNode methods
 		void ASTNode::addChild(std::shared_ptr<ASTNode>& c) {
 			throw error::operands_error{ "Attempt to add child to node" };
 		}
-
 		std::string ASTNode::print_string(std::string buf) {
 			return buf + "+- " + node_type + "\n";
 		}
 
+		// Debug methods
 		Debug::Debug(std::string _msg) : msg{ _msg } {}
 		EvalState& Debug::eval(EvalState& e) { return e; }
 		std::string Debug::to_string() { return msg; }
@@ -33,6 +34,7 @@ namespace dust {
 			return buf + "+- " + node_type + " " + msg + "\n";
 		}
 
+		// Literal methods
 		Literal::Literal(std::string _val, size_t t) : val{ _val }, id{ t } {}
 		EvalState& Literal::eval(EvalState& e) {
 			if (id == type::Traits<int>::id)
@@ -62,16 +64,11 @@ namespace dust {
 			return buf + "+- " + node_type + to_string() + "\n";
 		}
 
+		// Operator methods
 		Operator::Operator(std::string o) : l{ nullptr }, r{ nullptr }, op{ o } {}
 		EvalState& Operator::eval(EvalState& e) {
-			l->eval(e);
-
-			// Binary operator
-			if (r ? r->eval(e), true : false)
-				e.swap();					// Current Binary operator evalutation expects stack: ..., rhs, lhs
-
-			e.callOp(op);
-			return e;
+			if (r) r->eval(e);			// Current Binary operator evalutation expects stack: ..., rhs, lh
+			return l->eval(e).callOp(op);
 		}
 		std::string Operator::to_string() { return op; }
 		std::string Operator::print_string(std::string buf) {
@@ -83,6 +80,36 @@ namespace dust {
 			else throw error::unimplemented_operation{ "Dust does not currently support ternary operators" };
 		}
 
+		// BinaryKeyword methods
+		BinaryKeyword::BinaryKeyword(std::string key) : l{ nullptr }, r{ nullptr }, isAnd{ key == "and" } {}
+		EvalState& BinaryKeyword::eval(EvalState& e) {
+			if (!l || !r) throw error::bad_node_eval{ "Attempt to use BinaryKeyword node with less than two operands" };
+
+			l->eval(e).copy();						// Copy does perform reference incrementing
+			
+			// Short circuit evaluation
+			if (isAnd) {
+				if (!e.pop<bool>())	return e;		// if the left argument is false return immediately
+
+			} else {
+				if (e.pop<bool>()) return e;		// if the left argument is true return immediately
+			}
+		
+			// Otherwise leave the right argument on the stack
+			e.pop();
+			return r->eval(e);
+		}
+		std::string BinaryKeyword::to_string() { return isAnd ? "and" : "or"; }
+		std::string BinaryKeyword::print_string(std::string buf) {
+			return buf + "+- " + node_type + " " + to_string() + "\n" + l->print_string(buf + " ") + (r ? r->print_string(buf + " ") : "");
+		}
+		void BinaryKeyword::addChild(std::shared_ptr<ASTNode>& c) {
+			if (!l) l.swap(c);
+			else if (!r) r.swap(c);
+			else throw error::operands_error{ "Attempt to add more than three operands to BinaryKeyword node" };
+		}
+
+		// VarName methods
 		VarName::VarName(std::string var) : name{ var } {}
 		EvalState& VarName::eval(EvalState& e) {
 			e.getVar(name);
@@ -93,6 +120,7 @@ namespace dust {
 			return buf + "+- " + node_type + " " + name + "\n";
 		}
 
+		// Assign methods
 		Assign::Assign(std::string _op, bool _const, bool _static) : setConst{ _const }, setStatic{ _static }, vars{ nullptr }, vals{ nullptr } {
 			op = _op.size() ? "_op" + _op : _op;
 		}
@@ -155,6 +183,7 @@ namespace dust {
 		std::string Debug::node_type = "Debug";
 		std::string Literal::node_type = "Literal";
 		std::string Operator::node_type = "Operator";
+		std::string BinaryKeyword::node_type = "Boolean";
 		std::string VarName::node_type = "Variable";
 		std::string Assign::node_type = "Assignment";
 	}

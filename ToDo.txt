@@ -3,7 +3,7 @@ Timeline
 		Modify the grammar to accept multiple lines
 			This isn't really possible with the current loop structure (expects newline ([ENTER]) to end input)
 			Could I use \n to make "new lines" YES
-		Have the input "evaluate" to the value of the last line
+			Have the input "evaluate" to the value of the last line
 		Have tabbing create a new scope
 		Implement scoped declarations and access
 		Implement global and local variable distinction				## be able to access "masked" variables
@@ -19,9 +19,11 @@ Timeline
 		Arrays -> Tables (any key)
 		Empty Table => false
 	4 Keyword Recognition
+		Update pegtl library
 		Get the grammar to recognize various keywords
-		Get and/or to work on booleans
-			Possibly get and-or to work as well
+		Work on the framework for adding keywords to the AST
+			BinaryKeyword is a temporary addition to test and/or
+		Possibly clean up EvalState and Grammar
 	5 Exception and Error update
 		Update exceptions and errors to better fit the new features
 		Add exception catching and error functions
@@ -38,6 +40,7 @@ Timeline
 		_op() syntax (Metamethods ???)
 		Optional: No parens syntax
 	8 Keyword Framework Update
+		Potentially change the grammar to follow the basic framework in "lua53_parse.h"
 	9 Scoping Improvement Work
 	10 Control Structures
 	11 Table definition (This can go before scoping)

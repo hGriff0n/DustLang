@@ -113,6 +113,22 @@ namespace dust {
 				void addChild(std::shared_ptr<ASTNode>& c);
 		};
 
+		class BinaryKeyword : public ASTNode {
+			private:
+				std::shared_ptr<ASTNode> l, r;
+				bool isAnd;
+
+			public:
+				BinaryKeyword(std::string key);
+				static std::string node_type;
+
+				EvalState& eval(EvalState& e);
+				std::string to_string();
+
+				virtual std::string print_string(std::string buf);
+				void addChild(std::shared_ptr<ASTNode>& c);
+		};
+
 		class VarName : public ASTNode {
 			private:
 				std::string name;

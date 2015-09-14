@@ -11,6 +11,7 @@
 
 // TODO Improvements
 	// Improve API
+	// Surround require_eval output in quotes if the expected type is a string
 
 namespace dust {
 	namespace error {

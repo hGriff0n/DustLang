@@ -74,6 +74,26 @@ a:= (b: 3) * 2 + 2 ^ 2
 	e: true
 	a: true
 	b: 3
+	
+## Test boolean keywords
+c = 0 and 4 or 5				## 0 => true currently
+	e: 4
+
+false and (a: 5)
+	e: false
+	a: true
+
+a: b or 5
+	e: 3
+	a: 3
+
+b: c != 0 and 4 or (c: 5)		## 0 => true currently
+	e: 5
+	b: 5
+
+b: c and 4 or (c: 5)
+	e: 4
+	b: 4
 
 ## Tricky Operations and Parses
 

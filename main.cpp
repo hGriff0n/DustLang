@@ -138,37 +138,46 @@ void dust::test::run_tests(EvalState& e) {
 		t.require_true("a = 2");
 
 		t.require_eval("a, b: 1, 2", 2);
-		t.require_true("a = 1");
-		t.require_true("b = 2");
-		//t.require_true("a + b = 3");
-		//t.require_true("a = 1 and b = 2");
+		t.require_true("a = 1 and b = 2");
 
 		t.require_eval("a, b: b, a", 1);
-		t.require_true("a = 2");
-		t.require_true("b = 1");
+		t.require_true("a = 2 and b = 1");
 
 		t.require_eval("a, b: 1, 2, 3", 2);
-		t.require_true("a = 1");
-		t.require_true("b = 2");
+		t.require_true("a = 1 and b = 2");
 
 		t.require_eval("a, b: 3", 0);
-		t.require_true("a = 3");
-		t.require_true("b = 0");
+		t.require_true("a = 3 and b = 0");
 
 	// Compound Operations
 		t.init_sub_test("Compound Assignment");
 			t.require_eval("a, b:+ 2, 2", 2);
-			t.require_true("a = 5");
-			t.require_true("b = 2");
+			t.require_true("a = 5 and b = 2");
 
 			t.require_eval("a, b:* 2", 0);
-			t.require_true("a = 10");
-			t.require_true("b = 0");
+			t.require_true("a = 10 and b = 0");
 
 			t.require_eval("a:= (b: 3) * 2 + 2 ^ 2", true);
-			t.require_true("a");
-			t.require_true("b = 3");
+			t.require_true("a and b = 3");
 		t.close_sub_test();
+	t.close_sub_test();
+
+	// Test boolean keywords
+	t.init_sub_test("Boolean Keywords");
+		t.require_eval("c = 0 and 4 or 5", 4);
+		
+		t.require_eval("false and a: 5", false);
+		t.require_true("a = true");
+
+		t.require_eval("a: b or 5", 3);
+		t.require_true("a = 3");
+
+		// 0 => true. Should I keep this?
+		t.require_eval("b: c != 0 and 4 or (c: 5)", 5);
+		t.require_true("b = 5 and c = b");
+
+		t.require_eval("b: c and 4 or (c: 5)", 4);
+		t.require_true("b = 4");
 	t.close_sub_test();
 
 	t.init_sub_test("Tricky Operations");

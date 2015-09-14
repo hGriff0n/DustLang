@@ -112,15 +112,14 @@ namespace dust {
 		if (fn.at(0) != '_' || fn.at(2) != 'p') throw error::bad_api_call{ "Attempt to callOp on a non-operator" };
 
 		auto l = at(-2).type_id, r = at().type_id;
-		auto com_t = ts.com(l, r, fn);					// common type
-		auto dis_t = ts.findDef(com_t, fn);				// dispatch type (where fn is defined)
+		auto com_t = ts.com(l, r, fn);					// find common type
+		auto dis_t = ts.findDef(com_t, fn);					// find dispatch type (where fn is defined)
 
-		// This error isn't very explanatory though
 		if (dis_t == ts.NIL) throw error::dispatch_error{ "Method " + fn + " is not defined for objects of type " + ts.getName(l) + " and " + ts.getName(r) };
 
 		// Determine whether com selected a converter and perform conversions
 		if ((com_t == l ^ com_t == r) && ts.convertible(l, r)) {
-			forceType(-1, com_t);					// The name is a placeholder (Maybe move to be a TypeSystem method ???)
+			forceType(-1, com_t);					// The name is a placeholder
 			forceType(-2, com_t);					// Forces the value at the given index to have the given type by calling a converter if necessary
 		}
 
@@ -140,6 +139,7 @@ namespace dust {
 		return *this;
 	}
 
+
 	void initTypeSystem(type::TypeSystem& ts) {
 		auto Object = ts.getType("Object");
 		auto Number = ts.newType("Number");
@@ -156,6 +156,7 @@ namespace dust {
 		type::Traits<std::string>::id = String;
 		type::Traits<bool>::id = Bool;
 	}
+
 	void initConversions(type::TypeSystem& ts) {
 		auto Int = ts.getType("Int");
 		auto Float = ts.getType("Float");
@@ -257,7 +258,7 @@ namespace dust {
 		Float.addOp("_ou-", [](EvalState& e) { e.push(-(double)e); return 1; });
 		Float.addOp("_ou-", [](EvalState& e) { e.push(-(double)e); return 1; });
 
-		Bool.addOp("_op=", [](EvalState& e) { return 1; });
+		Bool.addOp("_op=", [](EvalState& e) { e.push((bool)e == (bool)e); return 1; });
 		Bool.addOp("_ou!", [](EvalState& e) { e.push(!(bool)e);  return 1; });
 	}
 }

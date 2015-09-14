@@ -38,8 +38,9 @@ namespace dust {
 		// Forward declarations
 		struct expr;
 		struct expr_0;
-		struct expr_5;
-		struct str;
+		struct expr_x;
+		struct id_end;
+		struct k_nil;
 
 		// "Readability" Tokens
 		struct sep : one<' '> {};
@@ -57,10 +58,18 @@ namespace dust {
 		struct boolean : sor<string<'t', 'r', 'u', 'e'>, string<'f', 'a', 'l', 's', 'e'>> {};
 		struct body : plus<sor<seq<esc, quote>, unless<quote>>> {};
 		struct str : seq<quote, opt<body>, quote> {};
-		struct literals : sor<decimal, integer, boolean, str> {};
+		struct literals : sor<decimal, integer, boolean, str, k_nil> {};
 
 		// Keyword Tokens
+		template <class Str>
+		struct key : seq<Str, not_at<id_end>> {};
 
+		struct k_and : key<string<'a', 'n', 'd'>> {};
+		struct k_or : key<string<'o', 'r'>> {};
+		struct k_nil : key<string<'n', 'i', 'l'>> {};
+		struct k_if : key<string<'i', 'f'>> {};
+		struct k_type : key<string<'t', 'y', 'p', 'e'>> {};
+		struct k_inherit : key<string<'<', '-'>> {};
 
 		// Identifier Tokens
 		struct id_end : identifier_other {};
@@ -73,7 +82,7 @@ namespace dust {
 		struct op_2 : one<'*', '/'> {};
 		struct op_3 : one<'+', '-', '%'> {};
 		struct op_4 : sor<string<'<', '='>, string<'>', '='>, string<'!', '='>, one<'<', '=', '>'>> {};					// A tad "crude"
-		struct op_5 : seq<one<':'>, opt<one<'^', '*', '/', '+', '-', '%', '<', '=', '>'>>> {};							// Assignment operators (should :>=, :<=, and :!= be valid???)
+		struct op_x : seq<one<':'>, opt<one<'^', '*', '/', '+', '-', '%', '<', '=', '>'>>> {};							// Assignment operators (should :>=, :<=, and :!= be valid???)
 
 		// Atomic Tokens
 		struct unary : seq<op_0, expr_0> {};
@@ -89,20 +98,25 @@ namespace dust {
 		struct expr_3 : seq<expr_2, star<seps, ee_3>, seps> {};							// {expr_2}( *{op_3} *{expr_2})* *
 		struct ee_4 : if_must<op_4, seps, expr_3> {};
 		struct expr_4 : seq<expr_3, star<seps, ee_4>, seps> {};							// {expr_3}( *{op_4} *{expr_3})* *
+		struct ee_5 : seq<pad<k_and, sep>, expr_4> {};
+		struct expr_5 : seq<expr_4, opt<seps, ee_5>, seps> {};							// {expr_4}( *and *{expr_4})? *
+		struct ee_6 : seq<pad<k_or, sep>, expr_5> {};
+		struct expr_6 : seq<expr_5, opt<seps, ee_6>, seps> {};							// {expr_5}( *or *{expr_5})? *
 
-
-		// Optimize and integrate multiple assignment
+		// Multiple Assignment
+			// expr_x is going to be a fairly high level expression
+			// Optimize and integrate multiple assignment
 			// Can I utilize the lookahead phase to push var_id's onto the stack ???
 		struct var_list : s_list<var_id> {};											// AST and lookahead? (seq<var_id, seps, sor<one<','>, op_5>>)  // this could technically match an expression list
-		struct expr_list : s_list<expr_5> {};											// {expr_5} *, *
+		struct expr_list : s_list<expr_x> {};											// {expr_5} *, *
 
-		struct assign : seq<var_list, seps, op_5> {};									// assignments are right associative
-		struct ee_5 : seq<assign, seps, expr_list> {};									// ensure that expr_4 doesn't trigger the expression reduction
-		struct expr_5 : if_then_else<at<assign>, ee_5, expr_4> {};						// {var_list} *{op_5} * {expr_list}
+		struct assign : seq<var_list, seps, op_x> {};									// assignments are right associative
+		struct ee_x : seq<assign, seps, expr_list> {};									// ensure that expr_4 doesn't trigger the expression reduction
+		struct expr_x : if_then_else<at<assign>, ee_x, expr_6> {};						// {var_list} *{op_5} * {expr_list}
 
 
 		// Organization Tokens
-		struct expr : seq<expr_5> {};
+		struct expr : seq<expr_x> {};
 	}
 
 	// Grammar Token

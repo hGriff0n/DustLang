@@ -14,11 +14,6 @@ namespace dust {
 		struct action : nothing<Rule> {};
 
 		// Workspace
-		template <> struct action<body> {
-			static void apply(const input& in, AST& ast) {
-				ast.push(makeNode<Literal>(unescape(in.string()), type::Traits<std::string>::id));
-			}
-		};
 
 		// Literal Actions
 		template <> struct action<decimal> {
@@ -39,6 +34,19 @@ namespace dust {
 			}
 		};
 
+		template <> struct action<body> {
+			static void apply(const input& in, AST& ast) {
+				ast.push(makeNode<Literal>(unescape(in.string()), type::Traits<std::string>::id));
+			}
+		};
+
+		template <> struct action<k_nil> {
+			static void apply(const input& in, AST& ast) {
+				ast.push(makeNode<Literal>("0", type::Traits<bool>::id));
+				//ast.push(makeNode<Literal>("", -1));
+			}
+		};
+
 
 		// Identifier Actions
 		template <> struct action<var_id> {
@@ -46,6 +54,15 @@ namespace dust {
 				ast.push(makeNode<VarName>(in.string()));
 			}
 		};
+
+		// Keyword Actions
+		template <> struct action<k_and> {
+			static void apply(const input& in, AST& ast) {
+				ast.push(makeNode<BinaryKeyword>(in.string()));					// and/or are not becoming methods of Bool
+			}
+		};
+
+		template <> struct action<k_or> : action<k_and> {};
 
 
 		// Operator Actions
@@ -66,12 +83,14 @@ namespace dust {
 		template <> struct action<op_3> : OpAction {};
 		template <> struct action<op_4> : OpAction {};
 
+
 		// Assignment Operators don't follow the same structure as Operators
-		template <> struct action<op_5> {
+		template <> struct action<op_x> {
 			static void apply(const input& in, AST& ast) {
 				ast.push(makeNode<Assign>(in.string().substr(1)));
 			}
 		};
+
 
 		// Atomic Actions
 		template <> struct action<unary> {
@@ -89,7 +108,6 @@ namespace dust {
 					throw error::missing_nodes{ "Attempt to construct Operator node with less than 2 nodes on the stack" };
 			}
 		};
-
 
 		// Expression Actions
 		template <typename Node>
@@ -119,8 +137,9 @@ namespace dust {
 		template <> struct action<ee_2> : ee_actions<Operator> {};
 		template <> struct action<ee_3> : ee_actions<Operator> {};
 		template <> struct action<ee_4> : ee_actions<Operator> {};
-		template <> struct action<ee_5> : ee_actions<Assign> {};				// ee_5 is Assignmnet, which needs and uses Assignment nodes. ee_acctions requires Operator nodes
-
+		template <> struct action<ee_5> : ee_actions<BinaryKeyword> {};
+		template <> struct action<ee_6> : ee_actions<BinaryKeyword> {};
+		template <> struct action<ee_x> : ee_actions<Assign> {};				// ee_x is Assignmnet, which needs and uses Assignment nodes. ee_acctions requires Operator nodes
 
 		// List Actions
 		template <class type>
