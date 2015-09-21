@@ -65,7 +65,7 @@ namespace dust {
 					s << buffer << "[|] Running Test " << std::setw(5) << ++num_tests;
 
 					if (code.size() > TESTING_WEIGHT - 8)
-						return s << "input=\"" + code + "\"\n" << buffer << "\t    Testing ";
+						return s << "input=\"" + parse::escape(code) + "\"\n" << buffer << "\t    Testing ";
 					else
 						return s << std::setw(TESTING_WEIGHT) << ("input=\"" + code + "\"") << " Testing ";
 				}
