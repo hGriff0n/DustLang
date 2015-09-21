@@ -1,0 +1,3 @@
+[submodule "Interpreter/Libraries/PEGTL"]
+	path = Interpreter/Libraries/PEGTL
+	url = https://github.com/ColinH/PEGTL.git
