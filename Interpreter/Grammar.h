@@ -10,6 +10,8 @@
 
 // For quick testing of grammar, pegjs.org/online
 
+#define key_string(x) key<pegtl_string_t(x)> {}
+
 namespace dust {
 	namespace parse {
 		using namespace pegtl;
@@ -43,7 +45,8 @@ namespace dust {
 		struct k_nil;
 
 		// "Readability" Tokens
-		struct sep : one<' '> {};
+		struct sep : one<' ', '\n'> {};
+		//struct sep : one<' ', '\n', '\t'> {};
 		struct seps : star<sep> {};
 		struct o_paren : one<'('> {};
 		struct c_paren : one<')'> {};
@@ -52,24 +55,28 @@ namespace dust {
 		struct esc : one<'\\'> {};		// % ???
 		struct comment : if_must<two<'#'>, until<eolf>> {};								// ##.*
 
-		// Literal Tokens
-		struct integer : plus<digit> {};												// [0-9]+
-		struct decimal : seq<plus<digit>, one<'.'>, star<digit>> {};					// [0-9]+\.[0-9]*
-		struct boolean : sor<string<'t', 'r', 'u', 'e'>, string<'f', 'a', 'l', 's', 'e'>> {};
-		struct body : plus<sor<seq<esc, quote>, unless<quote>>> {};
-		struct str : seq<quote, opt<body>, quote> {};
-		struct literals : sor<decimal, integer, boolean, str, k_nil> {};
-
 		// Keyword Tokens
 		template <class Str>
 		struct key : seq<Str, not_at<id_end>> {};
 
-		struct k_and : key<string<'a', 'n', 'd'>> {};
-		struct k_or : key<string<'o', 'r'>> {};
-		struct k_nil : key<string<'n', 'i', 'l'>> {};
-		struct k_if : key<string<'i', 'f'>> {};
-		struct k_type : key<string<'t', 'y', 'p', 'e'>> {};
-		struct k_inherit : key<string<'<', '-'>> {};
+		struct k_and : key_string("and");
+		struct k_true : key_string("true");
+		struct k_false : key_string("false");
+		struct k_or : key_string("or");
+		struct k_nil : key_string("nil");
+		struct k_do : key_string("do");
+		struct k_if : key_string("if");
+		struct k_type : key_string("type");
+		struct k_inherit : pegtl_string_t("<-") {};
+
+		// Literal Tokens
+		struct integer : plus<digit> {};												// [0-9]+
+		struct decimal : seq<plus<digit>, one<'.'>, star<digit>> {};					// [0-9]+\.[0-9]*
+		struct boolean : sor<k_true, k_false> {};
+		struct body : plus<sor<seq<esc, quote>, unless<quote>>> {};
+		struct str : seq<quote, opt<body>, quote> {};
+		struct literals : sor<decimal, integer, boolean, str, k_nil> {};
+
 
 		// Identifier Tokens
 		struct id_end : identifier_other {};

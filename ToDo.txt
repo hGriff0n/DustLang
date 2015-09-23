@@ -1,12 +1,82 @@
+Notes
+	PEGTL Submodule interactions can only be done with the Git Shell
+	For updating the local PEGTL repository
+		In Git Shell, navigate to "Visual Studio 2015/MyResources/MyLib"
+		Currently, delete the existing PEGTL directory
+		Execute "git clone https://github.com/ColinH/PEGTL.git"
+	Using newline in repl/testing
+		Just add "\n" in the automated tests (although the display is wonky)
+		For the repl loop, use getmultiline
+			getmultiline waits until [ENTER] is hit twice before accepting
+
+Opinions on adapting code to use the C++ Common Code Standards and the GSL
+	I feel like this would be a good idea on the whole
+		I currently can't explain why though
+
+	However there are many downsides the mean I won't implement it yet
+		Time-costly to go through and implement for the whole project
+			This will only get worse as time goes on however
+		I'm not used to the new standards
+			Error prone if I perform the switch while I'm figuring this stuff out
+			If I don't understand my current code at times, how can I accurately adapt it to the new standard?
+		Some of	the juicy stuff is not available yet (static analyzers)
+
 Timeline
 	1 Scoping and multi-lined grammar
 		Modify the grammar to accept multiple lines
-			This isn't really possible with the current loop structure (expects newline ([ENTER]) to end input)
-			Could I use \n to make "new lines" YES
-			Have the input "evaluate" to the value of the last line
-		Have tabbing create a new scope
+			
+			Have the input "evaluate" to the value of the last line														# How to handle multiline evaluation
+				A block of code is equivalent to a vector of Expressions (ASTNodes)
+				To evaluate the block, I iterate over the expressions
+					Before block evaluation the stack will have x elements
+					Before evaluating each expression, set stack top to x
+						The evaluate the requisite expression
+						Because the last expression has no following expression, it's values are left on the stack
+							Break/Continue may give some problems with this model
+					I have a general conception in AST
+
+		Be able to create and parse scopes using tabbing																# How to implement Scoping
+			Add "do" keyword recognition
+				Possibly enforce having a new scope follow use
+			Figure out how I'm going to store scopes for execution
+				Temporary v. Static Scopes (Loops v. Functions, etc.)
+					Temporary scopes are not stored in memory, Static scopes are
+						Temporary scopes are created and destroyed as needed
+					Will I even be having static scopes (Scopes that are stored)
+
+			Unify the ability to break expressions onto multiple aligns with whitespace for scoping						# Handling important whitespace
+				Continuation expressions
+					sep = one<' ', '\n', '\t'>
+						I could also keep sep as is and provide a c_sep/etc. that allows continuation expressions
+					Then any expression that allows a seps (c_seps) to exist on multiple lines and be parsed correctly
+						Can have one portion on one line and the rest on another, idented 5 levels
+						This part of the expression would ignore any scoping levels (logically it is a part of the previous line)
+
+				Indexing on multiple lines
+					The question is really whether "foo() . bar . call()" should equal "foo().bar.call()"
+						With the concept of "continuation expressions", "foo()\n.bar\n.call()" is a natural side effect of allowing the above
+							And moreover doesn't require any changes in grammar/parsing/etc. (aside from sep)
+
+			Determine the difference between a tab and x spaces															# Scoping whitespace rules
+				How does Python resolve this problem
+					Requiring a ':' to begin a new scope (ie. do keyword)?
+						But what about lambdas
+					Line joining
+						Python uses the '\' character to join physical lines into logical lines
+					Space and tab are different characters
+						Scoping is only introduced with tabs
+					Copy-paste
+						Translate all tabs to spaces (or vice versa) before parsing
+
 		Implement scoped declarations and access
-		Implement global and local variable distinction				## be able to access "masked" variables
+			ModifyEvalState to use scoping to store variables
+			Implement global and local variable distinction				## be able to access "masked" variables
+
+		Possibly replace global variable storage with the scoping structures/mechanisms
+			Good way of implementing namespaces/modules (map from string -> scope)
+				Normal "scoping" would use a stack (defaults to empty)
+			Could scoping also be used for tables ???
+
 	2 Type Definitions
 		Have the ability to create new types and assign inheritance relationships
 		Have some interaction with type ids, if only for debugging purposes

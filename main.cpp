@@ -43,6 +43,20 @@ void print(ostream& s, std::shared_ptr<parse::ASTNode>& ast) {
 	(s << ast->print_string("|")).flush();
 }
 
+// Wrapper around std::getline that waits for [ENTER] to be hit twice before accepting input
+template <class istream>
+istream& getmultiline(istream& in, std::string& s) {
+	std::getline(in, s);
+	if (s == "exit") return in;
+
+	std::string tmp{};
+	while (std::getline(in, tmp)) {
+		if (tmp == "") return in;
+
+		s += "\n" + tmp;
+	}
+}
+
 
 int main(int argc, const char* argv[]) {
 	std::cout << "Analyzing `dust::grammar`.....\n";
@@ -56,11 +70,19 @@ int main(int argc, const char* argv[]) {
 	EvalState e;
 	initState(e);
 
+	getmultiline(std::cin, input);
+	std::cout << input << std::endl;
+	getmultiline(std::cin, input);
+	std::cout << input << std::endl;
+
 	test::run_tests(e);
 
 	std::cout << "> ";
+	//while (getmultiline(std::cin, input) && input != "exit")
 	while (std::getline(std::cin, input) && input != "exit") {
 		if (input == "gc") {
+
+		} else if (input == "\n" || input == "") {
 
 		} else {
 			try {

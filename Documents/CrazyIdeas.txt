@@ -25,3 +25,6 @@ Multiple comparators
 
 	"i = 0 and j = 2" => "i, j = 0, 2"
 	"i = 0 and i = j" => "i, i = 0, j"
+
+Change inheritance syntax
+	Change the inheritance operator for specifying which types a new type inherits from '++' to '<-' to match the proposed type testing syntax
