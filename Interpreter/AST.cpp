@@ -55,10 +55,10 @@ namespace dust {
 		}
 		std::string Literal::to_string() {
 			return (id == type::Traits<int>::id ? " Int " :
-				id == type::Traits<double>::id ? " Float " :
-				id == type::Traits<bool>::id ? " Bool " :
-				id == type::Traits<std::string>::id ? " String \"" :
-				" Nil ") + val + (id == type::Traits<std::string>::id ? "\"" : "");
+					id == type::Traits<double>::id ? " Float " :
+					id == type::Traits<bool>::id ? " Bool " :
+					id == type::Traits<std::string>::id ? " String \"" : " Nil ")
+				+ val + (id == type::Traits<std::string>::id ? "\"" : "");
 		}
 		std::string Literal::print_string(std::string buf) {
 			return buf + "+- " + node_type + to_string() + "\n";
@@ -67,8 +67,14 @@ namespace dust {
 		// Operator methods
 		Operator::Operator(std::string o) : l{ nullptr }, r{ nullptr }, op{ o } {}
 		EvalState& Operator::eval(EvalState& e) {
-			if (r) r->eval(e);			// Current Binary operator evalutation expects stack: ..., rhs, lh
-			return l->eval(e).callOp(op);
+			l->eval(e);
+
+			if (r) {
+				r->eval(e);
+				e.swap();				// Current Binary operator evalutation expects stack: ..., rhs, lh
+			}
+
+			return e.callOp(op);
 		}
 		std::string Operator::to_string() { return op; }
 		std::string Operator::print_string(std::string buf) {
@@ -78,35 +84,6 @@ namespace dust {
 			if (!l) l.swap(c);
 			else if (!r) r.swap(c);
 			else throw error::unimplemented_operation{ "Dust does not currently support ternary operators" };
-		}
-
-		// BinaryKeyword methods
-		BinaryKeyword::BinaryKeyword(std::string key) : l{ nullptr }, r{ nullptr }, isAnd{ key == "and" } {}
-		EvalState& BinaryKeyword::eval(EvalState& e) {
-			if (!l || !r) throw error::bad_node_eval{ "Attempt to use BinaryKeyword node with less than two operands" };
-
-			l->eval(e).copy();						// Copy does perform reference incrementing
-			
-			// Short circuit evaluation
-			if (isAnd) {
-				if (!e.pop<bool>())	return e;		// if the left argument is false return immediately
-
-			} else {
-				if (e.pop<bool>()) return e;		// if the left argument is true return immediately
-			}
-		
-			// Otherwise leave the right argument on the stack
-			e.pop();
-			return r->eval(e);
-		}
-		std::string BinaryKeyword::to_string() { return isAnd ? "and" : "or"; }
-		std::string BinaryKeyword::print_string(std::string buf) {
-			return buf + "+- " + node_type + " " + to_string() + "\n" + l->print_string(buf + " ") + (r ? r->print_string(buf + " ") : "");
-		}
-		void BinaryKeyword::addChild(std::shared_ptr<ASTNode>& c) {
-			if (!l) l.swap(c);
-			else if (!r) r.swap(c);
-			else throw error::operands_error{ "Attempt to add more than three operands to BinaryKeyword node" };
 		}
 
 		// VarName methods
@@ -178,13 +155,79 @@ namespace dust {
 			if (vars && vals) throw error::operands_error{ "Assignment is a binary operation" };
 		}
 
+		// BinaryKeyword methods
+		BinaryKeyword::BinaryKeyword(std::string key) : l{ nullptr }, r{ nullptr }, isAnd{ key == "and" } {}
+		EvalState& BinaryKeyword::eval(EvalState& e) {
+			if (!l || !r) throw error::bad_node_eval{ "Attempt to use BinaryKeyword node with less than two operands" };
+
+			l->eval(e).copy();						// Copy does perform reference incrementing
+
+													// Short circuit evaluation
+			if (isAnd) {
+				if (!e.pop<bool>())	return e;		// and: if lhs == false return immediately
+
+			} else if (e.pop<bool>()) {
+				return e;							// or: if lhs == true return immediately
+			}
+
+			// Otherwise leave the right argument on the stack
+			e.pop();
+			return r->eval(e);
+		}
+		std::string BinaryKeyword::to_string() { return isAnd ? "and" : "or"; }
+		std::string BinaryKeyword::print_string(std::string buf) {
+			return buf + "+- " + node_type + " " + to_string() + "\n" + l->print_string(buf + " ") + (r ? r->print_string(buf + " ") : "");
+		}
+		void BinaryKeyword::addChild(std::shared_ptr<ASTNode>& c) {
+			if (!l) l.swap(c);
+			else if (!r) r.swap(c);
+			else throw error::operands_error{ "Attempt to add more than three operands to BinaryKeyword node" };
+		}
+
+		// Block methods
+		Block::Block() {}
+		auto Block::begin() {
+			return expr.rbegin();
+		}
+		auto Block::end() {
+			return expr.rend();
+		}
+		size_t Block::size() {
+			return expr.size();
+		}
+		EvalState& Block::eval(EvalState& e) {
+			if (expr.empty()) throw error::bad_node_eval{ "Attempt to evaluate an empty block" };
+			auto x = e.size();
+
+			for (const auto& i : *this) {
+				e.settop(x);							// Pops the results of the last expression (Not executed for the last expression)
+				i->eval(e);
+			}
+
+			return e;
+		}
+		std::string Block::to_string() { return ""; }
+		std::string Block::print_string(std::string buf) {
+			std::string ret = buf + "+- " + node_type + "\n";
+			buf += " ";
+
+			for (auto i : *this)
+				ret += i->print_string(buf);
+
+			return ret;
+		}
+		void Block::addChild(std::shared_ptr<ASTNode>& c) {
+			expr.push_back(c);
+		}
+
 
 		std::string ASTNode::node_type = "ASTNode";
 		std::string Debug::node_type = "Debug";
 		std::string Literal::node_type = "Literal";
 		std::string Operator::node_type = "Operator";
-		std::string BinaryKeyword::node_type = "Boolean";
 		std::string VarName::node_type = "Variable";
 		std::string Assign::node_type = "Assignment";
+		std::string BinaryKeyword::node_type = "Boolean";
+		std::string Block::node_type = "Block";
 	}
 }

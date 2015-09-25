@@ -22,6 +22,10 @@ Opinions on adapting code to use the C++ Common Code Standards and the GSL
 		Some of	the juicy stuff is not available yet (static analyzers)
 
 Timeline
+	0 Something is rotten in Evaluation
+		Rework the Testing suite to have pre-requisites
+			See comment at line 95
+
 	1 Scoping and multi-lined grammar
 		Modify the grammar to accept multiple lines
 			

@@ -6,6 +6,7 @@
 
 namespace dust {
 	namespace parse {
+		// Possibly create grammars and actions for escaping/unescaping strings
 		std::string escape(std::string);
 		std::string unescape(std::string);
 
@@ -51,7 +52,7 @@ namespace dust {
 					std::string ret = buf + "+- " + node_type + "\n";
 					buf += " ";
 
-					for (auto i = begin(); i != end(); ++i)
+					for (auto i = begin(); i != end(); ++i)		// for (auto i : *this)
 						ret += (*i)->print_string(buf);
 
 					return ret;
@@ -113,22 +114,6 @@ namespace dust {
 				void addChild(std::shared_ptr<ASTNode>& c);
 		};
 
-		class BinaryKeyword : public ASTNode {
-			private:
-				std::shared_ptr<ASTNode> l, r;
-				bool isAnd;
-
-			public:
-				BinaryKeyword(std::string key);
-				static std::string node_type;
-
-				EvalState& eval(EvalState& e);
-				std::string to_string();
-
-				virtual std::string print_string(std::string buf);
-				void addChild(std::shared_ptr<ASTNode>& c);
-		};
-
 		class VarName : public ASTNode {
 			private:
 				std::string name;
@@ -166,6 +151,41 @@ namespace dust {
 		};
 
 		// class Keyword : public ASTNode {};
+
+		class BinaryKeyword : public ASTNode {
+			private:
+				std::shared_ptr<ASTNode> l, r;
+				bool isAnd;
+
+			public:
+				BinaryKeyword(std::string key);
+				static std::string node_type;
+
+				EvalState& eval(EvalState& e);
+				std::string to_string();
+	
+				virtual std::string print_string(std::string buf);
+				void addChild(std::shared_ptr<ASTNode>& c);
+		};
+
+		class Block : public ASTNode {
+			private:
+				std::vector<std::shared_ptr<ASTNode>> expr;
+
+			public:
+				Block();
+				static std::string node_type;
+
+				EvalState& eval(EvalState& e);
+				std::string to_string();
+
+				virtual std::string print_string(std::string buf);
+				void addChild(std::shared_ptr<ASTNode>& c);
+
+				auto begin();
+				auto end();
+				size_t size();
+		};
 
 		template<class T> std::string List<T>::node_type = "List<" + T::node_type + ">";
 	}

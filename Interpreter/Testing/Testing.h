@@ -97,6 +97,11 @@ namespace dust {
 					s << std::setiosflags(std::ios::left);
 				}
 
+				// Execute the given code
+				virtual void eval(const std::string& code) {
+					evaluate(code);
+				}
+
 				// After executing the given code, the stack has the given number of elements
 				virtual void require_size(const std::string& code, size_t siz) {
 					displayTestHeader(code) << "for stack size of " << siz << "\n";

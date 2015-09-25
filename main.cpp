@@ -70,19 +70,11 @@ int main(int argc, const char* argv[]) {
 	EvalState e;
 	initState(e);
 
-	getmultiline(std::cin, input);
-	std::cout << input << std::endl;
-	getmultiline(std::cin, input);
-	std::cout << input << std::endl;
-
 	test::run_tests(e);
 
 	std::cout << "> ";
-	//while (getmultiline(std::cin, input) && input != "exit")
-	while (std::getline(std::cin, input) && input != "exit") {
+	while (getmultiline(std::cin, input) && input != "exit") {
 		if (input == "gc") {
-
-		} else if (input == "\n" || input == "") {
 
 		} else {
 			try {
@@ -94,6 +86,8 @@ int main(int argc, const char* argv[]) {
 
 				// Need to make a generic 'pop' here
 				// Or I can insist that printable equates to String convertible
+				// e >> input;		Define operator<< and operator>> for EvalState/Stack ???
+
 				std::cout << ":: "
 					<< (isResString ? "\"" : "")
 					<< (std::string)e
