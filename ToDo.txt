@@ -23,27 +23,15 @@ Opinions on adapting code to use the C++ Common Code Standards and the GSL
 
 Timeline
 	1 Scoping and multi-lined grammar
-		Be able to create and parse scopes using tabbing																# How to implement Scoping
-			Add "do" keyword recognition
-				Possibly enforce having a new scope follow use
-			Figure out how I'm going to store scopes for execution
-				Temporary v. Static Scopes (Loops v. Functions, etc.)
-					Temporary scopes are not stored in memory, Static scopes are
-						Temporary scopes are created and destroyed as needed
-					Will I even be having static scopes (Scopes that are stored)
-
-			Unify the ability to break expressions onto multiple aligns with whitespace for scoping						# Handling important whitespace
-				Continuation expressions
-					sep = one<' ', '\n', '\t'>
-						I could also keep sep as is and provide a c_sep/etc. that allows continuation expressions
-					Then any expression that allows a seps (c_seps) to exist on multiple lines and be parsed correctly
-						Can have one portion on one line and the rest on another, idented 5 levels
-						This part of the expression would ignore any scoping levels (logically it is a part of the previous line)
-
-				Indexing on multiple lines
-					The question is really whether "foo() . bar . call()" should equal "foo().bar.call()"
-						With the concept of "continuation expressions", "foo()\n.bar\n.call()" is a natural side effect of allowing the above
-							And moreover doesn't require any changes in grammar/parsing/etc. (aside from sep)
+		How to define Scoping
+			Continuation Expressions
+				Any expression that uses {seps} can be written using multiple lines
+					The parser will use the scope of the statement start when parsing the expression
+						The code on following lines can be indented willy-nilly
+					I can also provide a {c_seps} that does the same functionality (keep {sep} = ' ')
+				For table indexing, should the '.' immediately follow the table or can there be a {seps} in between
+					This would be a minor step to allowing indexing to be a continuation expression
+					ie. Should "foo() . bar . call()" parse correctly
 
 			Determine the difference between a tab and x spaces															# Scoping whitespace rules
 				How does Python resolve this problem
@@ -56,6 +44,15 @@ Timeline
 					Copy-paste
 						Translate all tabs to spaces (or vice versa) before parsing
 
+		Be able to create and parse scopes using tabbing																# How to implement Scoping
+			Add "do" keyword recognition
+				Possibly enforce having a new scope follow use
+			Figure out how I'm going to store scopes for execution
+				Temporary v. Static Scopes (Loops v. Functions, etc.)
+					Temporary scopes are not stored in memory, Static scopes are
+						Temporary scopes are created and destroyed as needed
+					Will I even be having static scopes (Scopes that are stored)
+
 		Implement scoped declarations and access
 			ModifyEvalState to use scoping to store variables
 			Implement global and local variable distinction				## be able to access "masked" variables
@@ -65,10 +62,20 @@ Timeline
 				Normal "scoping" would use a stack (defaults to empty)
 			Could scoping also be used for tables ???
 
-	2 Type Definitions
+	2 Type Definitions and Table Syntax
 		Have the ability to create new types and assign inheritance relationships
 		Have some interaction with type ids, if only for debugging purposes
-		Add a basic recognition of Table syntax (no semantical influence yet)
+		Add a basic recognition of Table syntax (the grammar accepts tables)
+			Possible Table Implementation
+				Have the Table ASTNode inherit from Block
+				Table::eval sets a scope, then calls Block::eval, which sets the variables in the scope
+					However, there's problems in setting default keys
+						It's a simple question of Assign vs. ASTNode
+						If the node is castable to Assign, then it doesn't need the default key
+							Printing is still a problem
+							Would ',' then become an expression seperator (outside of the list functionality) ???
+							There's also the implications on the range syntax (would this need tables)
+				Then Table = [ <expr>* ] (instead of [ <arg_list> ])
 	3 Table Semantics
 		Indexable arrays
 		Determine how to access the arrays

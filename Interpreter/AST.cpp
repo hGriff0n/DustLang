@@ -220,6 +220,38 @@ namespace dust {
 			expr.push_back(c);
 		}
 
+		// Table methods
+		Table::Table() {}
+		EvalState& Table::eval(EvalState& e) {
+			// Init e with a new scope (possibly a new stack
+
+			for (auto i : *this) {
+				i->eval(e);
+
+				// If the expression was not an assignment, assign using a default value
+				if (!std::dynamic_pointer_cast<Assign>(i)) {
+					// e.setVar(e.nextInt());
+				} else
+					e.pop();
+			}
+
+			// Get "table" from e
+			// Reset current scope
+			// Push table onto the stack
+			return e;
+		}
+
+		std::string Table::to_string() { return ""; }
+		std::string Table::print_string(std::string buf) {
+			std::string ret = buf + "+- " + node_type + "\n";
+			buf += " ";
+
+			for (auto i : *this)
+				ret += i->print_string(buf);
+
+			return ret;
+		}
+		
 
 		std::string ASTNode::node_type = "ASTNode";
 		std::string Debug::node_type = "Debug";
@@ -229,5 +261,6 @@ namespace dust {
 		std::string Assign::node_type = "Assignment";
 		std::string BinaryKeyword::node_type = "Boolean";
 		std::string Block::node_type = "Block";
+		std::string Table::node_type = "Table";
 	}
 }

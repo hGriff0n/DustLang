@@ -16,9 +16,9 @@ namespace dust {
 				static std::string node_type;
 
 				virtual EvalState& eval(EvalState&) =0;
-				virtual std::string to_string() =0;
-
 				virtual void addChild(std::shared_ptr<ASTNode>& c);
+
+				virtual std::string to_string() =0;
 				virtual std::string print_string(std::string buf);
 		};
 
@@ -41,12 +41,11 @@ namespace dust {
 					throw error::bad_node_eval{ "Attempt to evaluate a List node" };
 				}
 
-				std::string to_string() { return ""; }
-
-
 				void addChild(std::shared_ptr<ASTNode>& c) {
 					add(std::dynamic_pointer_cast<Node>(c));
 				}
+
+				std::string to_string() { return ""; }
 
 				virtual std::string print_string(std::string buf) {
 					std::string ret = buf + "+- " + node_type + "\n";
@@ -78,8 +77,8 @@ namespace dust {
 				static std::string node_type;
 
 				EvalState& eval(EvalState& e);
-				std::string to_string();
 
+				std::string to_string();
 				virtual std::string print_string(std::string buf);
 		};
 
@@ -93,8 +92,8 @@ namespace dust {
 				static std::string node_type;
 
 				EvalState& eval(EvalState& e);	// Based off of the old ast implementation
-				std::string to_string();		// Possibly temporary implementation
 
+				std::string to_string();		// Possibly temporary implementation
 				virtual std::string print_string(std::string buf);
 		};
 
@@ -108,10 +107,10 @@ namespace dust {
 				static std::string node_type;
 
 				EvalState& eval(EvalState& e);
-				std::string to_string();
-
-				virtual std::string print_string(std::string buf);
 				void addChild(std::shared_ptr<ASTNode>& c);
+
+				std::string to_string();
+				virtual std::string print_string(std::string buf);
 		};
 
 		class VarName : public ASTNode {
@@ -123,8 +122,8 @@ namespace dust {
 				static std::string node_type;
 
 				EvalState& eval(EvalState& e);
-				std::string to_string();
 
+				std::string to_string();
 				virtual std::string print_string(std::string buf);
 		};
 
@@ -144,10 +143,10 @@ namespace dust {
 				static std::string node_type;
 
 				EvalState& eval(EvalState& e);
-				std::string to_string();
-
-				virtual std::string print_string(std::string buf);
 				void addChild(std::shared_ptr<ASTNode>& c);
+
+				std::string to_string();
+				virtual std::string print_string(std::string buf);
 		};
 
 		// class Keyword : public ASTNode {};
@@ -162,29 +161,44 @@ namespace dust {
 				static std::string node_type;
 
 				EvalState& eval(EvalState& e);
-				std::string to_string();
-	
-				virtual std::string print_string(std::string buf);
 				void addChild(std::shared_ptr<ASTNode>& c);
+
+				std::string to_string();
+				virtual std::string print_string(std::string buf);
 		};
 
 		class Block : public ASTNode {
 			private:
 				std::vector<std::shared_ptr<ASTNode>> expr;
 
+			protected:
+				auto begin();
+				auto end();
+				size_t size();
+
 			public:
 				Block();
 				static std::string node_type;
 
-				EvalState& eval(EvalState& e);
-				std::string to_string();
+				virtual EvalState& eval(EvalState& e);
+				virtual void addChild(std::shared_ptr<ASTNode>& c);
 
+				virtual std::string to_string();
 				virtual std::string print_string(std::string buf);
-				void addChild(std::shared_ptr<ASTNode>& c);
+		};
 
-				auto begin();
-				auto end();
-				size_t size();
+		// Possible way of implementing Tables through specializing the Block node
+			// There's some implications that need to be worked through however
+		class Table : public Block {
+			private:
+			public:
+				Table();
+				static std::string node_type;
+
+				virtual EvalState& eval(EvalState& e);
+
+				virtual std::string to_string();
+				virtual std::string print_string(std::string buf);			// Printing could be better
 		};
 
 		template<class T> std::string List<T>::node_type = "List<" + T::node_type + ">";
