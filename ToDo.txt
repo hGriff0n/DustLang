@@ -22,23 +22,7 @@ Opinions on adapting code to use the C++ Common Code Standards and the GSL
 		Some of	the juicy stuff is not available yet (static analyzers)
 
 Timeline
-	0 Something is rotten in Evaluation
-		Rework the Testing suite to have pre-requisites
-			See comment at line 95
-
 	1 Scoping and multi-lined grammar
-		Modify the grammar to accept multiple lines
-			
-			Have the input "evaluate" to the value of the last line														# How to handle multiline evaluation
-				A block of code is equivalent to a vector of Expressions (ASTNodes)
-				To evaluate the block, I iterate over the expressions
-					Before block evaluation the stack will have x elements
-					Before evaluating each expression, set stack top to x
-						The evaluate the requisite expression
-						Because the last expression has no following expression, it's values are left on the stack
-							Break/Continue may give some problems with this model
-					I have a general conception in AST
-
 		Be able to create and parse scopes using tabbing																# How to implement Scoping
 			Add "do" keyword recognition
 				Possibly enforce having a new scope follow use

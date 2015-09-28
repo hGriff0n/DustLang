@@ -167,9 +167,22 @@ namespace dust {
 
 		template <> struct action<var_list> : list_actions<VarName> {};
 		template <> struct action<expr_list> : list_actions<ASTNode> {};
-		//template <> struct action<arg_list> : list_actions<TokenType::Arg, true> {};
-		//template <> struct action<tbl_list> : list_actions<TokenType::Field> {};			// true?
 
+		// Block and Scoping Actions
+			// A block is constructed "after" it's nodes
+			// If an operation needs a block, it first needs to push a START_BLOCK debug node on the stack
+		template <> struct action<block> {
+			static void apply(input& in, AST& ast) {
+				auto b = makeNode<Block>();
+				bool block_node = false;
+
+				while (!ast.empty() && !(block_node = ast.at()->to_string() == "START_BLOCK"))
+					b->addChild(ast.pop());
+
+				if (block_node) ast.pop();
+				ast.push(b);
+			}
+		};
 
 		// Other Actions
 		template <> struct action<o_paren> {

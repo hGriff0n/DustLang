@@ -71,6 +71,7 @@ namespace dust {
 				}
 
 				void evaluate(const std::string& code) {
+					tree.push(makeNode<parse::Debug>("START_BLOCK"));
 					pegtl::parse<grammar, action>(code, code, tree);
 					tree.pop()->eval(e);
 				}
@@ -82,6 +83,7 @@ namespace dust {
 
 				void exitTest() {
 					s << std::endl;
+					tree.clear();
 					reset(e);
 				}
 

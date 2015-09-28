@@ -67,7 +67,7 @@ namespace dust {
 		struct k_do : key_string("do");
 		struct k_if : key_string("if");
 		struct k_type : key_string("type");
-		struct k_inherit : pegtl_string_t("<-") {};
+		struct k_inherit : pegtl_string_t("<-") {};										// Can't start an indentifier
 
 		// Literal Tokens
 		struct integer : plus<digit> {};												// [0-9]+
@@ -121,11 +121,17 @@ namespace dust {
 		struct ee_x : seq<assign, seps, expr_list> {};									// ensure that expr_4 doesn't trigger the expression reduction
 		struct expr_x : if_then_else<at<assign>, ee_x, expr_6> {};						// {var_list} *{op_5} * {expr_list}
 
-
 		// Organization Tokens
-		struct expr : seq<expr_x> {};
+		struct expr : expr_x {};
+		struct block : plus<seps, expr, seps> {};										// Have to modify with scoping
 	}
 
 	// Grammar Token
-	struct grammar : pegtl::must<parse::expr> {};
+	//struct grammar : pegtl::must<parse::expr> {};
+	struct grammar : pegtl::must<parse::block> {};
+		// 3 + a: 3			 (This might actually be correct, "(3 + a)[: 3]")
+		// false and a: 5	 (Same here, "(false and a)[: 5])
+			// Expression constructed but not followed by end of input
+				// I might decide that this is an incorrect parse
+		// "attempt to evaluate List node" exception on test TrickyOperations.6
 }
