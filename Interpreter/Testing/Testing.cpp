@@ -65,26 +65,26 @@ namespace dust {
 			t.init_sub_test("Boolean Keywords");
 				t.require_eval("c = 0 and 4 or 5", 4);						// 1
 
-				t.require_eval("false and a: 5", false);					// 2
-				t.require_true("a = true");									// 3
+				t.require_excep<pegtl::parse_error>("false and a: 5");		// 2
+				t.require_eval("false and (a: 5)", false);					// 3
+				t.require_true("a = true");									// 4		# a: 5 is not evaluated
 
-				t.require_eval("a: b or 5", 3);								// 4
-				t.require_true("a = 3");									// 5
+				t.require_eval("a: b or 5", 3);								// 5
+				t.require_true("a = 3");									// 6
 
 				// 0 => true. Should I keep this?
-				t.require_eval("b: c != 0 and 4 or (c: 5)", 5);				// 6
-				t.require_true("b = 5 and c = b");							// 7
+				t.require_eval("b: c != 0 and 4 or (c: 5)", 5);				// 7
+				t.require_true("b = 5 and c = b");							// 8
 
-				t.require_eval("b: c and 4 or (c: 5)", 4);					// 8
-				t.require_true("b = 4");									// 9
+				t.require_eval("b: c and 4 or (c: 5)", 4);					// 9
+				t.require_true("b = 4");									// 10
 			t.close_sub_test();
 
 			t.init_sub_test("Tricky Operations");
 				t.require_eval("3 + (a: 4)", 7);							// 1
 				t.require_true("a = 4");									// 2
 
-				t.require_eval("3 + a: 3", 7);								// 3
-
+				t.require_excep<pegtl::parse_error>("3 + a: 3");			// 3
 				t.require_excep<error::missing_node_x>("a, b: 3, c: 4");	// 4
 
 				t.require_eval("a, b: 3, (c: 4)", 4);						// 5
@@ -99,6 +99,8 @@ namespace dust {
 
 			t.init_sub_test("Multiline Parsing");				// Need to escape output
 				t.require_eval("a\n+ b", 7);								// 1
+				t.require_excep<pegtl::parse_error>("3 + a: 3\n - 4");
+				t.require_eval("3 + a 3\n - 4", -1);
 			t.close_sub_test();
 
 			std::cout << "Passed: " << t.num_pass << " | Failed: " << (t.num_tests - t.num_pass) << " | " << t.num_pass << " / " << t.num_tests << " Tests (" << std::setprecision(4) << ((float)t.num_pass / t.num_tests * 100) << "%)\n\n";

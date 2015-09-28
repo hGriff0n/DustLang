@@ -41,6 +41,7 @@ namespace dust {
 		struct expr;
 		struct expr_0;
 		struct expr_x;
+		struct block;
 		struct id_end;
 		struct k_nil;
 
@@ -76,6 +77,11 @@ namespace dust {
 		struct body : plus<sor<seq<esc, quote>, unless<quote>>> {};
 		struct str : seq<quote, opt<body>, quote> {};
 		struct literals : sor<decimal, integer, boolean, str, k_nil> {};
+
+		//struct table : seq<one<'['>, opt<block>, one<']'>> {};						// analyze says this is fine
+		//struct tab_list : w_list<expr_x> {};
+		//struct table : seq<one<'['>, seps, tab_list, seps, one<']'>> {};				// There's basically no difference between the two
+		//struct literals : sor<decimal, integer, boolean, str, table, k_nil> {};
 
 
 		// Identifier Tokens
@@ -118,20 +124,15 @@ namespace dust {
 		struct expr_list : s_list<expr_x> {};											// {expr_5} *, *
 
 		struct assign : seq<var_list, seps, op_x> {};									// assignments are right associative
-		struct ee_x : seq<assign, seps, expr_list> {};									// ensure that expr_4 doesn't trigger the expression reduction
+		struct ee_x : seq<assign, seps, expr_list> {};									// ensure that expr_6 doesn't trigger the expression reduction
 		struct expr_x : if_then_else<at<assign>, ee_x, expr_6> {};						// {var_list} *{op_5} * {expr_list}
 
 		// Organization Tokens
 		struct expr : expr_x {};
-		struct block : plus<seps, expr, seps> {};										// Have to modify with scoping
+		struct block : plus<seps, expr, seps> {};										// Have to modify with scoping ???
+
 	}
 
 	// Grammar Token
-	//struct grammar : pegtl::must<parse::expr> {};
-	struct grammar : pegtl::must<parse::block> {};
-		// 3 + a: 3			 (This might actually be correct, "(3 + a)[: 3]")
-		// false and a: 5	 (Same here, "(false and a)[: 5])
-			// Expression constructed but not followed by end of input
-				// I might decide that this is an incorrect parse
-		// "attempt to evaluate List node" exception on test TrickyOperations.6
+	struct grammar : pegtl::must<parse::block, pegtl::eolf> {};
 }

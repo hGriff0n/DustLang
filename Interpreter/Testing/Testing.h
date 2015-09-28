@@ -47,6 +47,8 @@ namespace dust {
 		template<> const std::string name<storage_access_error>::is = "storage_access_error";
 		template<> const std::string name<null_exception>::is = "null_exception";
 		template<> const std::string name<conversion_error>::is = "conversion_error";
+
+		template<> const std::string name<pegtl::parse_error>::is = "pegtl_error";
 	}
 
 	namespace test {
