@@ -55,6 +55,8 @@ istream& getmultiline(istream& in, std::string& s) {
 
 		s += "\n" + tmp;
 	}
+
+	return in;
 }
 
 

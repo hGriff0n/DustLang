@@ -91,9 +91,9 @@ namespace dust {
 				Literal(std::string _val, size_t t);
 				static std::string node_type;
 
-				EvalState& eval(EvalState& e);	// Based off of the old ast implementation
+				virtual EvalState& eval(EvalState& e);	// Based off of the old ast implementation
 
-				std::string to_string();		// Possibly temporary implementation
+				virtual std::string to_string();		// Possibly temporary implementation
 				virtual std::string print_string(std::string buf);
 		};
 
@@ -172,11 +172,11 @@ namespace dust {
 				std::vector<std::shared_ptr<ASTNode>> expr;
 
 			protected:
+			public:
 				auto begin();
 				auto end();
 				size_t size();
 
-			public:
 				Block();
 				static std::string node_type;
 
@@ -187,18 +187,22 @@ namespace dust {
 				virtual std::string print_string(std::string buf);
 		};
 
-		// Possible way of implementing Tables through specializing the Block node
-			// There's some implications that need to be worked through however
-		class Table : public Block {
+		// Possible way of implementing Tables by using the Block node
+			// Can't specialize from the block node for construction purposes
+				// <table> is used in other grammar objects, such as Type. How am I going to handle this?
+		class Table : public Literal {
 			private:
+				std::shared_ptr<Block> body;		// need to move begin, end, and size to public
+
 			public:
 				Table();
 				static std::string node_type;
 
 				virtual EvalState& eval(EvalState& e);
+				virtual void addChild(std::shared_ptr<ASTNode>& c);
 
 				virtual std::string to_string();
-				virtual std::string print_string(std::string buf);			// Printing could be better
+				virtual std::string print_string(std::string buf);
 		};
 
 		template<class T> std::string List<T>::node_type = "List<" + T::node_type + ">";

@@ -221,37 +221,49 @@ namespace dust {
 		}
 
 		// Table methods
-		Table::Table() {}
+		Table::Table() : Literal{ "", -1 } {}
 		EvalState& Table::eval(EvalState& e) {
-			// Init e with a new scope (possibly a new stack
+			// Init e with a new scope (possibly a new stack as well)
+			int key = 1;
 
-			for (auto i : *this) {
+			for (auto i : *body) {
 				i->eval(e);
 
 				// If the expression was not an assignment, assign using a default value
 				if (!std::dynamic_pointer_cast<Assign>(i)) {
-					// e.setVar(e.nextInt());
+					// e.setVar(key++);
 				} else
 					e.pop();
 			}
 
-			// Get "table" from e
+			// Get "table" from e (possibly modify scope state)
 			// Reset current scope
 			// Push table onto the stack
 			return e;
 		}
-
+		// This function is not called if the table does not have a block (ie. [])
+		void Table::addChild(std::shared_ptr<ASTNode>& c) {
+			if (!std::dynamic_pointer_cast<Block>(c)) throw error::invalid_ast_construction{ "Attempt to construct Table node without a corresponding Block" };
+			if (body) throw error::invalid_ast_construction{ "Attempt to construct a Table node with multiple Blocks" };
+			body.swap(std::dynamic_pointer_cast<Block>(c));
+		}
 		std::string Table::to_string() { return ""; }
 		std::string Table::print_string(std::string buf) {
 			std::string ret = buf + "+- " + node_type + "\n";
 			buf += " ";
 
-			for (auto i : *this)
+			for (auto i : *body) {
 				ret += i->print_string(buf);
+				//if (std::dynamic_pointer_cast<Assign>(i)) {
+					// Do Assignment specific work
+				//} else {
+					// Add default assignment ???
+				//}
+			}
 
 			return ret;
 		}
-		
+
 
 		std::string ASTNode::node_type = "ASTNode";
 		std::string Debug::node_type = "Debug";
