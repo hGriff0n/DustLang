@@ -45,13 +45,40 @@ Timeline
 						Translate all tabs to spaces (or vice versa) before parsing
 
 		Be able to create and parse scopes using tabbing																# How to implement Scoping
-			Add "do" keyword recognition
-				Possibly enforce having a new scope follow use
-			Figure out how I'm going to store scopes for execution
+			How am I going to parse scopes
+				Have a "scope" rule that handles all scoping interaction
+					For better granularity, have scp and diff_scp structs
+						scp matches if the scope depth remains the same
+						diff_scp matches if the scope depth changes	
+							diff_scp handles Block creation correctly
+							would i need to initially push a NEW_SCOPE then
+						both consume their input on success
+					This abstracts away a lot of the problems
+						However the purpose of the "block" Rule is now a bit muddied
+						How would a Block be able to be reused
+							I can solve Tables by changing the grammar to use expr_list or a variant instead of block
+								Or I can use block (and the method described for loops) and enforce a unifrom indentation
+									I feel this can be very bad from an AST construction standpoint
+
+							How to implement loops and branching structures
+								Have all loops and branching structures use a similar form
+									def = {decl} {block}			# if-elsif-else might be a bit complicated
+									The decl action sets up the scoping rules for the parsing of the block
+										Increments the scope depth counter and pushes a NEW_SCOPE on the stack
+									The block can now parse correctly
+										When the scope is exited, the requisite block is created
+										However, the block rule won't end under the current formulation
+									When the block rule ends, the def rule can then combine the decl and the block
+
+							How to define block rule so that it can complete the necessary parsing for the above section
+								block parsing begins at depth = x and ends at depth < x			# This would be recursive (i think)
+
+			How am I going to store scopes
 				Temporary v. Static Scopes (Loops v. Functions, etc.)
 					Temporary scopes are not stored in memory, Static scopes are
 						Temporary scopes are created and destroyed as needed
 					Will I even be having static scopes (Scopes that are stored)
+					
 
 		Implement scoped declarations and access
 			ModifyEvalState to use scoping to store variables
