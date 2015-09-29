@@ -170,13 +170,13 @@ namespace dust {
 
 		// Block and Scoping Actions
 			// A block is constructed "after" it's nodes
-			// If an operation needs a block, it first needs to push a START_BLOCK debug node on the stack
+			// If an operation needs a block, it first needs to push a NEW_SCOPE debug node on the stack
 		template <> struct action<block> {
 			static void apply(input& in, AST& ast) {
 				auto b = makeNode<Block>();
 				bool block_node = false;
 
-				while (!ast.empty() && !(block_node = ast.at()->to_string() == "START_BLOCK"))
+				while (!ast.empty() && !(block_node = ast.at()->to_string() == "NEW_SCOPE"))
 					b->addChild(ast.pop());
 
 				if (block_node) ast.pop();
@@ -200,6 +200,23 @@ namespace dust {
 		template <> struct action<comma> {
 			static void apply(input& in, AST& ast) {
 				ast.push(makeNode<Debug>(in.string()));
+			}
+		};
+
+		// Creating Tables ???
+		template <> struct action<o_brack> {
+			static void apply(input& in, AST& ast) {
+				ast.push(makeNode<Table>());
+			}
+		};
+
+		template <> struct action<table> {
+			static void apply(input& in, AST& ast) {
+				if (std::dynamic_pointer_cast<Block>(ast.at()) && std::dynamic_pointer_cast<Table>(ast.at(-2)))
+					ast.at(-2)->addChild(ast.pop());
+
+				else if (!std::dynamic_pointer_cast<Table>(ast.at()))			// If not an empty table
+					throw error::missing_node_x{ "Attempt to construct a Table node without a Table or Block node" };
 			}
 		};
 	}
