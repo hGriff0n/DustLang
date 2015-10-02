@@ -17,31 +17,31 @@ namespace dust {
 
 		// Literal Actions
 		template <> struct action<decimal> {
-			static void apply(const input& in, AST& ast) {
+			static void apply(const input& in, AST& ast, const int _) {
 				ast.push(makeNode<Literal>(in.string(), type::Traits<double>::id));
 			}
 		};
 
 		template <> struct action<boolean> {
-			static void apply(const input& in, AST& ast) {
+			static void apply(const input& in, AST& ast, const int _) {
 				ast.push(makeNode<Literal>(std::string{ in.string() == "true" ? "1" : "0" }, type::Traits<bool>::id));
 			}
 		};
 
 		template <> struct action<integer> {
-			static void apply(const input& in, AST& ast) {
+			static void apply(const input& in, AST& ast, const int _) {
 				ast.push(makeNode<Literal>(in.string(), type::Traits<int>::id));
 			}
 		};
 
 		template <> struct action<body> {
-			static void apply(const input& in, AST& ast) {
+			static void apply(const input& in, AST& ast, const int _) {
 				ast.push(makeNode<Literal>(unescape(in.string()), type::Traits<std::string>::id));
 			}
 		};
 
 		template <> struct action<k_nil> {
-			static void apply(const input& in, AST& ast) {
+			static void apply(const input& in, AST& ast, const int _) {
 				ast.push(makeNode<Literal>("0", type::Traits<bool>::id));
 				//ast.push(makeNode<Literal>("", -1));
 			}
@@ -50,14 +50,14 @@ namespace dust {
 
 		// Identifier Actions
 		template <> struct action<var_id> {
-			static void apply(input& in, AST& ast) {
+			static void apply(input& in, AST& ast, const int _) {
 				ast.push(makeNode<VarName>(in.string()));
 			}
 		};
 
 		// Keyword Actions
 		template <> struct action<k_and> {
-			static void apply(const input& in, AST& ast) {
+			static void apply(const input& in, AST& ast, const int _) {
 				ast.push(makeNode<BinaryKeyword>(in.string()));					// and/or are not becoming methods of Bool
 			}
 		};
@@ -67,13 +67,13 @@ namespace dust {
 
 		// Operator Actions
 		struct OpAction {
-			static void apply(const input& in, AST& ast) {
+			static void apply(const input& in, AST& ast, const int _) {
 				ast.push(makeNode<Operator>("_op" + in.string()));
 			}
 		};
 
 		template <> struct action<op_0> {
-			static void apply(const input& in, AST& ast) {
+			static void apply(const input& in, AST& ast, const int _) {
 				ast.push(makeNode<Operator>("_ou" + in.string()));
 			}
 		};
@@ -86,7 +86,7 @@ namespace dust {
 
 		// Assignment Operators don't follow the same structure as Operators
 		template <> struct action<op_x> {
-			static void apply(const input& in, AST& ast) {
+			static void apply(const input& in, AST& ast, const int _) {
 				ast.push(makeNode<Assign>(in.string().substr(1)));
 			}
 		};
@@ -94,7 +94,7 @@ namespace dust {
 
 		// Atomic Actions
 		template <> struct action<unary> {
-			static void apply(input& in, AST& ast) {
+			static void apply(input& in, AST& ast, const int _) {
 				if (ast.size() >= 2) {
 					if (std::dynamic_pointer_cast<Operator>(ast.at(-2)))
 						// stack: ..., {op}, {operand}
@@ -112,7 +112,7 @@ namespace dust {
 		// Expression Actions
 		template <typename Node>
 		struct ee_actions {
-			static void apply(input& in, AST& ast) {
+			static void apply(input& in, AST& ast, const int _) {
 				if (ast.size() >= 3) {
 					if (std::dynamic_pointer_cast<Node>(ast.at(-2))) {
 						// stack: ..., {lhs}, {op}, {rhs}
@@ -144,7 +144,7 @@ namespace dust {
 		// List Actions
 		template <class type>
 		struct list_actions {
-			static void apply(input& in, AST& ast) {
+			static void apply(input& in, AST& ast, const int _) {
 				auto list = makeNode<List<type>>();
 
 				if (ast.at()->to_string() != ",")
@@ -170,48 +170,49 @@ namespace dust {
 
 		// Block and Scoping Actions
 			// A block is constructed "after" it's nodes
-			// If an operation needs a block, it first needs to push a NEW_SCOPE debug node on the stack
 		template <> struct action<block> {
-			static void apply(input& in, AST& ast) {
+			static void apply(input& in, AST& ast, const int _) {
 				auto b = makeNode<Block>();
-				bool block_node = false;
+				bool at_marker = false;
 
-				while (!ast.empty() && !(block_node = ast.at()->to_string() == "NEW_SCOPE"))
+				while (!ast.empty() && !(at_marker = ast.at()->to_string() == "NEW_SCOPE"))
 					b->addChild(ast.pop());
 
-				if (block_node) ast.pop();
+				if (at_marker) ast.pop();
 				ast.push(b);
 			}
 		};
 
+		template <> struct action<prog> : action<block> {};
+
 		// Other Actions
 		template <> struct action<o_paren> {
-			static void apply(input& in, AST& ast) {
+			static void apply(input& in, AST& ast, const int _) {
 				ast.push(makeNode<Debug>("("));
 			}
 		};
 
 		template <> struct action<c_paren> {
-			static void apply(input& in, AST& ast) {
+			static void apply(input& in, AST& ast, const int _) {
 				ast.swap(); ast.pop();			// Might use some testing (empty parens)
 			}
 		};
 
 		template <> struct action<comma> {
-			static void apply(input& in, AST& ast) {
+			static void apply(input& in, AST& ast, const int _) {
 				ast.push(makeNode<Debug>(in.string()));
 			}
 		};
 
 		// Creating Tables ???
 		template <> struct action<o_brack> {
-			static void apply(input& in, AST& ast) {
+			static void apply(input& in, AST& ast, const int _) {
 				ast.push(makeNode<Table>());
 			}
 		};
 
 		template <> struct action<table> {
-			static void apply(input& in, AST& ast) {
+			static void apply(input& in, AST& ast, const int _) {
 				if (std::dynamic_pointer_cast<Block>(ast.at()) && std::dynamic_pointer_cast<Table>(ast.at(-2)))
 					ast.at(-2)->addChild(ast.pop());
 

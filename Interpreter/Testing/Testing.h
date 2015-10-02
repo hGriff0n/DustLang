@@ -74,7 +74,7 @@ namespace dust {
 
 				void evaluate(const std::string& code) {
 					tree.push(makeNode<parse::Debug>("NEW_SCOPE"));
-					pegtl::parse<grammar, action>(code, code, tree);
+					pegtl::parse<grammar, action>(code, code, tree, 0);
 					tree.pop()->eval(e);
 				}
 
