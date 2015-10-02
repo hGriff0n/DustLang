@@ -22,7 +22,17 @@ Opinions on adapting code to use the C++ Common Code Standards and the GSL
 		Some of	the juicy stuff is not available yet (static analyzers)
 
 Timeline
+	0 Bugfixes
+		in="3 + 3 4 + 4"
+			Parser parses and constructs both expressions perfectly fine
+			However it only pops the second one into the block
+
 	1 Scoping and multi-lined grammar
+		Better specify how scoping is handled
+		Test that the new block rule works
+			Analysis says there's an infinite loop with block (probably because I don't know what I'm doing with that stuff)
+				Work on analysis (or solve the infinite loop)
+
 		How to define Scoping
 			Continuation Expressions
 				Any expression that uses {seps} can be written using multiple lines
@@ -46,32 +56,58 @@ Timeline
 
 		Be able to create and parse scopes using tabbing																# How to implement Scoping
 			How am I going to parse scopes
+				Assuming scp_ch = '\t'
+
 				Have a "scope" rule that handles all scoping interaction
-					For better granularity, have scp and diff_scp structs
+					This takes the form of scp and diff_Scp structs
 						scp matches if the scope depth remains the same
 						diff_scp matches if the scope depth changes	
 							diff_scp handles Block creation correctly
 							would i need to initially push a NEW_SCOPE then
 						both consume their input on success
+						how well would this handle empty lines ?
+
 					This abstracts away a lot of the problems
 						However the purpose of the "block" Rule is now a bit muddied
 						How would a Block be able to be reused
 							I can solve Tables by changing the grammar to use expr_list or a variant instead of block
 								Or I can use block (and the method described for loops) and enforce a unifrom indentation
 									I feel this can be very bad from an AST construction standpoint
+								If I use the new Block rule, I can revert to constructing tables from blocks
 
 							How to implement loops and branching structures
 								Have all loops and branching structures use a similar form
 									def = {decl} {block}			# if-elsif-else might be a bit complicated
 									The decl action sets up the scoping rules for the parsing of the block
 										Increments the scope depth counter and pushes a NEW_SCOPE on the stack
+										This should work for inline statements (the new scope ends immediately)
 									The block can now parse correctly
 										When the scope is exited, the requisite block is created
-										However, the block rule won't end under the current formulation
-									When the block rule ends, the def rule can then combine the decl and the block
+										However, the block rule won't end under the current formulation				# Needs a new formulation
+											Solution: Define block much like scp and diff_scp
+												Insight: block parsing begins with x: depth and ends when depth < x			# This should handle variable depth exits
+													The Implementation of this could get really tricky
 
-							How to define block rule so that it can complete the necessary parsing for the above section
-								block parsing begins at depth = x and ends at depth < x			# This would be recursive (i think)
+												Queston: Does matching a Rule in a custom Rule automatically call the Action overload
+													Would I have to specially provide the template arguments??
+
+												The old block Rule gets renamed to prog
+													Basically a block that starts at 0 scope depth (only exits when input ends)
+
+									When the block rule ends, the def rule can then combine the decl and the constructed block
+
+									Factor the diff_scp into an Action specialisation
+
+								Possible program change
+									Change the NEW_SCOPE debug node used to stop Block combination to a Control node
+										The default NEW_SCOPE node will become a "run once" Control node
+										Loops and (possibly) branches will act as the control node
+									This Control node handles how the block is run
+										"run once" is analagous to Block::eval
+										"for" rather translates into something like while (For::eval) Block::eval
+										This might have some problems with evaluating while versus do-while
+									This removes using program resources on completely useless operations
+										Except maybe not (Block construction might stop on an inner loop)
 
 			How am I going to store scopes
 				Temporary v. Static Scopes (Loops v. Functions, etc.)

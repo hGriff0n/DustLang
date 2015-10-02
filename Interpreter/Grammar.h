@@ -21,7 +21,7 @@ namespace dust {
 		using AST = Stack<std::shared_ptr<ASTNode>>;			// Would STATE be a better name
 
 
-		// Rule Templates
+																// Rule Templates
 		template <typename Rule, typename Sep, typename Pad>							// Covers pegtl::list (apes list_tail)
 		struct list : seq<pegtl::list<Rule, Sep, Pad>, opt<star<Pad>, disable<Sep>>> {};	// Prevents the comma action from being called multiple times (is this necessary?)
 		template <typename Rule>
@@ -29,7 +29,7 @@ namespace dust {
 
 
 		// Forward declarations
-		struct expr;
+		struct expr;		struct a_expr;
 		struct expr_0;
 		struct expr_x;
 		struct block;
@@ -57,8 +57,8 @@ namespace dust {
 		struct esc : one<'\\'> {};		// % ???
 		struct comment : if_must<two<'#'>, until<eolf>> {};								// ##.*
 
-		
-		// Keyword Tokens
+
+																						// Keyword Tokens
 		template <class Str>
 		struct key : seq<Str, not_at<id_end>> {};
 
@@ -73,7 +73,7 @@ namespace dust {
 		struct k_inherit : pegtl_string_t("<-") {};										// Can't start an indentifier
 
 
-		// Literal Tokens
+																						// Literal Tokens
 		struct integer : plus<digit> {};												// [0-9]+
 		struct decimal : seq<plus<digit>, one<'.'>, star<digit>> {};					// [0-9]+\.[0-9]*
 		struct boolean : sor<k_true, k_false> {};
@@ -84,16 +84,16 @@ namespace dust {
 		//struct table : seq<o_brack, opt<expr_list>, seps, c_brack> {};
 		//struct table : seq<o_brack, opt<block>, seps, c_brack> {};
 		struct table : seq<one<'['>, opt<block>, seps, one<']'>> {};					// \[{block}? *\]
-		//struct literals : sor<decimal, integer, boolean, str, table, k_nil> {};
+																						//struct literals : sor<decimal, integer, boolean, str, table, k_nil> {};
 
 
-		// Identifier Tokens
+																						// Identifier Tokens
 		struct id_end : identifier_other {};
 		struct type_id : seq<range<'A', 'Z'>, star<id_end>> {};							// [A-Z]{id_end}*
 		struct var_id : seq<range<'a', 'z'>, star<id_end>> {};							// [a-z]{id_end}*
 
 
-		// Operator Tokens
+																						// Operator Tokens
 		struct op_0 : one<'!', '-'> {};													// unary operators
 		struct op_1 : one<'^'> {};
 		struct op_2 : one<'*', '/'> {};
@@ -102,7 +102,7 @@ namespace dust {
 		struct op_x : seq<one<':'>, opt<one<'^', '*', '/', '+', '-', '%', '<', '=', '>'>>> {};							// Assignment operators (should :>=, :<=, and :!= be valid???)
 
 
-		// Atomic Tokens
+																														// Atomic Tokens
 		struct unary : seq<op_0, expr_0> {};
 		struct parens : if_must<o_paren, seps, expr, seps, c_paren> {};
 
@@ -129,10 +129,10 @@ namespace dust {
 		struct expr_6 : seq<expr_5, opt<seps, ee_6>, seps> {};							// {expr_5}( *or *{expr_5})? *
 
 
-		// Multiple Assignment
-			// expr_x is going to be a fairly high level expression
-			// Optimize and integrate multiple assignment
-			// Can I utilize the lookahead phase to push var_id's onto the stack ???
+																						// Multiple Assignment
+																						// expr_x is going to be a fairly high level expression
+																						// Optimize and integrate multiple assignment
+																						// Can I utilize the lookahead phase to push var_id's onto the stack ???
 		struct var_list : s_list<var_id> {};											// AST and lookahead? (seq<var_id, seps, sor<one<','>, op_5>>)  // this could technically match an expression list
 		struct expr_list : s_list<expr_x> {};											// {expr_5} *, *
 
@@ -143,6 +143,8 @@ namespace dust {
 
 		// Scoping Rules
 		struct block {
+			using analyze_t = analysis::counted<analysis::rule_type::STAR, 0, block, expr>;
+
 			template <apply_mode A, template<typename...> class Action, template<typename...> class Control>
 			static bool match(input& in, AST& ast, const int exit) {
 				// This doesn't need to rely on recursion (to handle sub-blocks within this)
@@ -152,28 +154,27 @@ namespace dust {
 					// However, false is only returned if expr::match returns false 
 						// I might want to treat this as a critical failure (in which case, input consumation is a (possibly) moot point)
 
-				/*
+
 				int depth;
-				bool matches = true;
 				ast.push(makeNode<Debug>("NEW_SCOPE"));														// Push sentinel node
 
-				// Parse until the scope depth decreases
-				while (matches && (depth = block::depth(in)) >= exit) {
+				// How to handle empty lines
+					// How do I even repl empty lines ???
 
+				// Parse until the scope depth decreases or the file ends
+				while (in.size() > 0 && (depth = block::depth(in)) >= exit) {
 					// If the scope depth increases, parse a new block
 					if (depth > exit)
-						matches = Control<block>::template match<A, Action, Control>(in, ast, exit+1);		// This should call the action specialization
+						Control<must<block>>::template match<A, Action, Control>(in, ast, exit + 1);
 
 					// Otherwise, parse an expression
 					else {
-						in.bump(depth);			// Consume input. Might need to rework depending on how I specify scoping syntax
-						matches = Control<expr>::template match<A, Action, Control>(in, ast, exit);			// This calls the necessary actions
-
+						in.bump(depth);			// Consume scoping. Might need to rework depending on how I specify scoping syntax
+						Control<must<a_expr>>::template match<A, Action, Control>(in, ast, exit);
 					}
 				}
 
-				return matches || (throw error::parse_error{ "Failure construct block" });
-				*/
+				return true;
 			}
 
 			// Determines the depth of the current line. Doesn't consume
@@ -182,12 +183,14 @@ namespace dust {
 			}
 
 			static int depth(const std::string& in) {
-				return 0;
+				int ret = 0;
+				while (ret < in.size() && in.at(ret) == '\t') ++ret;
+				return ret;
 			}
 		};
 
 		// Allows the first line of a block to be in-lined
-			// Supposed to only allow inlining of single expression loops
+		// Supposed to only allow inlining of single expression loops
 		struct inline_block {
 			template <apply_mode A, template<typename...> class Action, template<typename...> class Control>
 			static bool match(input& in, AST& ast, const int scope) {
@@ -198,9 +201,9 @@ namespace dust {
 
 		// Organization Tokens
 		struct expr : expr_x {};
-		//struct expr : seq<seps, expr_x, seps> {};
-		struct prog : plus<seps, expr, seps> {};										// Have to modify with scoping ???
-		//struct prog : block {};
+		struct a_expr : seq<seps, expr_x, seps> {};
+		//struct prog : plus<seps, expr, seps> {};										// Have to modify with scoping ???
+		struct prog : block {};
 		//struct prog : must<block> {};					// This doesn't allow empty files
 
 	}
