@@ -28,49 +28,6 @@ namespace dust {
 		struct unless : if_then_else<at<Rule>, failure, any> {};
 
 
-		// Scoping Rules
-		// General scoping class. Catches when the scoping doesn't change
-		struct scp {
-			template <apply_mode A, template<typename...> class Action, template<typename...> class Control>
-			static bool match(input& in, AST& ast) {	//, int& counter) {
-				//bool matches = scp::scope(in) == counter;
-				//if (matches) "eat input"
-				//return matches
-			}
-
-			// Determines the depth of the current line. Doesn't consume
-			static int scope(input& in) {
-				// Determine the number of continuous scope characters
-			}
-		};
-
-		// Catches when the scope depth changess
-		struct exit_scp {
-			template <apply_mode A, template<typename...> class Action, template<typename...> class Control>
-			static bool match(input& in, AST& ast) {
-				//int count = scp::scope(in);
-
-				//if (count != counter) {
-				//	if (count < counter) {
-				//		while (counter != count)								// Construct the necessary Block nodes (this struct only matches once)
-				//			Action<Block>::apply(in, ast, counter--);
-				
-				//	} else if (count > counter) {
-				//		while (counter != count) {
-				//			++counter;
-				//			push nodes on the stack								// Setup up the AST (this struct only matches once)
-				//		}
-				//	}
-				
-				//	"eat" input
-				//	return true;
-				//}
-
-				//return false;
-			}
-		};
-
-
 		// Forward declarations
 		struct expr;
 		struct expr_0;
@@ -124,6 +81,7 @@ namespace dust {
 		struct str : seq<quote, opt<body>, quote> {};
 		struct literals : sor<decimal, integer, boolean, str, k_nil> {};
 
+		//struct table : seq<o_brack, opt<expr_list>, seps, c_brack> {};
 		//struct table : seq<o_brack, opt<block>, seps, c_brack> {};
 		struct table : seq<one<'['>, opt<block>, seps, one<']'>> {};					// \[{block}? *\]
 		//struct literals : sor<decimal, integer, boolean, str, table, k_nil> {};
@@ -183,13 +141,70 @@ namespace dust {
 		struct expr_x : if_then_else<at<assign>, ee_x, expr_6> {};						// {var_list} *{op_5} * {expr_list}
 
 
+		// Scoping Rules
+		struct block {
+			template <apply_mode A, template<typename...> class Action, template<typename...> class Control>
+			static bool match(input& in, AST& ast, const int exit) {
+				// This doesn't need to rely on recursion (to handle sub-blocks within this)
+					// I would be able to split block into a Rule and an Action if I keep with recursion
+				// PEGTL works on the assumption that if Rule::match returns false, no input was consumed
+					// Current implementation doesn't follow that rule
+					// However, false is only returned if expr::match returns false 
+						// I might want to treat this as a critical failure (in which case, input consumation is a (possibly) moot point)
+
+				/*
+				int depth;
+				bool matches = true;
+				ast.push(makeNode<Debug>("NEW_SCOPE"));														// Push sentinel node
+
+				// Parse until the scope depth decreases
+				while (matches && (depth = block::depth(in)) >= exit) {
+
+					// If the scope depth increases, parse a new block
+					if (depth > exit)
+						matches = Control<block>::template match<A, Action, Control>(in, ast, exit+1);		// This should call the action specialization
+
+					// Otherwise, parse an expression
+					else {
+						in.bump(depth);			// Consume input. Might need to rework depending on how I specify scoping syntax
+						matches = Control<expr>::template match<A, Action, Control>(in, ast, exit);			// This calls the necessary actions
+
+					}
+				}
+
+				return matches || (throw error::parse_error{ "Failure construct block" });
+				*/
+			}
+
+			// Determines the depth of the current line. Doesn't consume
+			static int depth(const input& in) {
+				return block::depth(in.string());
+			}
+
+			static int depth(const std::string& in) {
+				return 0;
+			}
+		};
+
+		// Allows the first line of a block to be in-lined
+			// Supposed to only allow inlining of single expression loops
+		struct inline_block {
+			template <apply_mode A, template<typename...> class Action, template<typename...> class Control>
+			static bool match(input& in, AST& ast, const int scope) {
+				return Control<block>::template match<A, Action, Control>(in, ast, scope + 1);
+			}
+		};
+
+
 		// Organization Tokens
 		struct expr : expr_x {};
-		struct block : plus<seps, expr, seps> {};										// Have to modify with scoping ???
-		//struct block : plus<sor<scp, diff_scp>, seps, expr, seps> {};
+		//struct expr : seq<seps, expr_x, seps> {};
+		struct prog : plus<seps, expr, seps> {};										// Have to modify with scoping ???
+		//struct prog : block {};
+		//struct prog : must<block> {};					// This doesn't allow empty files
 
 	}
 
 	// Grammar Token
-	struct grammar : pegtl::must<parse::block, pegtl::eolf> {};
+	struct grammar : pegtl::must<parse::prog, pegtl::eolf> {};
 }
