@@ -61,23 +61,24 @@ namespace dust {
 				t.close_sub_test();
 			t.close_sub_test();
 
-			// Test boolean keywords
-			t.init_sub_test("Boolean Keywords");
-				t.require_eval("c = 0 and 4 or 5", 4);						// 1
+			// Test boolean ternary statement
+			t.init_sub_test("Boolean Ternary");
+				t.require_eval("true and false or true", "true");			// 1		# Counter-intuitive. But this is how lua's ternary works
+				t.require_eval("c = 0 and 4 or 5", 4);						// 2
 
-				t.require_excep<pegtl::parse_error>("false and a: 5");		// 2
-				t.require_eval("false and (a: 5)", false);					// 3
-				t.require_true("a = true");									// 4		# a: 5 is not evaluated
+				t.require_excep<pegtl::parse_error>("false and a: 5");		// 3
+				t.require_eval("false and (a: 5)", false);					// 4
+				t.require_true("a = true");									// 5		# a: 5 is not evaluated
 
-				t.require_eval("a: b or 5", 3);								// 5
-				t.require_true("a = 3");									// 6
+				t.require_eval("a: b or 5", 3);								// 6
+				t.require_true("a = 3");									// 7
 
 				// 0 => true. Should I keep this?
-				t.require_eval("b: c != 0 and 4 or (c: 5)", 5);				// 7
-				t.require_true("b = 5 and c = b");							// 8
+				t.require_eval("b: c != 0 and 4 or (c: 5)", 5);				// 8
+				t.require_true("b = 5 and c = b");							// 9
 
-				t.require_eval("b: c and 4 or (c: 5)", 4);					// 9
-				t.require_true("b = 4");									// 10
+				t.require_eval("b: c and 4 or (c: 5)", 4);					// 10
+				t.require_true("b = 4");									// 11
 			t.close_sub_test();
 
 			t.init_sub_test("Tricky Operations");
@@ -92,15 +93,22 @@ namespace dust {
 
 				t.require_eval("3 +-3", 0);									// 7
 
-				t.eval("a:2");
+				t.eval("a: 2");
 				t.require_eval("(a: 3) + 3 * a", 12);						// 8
 				t.require_true("a = 3");									// 9
 			t.close_sub_test();
 
 			t.init_sub_test("Multiline Parsing");				// Need to escape output
 				t.require_eval("a\n+ b", 7);								// 1
-				t.require_excep<pegtl::parse_error>("3 + a: 3\n - 4");
-				t.require_eval("3 + a 3\n - 4", -1);
+				t.require_excep<pegtl::parse_error>("3 + a: 3\n - 4");		// 2
+				t.require_eval("3 + a 3\n - 4", -1);						// 3
+				t.require_eval("3 + 3\n\n4 + 4", 8);						// 4
+				t.require_eval("3 + 3\n\t4 + 4\n\n\t5 + 5", 10);			// 5		Testing whether "4 + 4" and "5 + 5" are in the same block
+
+				t.init_sub_test("Scoped Assignment");
+					t.require_eval("a: 2\n\ta: 5", "5");					// 1
+					t.require_true("a = 2");								// 2
+				t.close_sub_test();
 			t.close_sub_test();
 
 			std::cout << "Passed: " << t.num_pass << " | Failed: " << (t.num_tests - t.num_pass) << " | " << t.num_pass << " / " << t.num_tests << " Tests (" << std::setprecision(4) << ((float)t.num_pass / t.num_tests * 100) << "%)\n\n";

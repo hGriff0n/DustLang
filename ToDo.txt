@@ -22,17 +22,22 @@ Opinions on adapting code to use the C++ Common Code Standards and the GSL
 		Some of	the juicy stuff is not available yet (static analyzers)
 
 Timeline
-	1 Scoping and multi-lined grammar
-		How to define Scoping
-			Continuation Expressions
-				Any expression that uses {seps} can be written using multiple lines
-					The parser will use the scope of the statement start when parsing the expression
-						The code on following lines can be indented willy-nilly
-					I can also provide a {c_seps} that does the same functionality (keep {sep} = ' ')
-				For table indexing, should the '.' immediately follow the table or can there be a {seps} in between
-					This would be a minor step to allowing indexing to be a continuation expression
-					ie. Should "foo() . bar . call()" parse correctly
+	0 Bugfixes
+		in="3 + 3 4 + 4"
+			Parser parses and constructs both expressions perfectly fine
+			However it only pops the second one into the block
 
+	1 Scoping and multi-lined grammar
+		Implement Scope storage (ie. Tables)
+			Change the global table to use this structure
+		Better specify how scoping is handled
+		Solve the problem with analysis
+			Analysis says there's an infinite loop with block (probably because I don't know what I'm doing with that stuff)
+			problem: cycle without progress detected at class struct dust::parse::block
+		Add scope api to EvalState
+		Implement scoped variable lookup
+
+		How to define Scoping
 			Determine the difference between a tab and x spaces															# Scoping whitespace rules
 				How does Python resolve this problem
 					Requiring a ':' to begin a new scope (ie. do keyword)?
@@ -44,23 +49,24 @@ Timeline
 					Copy-paste
 						Translate all tabs to spaces (or vice versa) before parsing
 
-		Be able to create and parse scopes using tabbing																# How to implement Scoping
-			Add "do" keyword recognition
-				Possibly enforce having a new scope follow use
-			Figure out how I'm going to store scopes for execution
+		Be able to create and parse scopes using tabbing
+			block is currently a "non-recoverable" node (you can't recover from failures during parsing)
+
+			Possible program change
+				Change the NEW_SCOPE debug node used to stop Block combination to a Control node
+					The default NEW_SCOPE node will become a "run once" Control node
+					Loops and (possibly) branches will act as the control node
+				This Control node handles how the block is run
+					"run once" is analagous to Block::eval
+					"for" rather translates into something like while (For::eval) Block::eval
+					This might have some problems with evaluating while versus do-while
+				This removes using program resources on completely useless operations
+					Except maybe not (Block construction might stop on an inner loop)
+
+			How am I going to store scopes
 				Temporary v. Static Scopes (Loops v. Functions, etc.)
-					Temporary scopes are not stored in memory, Static scopes are
+					Temporary scopes are not stored, Static scopes are
 						Temporary scopes are created and destroyed as needed
-					Will I even be having static scopes (Scopes that are stored)
-
-		Implement scoped declarations and access
-			ModifyEvalState to use scoping to store variables
-			Implement global and local variable distinction				## be able to access "masked" variables
-
-		Possibly replace global variable storage with the scoping structures/mechanisms
-			Good way of implementing namespaces/modules (map from string -> scope)
-				Normal "scoping" would use a stack (defaults to empty)
-			Could scoping also be used for tables ???
 
 	2 Type Definitions and Table Syntax
 		Have the ability to create new types and assign inheritance relationships

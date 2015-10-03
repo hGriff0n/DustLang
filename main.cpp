@@ -55,6 +55,8 @@ istream& getmultiline(istream& in, std::string& s) {
 
 		s += "\n" + tmp;
 	}
+
+	return in;
 }
 
 
@@ -78,7 +80,7 @@ int main(int argc, const char* argv[]) {
 
 		} else {
 			try {
-				pegtl::parse<grammar, action>(input, input, parse_tree);
+				pegtl::parse<grammar, action>(input, input, parse_tree, 0);
 
 				print(std::cout, parse_tree.at());
 				isResString = parse_tree.pop()->eval(e).is<std::string>();
