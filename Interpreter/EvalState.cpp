@@ -1,14 +1,7 @@
 #include "EvalState.h"
 #include "Exceptions\dust.h"
 
-
 namespace dust {
-
-	void initState(EvalState& e) {
-		initTypeSystem(e.ts);
-		initConversions(e.ts);
-		initOperations(e.ts);
-	}
 
 	void EvalState::forceType(int idx, size_t type) {
 		if (at(idx).type_id == type) return;
@@ -18,86 +11,29 @@ namespace dust {
 		swap(idx, -1);
 	}
 
-
-	EvalState::EvalState() : ts{}, gc{}, CallStack{ gc }, vars{} {}
-
 	// Convert the element to var.type_id if possible because var is statically typed
 		// Is only called if var.type_id != ts.Nil and at(idx).type_id is not a child of var.type_id
-	void EvalState::staticTyping(impl::Variable& var, bool isConst) {
+	void EvalState::staticTyping(impl::Variable& var, bool is_const) {
 		if (!ts.convertible(var.type_id, at().type_id))
 			throw error::converter_not_found{ "No converter from from the assigned value to the variable's static type" };
 
 		callMethod(ts.getName(var.type_id));
 		var.val = pop();
-		var.is_const = isConst;
+		var.is_const = is_const;
 	}
 
 	// Create and set a new Variable
-	void EvalState::newVar(std::string name, bool isConst, bool isTyped) {
-		auto& var = vars[name] = impl::Variable{ pop(), ts.NIL, isConst };
-
-		if (isTyped) var.type_id = var.val.type_id;
+	void EvalState::newVar(const std::string& name, bool is_const, bool is_typed) {
+		auto& var = global.getVar(name);
+		var = impl::Variable{ pop(), ts.NIL, is_const };
+		if (is_typed) var.type_id = var.val.type_id;
 	}
 
-	// Assign the top value on the stack to the given variable with the given flags
-	void EvalState::setVar(std::string name, bool isConst, bool isTyped) {
-		if (vars.count(name) == 0) return newVar(name, isConst, isTyped);					// If the variable doesn't already exist
-		auto& var = vars[name];
-
-		// If the variable is marked "constant"
-		if (var.is_const) throw error::illegal_operation{ "Attempt to reassign a constant variable" };
-
-		// If the variable is statically typed
-		if (var.type_id != ts.NIL && !ts.isChildType(at().type_id, var.type_id))
-			return staticTyping(var, isConst);
-
-		// Remove the variables current value and give it the new one
-		try_decRef(var.val);
-		var.val = pop();
-		try_incRef(var.val);
-
-		// Ensure the isConst and type_id flags are current
-		var.is_const = isConst;
-		if (isTyped) var.type_id = var.val.type_id;
-	}
-
-	// Push the variable onto the stack (0 if it doesn't exist)
-	void EvalState::getVar(std::string var) {
-		if (vars.count(var) == 0) return push(0);			// Temporary as nil is not implemented
-		push(vars[var].val);
-	}
-
-	void EvalState::mark_constant(std::string var) {
-		if (vars.count(var) == 0) return;					// Temporary. Haven't determined what should happen in these circumstances
-		vars[var].is_const = !vars[var].is_const;
-	}
-
-	void EvalState::set_typing(std::string var, size_t typ) {
-		if (vars.count(var) == 0) return;					// Temporary. Haven't determined what should happen in these circumstances
-
-		if (typ != ts.NIL) {								// If the variable is being statically typed
-			if (!ts.convertible(vars[var].type_id, typ)) throw error::converter_not_found{ "No converter from the current value to the given type" };
-
-			getVar(var);
-			callMethod(ts.getName(typ));
-			try_decRef(vars[var].val);
-			vars[var].val = pop();
-		}
-
-		vars[var].type_id = typ;
-	}
-
-	bool EvalState::isConst(std::string var) {
-		return vars[var].is_const;
-	}
-
-	bool EvalState::isStatic(std::string var) {
-		return vars[var].type_id != ts.NIL;
-	}
-
+	// Constructor
+	EvalState::EvalState() : ts{}, gc{}, CallStack{ gc }, global{} {}
 
 	// Free functions
-	EvalState& EvalState::call(std::string fn) {
+	EvalState& EvalState::call(const std::string& fn) {
 		if (fn == "type")
 			push((int)(pop().type_id));
 		else if (fn == "typename")
@@ -105,40 +41,95 @@ namespace dust {
 
 		return *this;
 	}
-
 	// Operators
-	EvalState& EvalState::callOp(std::string fn) {
+	EvalState& EvalState::callOp(const std::string& fn) {
 		if (fn.at(0) == '_' && fn.at(2) == 'u') return callMethod(fn);
 		if (fn.at(0) != '_' || fn.at(2) != 'p') throw error::bad_api_call{ "Attempt to callOp on a non-operator" };
 
-		auto l = at(-2).type_id, r = at().type_id;
-		auto com_t = ts.com(l, r, fn);					// find common type
+		auto r = at(-2).type_id, l = at().type_id;
+		auto com_t = ts.com(l, r, fn);						// find common type
 		auto dis_t = ts.findDef(com_t, fn);					// find dispatch type (where fn is defined)
 
 		if (dis_t == ts.NIL) throw error::dispatch_error{ "Method " + fn + " is not defined for objects of type " + ts.getName(l) + " and " + ts.getName(r) };
 
 		// Determine whether com selected a converter and perform conversions
 		if ((com_t == l ^ com_t == r) && ts.convertible(l, r)) {
-			forceType(-1, com_t);					// The name is a placeholder
-			forceType(-2, com_t);					// Forces the value at the given index to have the given type by calling a converter if necessary
+			forceType(-1, com_t);					// Forces the value at the given index to have the given type by calling a converter if necessary
+			forceType(-2, com_t);
 		}
 
 		auto rets = ts.get(dis_t).ops[fn](*this);
 
 		return *this;
 	}
-
 	// Methods
-	EvalState& EvalState::callMethod(std::string fn) {
+	EvalState& EvalState::callMethod(const std::string& fn) {
 		auto dis_t = ts.findDef(at().type_id, fn);
-
-		if (dis_t == ts.NIL) throw std::string{ "Dispatch error: Method " + fn + " is not defined for objects of type " + ts.getName(dis_t) };
-
+		if (dis_t == ts.NIL) throw error::dispatch_error{ "Method " + fn + " is not defined for objects of type " + ts.getName(at().type_id) };
+		
 		auto rets = ts.get(dis_t).ops[fn](*this);
 
 		return *this;
 	}
 
+	// Assign the top value on the stack to the given variable with the given flags
+	void EvalState::setVar(const std::string& name, bool is_const, bool is_typed) {
+		if (!global.has(name)) return newVar(name, is_const, is_typed);
+		auto& var = global.getVar(name);
+
+		if (var.is_const) throw error::illegal_operation{ "Attempt to reassign a constant variable" };
+
+		if (var.type_id != ts.NIL && !ts.isChildType(at().type_id, var.type_id))
+			return staticTyping(var, is_const);
+
+		try_decRef(var.val);
+		var.val = pop();
+		try_incRef(var.val);
+
+		var.is_const = is_const;
+		if (is_typed) var.type_id = var.val.type_id;
+	}
+
+	// Push the variable onto the stack (0 if it doesn't exist)
+	void EvalState::getVar(const std::string& name) {
+		if (!global.has(name)) return push(0);
+		push(global.getVal(name));
+	}
+
+	void EvalState::markConst(const std::string& name) {
+		if (global.has(name))
+			global.getVar(name).is_const = !global.getVar(name).is_const;
+	}
+	void EvalState::markTyped(const std::string& name, size_t typ) {
+		if (!global.has(name)) return;
+
+		auto& var = global.getVar(name);
+
+		if (typ != ts.NIL) {
+			if (!ts.convertible(global.getVar(name).type_id, typ))
+				throw error::converter_not_found{ "No converter from the current value to the given type" };
+
+			push(var.val);
+			callMethod(ts.getName(typ));
+			try_decRef(var.val);
+			var.val = pop();
+		}
+
+		var.val.type_id = typ;
+	}
+	bool EvalState::isConst(const std::string& name) {
+		return global.getVar(name).is_const;
+	}
+	bool EvalState::isTyped(const std::string& name) {
+		return global.getVar(name).type_id != ts.NIL;
+	}
+
+
+	void initState(EvalState& e) {
+		initTypeSystem(e.ts);
+		initConversions(e.ts);
+		initOperations(e.ts);
+	}
 
 	void initTypeSystem(type::TypeSystem& ts) {
 		auto Object = ts.getType("Object");
