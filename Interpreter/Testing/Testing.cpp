@@ -93,15 +93,22 @@ namespace dust {
 
 				t.require_eval("3 +-3", 0);									// 7
 
-				t.eval("a:2");
+				t.eval("a: 2");
 				t.require_eval("(a: 3) + 3 * a", 12);						// 8
 				t.require_true("a = 3");									// 9
 			t.close_sub_test();
 
 			t.init_sub_test("Multiline Parsing");				// Need to escape output
 				t.require_eval("a\n+ b", 7);								// 1
-				t.require_excep<pegtl::parse_error>("3 + a: 3\n - 4");
-				t.require_eval("3 + a 3\n - 4", -1);
+				t.require_excep<pegtl::parse_error>("3 + a: 3\n - 4");		// 2
+				t.require_eval("3 + a 3\n - 4", -1);						// 3
+				t.require_eval("3 + 3\n\n4 + 4", 8);						// 4
+				t.require_eval("3 + 3\n\t4 + 4\n\n\t5 + 5", 10);			// 5		Testing whether "4 + 4" and "5 + 5" are in the same block
+
+				t.init_sub_test("Scoped Assignment");
+					t.require_eval("a: 2\n\ta: 5", "5");					// 1
+					t.require_true("a = 2");								// 2
+				t.close_sub_test();
 			t.close_sub_test();
 
 			std::cout << "Passed: " << t.num_pass << " | Failed: " << (t.num_tests - t.num_pass) << " | " << t.num_pass << " / " << t.num_tests << " Tests (" << std::setprecision(4) << ((float)t.num_pass / t.num_tests * 100) << "%)\n\n";

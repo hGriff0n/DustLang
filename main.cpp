@@ -80,7 +80,6 @@ int main(int argc, const char* argv[]) {
 
 		} else {
 			try {
-				//pegtl::parse<grammar, action>(input, input, parse_tree);
 				pegtl::parse<grammar, action>(input, input, parse_tree, 0);
 
 				print(std::cout, parse_tree.at());

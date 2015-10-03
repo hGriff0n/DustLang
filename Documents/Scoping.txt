@@ -1,0 +1,75 @@
+Ex.d 1
+a: 3 + 5 ^ 2
+	a: 15
+	for i in [1..(.a)] print(i / a)
+	while (!a.prime())
+		print(a)
+		a:+ 2
+print(a)
+
+Ex.p 1
+Block
+	Assign{a, 3 + 5 ^ 2}
+	Control{for, i, [1..(.a)]}	<-	Block
+		Expr{print(i / a)}
+	Control{while, !a.prime()}	<-	Block
+		Expr{print(a)}
+		Assign{a, 2, +}
+	Expr{print(a)}
+
+Ex.d 2
+a: 1
+		c: 2
+	b: 3
+
+Ex.p 2
+Block
+	Assign{a, 1}
+	Block
+		Block
+			Assign{c, 2}
+		Assign{b, 3}
+
+Insights:
+	Every time the scope increases, parse a new block
+	For every control structure, parse an inline_block
+	A block ends when the scope depth drops below the entrance depth
+	Scoping is only handled by blocks
+
+
+
+How is scoping (and blocks) handled by the parser?
+	Scoping and blocks are intimately related in dust
+		A block is a collection of expressions that share the same scope
+		Blocks are naturally an expression themselves and can have sub-blocks
+
+	Given the relationship between scoping and blocks
+		Scoping rules are naturally easiest to handle within the context of the block rule
+
+	Scoping, at the core, comes down to three possible groups
+		The scope depth of two statements remains the same
+		The scope depth of the second is greater than the first
+		The scope depth of the second is smaller than the first
+
+	The handling of these cases within the block rule is simple
+		If the scope depth remains the same, parse the expression
+		If the scope depth increases, parse a new block	
+			Ensure that the invariant the following bullet depends on remains true
+		If the scope depth decreases, stop block parsing
+			The existence of a block is dependent on its scope level (invariant)
+
+	The assembly of the given block nodes is left to the block action
+		The block rule returns true in all cases where sub-parses don't fail
+			Throws an exception when parsing fails (has a must rule on all sub-parses)
+			The block rule is not currently a recoverable failure
+		The block rule also pushes a debug node on the stack before attempting sub-parses
+			This is used to determine when to stop assembling the resulting Block
+
+Continuation Expressions
+	Any expression that uses {seps} can be written using multiple lines
+		The parser will use the scope of the statement start when parsing the expression
+			The code on following lines can be indented willy-nilly
+		I can also provide a {c_seps} that does the same functionality (keep {sep} = ' ')
+	For table indexing, should the '.' immediately follow the table or can there be a {seps} in between
+		This would be a minor step to allowing indexing to be a continuation expression
+		ie. Should "foo() . bar . call()" parse correctly
