@@ -11,6 +11,26 @@ namespace dust {
 		swap(idx, -1);								// Restore the stack positions
 	}
 
+	impl::Table* EvalState::findScope(const std::string& var, int off, bool not_null) {
+		// Need to strip any forced scoping from var
+
+		return findScope(curr_scp, forcedLevel(var) + off, [&](impl::Table* s) { return s->has(var); }, not_null);
+	}
+
+	impl::Table* EvalState::findScope(impl::Table* scp, const std::function<bool(impl::Table*)>& pred) {
+		while (!pred(scp) && (scp = scp->getPar()));
+		return scp;
+	}
+	
+	impl::Table* EvalState::findScope(impl::Table* scp, int lvl, const std::function<bool(impl::Table*)>& pred, bool not_null) {
+		while (lvl-- && scp) scp = findScope(scp, pred);
+		return !scp && not_null ? &global : scp;
+	}
+
+	int EvalState::forcedLevel(const std::string& var) {
+		return var.find_first_not_of('.');
+	}
+
 	// Constructor
 	EvalState::EvalState() : ts{}, gc{}, CallStack{ gc }, global{}, curr_scp{ nullptr } {}
 
@@ -55,8 +75,8 @@ namespace dust {
 	}
 
 	// Assign the top value on the stack to the given variable with the given flags
-	void EvalState::setVar(const std::string& name, bool is_const, bool is_typed) {
-		auto& var = curr_scp->getVar(name);				// Creates a new variable if one doesn't exist already
+	void EvalState::set(const std::string& name, bool is_const, bool is_typed) {
+		auto& var = findScope(name, 0, true)->getVar(name);							// Creates a new variable if one doesn't exist already
 		
 		// If the variable has a previous value (ie. not new)
 		if (var.val.type_id != ts.NIL) {
@@ -70,20 +90,20 @@ namespace dust {
 		}
 
 		// Set the variable data
-		var.val = pop();											// `pop` (no templates) doesn't decrement references
+		var.val = pop();															// `pop` (no templates) doesn't decrement references
 		var.is_const = is_const;
 		if (is_typed) var.type_id = var.val.type_id;
 	}
 
 	// Push the variable onto the stack (nil if it doesn't exist)
-	void EvalState::getVar(const std::string& name) {
-		auto* scp = curr_scp;
+	void EvalState::get(const std::string& name) {
+		auto scp = findScope(name, 1);
 
-		do
-			if (scp->has(name)) return push(scp->getVal(name));
-		while (scp = scp->getPar());
+		scp ? push(scp->getVal(name)) : pushNil();
+	}
 
-		pushNil();
+	void EvalState::get() {
+		get(pop<std::string>());
 	}
 
 	void EvalState::markConst(const std::string& name) {
@@ -96,8 +116,7 @@ namespace dust {
 
 		// If the typing change may require type conversion (ie. typ not Nil and !(type(var) <= typ))
 		if (typ != ts.NIL && !ts.isChildType(var.type_id, typ)) {
-			if (!ts.convertible(var.type_id, typ))
-				throw error::converter_not_found{ "No converter from the current value to the given type" };
+			if (!ts.convertible(var.type_id, typ)) throw error::converter_not_found{ "No converter from the current value to the given type" };
 
 			push(var.val);
 			callMethod(ts.getName(typ));

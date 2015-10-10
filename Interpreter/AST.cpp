@@ -89,7 +89,7 @@ namespace dust {
 		// VarName methods
 		VarName::VarName(std::string var) : name{ var } {}
 		EvalState& VarName::eval(EvalState& e) {
-			e.getVar(name);
+			e.get(name);
 			return e;
 		}
 		std::string VarName::to_string() { return name; }
@@ -130,7 +130,7 @@ namespace dust {
 			//auto last_var = r_var;
 			while (r_var != l_var) {
 				if (op.size()) (*r_var)->eval(e).callOp(op);
-				e.setVar((*r_var++)->to_string(), setConst, setStatic);
+				e.set((*r_var++)->to_string(), setConst, setStatic);
 			}
 
 			//return last_var->eval(e);
@@ -201,24 +201,31 @@ namespace dust {
 			size_t x = e.size(), n_key = 1;
 			e.newScope();
 
+			//for (auto i = begin(); i != end(); ++i) {
 			for (const auto& i : *this) {
 				e.settop(x);							// Pops the results of the last expression (Not executed for the last expression)
 
 				try {
+					//(*i)->eval(e);
 					i->eval(e);
-				//} catch (error::dust_error& err) {		## Dust exception handling
-					// If the next expression is a "catch" block
-					// Handle the exception					## Would require reworking the execution loop
-					//else {
-					//	e.endScope();
-					//	throw err;
-					//}
+
+				} catch (error::dust_error& err) {		// Try to handle dust exceptions
+					if (false) {
+					//if (std::dynamic_pointer_cast<Catch>(*(++i)) {		// If the next expression is a catch block
+						//*(&i + 1);							// Since block uses std::vector (ie. contiguous storage)		## I could also keep track of the "index"
+						//e.push(err.what());					// How do I ensure that Catch statements are not executed if there is no exception thrown
+						//(*i)->eval(e);						// Also this formulation would imply that errors can be caught in the same block they are thrown
+					} else {
+						e.endScope();
+						throw err;
+					}
 
 				} catch(...) {
 					e.endScope();
 					throw;
 				}
 
+				//if (table && !std::dynamic_pointer_cast<Assign>(*i)) {
 				if (table && !std::dynamic_pointer_cast<Assign>(i)) {
 					// perform default assignment
 					++n_key;
