@@ -70,7 +70,7 @@ namespace dust {
 		}
 
 		// Set the variable data
-		try_incRef(var.val = pop());
+		var.val = pop();											// `pop` (no templates) doesn't decrement references
 		var.is_const = is_const;
 		if (is_typed) var.type_id = var.val.type_id;
 	}
@@ -88,15 +88,15 @@ namespace dust {
 		if (!curr_scp->has(name)) return;
 		auto& var = curr_scp->getVar(name);
 
-		// If the typing change may require type conversion (ie. typ not Nil)
-		if (typ != ts.NIL) {
-			if (!ts.convertible(curr_scp->getVar(name).type_id, typ))
+		// If the typing change may require type conversion (ie. typ not Nil and !(type(var) <= typ))
+		if (typ != ts.NIL && !ts.isChildType(var.type_id, typ)) {
+			if (!ts.convertible(var.type_id, typ))
 				throw error::converter_not_found{ "No converter from the current value to the given type" };
 
 			push(var.val);
 			callMethod(ts.getName(typ));
 			try_decRef(var.val);
-			try_incRef(var.val = pop());
+			var.val = pop();										// `pop` (no templates) doesn't decrement references
 		}
 
 		var.val.type_id = typ;

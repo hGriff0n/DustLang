@@ -78,8 +78,8 @@ namespace dust {
 			type::TypeSystem ts;
 
 			//impl::RuntimeStorage<str_record> strings;
-			//impl::RuntimeStorage<impl::Scope> tables;
-			//impl::RuntimeStorage<void*> user_data;
+			//impl::RuntimeStorage<impl::Table> tables;
+			//impl::RuntimeStorage<void> user_data;
 			impl::GC gc;
 
 		protected:
