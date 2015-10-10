@@ -226,23 +226,26 @@ namespace dust {
 				// While executing the given code, an exception, of type 'Exception', is thrown
 				template <typename Exception>
 				void require_excep(const std::string& code) {
-				displayTestHeader(code) << "for exception of type " << error::name<Exception>::is << "\n";
+					displayTestHeader(code) << "for exception of type " << error::name<Exception>::is << "\n";
 
-				try {
-					evaluate(code);
+					try {
+						evaluate(code);
 
-					printMsg(false) << " Failed Test " << std::setw(5) << num_tests << "\"" << code << "\" did not throw an exception\n";
+						printMsg(false) << " Failed Test " << std::setw(5) << num_tests << "\"" << code << "\" did not throw an exception\n";
 
-				} catch (Exception& e) {
-					//printMsg(true) << " Passed Test " << std::setw(5) << num_tests << "\"" << code << "\" threw the expected exception\n";
-					printMsg(true) << " Passed Test " << std::setw(5) << num_tests << "Caught: " << e.what() << "\n";
+					} catch (Exception& e) {
+						//printMsg(true) << " Passed Test " << std::setw(5) << num_tests << "\"" << code << "\" threw the expected exception\n";
+						printMsg(true) << " Passed Test " << std::setw(5) << num_tests << "Caught: " << e.what() << "\n";
 
-				} catch (...) {
-					printMsg(false) << " Failed Test " << std::setw(5) << num_tests << "\"" << code << "\" threw an unexpected exception\n";
+					} catch (...) {
+						printMsg(false) << " Failed Test " << std::setw(5) << num_tests << "\"" << code << "\" threw an unexpected exception\n";
+					} //catch (std::exception& e) {
+						//dynamic_cast<Exception>(e);			// Throws std::bad_cast if e is not castable to Exception
+						//std::cout << typeid(e).name() << "\n";
+					//}
+
+					exitTest();
 				}
-
-				exitTest();
-			}
 		};
 
 		template <class Stream>

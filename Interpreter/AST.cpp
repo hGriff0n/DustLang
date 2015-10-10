@@ -203,9 +203,7 @@ namespace dust {
 
 			for (const auto& i : *this) {
 				e.settop(x);							// Pops the results of the last expression (Not executed for the last expression)
-				//i->eval(e);
 
-				//*/
 				try {
 					i->eval(e);
 				//} catch (error::dust_error& err) {		## Dust exception handling
@@ -216,11 +214,10 @@ namespace dust {
 					//	throw err;
 					//}
 
-				} catch (std::exception& err) {
+				} catch(...) {
 					e.endScope();
-					throw err;
+					throw;
 				}
-				//*/
 			}
 
 			required ? e.pushScope() : e.endScope();
