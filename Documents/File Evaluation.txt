@@ -1,0 +1,25 @@
+
+Requiring Files
+	require = {req_assign}?require {string}
+		req_assign = {var_id}: *
+
+	Require loads the file given by the string into a table
+		The table is then assigned to the global variable given in req_assign
+			If a req_assign is not given, it is created from the required file
+
+			Ex. g: require "graph"
+				require "graph"
+				print(g = graph)			## true
+
+		Thereby require uses a different scoping level from the including file
+			What about including includes ?
+				File A includes File B which includes File C
+				To access C from A requires B.C
+					Have a require_all keyword??
+
+		If the file is already loaded, require reuses the loaded table
+			Might delete the tables if no longer referenced
+					
+
+	It also needs to interact with a possible module system
+		Have the ability to "hide" variables

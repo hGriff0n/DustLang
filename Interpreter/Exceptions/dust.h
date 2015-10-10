@@ -5,6 +5,7 @@
 // Dust error classes and facilities
 
 // For errors regarding dust behavior semantics
+	// All errors handled by dust catch blocks inherit from dust_error
 
 namespace dust {
 	namespace error {

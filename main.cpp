@@ -1,3 +1,5 @@
+
+#define USE_SCOPE_STORAGE
 #include "Interpreter\Actions.h"
 
 #include "Interpreter\Testing\Testing.h"
@@ -62,7 +64,7 @@ istream& getmultiline(istream& in, std::string& s) {
 
 int main(int argc, const char* argv[]) {
 	std::cout << "Analyzing `dust::grammar`.....\n";
-	pegtl::analyze<grammar>();
+	pegtl::analyze<grammar>();									// Ignore this for now (except maybe not?)
 	std::cout << std::endl;
 
 	parse::AST parse_tree;
@@ -83,6 +85,7 @@ int main(int argc, const char* argv[]) {
 				pegtl::parse<grammar, action>(input, input, parse_tree, 0);
 
 				print(std::cout, parse_tree.at());
+				//std::dynamic_pointer_cast<parse::Block>(parse_tree.at())->global = true;
 				isResString = parse_tree.pop()->eval(e).is<std::string>();
 				//isResString = e.eval(parse_tree.pop()).is<std::string>();
 

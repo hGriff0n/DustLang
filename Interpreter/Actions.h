@@ -183,7 +183,7 @@ namespace dust {
 			}
 		};
 
-		template <> struct action<prog> : action<block> {};
+		template <> struct action<file> : action<block> {};
 
 		// Other Actions
 		template <> struct action<o_paren> {

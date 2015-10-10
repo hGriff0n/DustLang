@@ -129,7 +129,7 @@ namespace dust {
 
 		// Scoping Rules
 		struct block {
-			using analyze_t = analysis::counted<analysis::rule_type::STAR, 0, block, expr>;	
+			using analyze_t = analysis::counted<analysis::rule_type::STAR, 0, block, expr>;			// I have no idea how to do this
 
 			template <apply_mode A, template<typename...> class Action, template<typename...> class Control>
 			static bool match(input& in, AST& ast, const int exit) {
@@ -171,6 +171,8 @@ namespace dust {
 		// Allows the first line of a block to be in-lined
 			// Supposed to only allow inlining of single expression loops
 		struct inline_block {
+			using analyze_t = block::analyze_t;
+
 			template <apply_mode A, template<typename...> class Action, template<typename...> class Control>
 			static bool match(input& in, AST& ast, const int scope) {
 				return Control<block>::template match<A, Action, Control>(in, ast, scope + 1);
@@ -181,10 +183,12 @@ namespace dust {
 		// Organization Tokens
 		struct expr : seq<seps, expr_x, seps> {};
 		//struct prog : plus<seps, expr, seps> {};										// Have to modify with scoping ???
-		struct prog : block {};
+		struct file : block {};
+		//struct file : seq<block, eof> {};
 
 	}
 
 	// Grammar Token
-	struct grammar : pegtl::must<parse::prog, pegtl::eolf> {};
+	struct grammar : pegtl::must<parse::file, pegtl::eolf> {};
+	//struct grammar : pegtl::must<parse::file> {};
 }

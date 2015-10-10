@@ -23,19 +23,69 @@ Opinions on adapting code to use the C++ Common Code Standards and the GSL
 
 Timeline
 	0 Bugfixes
-		in="3 + 3 4 + 4"
-			Parser parses and constructs both expressions perfectly fine
-			However it only pops the second one into the block
+		Fix Bug involving scopes and assignments
+			Any assignment based tests are currently broken (Don't "stick")
+				Exceptions don't "unroll" scoping
+				I have a solution, I just need time to thing on its efficacy
+					The solution provides for handling dust exceptions in dust
+			Move the work on require/etc. into "File Evaluation.txt"
+		Possibly improve the Testing System code
+		Comments cause parser errors
+		Improve the usefulness of the Testing suite by adding a review of the status of all (global) tests that were run
+			Possibly add in sub-test reviews if able
+			Could also replace the last statement of the run_tests
 
 	1 Scoping and multi-lined grammar
-		Implement Scope storage (ie. Tables)
-			Change the global table to use this structure
+		Move EvalState to be able to have multiple scopes
+			Need to have a "global" scope
+				This is primarily a problem with Block eval
+				Add flags to Block (set to true if main Block)
+					This is a (probable) problem with including files
+
+					require = {req_assign}?require {string}
+						req_assign = {var_id}: *
+
+					Require loads the file given by the string into a table
+						Evaluation is performed as a block object, the scope is not deleted after evaluation
+							This needs a seperate flag from global
+
+						The table is then assigned to the variable given in req_assign
+							If a req_assign is not given, the var_name is created from the file string
+							If a req_assign is not given, the assignment is performed in the global scope
+
+							Ex. g: require "graph"
+								require "graph"				## equivalent to "_G.graph: require "graph""
+								print(g = graph)			## true
+
+						Loading files therefore uses a different scoping system from the including file
+						If the file is already loaded, require reuses the loaded table
+							Might delete the tables if no longer referenced
+
+					Implementation General Ideas
+						For evaluating files
+							Starting a file evaluation requires the creation of a new scope
+							Ending a file's evaluation entails the deletion of the scope (unless require'd)
+								However the "global" scope is kept seperate from this system and is not deleted
+								Also used to "initialize" the deep scoping
+
+						For parsing require
+							Require evaluation flags its constructed Block's "required" field, before evaluating the Block
+							This field changes the scope deletion into a scope storage (which is then used for assignment)
+					
+					How will modules work
+						Modules is just a way of specifying which "functions" and "variables" are visible to a user of the table
+						Could possibly be implemented using metamethods (Add at file end)
+
+		Ensure that EvalState decrements references correctly
+			Improve the implementation of EvalState methods
+		Add scope api to EvalState
+			Block can use EvalState to create/destroy/store scopes
+		Implement scoped variable lookup
+		Generalize RuntimeStorage and GC to be able to work with Scope
 		Better specify how scoping is handled
 		Solve the problem with analysis
 			Analysis says there's an infinite loop with block (probably because I don't know what I'm doing with that stuff)
 			problem: cycle without progress detected at class struct dust::parse::block
-		Add scope api to EvalState
-		Implement scoped variable lookup
 
 		How to define Scoping
 			Determine the difference between a tab and x spaces															# Scoping whitespace rules

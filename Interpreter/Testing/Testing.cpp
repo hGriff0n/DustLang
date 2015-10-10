@@ -5,19 +5,20 @@ namespace dust {
 		void run_tests(EvalState& e) {
 			TestOrganizer<decltype(std::cout)> t{ e, std::cout };
 
-			// Literals and Typing tests
-			t.init_sub_test("Literals and Type System");
+			// Basics and Type System tests
+			t.init_sub_test("Basics and Type System");
 				t.require_eval("3", 3);										// 1
 				t.require_type("3", "Int");									// 2
+				t.require_eval("## Hello", 0);								// 3
 
-				t.require_eval("\"3\"", "3");								// 3
-				t.require_type("\"3\"", "String");							// 4
+				t.require_eval("\"3\"", "3");								// 4
+				t.require_type("\"3\"", "String");							// 5
 
-				t.require_eval("3.3", 3.3);									// 5
-				t.require_type("3.3", "Float");								// 6
+				t.require_eval("3.3", 3.3);									// 6
+				t.require_type("3.3", "Float");								// 7
 
-				t.require_eval("true", true);								// 7
-				t.require_type("true", "Bool");								// 8
+				t.require_eval("true", true);								// 8
+				t.require_type("true", "Bool");								// 9
 			t.close_sub_test();
 
 			// Operator resolution tests
@@ -106,10 +107,13 @@ namespace dust {
 				t.require_eval("3 + 3\n\t4 + 4\n\n\t5 + 5", 10);			// 5		Testing whether "4 + 4" and "5 + 5" are in the same block
 
 				t.init_sub_test("Scoped Assignment");
-					t.require_eval("a: 2\n\ta: 5", "5");					// 1
+					t.require_eval("a: 2\n\ta: 5\n\ta", "5");					// 1
 					t.require_true("a = 2");								// 2
 				t.close_sub_test();
 			t.close_sub_test();
+
+			// Is there a way to review all tests here ???
+			//t.end_tests();
 
 			std::cout << "Passed: " << t.num_pass << " | Failed: " << (t.num_tests - t.num_pass) << " | " << t.num_pass << " / " << t.num_tests << " Tests (" << std::setprecision(4) << ((float)t.num_pass / t.num_tests * 100) << "%)\n\n";
 
