@@ -179,25 +179,7 @@ namespace dust {
 
 				Block();
 				static std::string node_type;
-				bool save_scope;
-
-				virtual EvalState& eval(EvalState& e);
-				virtual void addChild(std::shared_ptr<ASTNode>& c);
-
-				virtual std::string to_string();
-				virtual std::string print_string(std::string buf);
-		};
-
-		// Possible way of implementing Tables by using the Block node
-			// Can't specialize from the block node for construction purposes
-				// <table> is used in other grammar objects, such as Type. How am I going to handle this?
-		class Table : public Literal {
-			private:
-				std::shared_ptr<Block> body;		// need to move begin, end, and size to public
-
-			public:
-				Table();
-				static std::string node_type;
+				bool save_scope, table;
 
 				virtual EvalState& eval(EvalState& e);
 				virtual void addChild(std::shared_ptr<ASTNode>& c);

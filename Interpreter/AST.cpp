@@ -185,7 +185,7 @@ namespace dust {
 		}
 
 		// Block methods
-		Block::Block() : save_scope{ false } {}
+		Block::Block() : save_scope{ false }, table{ false } {}
 		auto Block::begin() {
 			return expr.rbegin();
 		}
@@ -198,7 +198,7 @@ namespace dust {
 		EvalState& Block::eval(EvalState& e) {
 			if (expr.empty()) throw error::bad_node_eval{ "Attempt to evaluate an empty block" };
 
-			auto x = e.size();
+			size_t x = e.size(), n_key = 1;
 			e.newScope();
 
 			for (const auto& i : *this) {
@@ -218,16 +218,24 @@ namespace dust {
 					e.endScope();
 					throw;
 				}
+
+				if (table && !std::dynamic_pointer_cast<Assign>(i)) {
+					// perform default assignment
+					++n_key;
+				}
 			}
 
-			save_scope ? e.pushScope() : e.endScope();
-			//if (!required) e.endScope();
-			//else e.pushScope();
-			//e.endScope();
+			if (save_scope) {
+				e.settop(x);
+				e.pushScope();
+			} else
+				e.endScope();
 
 			return e;
 		}
-		std::string Block::to_string() { return ""; }
+		std::string Block::to_string() {
+			return table ? "[]" : "";
+		}
 		std::string Block::print_string(std::string buf) {
 			std::string ret = buf + "+- " + node_type + "\n";
 			buf += " ";
@@ -241,52 +249,6 @@ namespace dust {
 			expr.push_back(c);
 		}
 
-		// Table methods
-		Table::Table() : Literal{ "", -1 } {}
-		EvalState& Table::eval(EvalState& e) {
-			int key = 1;
-
-			//e.newScope();
-			// init e with a new stack ???
-			for (auto i : *body) {
-				i->eval(e);
-
-				// If the expression was not an assignment, assign using a default value
-				if (!std::dynamic_pointer_cast<Assign>(i)) {
-					// e.setVar(key++);
-				} else
-					e.pop();
-			}
-
-			//e.pushScope();
-			//e.closeScope();
-
-			// Ensure that the item on the stack as the correct metadata
-			return e;
-		}
-		// This function is not called if the table does not have a block (ie. [])
-		void Table::addChild(std::shared_ptr<ASTNode>& c) {
-			if (!std::dynamic_pointer_cast<Block>(c)) throw error::invalid_ast_construction{ "Attempt to construct Table node without a corresponding Block" };
-			if (body) throw error::invalid_ast_construction{ "Attempt to construct a Table node with multiple Blocks" };
-			body.swap(std::dynamic_pointer_cast<Block>(c));
-		}
-		std::string Table::to_string() { return ""; }
-		std::string Table::print_string(std::string buf) {
-			std::string ret = buf + "+- " + node_type + "\n";
-			buf += " ";
-
-			for (auto i : *body) {
-				ret += i->print_string(buf);
-				//if (std::dynamic_pointer_cast<Assign>(i)) {
-					// Do Assignment specific work
-				//} else {
-					// Add default assignment ???
-				//}
-			}
-
-			return ret;
-		}
-
 
 		std::string ASTNode::node_type = "ASTNode";
 		std::string Debug::node_type = "Debug";
@@ -296,6 +258,5 @@ namespace dust {
 		std::string Assign::node_type = "Assignment";
 		std::string BinaryKeyword::node_type = "Boolean";
 		std::string Block::node_type = "Block";
-		std::string Table::node_type = "Table";
 	}
 }
