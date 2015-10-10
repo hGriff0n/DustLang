@@ -1,25 +1,22 @@
+require = {req_assign}?require {string}
+	req_assign = {var_id}: *
 
-Requiring Files
-	require = {req_assign}?require {string}
-		req_assign = {var_id}: *
+Require loads the file given by the string into a table
+	Evaluation is performed as a block object, not as a table object
+		However the scope is not deleted
+			Therefore the require action/evaluation must set the created Block's save_scope field to true before evaluation
 
-	Require loads the file given by the string into a table
-		The table is then assigned to the global variable given in req_assign
-			If a req_assign is not given, it is created from the required file
+	The table is then assigned to the var_id given in req_assign
+		If a req_assign is not given, the var_id is created from the file string
+		If a req_assign is not given, the table is assigned in the global scope
 
-			Ex. g: require "graph"
-				require "graph"
-				print(g = graph)			## true
+		Ex. g: require "graph"
+			require "graph"				## equivalent to "_G.graph: require "graph""
+			print(g = graph)			## true
 
-		Thereby require uses a different scoping level from the including file
-			What about including includes ?
-				File A includes File B which includes File C
-				To access C from A requires B.C
-					Have a require_all keyword??
-
-		If the file is already loaded, require reuses the loaded table
-			Might delete the tables if no longer referenced
+	If the file is already loaded, require reuses the loaded table
+		Might delete the tables if no longer referenced
 					
-
-	It also needs to interact with a possible module system
-		Have the ability to "hide" variables
+How will modules work
+	Modules is just a way of specifying which "functions" and "variables" are visible to a user of the table
+	Could possibly be implemented using metamethods (Add at file end)

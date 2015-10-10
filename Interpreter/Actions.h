@@ -205,6 +205,7 @@ namespace dust {
 		};
 
 		// Creating Tables ???
+		/*/
 		template <> struct action<o_brack> {
 			static void apply(input& in, AST& ast, const int _) {
 				ast.push(makeNode<Table>());
@@ -213,13 +214,17 @@ namespace dust {
 
 		template <> struct action<table> {
 			static void apply(input& in, AST& ast, const int _) {
-				if (std::dynamic_pointer_cast<Block>(ast.at()) && std::dynamic_pointer_cast<Table>(ast.at(-2)))
-					ast.at(-2)->addChild(ast.pop());
+				std::shared_ptr<Block> t;
 
-				else if (!std::dynamic_pointer_cast<Table>(ast.at()))			// If not an empty table
-					throw error::missing_node_x{ "Attempt to construct a Table node without a Table or Block node" };
+				if (t = std::dynamic_pointer_cast<Block>(ast.at())) {
+					t->save_scope = true;
+					t->table = true;
+
+				} else throw error::missing_node_x{ "Attempt to construct a Table without a Block node" };
 			}
 		};
+
+		//*/
 	}
 
 	template <typename Rule>

@@ -27,7 +27,7 @@ namespace dust {
 				t.require_eval("\"The answer is \" + (6.3 ^ 2)",
 					"The answer is 39.690000");								// 3
 				t.require_error("3 + true");								// 4
-				t.require_excep<error::dispatch_error>("3 + true");			// 5			Not throwing a dispatch error
+				t.require_excep<error::dispatch_error>("3 + true");			// 5			## dispatch_error inherits from dust_error
 				t.require_eval("\"4\" + 3", "43");							// 6
 				t.require_eval("\"4\" - 3", 1);								// 7
 			t.close_sub_test();
@@ -64,12 +64,12 @@ namespace dust {
 
 			// Test boolean ternary statement
 			t.init_sub_test("Boolean Ternary");
-				t.require_eval("true and false or true", "true");			// 1		# Counter-intuitive. But this is how lua's ternary works
+				t.require_eval("true and false or true", "true");			// 1		# Counter-intuitive. But this is how lua's ternary operator works
 				t.require_eval("c = 0 and 4 or 5", 4);						// 2
 
 				t.require_excep<pegtl::parse_error>("false and a: 5");		// 3
 				t.require_eval("false and (a: 5)", false);					// 4
-				t.require_true("a = true");									// 5		# a: 5 is not evaluated
+				t.require_true("a = true");									// 5		# Checking that a: 5 is not evaluated
 
 				t.require_eval("a: b or 5", 3);								// 6
 				t.require_true("a = 3");									// 7
