@@ -185,7 +185,7 @@ namespace dust {
 		}
 
 		// Block methods
-		Block::Block() {}
+		Block::Block() : required{ false } {}
 		auto Block::begin() {
 			return expr.rbegin();
 		}
@@ -197,12 +197,36 @@ namespace dust {
 		}
 		EvalState& Block::eval(EvalState& e) {
 			if (expr.empty()) throw error::bad_node_eval{ "Attempt to evaluate an empty block" };
+
 			auto x = e.size();
+			e.newScope();
 
 			for (const auto& i : *this) {
 				e.settop(x);							// Pops the results of the last expression (Not executed for the last expression)
-				i->eval(e);
+				//i->eval(e);
+
+				//*/
+				try {
+					i->eval(e);
+				//} catch (error::dust_error& err) {		## Dust exception handling
+					// If the next expression is a "catch" block
+					// Handle the exception					## Would require reworking the execution loop
+					//else {
+					//	e.endScope();
+					//	throw err;
+					//}
+
+				} catch (std::exception& err) {
+					e.endScope();
+					throw err;
+				}
+				//*/
 			}
+
+			required ? e.pushScope() : e.endScope();
+			//if (!required) e.endScope();
+			//else e.pushScope();
+			//e.endScope();
 
 			return e;
 		}
@@ -223,9 +247,10 @@ namespace dust {
 		// Table methods
 		Table::Table() : Literal{ "", -1 } {}
 		EvalState& Table::eval(EvalState& e) {
-			// Init e with a new scope (possibly a new stack as well)
 			int key = 1;
 
+			//e.newScope();
+			// init e with a new stack ???
 			for (auto i : *body) {
 				i->eval(e);
 
@@ -236,9 +261,10 @@ namespace dust {
 					e.pop();
 			}
 
-			// Get "table" from e (possibly modify scope state)
-			// Reset current scope
-			// Push table onto the stack
+			//e.pushScope();
+			//e.closeScope();
+
+			// Ensure that the item on the stack as the correct metadata
 			return e;
 		}
 		// This function is not called if the table does not have a block (ie. [])

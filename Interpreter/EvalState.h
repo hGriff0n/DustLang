@@ -2,7 +2,7 @@
 
 #include "CallStack.h"
 #include "TypeSystem.h"
-#include "Scope.h"
+#include "Table.h"
 
 namespace dust {
 	void initTypeSystem(dust::type::TypeSystem&);
@@ -73,9 +73,13 @@ namespace dust {
 
 	class EvalState : public impl::CallStack {
 		private:
-			//Stack<Scope> curr_scope;
-			impl::Scope global;
+			impl::Table* curr_scp;
+			impl::Table global;
 			type::TypeSystem ts;
+
+			//impl::RuntimeStorage<str_record> strings;
+			//impl::RuntimeStorage<impl::Scope> tables;
+			//impl::RuntimeStorage<void*> user_data;
 			impl::GC gc;
 
 		protected:
@@ -106,6 +110,11 @@ namespace dust {
 			void markTyped(const std::string& name, size_t typ);
 			bool isConst(const std::string& name);
 			bool isTyped(const std::string& name);
+
+			// Scope Interaction
+			void newScope();				// Start a new scope with the current scope as parent
+			void endScope();				// Delete current scope (Cleans up memory)
+			void pushScope();				// Store scope in memory and push on the stack (tables, functions, etc.)
 
 			friend void initState(EvalState&);
 			template <class Stream> friend class test::Tester;
