@@ -75,9 +75,15 @@ namespace dust {
 		if (is_typed) var.type_id = var.val.type_id;
 	}
 
-	// Push the variable onto the stack (0 if it doesn't exist)
+	// Push the variable onto the stack (nil if it doesn't exist)
 	void EvalState::getVar(const std::string& name) {
-		curr_scp->has(name) ? push(curr_scp->getVal(name)) : pushNil();
+		auto* scp = curr_scp;
+
+		do
+			if (scp->has(name)) return push(scp->getVal(name));
+		while (scp = scp->getPar());
+
+		pushNil();
 	}
 
 	void EvalState::markConst(const std::string& name) {

@@ -2,14 +2,14 @@
 
 #include "Value.h"
 #include <string>
-#include <map>
+#include <unordered_map>
 
 namespace dust {
 	namespace impl {
 
 		class Table {
 			using key_type = std::string;
-			using storage_type = std::map<key_type, Variable>;			// Would an unordered_map be better ?
+			using storage_type = std::unordered_map<key_type, Variable>;			// Would an unordered_map be better ?
 
 			private:
 				Table* parent;											// only global and outer tables (not sub-tables) have parent == nullptr

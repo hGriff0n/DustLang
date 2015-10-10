@@ -234,7 +234,6 @@ namespace dust {
 						printMsg(false) << " Failed Test " << std::setw(5) << num_tests << "\"" << code << "\" did not throw an exception\n";
 
 					} catch (Exception& e) {
-						//printMsg(true) << " Passed Test " << std::setw(5) << num_tests << "\"" << code << "\" threw the expected exception\n";
 						printMsg(true) << " Passed Test " << std::setw(5) << num_tests << "Caught: " << e.what() << "\n";
 
 					} catch (...) {
