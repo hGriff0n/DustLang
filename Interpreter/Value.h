@@ -33,7 +33,7 @@ namespace dust {
 			Atom val;
 			size_t type_id;
 
-			Value() {}
+			Value() { type_id = -1; }
 			Value(Atom v, size_t t) : val{ v }, type_id{ t } {}
 			Value(const Value& v) : val{ v.val }, type_id{ v.type_id } {}
 
@@ -45,7 +45,7 @@ namespace dust {
 			bool is_const;
 			size_t type_id;			// == NIL unless statically typed
 
-			Variable() {}
+			Variable() { type_id = -1; }
 			Variable(Value v, size_t t, bool c) : type_id{ t }, val{ v }, is_const{ c } {}
 		};
 	}

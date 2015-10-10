@@ -24,6 +24,11 @@ namespace dust {
 			Stack::push(val);
 		}
 
+		void CallStack::pushNil() {
+			//push(impl::Value{});
+			push(0);
+		}
+
 		impl::Value CallStack::pop(int idx) {
 			return Stack::pop(idx);
 		}

@@ -179,7 +179,7 @@ namespace dust {
 
 				Block();
 				static std::string node_type;
-				bool required;
+				bool save_scope;
 
 				virtual EvalState& eval(EvalState& e);
 				virtual void addChild(std::shared_ptr<ASTNode>& c);

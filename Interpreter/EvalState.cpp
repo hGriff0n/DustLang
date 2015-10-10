@@ -6,34 +6,13 @@ namespace dust {
 	void EvalState::forceType(int idx, size_t type) {
 		if (at(idx).type_id == type) return;
 
-		swap(idx, -1);
+		swap(idx, -1);								// Ensure the value is at the top of the stack
 		callMethod(ts.getName(type));				// Call the converter (if execution reaches here, the converter exists)
-		swap(idx, -1);
-	}
-
-	// Convert the element to var.type_id if possible because var is statically typed
-		// Is only called if var.type_id != ts.Nil and at(idx).type_id is not a child of var.type_id
-	void EvalState::staticTyping(impl::Variable& var, bool is_const) {
-		if (!ts.convertible(var.type_id, at().type_id))	throw error::converter_not_found{ "No converter from from the assigned value to the variable's static type" };
-
-		try_decRef(var.val);
-		callMethod(ts.getName(var.type_id));
-		try_incRef(var.val = pop());
-		var.is_const = is_const;
-	}
-
-	// Create and set a new Variable
-	void EvalState::newVar(const std::string& name, bool is_const, bool is_typed) {
-		//auto& var = global.getVar(name);
-		auto& var = curr_scp->getVar(name);
-		var = impl::Variable{ pop(), ts.NIL, is_const };
-		if (is_typed) var.type_id = var.val.type_id;
+		swap(idx, -1);								// Restore the stack positions
 	}
 
 	// Constructor
-	EvalState::EvalState() : ts{}, gc{}, CallStack{ gc }, global{}, curr_scp{ nullptr } {
-		curr_scp = nullptr;
-	}
+	EvalState::EvalState() : ts{}, gc{}, CallStack{ gc }, global{}, curr_scp{ nullptr } {}
 
 	// Free functions
 	EvalState& EvalState::call(const std::string& fn) {
@@ -77,65 +56,56 @@ namespace dust {
 
 	// Assign the top value on the stack to the given variable with the given flags
 	void EvalState::setVar(const std::string& name, bool is_const, bool is_typed) {
-		//if (!global.has(name)) return newVar(name, is_const, is_typed);
-		//auto& var = global.getVar(name);
-		if (!curr_scp->has(name)) return newVar(name, is_const, is_typed);
-		auto& var = curr_scp->getVar(name);
+		auto& var = curr_scp->getVar(name);				// Creates a new variable if one doesn't exist already
+		
+		// If the variable has a previous value (ie. not new)
+		if (var.val.type_id != ts.NIL) {
+			if (var.is_const) throw error::illegal_operation{ "Attempt to reassign a constant variable" };
+			if (var.type_id != ts.NIL && !ts.isChildType(at().type_id, var.type_id)) {
+				if (!ts.convertible(var.type_id, at().type_id))	throw error::converter_not_found{ "No converter from from the assigned value to the variable's static type" };
+				callMethod(ts.getName(var.type_id));
+			}
 
-		if (var.is_const) throw error::illegal_operation{ "Attempt to reassign a constant variable" };
+			try_decRef(var.val);
+		}
 
-		if (var.type_id != ts.NIL && !ts.isChildType(at().type_id, var.type_id))
-			return staticTyping(var, is_const);
-
-		try_decRef(var.val);
-		var.val = pop();
-		try_incRef(var.val);
-
+		// Set the variable data
+		try_incRef(var.val = pop());
 		var.is_const = is_const;
 		if (is_typed) var.type_id = var.val.type_id;
 	}
 
 	// Push the variable onto the stack (0 if it doesn't exist)
 	void EvalState::getVar(const std::string& name) {
-		//if (!global.has(name)) return push(0);
-		//push(global.getVal(name));
-		if (!curr_scp->has(name)) return push(0);
-		push(curr_scp->getVal(name));
+		curr_scp->has(name) ? push(curr_scp->getVal(name)) : pushNil();
 	}
 
 	void EvalState::markConst(const std::string& name) {
-		//if (global.has(name))
-			//global.getVar(name).is_const = !global.getVar(name).is_const;
 		if (curr_scp->has(name))
 			curr_scp->getVar(name).is_const = !curr_scp->getVar(name).is_const;
 	}
-	void EvalState::markTyped(const std::string& name, size_t typ) {
-		//if (!global.has(name)) return;
-		//auto& var = global.getVar(name);
-		
+	void EvalState::markTyped(const std::string& name, size_t typ) {		
 		if (!curr_scp->has(name)) return;
 		auto& var = curr_scp->getVar(name);
 
+		// If the typing change may require type conversion (ie. typ not Nil)
 		if (typ != ts.NIL) {
-			//if (!ts.convertible(global.getVar(name).type_id, typ))
 			if (!ts.convertible(curr_scp->getVar(name).type_id, typ))
 				throw error::converter_not_found{ "No converter from the current value to the given type" };
 
 			push(var.val);
 			callMethod(ts.getName(typ));
 			try_decRef(var.val);
-			var.val = pop();
+			try_incRef(var.val = pop());
 		}
 
 		var.val.type_id = typ;
 	}
 	bool EvalState::isConst(const std::string& name) {
-		//return global.getVar(name).is_const;
-		return curr_scp->getVar(name).is_const;
+		return curr_scp->has(name) && curr_scp->getVar(name).is_const;
 	}
 	bool EvalState::isTyped(const std::string& name) {
-		//return global.getVar(name).type_id != ts.NIL;
-		return curr_scp->getVar(name).type_id != ts.NIL;
+		return curr_scp->has(name) && curr_scp->getVar(name).type_id != ts.NIL;
 	}
 
 	void EvalState::newScope() {

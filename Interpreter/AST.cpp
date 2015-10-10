@@ -185,7 +185,7 @@ namespace dust {
 		}
 
 		// Block methods
-		Block::Block() : required{ false } {}
+		Block::Block() : save_scope{ false } {}
 		auto Block::begin() {
 			return expr.rbegin();
 		}
@@ -220,7 +220,7 @@ namespace dust {
 				}
 			}
 
-			required ? e.pushScope() : e.endScope();
+			save_scope ? e.pushScope() : e.endScope();
 			//if (!required) e.endScope();
 			//else e.pushScope();
 			//e.endScope();

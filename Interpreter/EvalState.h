@@ -85,10 +85,6 @@ namespace dust {
 		protected:
 			void forceType(int, size_t);
 
-			// Variables
-			void staticTyping(impl::Variable&, bool);
-			void newVar(const std::string&, bool, bool);
-
 		public:
 			EvalState();
 

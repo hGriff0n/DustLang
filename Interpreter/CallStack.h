@@ -35,6 +35,7 @@ namespace dust {
 				void push(const char* val);
 
 				void push(impl::Value val);	// impl::Value& ???
+				void pushNil();
 
 
 				// Pop values from the stack
