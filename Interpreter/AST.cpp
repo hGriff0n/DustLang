@@ -217,7 +217,7 @@ namespace dust {
 						//(*i)->eval(e);						// Also this formulation would imply that errors can be caught in the same block they are thrown
 					} else {
 						e.endScope();
-						throw err;
+						throw;
 					}
 
 				} catch(...) {
