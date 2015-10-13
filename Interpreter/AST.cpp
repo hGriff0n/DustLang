@@ -243,6 +243,38 @@ namespace dust {
 			expr.push_back(c);
 		}
 
+		// TryCatch methods
+		TryCatch::TryCatch() {}
+		EvalState& TryCatch::eval(EvalState& e) {
+			if (!try_code || !catch_code) throw error::bad_node_eval{ "Attempt to evaluate an incomplete TryCatch node" };
+
+			// Should I mirror block evaluation
+				// Or add a flag to block to prevent it from creating/destroying scope
+			// This code follows the second option (although the flag(s) are currently unimplemented)
+
+			try {
+				try_code->eval(e);
+
+			} catch (error::dust_error& err) {
+				e.push(err.what());
+				catch_code->eval(e);
+			}
+
+			return e;
+		}
+		std::string TryCatch::to_string() { return ""; }
+		std::string TryCatch::print_string(std::string buf) {
+			return buf + "+- " + node_type + "::try\n" + try_code->print_string(buf + " ") +
+				   buf + "+- " + node_type + "::catch\n" + catch_code->print_string(buf + " ");
+		}
+		void TryCatch::addChild(std::shared_ptr<ASTNode>& c) {
+			auto& code_block = catch_code ? try_code : catch_code;
+			if (code_block) throw error::operands_error{ "Attempt to add more than two blocks to TryCatch node" };
+
+			code_block.swap(std::dynamic_pointer_cast<Block>(c));
+			if (!code_block) throw error::invalid_ast_construction{ "Attempt to construct TryCatch node with a non-Block node" };
+		}
+
 
 		std::string ASTNode::node_type = "ASTNode";
 		std::string Debug::node_type = "Debug";
@@ -252,5 +284,6 @@ namespace dust {
 		std::string Assign::node_type = "Assignment";
 		std::string BinaryKeyword::node_type = "Boolean";
 		std::string Block::node_type = "Block";
+		std::string TryCatch::node_type = "Try-Catch";
 	}
 }
