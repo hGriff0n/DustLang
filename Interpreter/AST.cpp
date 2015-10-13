@@ -201,26 +201,13 @@ namespace dust {
 			size_t x = e.size(), n_key = 1;
 			e.newScope();
 
-			//for (auto i = begin(); i != end(); ++i) {
 			for (const auto& i : *this) {
 				e.settop(x);							// Pops the results of the last expression (Not executed for the last expression)
 
 				try {
-					//(*i)->eval(e);
-					i->eval(e);
+					i->eval(e);							// Dust Exceptions are handled by a surrounding TryCatch node (Block just needs to reset scoping)
 
-				} catch (error::dust_error& err) {		// Try to handle dust exceptions
-					if (false) {
-					//if (std::dynamic_pointer_cast<Catch>(*(++i)) {		// If the next expression is a catch block
-						//*(&i + 1);							// Since block uses std::vector (ie. contiguous storage)		## I could also keep track of the "index"
-						//e.push(err.what());					// How do I ensure that Catch statements are not executed if there is no exception thrown
-						//(*i)->eval(e);						// Also this formulation would imply that errors can be caught in the same block they are thrown
-					} else {
-						e.endScope();
-						throw;
-					}
-
-				} catch(...) {
+				} catch (...) {
 					e.endScope();
 					throw;
 				}

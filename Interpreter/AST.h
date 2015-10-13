@@ -127,6 +127,22 @@ namespace dust {
 				virtual std::string print_string(std::string buf);
 		};
 
+		/*/
+		class TryCatch : public ASTNode {
+			private:
+				std::shared_ptr<Block> try_code, catch_code;
+
+			public:
+				TryCatch();
+				static std::string node_type;
+
+				EvalState& eval(EvalState& e);
+
+				std::string to_string();
+				virtual std::string print_string(std::string buf);
+		};
+		//*/
+
 		class Assign : public ASTNode {
 			typedef List<VarName> var_type;
 			typedef List<ASTNode> val_type;
