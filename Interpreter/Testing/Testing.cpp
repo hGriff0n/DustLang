@@ -10,15 +10,16 @@ namespace dust {
 				t.require_eval("3", 3);										// 1
 				t.require_type("3", "Int");									// 2
 				t.require_eval("## Hello", 0);								// 3
+				t.require_eval("3## Hello", 3);								// 4
 
-				t.require_eval("\"3\"", "3");								// 4
-				t.require_type("\"3\"", "String");							// 5
+				t.require_eval("\"3\"", "3");								// 5
+				t.require_type("\"3\"", "String");							// 6
 
-				t.require_eval("3.3", 3.3);									// 6
-				t.require_type("3.3", "Float");								// 7
+				t.require_eval("3.3", 3.3);									// 7
+				t.require_type("3.3", "Float");								// 8
 
-				t.require_eval("true", true);								// 8
-				t.require_type("true", "Bool");								// 9
+				t.require_eval("true", true);								// 9
+				t.require_type("true", "Bool");								// 10
 			t.close_sub_test();
 
 			// Operator resolution tests

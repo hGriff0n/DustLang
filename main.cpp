@@ -1,10 +1,8 @@
 
-#define USE_SCOPE_STORAGE
 #include "Interpreter\Actions.h"
-
 #include "Interpreter\Testing\Testing.h"
-#include <iostream>
 
+#include <iostream>
 #include <pegtl/analyze.hh>
 
 #define p(x) std::cout << (x)
@@ -92,6 +90,8 @@ int main(int argc, const char* argv[]) {
 				// Need to make a generic 'pop' here
 				// Or I can insist that printable equates to String convertible
 				// e >> input;		Define operator<< and operator>> for EvalState/Stack ???
+				//e.print(std::cout << ":: " << (isResString ? "\"" : ""))
+					//<< (isResString ? "\"\n" : "\n");
 
 				std::cout << ":: "
 					<< (isResString ? "\"" : "")

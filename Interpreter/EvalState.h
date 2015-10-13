@@ -89,8 +89,6 @@ namespace dust {
 			impl::Table* findScope(const std::function<bool(impl::Table*)>&, int, bool = false);
 			impl::Table* findScope(impl::Table*, const std::function<bool(impl::Table*)>&);
 			int forcedLevel(const std::string&);
-			//impl::Table* findScope(const std::string& name, impl::Table* start);
-			//impl::Table* findScope(const std::string& name, int depth);
 
 		public:
 			EvalState();

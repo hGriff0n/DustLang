@@ -74,7 +74,7 @@ namespace dust {
 		struct str : seq<quote, body, quote> {};										// \"{body}\"
 
 		//struct table : seq<o_brack, opt<expr_list>, seps, c_brack> {};
-		struct table : seq<o_brack, opt<block>, seps, c_brack> {};					// \[{block}? *\]
+		struct table : seq<o_brack, seps, opt<inline_block>, seps, c_brack> {};		// \[ *{block}? *\]
 			// This doesn't allow [ 4 ] syntax (block relies on scoping changes to end parsing)
 				// Then tables can't be ended with a ']' unless it's on a newline and "de-scoped" (not that that's not good style)
 			// table_block struct ???
@@ -129,7 +129,7 @@ namespace dust {
 
 		// Scoping Rules
 		struct block {
-			using analyze_t = analysis::counted<analysis::rule_type::STAR, 0, block, expr>;			// I have no idea how to do this
+			using analyze_t = analysis::counted<analysis::rule_type::PLUS, 1, expr, block>;
 
 			template <apply_mode A, template<typename...> class Action, template<typename...> class Control>
 			static bool match(input& in, AST& ast, const int exit) {
@@ -154,12 +154,7 @@ namespace dust {
 
 			// Determines the depth of the current line. Doesn't consume			Also assumes that scoping == '\t'
 			static int depth(const input& in) {
-				return block::depth(in.string());
-			}
-			static int depth(const std::string& in) {
-				int ret = 0;
-				while (ret < in.size() && in.at(ret) == '\t') ++ret;
-				return ret;
+				return in.string().find_first_not_of('\t');
 			}
 
 			// Consumes x scope layers from the input
@@ -181,14 +176,12 @@ namespace dust {
 
 
 		// Organization Tokens
-		struct expr : seq<seps, expr_x, seps> {};
-		//struct prog : plus<seps, expr, seps> {};										// Have to modify with scoping ???
+		//struct expr : seq<seps, expr_x, seps> {};
+		struct expr : seq<seps, expr_x, opt<seps, comment>, seps> {};
 		struct file : block {};
-		//struct file : seq<block, eof> {};
 
 	}
 
 	// Grammar Token
 	struct grammar : pegtl::must<parse::file, pegtl::eolf> {};
-	//struct grammar : pegtl::must<parse::file> {};
 }
