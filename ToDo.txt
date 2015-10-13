@@ -24,8 +24,6 @@ Opinions on adapting code to use the C++ Common Code Standards and the GSL
 Timeline
 	0 Bugfixes / Improvements
 		Comments cause parser errors
-		Operator.5 throws a dust_error instead of a dispatch_error
-			Similar problem as earlier
 		Possibly improve the Testing System code
 			Is there a way to get the testing system to print the type of the exception if thrown a "wrong" exception
 		Improve the usefulness of the Testing suite by adding a review of the status of all (global) tests that were run
@@ -33,18 +31,10 @@ Timeline
 			Could also replace the last statement of the run_tests
 		Ensure that the default operators handle references properly
 			Consider changing EvalState::pop to perform the proper reference handling
+		Add in TryCatch ASTNode
+			Handles try-catching of dust exceptions
 
 	1 Scoping and multi-lined grammar
-		Need to determine how scoping will be handled in regards to API calls, etc.
-			Currently a scope is not loaded until the "global" block is evaluated
-		Solve the problem with analysis
-			Analysis says there's an infinite loop with block (probably because I don't know what I'm doing with that stuff)
-			problem: cycle without progress detected at class struct dust::parse::block
-		Implement scoped lookup and assignment
-			First get the grammar to recognize
-			Then fill out the necessary work in findScope
-			Get all EvalState functions to use findScope if possible
-
 		How to define Scoping
 			Determine the difference between a tab and x spaces															# Scoping whitespace rules
 				How does Python resolve this problem
@@ -79,6 +69,10 @@ Timeline
 					This might have some problems with evaluating while versus do-while
 				This removes using program resources on completely useless operations
 					Except maybe not (Block construction might stop on an inner loop)
+
+		Solve the problem with analysis
+			Analysis says there's an infinite loop with block (probably because I don't know what I'm doing with that stuff)
+			problem: cycle without progress detected at class struct dust::parse::block
 
 	2 True Nil type and values
 		Change pushNil from push(0) to push(impl::Value{})

@@ -86,8 +86,8 @@ namespace dust {
 			void forceType(int, size_t);
 
 			impl::Table* findScope(const std::string&, int, bool = false);
+			impl::Table* findScope(const std::function<bool(impl::Table*)>&, int, bool = false);
 			impl::Table* findScope(impl::Table*, const std::function<bool(impl::Table*)>&);
-			impl::Table* findScope(impl::Table*, int, const std::function<bool(impl::Table*)>&, bool = false);
 			int forcedLevel(const std::string&);
 			//impl::Table* findScope(const std::string& name, impl::Table* start);
 			//impl::Table* findScope(const std::string& name, int depth);
@@ -104,8 +104,9 @@ namespace dust {
 			//EvalState& eval(std::shared_ptr<parse::ASTNode>&);
 
 			// Set/Get Variables
-			void set(const std::string& name, bool isConst = false, bool isTyped = false);
+			void set(const std::string& name, bool is_const = false, bool is_typed = false);
 			void get(const std::string& var);
+			void set(bool is_const = false, bool is_typed = false);
 			void get();
 			//void setGlobal(const std::string& name, bool isConst = false, bool isTyped = false);
 			//void getGlobal(const std::string& name);

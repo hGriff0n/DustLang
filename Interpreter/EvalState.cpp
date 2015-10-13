@@ -12,9 +12,9 @@ namespace dust {
 	}
 
 	impl::Table* EvalState::findScope(const std::string& var, int off, bool not_null) {
-		// Need to strip any forced scoping from var
+		if (!curr_scp) return &global;
 
-		return findScope(curr_scp, forcedLevel(var) + off, [&](impl::Table* s) { return s->has(var); }, not_null);
+		return findScope([&](impl::Table* s) { return s->has(var); }, off, not_null);
 	}
 
 	impl::Table* EvalState::findScope(impl::Table* scp, const std::function<bool(impl::Table*)>& pred) {
@@ -22,9 +22,13 @@ namespace dust {
 		return scp;
 	}
 	
-	impl::Table* EvalState::findScope(impl::Table* scp, int lvl, const std::function<bool(impl::Table*)>& pred, bool not_null) {
-		while (lvl-- && scp) scp = findScope(scp, pred);
-		return !scp && not_null ? &global : scp;
+	impl::Table* EvalState::findScope(const std::function<bool(impl::Table*)>& pred, int lvl, bool not_null) {
+		impl::Table* scp = curr_scp;
+
+		while (scp && lvl-- && (scp = findScope(scp, pred)))
+			if (lvl) scp = scp->getPar();
+
+		return (!scp && not_null) ? &global : scp;			// Wouldn't need this code if the above is taken
 	}
 
 	int EvalState::forcedLevel(const std::string& var) {
@@ -76,7 +80,8 @@ namespace dust {
 
 	// Assign the top value on the stack to the given variable with the given flags
 	void EvalState::set(const std::string& name, bool is_const, bool is_typed) {
-		auto& var = findScope(name, 0, true)->getVar(name);							// Creates a new variable if one doesn't exist already
+		int lvl = forcedLevel(name);
+		auto& var = findScope(name.substr(lvl), lvl, true)->getVar(name);				// Creates a new variable if one doesn't exist already
 		
 		// If the variable has a previous value (ie. not new)
 		if (var.val.type_id != ts.NIL) {
@@ -97,22 +102,31 @@ namespace dust {
 
 	// Push the variable onto the stack (nil if it doesn't exist)
 	void EvalState::get(const std::string& name) {
-		auto scp = findScope(name, 1);
+		int lvl = forcedLevel(name);						// Strip leveling from the string
+		std::string var = name.substr(lvl);
 
-		scp ? push(scp->getVal(name)) : pushNil();
+		auto scp = findScope(var, lvl + 1, lvl);
+		scp ? push(scp->getVal(var)) : pushNil();
 	}
 
 	void EvalState::get() {
 		get(pop<std::string>());
 	}
+	void EvalState::set(bool is_const, bool is_typed) {
+		set(pop<std::string>(), is_const, is_typed);
+	}
 
 	void EvalState::markConst(const std::string& name) {
-		if (curr_scp->has(name))
-			curr_scp->getVar(name).is_const = !curr_scp->getVar(name).is_const;
+		
+		auto scp = findScope(name, 0);
+		if (scp) scp->getVar(name).is_const = !scp->getVar(name).is_const;
+			//bool& ic = scp->getVar(name).is_const;
+			//ic = !ic;
 	}
-	void EvalState::markTyped(const std::string& name, size_t typ) {		
-		if (!curr_scp->has(name)) return;
-		auto& var = curr_scp->getVar(name);
+	void EvalState::markTyped(const std::string& name, size_t typ) {
+		auto scp = findScope(name, 0);
+		if (!scp) return;		// throw error::base{ "Attempt to static type a nil value" };
+		auto& var = scp->getVar(name);
 
 		// If the typing change may require type conversion (ie. typ not Nil and !(type(var) <= typ))
 		if (typ != ts.NIL && !ts.isChildType(var.type_id, typ)) {
@@ -127,10 +141,13 @@ namespace dust {
 		var.val.type_id = typ;
 	}
 	bool EvalState::isConst(const std::string& name) {
-		return curr_scp->has(name) && curr_scp->getVar(name).is_const;
+		// if (name[0] = '.') throw "isConst cannot not be called on non-local variables";
+		auto scp = findScope(name, 0);
+		return scp && scp->getVar(name).is_const;
 	}
 	bool EvalState::isTyped(const std::string& name) {
-		return curr_scp->has(name) && curr_scp->getVar(name).type_id != ts.NIL;
+		auto scp = findScope(name, 0);
+		return scp && scp->getVar(name).type_id != ts.NIL;
 	}
 
 	void EvalState::newScope() {

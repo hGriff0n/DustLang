@@ -48,7 +48,7 @@ namespace dust {
 		// Identifier Tokens
 		struct id_end : identifier_other {};
 		struct type_id : seq<range<'A', 'Z'>, star<id_end>> {};							// [A-Z]{id_end}*
-		struct var_id : seq<range<'a', 'z'>, star<id_end>> {};							// [a-z]{id_end}*
+		struct var_id : seq<star<one<'.'>>, range<'a', 'z'>, star<id_end>> {};			// \.*[a-z]{id_end}*
 
 
 		// Keyword Tokens
