@@ -172,6 +172,20 @@ namespace dust {
 					exitTest();
 				}
 
+				virtual void require_noerror(const std::string& code) {
+					displayTestHeader(code) << "for no exceptions during evaluation\n";
+
+					try {
+						evaluate(code);
+
+						printMsg(true) << " Passed Test " << std::setw(5) << num_tests << "\"" << code << "\" did not throw an exception\n";
+					} catch (...) {
+						printMsg(false) << " Failed Test " << std::setw(5) << num_tests << "\"" << code << "\" threw an exception\n";
+					}
+
+					exitTest();
+				}
+
 				// Executing the given code leaves a true value on top of the stack
 				virtual void require_true(const std::string& code) {
 					displayTestHeader(code) << "for result of true\n";
@@ -294,6 +308,11 @@ namespace dust {
 				// While executing the given code, an exception is thrown
 				virtual void require_error(const std::string& code) {
 					return sub_test ? sub_test->require_error(code) : Tester<Stream>::require_error(code);
+				}
+
+				// While executing the given code, no exceptions are thrown
+				virtual void require_noerror(const std::string& code) {
+					return sub_test ? sub_test->require_noerror(code) : Tester<Stream>::require_noerror(code);
 				}
 
 				// Executing the given code leaves a true value on top of the stack

@@ -68,6 +68,7 @@ namespace dust {
 		Operator::Operator(std::string o) : l{ nullptr }, r{ nullptr }, op{ o } {}
 		EvalState& Operator::eval(EvalState& e) {
 			l->eval(e);
+			// Stack should have 0
 
 			if (r) {
 				r->eval(e);
@@ -196,7 +197,7 @@ namespace dust {
 			return expr.size();
 		}
 		EvalState& Block::eval(EvalState& e) {
-			if (expr.empty()) throw error::bad_node_eval{ "Attempt to evaluate an empty block" };
+			//if (excep_if_empty && expr.empty()) throw error::bad_node_eval{ "Attempt to evaluate an empty block" };
 
 			size_t x = e.size(), n_key = 1;
 			e.newScope();

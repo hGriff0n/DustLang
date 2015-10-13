@@ -23,7 +23,6 @@ Opinions on adapting code to use the C++ Common Code Standards and the GSL
 
 Timeline
 	0 Bugfixes / Improvements
-		Comments cause parser errors
 		Possibly improve the Testing System code
 			Is there a way to get the testing system to print the type of the exception if thrown a "wrong" exception
 		Improve the usefulness of the Testing suite by adding a review of the status of all (global) tests that were run
@@ -31,8 +30,13 @@ Timeline
 			Could also replace the last statement of the run_tests
 		Ensure that the default operators handle references properly
 			Consider changing EvalState::pop to perform the proper reference handling
-		Add in TryCatch ASTNode
-			Handles try-catching of dust exceptions
+		Improve TryCatch node
+			Add necessary flags to Block
+		Anything in Possibilities.txt
+		Implement setGlobal and getGlobal in EvalState ???
+		Survey Comment error solution
+			Should evaluating an empty block be an error or no error
+				Maybe evaluating an empty file should be no error (add file action)
 
 	1 Scoping and multi-lined grammar
 		How to define Scoping
@@ -47,32 +51,8 @@ Timeline
 					Copy-paste
 						Translate all tabs to spaces (or vice versa) before parsing
 
-		Block evaluation
-			Evaluating a Block always requires the loading of a new scope, regardless of execution location
-				The "main file" Block loads the global scope into curr_scp
-				All other Blocks must create their scope
-
-			Ending a Block evaluation requires one of two actions
-				Delete the scope if the save_scope field is not set
-				Push the scope on the stack if save_scope is set
-
-		Be able to create and parse scopes using tabbing
-			block is currently a "non-recoverable" node (you can't recover from failures during parsing)
-
-			Possible program change
-				Change the NEW_SCOPE debug node used to stop Block combination to a Control node
-					The default NEW_SCOPE node will become a "run once" Control node
-					Loops and (possibly) branches will act as the control node
-				This Control node handles how the block is run
-					"run once" is analagous to Block::eval
-					"for" rather translates into something like while (For::eval) Block::eval
-					This might have some problems with evaluating while versus do-while
-				This removes using program resources on completely useless operations
-					Except maybe not (Block construction might stop on an inner loop)
-
-		Solve the problem with analysis
-			Analysis says there's an infinite loop with block (probably because I don't know what I'm doing with that stuff)
-			problem: cycle without progress detected at class struct dust::parse::block
+		block is currently a "non-recoverable" rule (you can't recover from failures during parsing)
+			Is there a way to change this ???
 
 	2 True Nil type and values
 		Change pushNil from push(0) to push(impl::Value{})
@@ -136,13 +116,6 @@ Timeline
 	14 Metamethods (converting syntax into function calls)
 	...
 
-Other
-	Exceptions and error handling
-		Stack out of data
-		No defined conversion
-		...
-	Make the parser reject ill-formed input
-	String escape characters
 
 Notes (In case I forget some of my decisions)
 	3 + e: 4	=> (3 + e)[: 4]		/> (3 + (e: 4))		// To difficult to modify the grammar. I can't find anywhere that I expected it

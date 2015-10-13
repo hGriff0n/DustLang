@@ -183,7 +183,15 @@ namespace dust {
 			}
 		};
 
-		template <> struct action<file> : action<block> {};
+		template <> struct action<file> {
+			static void apply(input& in, AST& ast, const int _) {
+				action<block>::apply(in, ast, _);
+				//auto b = std::dynamic_pointer_cast<Block>(ast.at());
+
+				//b->excep_if_empty = false;
+				// require code
+			}
+		};
 
 		// Other Actions
 		template <> struct action<o_paren> {

@@ -126,8 +126,12 @@ namespace dust {
 		struct ee_x : seq<assign, seps, expr_list> {};									// ensure that expr_6 doesn't trigger the expression reduction
 		struct expr_x : if_then_else<at<assign>, ee_x, expr_6> {};						// {var_list} *{op_5} * {expr_list}
 
+		// Organization Tokens
+		struct expr : sor<seq<expr_x, seps, opt<comment>>, seq<seps, comment>> {};
+		//struct expr : seq<expr_x, opt<seps, comment>, seps> {};
+		//struct expr : seq<expr_x, seps, opt<comment>> {};
 
-		// Scoping Rules
+		// Defines Scoping rules
 		struct block {
 			using analyze_t = analysis::counted<analysis::rule_type::PLUS, 1, expr, block>;
 
@@ -176,8 +180,6 @@ namespace dust {
 
 
 		// Organization Tokens
-		//struct expr : seq<seps, expr_x, seps> {};
-		struct expr : seq<seps, expr_x, opt<seps, comment>, seps> {};
 		struct file : block {};
 
 	}
