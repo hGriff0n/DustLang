@@ -1,8 +1,8 @@
+
 #include "Interpreter\Actions.h"
-
 #include "Interpreter\Testing\Testing.h"
-#include <iostream>
 
+#include <iostream>
 #include <pegtl/analyze.hh>
 
 #define p(x) std::cout << (x)
@@ -62,7 +62,7 @@ istream& getmultiline(istream& in, std::string& s) {
 
 int main(int argc, const char* argv[]) {
 	std::cout << "Analyzing `dust::grammar`.....\n";
-	pegtl::analyze<grammar>();
+	pegtl::analyze<grammar>();									// Ignore this for now (except maybe not?)
 	std::cout << std::endl;
 
 	parse::AST parse_tree;
@@ -83,12 +83,15 @@ int main(int argc, const char* argv[]) {
 				pegtl::parse<grammar, action>(input, input, parse_tree, 0);
 
 				print(std::cout, parse_tree.at());
+				//std::dynamic_pointer_cast<parse::Block>(parse_tree.at())->global = true;
 				isResString = parse_tree.pop()->eval(e).is<std::string>();
 				//isResString = e.eval(parse_tree.pop()).is<std::string>();
 
 				// Need to make a generic 'pop' here
 				// Or I can insist that printable equates to String convertible
 				// e >> input;		Define operator<< and operator>> for EvalState/Stack ???
+				//e.print(std::cout << ":: " << (isResString ? "\"" : ""))
+					//<< (isResString ? "\"\n" : "\n");
 
 				std::cout << ":: "
 					<< (isResString ? "\"" : "")

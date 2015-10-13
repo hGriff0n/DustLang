@@ -2,6 +2,7 @@
 
 #include "CallStack.h"
 #include "TypeSystem.h"
+#include "Table.h"
 
 namespace dust {
 	void initTypeSystem(dust::type::TypeSystem&);
@@ -72,38 +73,53 @@ namespace dust {
 
 	class EvalState : public impl::CallStack {
 		private:
-			std::map<std::string, impl::Variable> vars;		// Subject to change depending on how the global environment is implemented
+			impl::Table* curr_scp;
+			impl::Table global;
 			type::TypeSystem ts;
+
+			//impl::RuntimeStorage<str_record> strings;
+			//impl::RuntimeStorage<impl::Table> tables;
+			//impl::RuntimeStorage<void> user_data;
 			impl::GC gc;
 
 		protected:
 			void forceType(int, size_t);
 
-			// Variables
-			void staticTyping(impl::Variable&, bool);
-			void newVar(std::string, bool, bool);
+			impl::Table* findScope(const std::string&, int, bool = false);
+			impl::Table* findScope(const std::function<bool(impl::Table*)>&, int, bool = false);
+			impl::Table* findScope(impl::Table*, const std::function<bool(impl::Table*)>&);
+			int forcedLevel(const std::string&);
 
 		public:
 			EvalState();
 
 			// Call functions
-			EvalState& call(std::string fn);
-			EvalState& callOp(std::string fn);				// Temporary methods until I determine how functions and tables will be implemented
-			EvalState& callMethod(std::string fn);
+			EvalState& call(const std::string& fn);
+			EvalState& callOp(const std::string& fn);				// Temporary methods until I determine how functions and tables will be implemented
+			EvalState& callMethod(const std::string& fn);
 
 			// EvalState doesn't know about shared_ptr or ASTNode
 			//EvalState& eval(std::shared_ptr<parse::ASTNode>&);
 
 			// Set/Get Variables
-			void setVar(std::string name, bool isConst = false, bool isTyped = false);
-			void getVar(std::string var);
+			void set(const std::string& name, bool is_const = false, bool is_typed = false);
+			void get(const std::string& var);
+			void set(bool is_const = false, bool is_typed = false);
+			void get();
+			//void setGlobal(const std::string& name, bool isConst = false, bool isTyped = false);
+			//void getGlobal(const std::string& name);
 
 			// Variable flags
 			// Sets var to const if not const and vice versa
-			void mark_constant(std::string var);
-			void set_typing(std::string var, size_t typ);
-			bool isConst(std::string var);
-			bool isStatic(std::string var);
+			void markConst(const std::string& name);
+			void markTyped(const std::string& name, size_t typ);
+			bool isConst(const std::string& name);
+			bool isTyped(const std::string& name);
+
+			// Scope Interaction
+			void newScope();				// Start a new scope with the current scope as parent
+			void endScope();				// Delete current scope (Cleans up memory)
+			void pushScope();				// Store scope in memory and push on the stack (tables, functions, etc.)
 
 			friend void initState(EvalState&);
 			template <class Stream> friend class test::Tester;

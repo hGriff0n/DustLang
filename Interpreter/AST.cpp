@@ -68,6 +68,7 @@ namespace dust {
 		Operator::Operator(std::string o) : l{ nullptr }, r{ nullptr }, op{ o } {}
 		EvalState& Operator::eval(EvalState& e) {
 			l->eval(e);
+			// Stack should have 0
 
 			if (r) {
 				r->eval(e);
@@ -89,7 +90,7 @@ namespace dust {
 		// VarName methods
 		VarName::VarName(std::string var) : name{ var } {}
 		EvalState& VarName::eval(EvalState& e) {
-			e.getVar(name);
+			e.get(name);
 			return e;
 		}
 		std::string VarName::to_string() { return name; }
@@ -130,7 +131,7 @@ namespace dust {
 			//auto last_var = r_var;
 			while (r_var != l_var) {
 				if (op.size()) (*r_var)->eval(e).callOp(op);
-				e.setVar((*r_var++)->to_string(), setConst, setStatic);
+				e.set((*r_var++)->to_string(), setConst, setStatic);
 			}
 
 			//return last_var->eval(e);
@@ -185,7 +186,7 @@ namespace dust {
 		}
 
 		// Block methods
-		Block::Block() {}
+		Block::Block() : save_scope{ false }, table{ false } {}
 		auto Block::begin() {
 			return expr.rbegin();
 		}
@@ -196,17 +197,40 @@ namespace dust {
 			return expr.size();
 		}
 		EvalState& Block::eval(EvalState& e) {
-			if (expr.empty()) throw error::bad_node_eval{ "Attempt to evaluate an empty block" };
-			auto x = e.size();
+			//if (excep_if_empty && expr.empty()) throw error::bad_node_eval{ "Attempt to evaluate an empty block" };
+
+			size_t x = e.size(), n_key = 1;
+			e.newScope();
 
 			for (const auto& i : *this) {
 				e.settop(x);							// Pops the results of the last expression (Not executed for the last expression)
-				i->eval(e);
+
+				try {
+					i->eval(e);							// Dust Exceptions are handled by a surrounding TryCatch node (Block just needs to reset scoping)
+
+				} catch (...) {
+					e.endScope();
+					throw;
+				}
+
+				//if (table && !std::dynamic_pointer_cast<Assign>(*i)) {
+				if (table && !std::dynamic_pointer_cast<Assign>(i)) {
+					// perform default assignment
+					++n_key;
+				}
 			}
+
+			if (save_scope) {
+				e.settop(x);
+				e.pushScope();
+			} else
+				e.endScope();
 
 			return e;
 		}
-		std::string Block::to_string() { return ""; }
+		std::string Block::to_string() {
+			return table ? "[]" : "";
+		}
 		std::string Block::print_string(std::string buf) {
 			std::string ret = buf + "+- " + node_type + "\n";
 			buf += " ";
@@ -220,48 +244,36 @@ namespace dust {
 			expr.push_back(c);
 		}
 
-		// Table methods
-		Table::Table() : Literal{ "", -1 } {}
-		EvalState& Table::eval(EvalState& e) {
-			// Init e with a new scope (possibly a new stack as well)
-			int key = 1;
+		// TryCatch methods
+		TryCatch::TryCatch() {}
+		EvalState& TryCatch::eval(EvalState& e) {
+			if (!try_code || !catch_code) throw error::bad_node_eval{ "Attempt to evaluate an incomplete TryCatch node" };
 
-			for (auto i : *body) {
-				i->eval(e);
+			// Should I mirror block evaluation
+				// Or add a flag to block to prevent it from creating/destroying scope
+			// This code follows the second option (although the flag(s) are currently unimplemented)
 
-				// If the expression was not an assignment, assign using a default value
-				if (!std::dynamic_pointer_cast<Assign>(i)) {
-					// e.setVar(key++);
-				} else
-					e.pop();
+			try {
+				try_code->eval(e);
+
+			} catch (error::dust_error& err) {
+				e.push(err.what());
+				catch_code->eval(e);
 			}
 
-			// Get "table" from e (possibly modify scope state)
-			// Reset current scope
-			// Push table onto the stack
 			return e;
 		}
-		// This function is not called if the table does not have a block (ie. [])
-		void Table::addChild(std::shared_ptr<ASTNode>& c) {
-			if (!std::dynamic_pointer_cast<Block>(c)) throw error::invalid_ast_construction{ "Attempt to construct Table node without a corresponding Block" };
-			if (body) throw error::invalid_ast_construction{ "Attempt to construct a Table node with multiple Blocks" };
-			body.swap(std::dynamic_pointer_cast<Block>(c));
+		std::string TryCatch::to_string() { return ""; }
+		std::string TryCatch::print_string(std::string buf) {
+			return buf + "+- " + node_type + "::try\n" + try_code->print_string(buf + " ") +
+				   buf + "+- " + node_type + "::catch\n" + catch_code->print_string(buf + " ");
 		}
-		std::string Table::to_string() { return ""; }
-		std::string Table::print_string(std::string buf) {
-			std::string ret = buf + "+- " + node_type + "\n";
-			buf += " ";
+		void TryCatch::addChild(std::shared_ptr<ASTNode>& c) {
+			auto& code_block = catch_code ? try_code : catch_code;
+			if (code_block) throw error::operands_error{ "Attempt to add more than two blocks to TryCatch node" };
 
-			for (auto i : *body) {
-				ret += i->print_string(buf);
-				//if (std::dynamic_pointer_cast<Assign>(i)) {
-					// Do Assignment specific work
-				//} else {
-					// Add default assignment ???
-				//}
-			}
-
-			return ret;
+			code_block.swap(std::dynamic_pointer_cast<Block>(c));
+			if (!code_block) throw error::invalid_ast_construction{ "Attempt to construct TryCatch node with a non-Block node" };
 		}
 
 
@@ -273,6 +285,6 @@ namespace dust {
 		std::string Assign::node_type = "Assignment";
 		std::string BinaryKeyword::node_type = "Boolean";
 		std::string Block::node_type = "Block";
-		std::string Table::node_type = "Table";
+		std::string TryCatch::node_type = "Try-Catch";
 	}
 }

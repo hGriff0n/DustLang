@@ -4,7 +4,7 @@ Dust is the working title for a multi-paradigm, expression-based, interpreted pr
 
 	print("Welcome to the Dust Language")
 
-## [Implementation](https://github.com/hGriff0n/DustLang/tree/master/Interpreter/WIP)
+## [Implementation](https://github.com/hGriff0n/DustLang/tree/master/Interpreter)
 Dust uses the [PEGTL](https://github.com/ColinH/PEGTL) library to implement its parsing algorithm. Many thanks to ColinH for the excellent documentation and implementation of the library.
 
 ## Syntax

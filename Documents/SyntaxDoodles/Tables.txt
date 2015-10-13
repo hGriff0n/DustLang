@@ -1,6 +1,8 @@
 
 Table Declaration
 	[ <entry_list>? ] where entry = '<id>:'? <expr>
+	# Possible: [ <expr>* ] (It is the expression's job to assign the variable)
+		# If the expression is not an assignment, the assignment is performed automatically
 
 	The 'key' defaults to the next value of the range [1..] that is not already a key in the table
 		Note that tables are 1 indexed by default
