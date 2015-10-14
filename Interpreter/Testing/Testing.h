@@ -250,12 +250,9 @@ namespace dust {
 					} catch (Exception& e) {
 						printMsg(true) << " Passed Test " << std::setw(5) << num_tests << "Caught: " << e.what() << "\n";
 
-					} catch (...) {
-						printMsg(false) << " Failed Test " << std::setw(5) << num_tests << "\"" << code << "\" threw an unexpected exception\n";
-					} //catch (std::exception& e) {
-						//dynamic_cast<Exception>(e);			// Throws std::bad_cast if e is not castable to Exception
-						//std::cout << typeid(e).name() << "\n";
-					//}
+					} catch (std::exception& e) {
+						printMsg(false) << " Failed Test " << std::setw(5) << num_tests << "Caught exception of type " << typeid(e).name() << "\n";
+					}
 
 					exitTest();
 				}

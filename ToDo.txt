@@ -23,45 +23,33 @@ Opinions on adapting code to use the C++ Common Code Standards and the GSL
 
 Timeline
 	0 Bugfixes / Improvements
-		Possibly improve the Testing System code
-			Is there a way to get the testing system to print the type of the exception if thrown a "wrong" exception
+		Consider removing get- and setGlobal
+		Implement a (basic) Control ASTNode (ala TryCatch)
+			Convert Block to use a Control node to stop assembly (instead of a NEW_NODE/empty) ## see VagueToDo.txt
 		Improve the usefulness of the Testing suite by adding a review of the status of all (global) tests that were run
 			Possibly add in sub-test reviews if able
 			Could also replace the last statement of the run_tests
-		Ensure that the default operators handle references properly
-			Consider changing EvalState::pop to perform the proper reference handling
-		Improve TryCatch node
-			Add necessary flags to Block
-		Anything in Possibilities.txt
-		Implement setGlobal and getGlobal in EvalState ???
-		Survey Comment error solution
-			Should evaluating an empty block be an error or no error
-				Maybe evaluating an empty file should be no error (add file action)
+		No Input causes error in repl loop (Stack error)
+			" " causes error in tests
 
-	1 Scoping and multi-lined grammar
-		How to define Scoping
-			Determine the difference between a tab and x spaces															# Scoping whitespace rules
-				How does Python resolve this problem
-					Requiring a ':' to begin a new scope (ie. do keyword)?
-						But what about lambdas
-					Line joining
-						Python uses the '\' character to join physical lines into logical lines
-					Space and tab are different characters
-						Scoping is only introduced with tabs
-					Copy-paste
-						Translate all tabs to spaces (or vice versa) before parsing
+	IDEA FOR PARSING TABLES
+		Have a "table_inner" rule that matches everything until the closing bracket
+		Then in action<inner_table>, run the Block rule on the matching code
+			How can I run block::match ???
+				Need template arguments that the Action class doesn't have
+				I could possibly define a Control class
+				Try the variation on the until (table_inner_t)
+			Would this trigger the Block action?
 
-		block is currently a "non-recoverable" rule (you can't recover from failures during parsing)
-			Is there a way to change this ???
-
-	2 True Nil type and values
+	1 True Nil type and values
+		Add Nil/nil interaction API
+			Add a "Nil" struct and template definitions ???
+		Determine a way to "print" nil
 		Change pushNil from push(0) to push(impl::Value{})
 			An impl::Value with type_id == ts.NIL is the representation of nil
 		Update code to account for this possibility
-		Update api to enable programmers to query this possibility
-			Possibly create a "Nil" struct for use as a template arg/etc.
 
-	3 Type Definitions and Table Syntax
+	2 Type Definitions and Table Syntax
 		Have the ability to create new types and assign inheritance relationships
 		Have some interaction with type ids, if only for debugging purposes
 		Add a basic recognition of Table syntax (so that the grammar accepts tables)

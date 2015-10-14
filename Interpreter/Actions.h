@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Grammar.h"
-
 #include "Exceptions\parsing.h"
 
 namespace dust {
@@ -186,9 +185,9 @@ namespace dust {
 		template <> struct action<file> {
 			static void apply(input& in, AST& ast, const int _) {
 				action<block>::apply(in, ast, _);
-				//auto b = std::dynamic_pointer_cast<Block>(ast.at());
+				auto b = std::dynamic_pointer_cast<Block>(ast.at());
 
-				//b->excep_if_empty = false;
+				b->excep_if_empty = false;
 				// require code
 			}
 		};
@@ -217,6 +216,13 @@ namespace dust {
 		template <> struct action<o_brack> {
 			static void apply(input& in, AST& ast, const int _) {
 				ast.push(makeNode<Table>());
+			}
+		};
+
+		template <> struct action<table_inner> {
+			static void apply(input& in, AST& ast, const int _) {
+				pegtl::parse<block, action>(in, ast, _);
+				Control<must<block>>::template match(in, ast, _);
 			}
 		};
 

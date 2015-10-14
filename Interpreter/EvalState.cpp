@@ -78,12 +78,8 @@ namespace dust {
 		return *this;
 	}
 
-	// Assign the top value on the stack to the given variable with the given flags
-	void EvalState::set(const std::string& name, bool is_const, bool is_typed) {
-		int lvl = forcedLevel(name);
-		auto& var = findScope(name.substr(lvl), lvl, true)->getVar(name);				// Creates a new variable if one doesn't exist already
-		
-		// If the variable has a previous value (ie. not new)
+	// Handles variable assignment interaction with constant and typing
+	void EvalState::setVar(impl::Variable& var, bool is_const, bool is_typed) {
 		if (var.val.type_id != ts.NIL) {
 			if (var.is_const) throw error::illegal_operation{ "Attempt to reassign a constant variable" };
 			if (var.type_id != ts.NIL && !ts.isChildType(at().type_id, var.type_id)) {
@@ -98,6 +94,12 @@ namespace dust {
 		var.val = pop();															// `pop` (no templates) doesn't decrement references
 		var.is_const = is_const;
 		if (is_typed) var.type_id = var.val.type_id;
+	}
+	
+	// Assign the top value on the stack to the given variable with the given flags
+	void EvalState::set(const std::string& name, bool is_const, bool is_typed) {
+		int lvl = forcedLevel(name);
+		setVar(findScope(name.substr(lvl), lvl, true)->getVar(name), is_const, is_typed);
 	}
 
 	// Push the variable onto the stack (nil if it doesn't exist)
@@ -114,6 +116,13 @@ namespace dust {
 	}
 	void EvalState::set(bool is_const, bool is_typed) {
 		set(pop<std::string>(), is_const, is_typed);
+	}
+	void EvalState::setGlobal(const std::string& name, bool is_const, bool is_typed) {
+		setVar(global.getVar(name.substr(forcedLevel(name))), is_const, is_typed);
+	}
+	void EvalState::getGlobal(const std::string& name) {
+		auto var = name.substr(forcedLevel(name));
+		global.has(var) ? push(global.getVal(var)) : pushNil();
 	}
 
 	void EvalState::markConst(const std::string& name) {
@@ -224,7 +233,7 @@ namespace dust {
 			if (!(bool)e)
 				e.callOp("_op=");
 			else {
-				e.pop();
+				e.pop();						// Don't handle references (unless EvalState/CallStack::pop does)
 				e.pop();
 				e.push(true);
 			}
@@ -239,7 +248,7 @@ namespace dust {
 			if (!(bool)e)
 				e.callOp("_op=");
 			else {
-				e.pop();
+				e.pop();						// Doesn't handle references
 				e.pop();
 				e.push(true);
 			}
@@ -269,7 +278,7 @@ namespace dust {
 
 
 		String.addOp("_op+", [](EvalState& e) { e.push((std::string)e + e.pop<std::string>(-2)); return 1; });			// Why is Int._op- correct then???
-		String.addOp("_op=", [](EvalState& e) { e.push(e.pop_ref(true) == e.pop_ref(true)); return 1; });
+		String.addOp("_op=", [](EvalState& e) { e.push(e.pop().val.i == e.pop().val.i); return 1; });
 
 
 		Float.addOp("_op+", [](EvalState& e) { e.push((double)e + (double)e); return 1; });

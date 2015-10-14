@@ -68,7 +68,6 @@ namespace dust {
 		Operator::Operator(std::string o) : l{ nullptr }, r{ nullptr }, op{ o } {}
 		EvalState& Operator::eval(EvalState& e) {
 			l->eval(e);
-			// Stack should have 0
 
 			if (r) {
 				r->eval(e);
@@ -186,7 +185,7 @@ namespace dust {
 		}
 
 		// Block methods
-		Block::Block() : save_scope{ false }, table{ false } {}
+		Block::Block() : save_scope{ false }, table{ false }, excep_if_empty{ true } {}
 		auto Block::begin() {
 			return expr.rbegin();
 		}
@@ -197,7 +196,10 @@ namespace dust {
 			return expr.size();
 		}
 		EvalState& Block::eval(EvalState& e) {
-			//if (excep_if_empty && expr.empty()) throw error::bad_node_eval{ "Attempt to evaluate an empty block" };
+			if (expr.empty()) {
+				if (!excep_if_empty) return e;
+				throw error::bad_node_eval{ "Attempt to evaluate an empty block" };
+			}
 
 			size_t x = e.size(), n_key = 1;
 			e.newScope();
@@ -213,7 +215,6 @@ namespace dust {
 					throw;
 				}
 
-				//if (table && !std::dynamic_pointer_cast<Assign>(*i)) {
 				if (table && !std::dynamic_pointer_cast<Assign>(i)) {
 					// perform default assignment
 					++n_key;

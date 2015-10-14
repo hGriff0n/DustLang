@@ -15,10 +15,10 @@ namespace dust {
 			public:
 				static std::string node_type;
 
-				virtual EvalState& eval(EvalState&) =0;
+				virtual EvalState& eval(EvalState&) = 0;
 				virtual void addChild(std::shared_ptr<ASTNode>& c);
 
-				virtual std::string to_string() =0;
+				virtual std::string to_string() = 0;
 				virtual std::string print_string(std::string buf);
 		};
 
@@ -167,8 +167,24 @@ namespace dust {
 				virtual std::string print_string(std::string buf);
 		};
 
+		/*/
+		class Control : public ASTNode {
+			private:
+			public:
+				Control();
+				static std::string node_type;
+				
+				virtual EvalState& eval(EvalState& e);
+				virtual void addChild(std::shared_ptr<ASTNode>& c);
+
+				virtual std::string to_string();
+				virtual std::string print_string(std::string buf);
+		};
+		//*/
+
 		class Block : public ASTNode {
 			private:
+				//std::shared_ptr<Control> control;
 				std::vector<std::shared_ptr<ASTNode>> expr;
 
 			protected:
@@ -179,7 +195,7 @@ namespace dust {
 
 				Block();
 				static std::string node_type;
-				bool save_scope, table;
+				bool save_scope, table, excep_if_empty;
 
 				virtual EvalState& eval(EvalState& e);
 				virtual void addChild(std::shared_ptr<ASTNode>& c);
@@ -193,15 +209,15 @@ namespace dust {
 			std::shared_ptr<Block> try_code, catch_code;
 
 			public:
-			TryCatch();
-			static std::string node_type;
+				TryCatch();
+				static std::string node_type;
 
-			EvalState& eval(EvalState& e);
+				EvalState& eval(EvalState& e);
 
-			std::string to_string();
-			virtual std::string print_string(std::string buf);
+				std::string to_string();
+				virtual std::string print_string(std::string buf);
 
-			virtual void addChild(std::shared_ptr<ASTNode>& c);
+				virtual void addChild(std::shared_ptr<ASTNode>& c);
 		};
 
 		template<class T> std::string List<T>::node_type = "List<" + T::node_type + ">";

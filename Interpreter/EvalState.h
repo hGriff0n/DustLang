@@ -90,6 +90,8 @@ namespace dust {
 			impl::Table* findScope(impl::Table*, const std::function<bool(impl::Table*)>&);
 			int forcedLevel(const std::string&);
 
+			void setVar(impl::Variable&, bool, bool);
+
 		public:
 			EvalState();
 
@@ -106,8 +108,10 @@ namespace dust {
 			void get(const std::string& var);
 			void set(bool is_const = false, bool is_typed = false);
 			void get();
-			//void setGlobal(const std::string& name, bool isConst = false, bool isTyped = false);
-			//void getGlobal(const std::string& name);
+
+			// Might remove these interfaces (no need)
+			void setGlobal(const std::string& name, bool isConst = false, bool isTyped = false);
+			void getGlobal(const std::string& name);
 
 			// Variable flags
 			// Sets var to const if not const and vice versa

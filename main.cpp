@@ -62,7 +62,7 @@ istream& getmultiline(istream& in, std::string& s) {
 
 int main(int argc, const char* argv[]) {
 	std::cout << "Analyzing `dust::grammar`.....\n";
-	pegtl::analyze<grammar>();									// Ignore this for now (except maybe not?)
+	pegtl::analyze<grammar>();
 	std::cout << std::endl;
 
 	parse::AST parse_tree;
@@ -85,6 +85,7 @@ int main(int argc, const char* argv[]) {
 				print(std::cout, parse_tree.at());
 				//std::dynamic_pointer_cast<parse::Block>(parse_tree.at())->global = true;
 				isResString = parse_tree.pop()->eval(e).is<std::string>();
+				//isResNil = e.is<Nil>();
 				//isResString = e.eval(parse_tree.pop()).is<std::string>();
 
 				// Need to make a generic 'pop' here
@@ -96,6 +97,7 @@ int main(int argc, const char* argv[]) {
 				std::cout << ":: "
 					<< (isResString ? "\"" : "")
 					<< (std::string)e
+					//<< (isResNil ? (e.pop(), "nil") : (std::string)e)
 					<< (isResString ? "\"" : "")
 					<< "\n";
 

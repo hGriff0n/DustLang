@@ -1,5 +1,6 @@
 #include "Testing.h"
 
+
 namespace dust {
 	namespace test {
 		void run_tests(EvalState& e) {
@@ -11,15 +12,16 @@ namespace dust {
 				t.require_type("3", "Int");									// 2
 				t.require_noerror("## Hello");								// 3
 				t.require_eval("3## Hello", 3);								// 4
+				t.require_noerror(" ");										// 5
 
-				t.require_eval("\"3\"", "3");								// 5
-				t.require_type("\"3\"", "String");							// 6
+				t.require_eval("\"3\"", "3");								// 6
+				t.require_type("\"3\"", "String");							// 7
 
-				t.require_eval("3.3", 3.3);									// 7
-				t.require_type("3.3", "Float");								// 8
+				t.require_eval("3.3", 3.3);									// 8
+				t.require_type("3.3", "Float");								// 9
 
-				t.require_eval("true", true);								// 9
-				t.require_type("true", "Bool");								// 10
+				t.require_eval("true", true);								// 10
+				t.require_type("true", "Bool");								// 11
 			t.close_sub_test();
 
 			// Operator resolution tests
@@ -28,7 +30,7 @@ namespace dust {
 				t.require_eval("\"The answer is \" + (6.3 ^ 2)",
 					"The answer is 39.690000");								// 3
 				t.require_error("3 + true");								// 4
-				t.require_excep<error::dispatch_error>("3 + true");			// 5			## dispatch_error inherits from dust_error
+				t.require_excep<error::dispatch_error>("3 + true");			// 5
 				t.require_eval("\"4\" + 3", "43");							// 6
 				t.require_eval("\"4\" - 3", 1);								// 7
 			t.close_sub_test();
@@ -111,8 +113,6 @@ namespace dust {
 					t.require_eval("a: 2\n\ta: 5\n\ta", 5);					// 1
 					t.require_true("a = 2");								// 2
 					t.require_eval("a", 2);
-					// The second assignment is being performed in the global scope
-					// The following assignment is not being performed in the global scope
 					t.require_eval("a: 3\n\ta + 2", 5);						// 3
 					t.require_eval("a: 4\n"
 								   "\ta: 3\n"
@@ -130,6 +130,9 @@ namespace dust {
 								   "\tb + a", 7);							// 2
 				t.close_sub_test();
 			t.close_sub_test();
+
+			//t.init_sub_test("API Testing");
+			//t.close_sub_test();
 
 			// Is there a way to review all tests here ???
 			//t.end_tests();

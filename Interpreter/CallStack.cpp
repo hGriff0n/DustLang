@@ -30,6 +30,7 @@ namespace dust {
 		}
 
 		impl::Value CallStack::pop(int idx) {
+			try_decRef(at(idx));
 			return Stack::pop(idx);
 		}
 
@@ -57,13 +58,6 @@ namespace dust {
 			try_decRef(v);
 
 			v = pop();
-		}
-
-		size_t CallStack::pop_ref(bool decRef) {
-			if (!is<std::string>(-1)) throw error::stack_type_error{ "Object at given idx is not a String" };
-			if (decRef) gc.decRef(at(-1).val.i);
-
-			return pop(-1).val.i;
 		}
 
 	}

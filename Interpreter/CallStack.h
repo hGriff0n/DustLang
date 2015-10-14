@@ -69,10 +69,6 @@ namespace dust {
 
 
 				// Other Functions
-				// For quicker String operations (particularly equality testing)
-					// Should this convert the object if it is not a string
-				size_t pop_ref(bool decRef = false);
-				// A push_ref method is not really useful (the implementation is also slightly convoluted)
 
 				// Overload cast operator to perform a pop
 				template <typename T>
