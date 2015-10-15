@@ -7,6 +7,8 @@ namespace dust {
 	namespace type {
 		using TypeVisitor = TypeSystem::TypeVisitor;
 
+		TypeVisitor::TypeVisitor(size_t i, TypeSystem* self) : id{ i }, ts{ self } {}
+
 		TypeVisitor& TypeVisitor::addOp(std::string op, Function f) {
 			// Check if the function is a converter
 			if (ts->type_id.count(op) > 0)
@@ -57,7 +59,7 @@ namespace dust {
 			int sidx = 0;
 
 			// Assign a default value to the array
-			if (conv.count(idx) == 0) conv[idx][1] = -1;
+			if (conv.count(idx) == 0) conv[idx][1] = NO_DEF;
 
 			// Test for cases where the converter will have low precedence
 			if (conv[idx][1] == from) {
@@ -106,14 +108,14 @@ namespace dust {
 		}
 
 		size_t TypeSystem::findDef(size_t t, std::string fn) {
-			while (t != -1 && isDefd(t, fn) == -1)
+			while (t != NO_DEF && isDefd(t, fn) == NO_DEF)
 				t = types[t].parent;
 
 			return t;
 		}
 
 		size_t TypeSystem::isDefd(size_t t, std::string fn) {
-			return types[t].ops.count(fn) > 0 ? t : -1;
+			return types[t].ops.count(fn) > 0 ? t : NO_DEF;
 		}
 
 		size_t TypeSystem::com(size_t l, size_t r, std::string op) {
@@ -125,10 +127,10 @@ namespace dust {
 			if (conv.count(idx) > 0) {							// If there is a defined conversion
 				auto convs = conv[idx];
 
-				if (findDef(convs[0], op) != -1)				// Test the highest precedence
+				if (findDef(convs[0], op) != NO_DEF)				// Test the highest precedence
 					return convs[0];
 
-				if (findDef(convs[1], op) != -1)				// Test the lowest precedence
+				if (findDef(convs[1], op) != NO_DEF)				// Test the lowest precedence
 					return convs[1];
 			}
 

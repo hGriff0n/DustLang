@@ -73,7 +73,8 @@ namespace dust {
 				}
 
 				void evaluate(const std::string& code) {
-					pegtl::parse<grammar, action>(code, code, tree, 0);
+					pegtl::parse<grammar, action>(parse::trim(code), code, tree, 0);
+					//pegtl::parse<grammar, action>(code, code, tree, 0);
 					tree.pop()->eval(e);
 				}
 
@@ -148,10 +149,9 @@ namespace dust {
 					}
 
 					auto name = e.ts.getName(e.at().type_id);
-					(name == typ ? (printMsg(true) << " Passed Test ")
-						: (printMsg(false) << " Failed Test "))
-						<< std::setw(5) << num_tests
-						<< "Result of " << e.pop<std::string>() << " had type " << name << "\n";
+					printMsg(name == typ) << (name == typ ? " Passed Test " : " Failed Test")
+						<< std::setw(5) << num_tests << "Result of ";
+					e.stream(s) << " had type " << name << "\n";
 
 					exitTest();
 				}
@@ -180,7 +180,8 @@ namespace dust {
 
 						printMsg(true) << " Passed Test " << std::setw(5) << num_tests << "\"" << code << "\" did not throw an exception\n";
 					} catch (std::exception& err) {
-						printMsg(false) << " Failed Test " << std::setw(5) << num_tests << "\"" << code << "\" threw a " << typeid(err).name() << "\n";
+						//printMsg(false) << " Failed Test " << std::setw(5) << num_tests << "\"" << code << "\" threw a " << typeid(err).name() << "\n";
+						printMsg(false) << " Failed Test " << std::setw(5) << num_tests << "\"" << code << "\" threw " << err.what() << "\n";
 					}
 
 					exitTest();

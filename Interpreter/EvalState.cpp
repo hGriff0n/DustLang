@@ -56,7 +56,7 @@ namespace dust {
 		auto com_t = ts.com(l, r, fn);						// find common type
 		auto dis_t = ts.findDef(com_t, fn);					// find dispatch type (where fn is defined)
 
-		if (dis_t == -1) throw error::dispatch_error{ "Method " + fn + " is not defined for operands of type " + ts.getName(l) + " and " + ts.getName(r) };
+		if (dis_t == ts.NO_DEF) throw error::dispatch_error{ "Method " + fn + " is not defined for operands of type " + ts.getName(l) + " and " + ts.getName(r) };
 		
 		// Determine whether com selected a converter and perform conversions
 		if ((com_t == l ^ com_t == r) && ts.convertible(l, r)) {
@@ -71,7 +71,7 @@ namespace dust {
 	// Methods
 	EvalState& EvalState::callMethod(const std::string& fn) {
 		auto dis_t = ts.findDef(at().type_id, fn);
-		if (dis_t == -1) throw error::dispatch_error{ "Method " + fn + " is not defined for objects of type " + ts.getName(at().type_id) };
+		if (dis_t == ts.NO_DEF) throw error::dispatch_error{ "Method " + fn + " is not defined for objects of type " + ts.getName(at().type_id) };
 		
 		auto rets = ts.get(dis_t).ops[fn](*this);
 

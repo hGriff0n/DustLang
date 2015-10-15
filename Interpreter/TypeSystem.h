@@ -14,24 +14,30 @@
 		// Though if you think about it, this isn't all that different from hard-coding the selection in the evaluation (There's trade-offs of course)
 		// Moreover the converter can also be overwritten/rewritten to have lower precedence
 	// Consider moving converter precedence resolution to "first declaration" (currently "first definition")
-	// Currently NIL type is an error code, but the idea is for it to have some meaning (ie. operations and values)
 	// Define entry, throw, and catch points for exceptions and error handling (The next chunk of dust is to add exceptions so I won't handle this now)
 		// Add in checks for assigning nil in the future (for some Type methods/members)
 
 namespace dust {
 	namespace type {
 
+		/*
+		 * Class to hold all information regarding the dust type system
+		 * Provides an API to determine type relationships and method resolution
+		 */
 		class TypeSystem {
 			public:
-				// A visitor interface to the type records that allows modifications on individual types to be maintained after scope exit
-					// Possible security issues
+				/*
+				 * A visitor interface to the internal type records
+				 * Allows modifications on individual types to be maintained after scope exit
+				 * - Possible security issues
+				 */
 				struct TypeVisitor {
 					private:
 						size_t id;
 						TypeSystem* ts;
 
 					public:
-						TypeVisitor(size_t i, TypeSystem* self) : id{ i }, ts{ self } {}
+						TypeVisitor(size_t i, TypeSystem* self);
 
 						TypeVisitor& addOp(std::string op, Function f);
 
@@ -64,8 +70,9 @@ namespace dust {
 
 			public:
 				TypeSystem();
+				static const size_t NO_DEF = -1;
 
-				// Inheritance Resolution (returns NIL if no definition is found
+				// Inheritance Resolution (returns NO_DEF if no definition is found)
 				// Find op definition in type or in parent(type)
 				size_t findDef(size_t t, std::string fn);
 
@@ -104,6 +111,7 @@ namespace dust {
 				// Checks if t1 is a child of t2
 				bool isChildType(size_t t1, size_t t2);
 
+				// Type "data" functions
 				std::string getName(size_t t);
 				size_t getId(std::string t);
 		};
