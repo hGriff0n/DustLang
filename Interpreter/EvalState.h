@@ -75,6 +75,11 @@ namespace dust {
 		class Tester;
 	}
 
+	/*
+	 * The (current) entry point into dust evaluation.
+	 * Provides a basic API to interact with dust systems
+	 * - Passed to ASTNode::eval to perform evaluation
+	 */
 	class EvalState : public impl::CallStack {
 		private:
 			impl::Table* curr_scp;
@@ -92,8 +97,8 @@ namespace dust {
 			impl::Table* findScope(const std::string&, int, bool = false);
 			impl::Table* findScope(const std::function<bool(impl::Table*)>&, int, bool = false);
 			impl::Table* findScope(impl::Table*, const std::function<bool(impl::Table*)>&);
-			int forcedLevel(const std::string&);
 
+			int forcedLevel(const std::string&);
 			void setVar(impl::Variable&, bool, bool);
 
 		public:
@@ -117,8 +122,7 @@ namespace dust {
 			void setGlobal(const std::string& name, bool isConst = false, bool isTyped = false);
 			void getGlobal(const std::string& name);
 
-			// Variable flags
-			// Sets var to const if not const and vice versa
+			// Variable flags (setters & getters)
 			void markConst(const std::string& name);
 			void markTyped(const std::string& name, size_t typ);
 			bool isConst(const std::string& name);

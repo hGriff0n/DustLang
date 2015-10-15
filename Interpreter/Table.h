@@ -7,6 +7,10 @@
 namespace dust {
 	namespace impl {
 
+		/*
+		 * Class that mimics the semantics of Dust tables
+		 * Is also (currently) used to implement scopes
+		 */
 		class Table {
 			using key_type = std::string;
 			using storage_type = std::unordered_map<key_type, Variable>;			// Would an unordered_map be better ?
@@ -29,6 +33,8 @@ namespace dust {
 
 				Table* getPar();
 		};
+
+		// class Scope : public Table;									// All internal operations work on Scope. API calls and storage use Table?
 
 	}
 }

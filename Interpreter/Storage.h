@@ -21,6 +21,10 @@ namespace dust {
 				...
 		}
 		*/
+
+		/*
+		 * Stores and controls access to str_record (and other allocable resources)
+		 */
 		class RuntimeStorage {
 			private:
 			protected:
@@ -39,7 +43,6 @@ namespace dust {
 
 			public:
 				RuntimeStorage();
-				//using temporary = str_record*;
 
 				// INITIALIZATION/MODIFICATION
 				//size_t loadRef(size_t);								// New reference

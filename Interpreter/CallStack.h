@@ -15,6 +15,10 @@ template<> dust::impl::Value dust::type::Traits<std::string>::make(std::string s
 namespace dust {
 	namespace impl {
 
+		/*
+		 * Specialization of Stack<impl::Value> that handles interactions with the Garbage Collector
+		 * Provides functions to pop and push values of any type (converted to impl::Value for storage)
+		 */
 		class CallStack : public Stack<impl::Value> {
 			private:
 				impl::GC& gc;

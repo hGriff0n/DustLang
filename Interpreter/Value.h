@@ -3,6 +3,10 @@
 
 namespace dust {
 	namespace impl {
+
+		/*
+		 * Raw data
+		 */
 		union Atom {
 			int i;				// 4
 			double d;			// 8
@@ -24,11 +28,13 @@ namespace dust {
 		BOOL	|	i
 		STRING	|	i
 		FLOAT	|	d
-		NIL		|	u
 		...
 		*/
 
 
+		/*
+		 * A dust value
+		 */
 		struct Value {
 			Atom val;
 			size_t type_id;
@@ -40,6 +46,9 @@ namespace dust {
 			operator size_t() { return type_id; }
 		};
 
+		/*
+		 * A dust variable
+		 */
 		struct Variable {
 			Value val;
 			bool is_const = false;

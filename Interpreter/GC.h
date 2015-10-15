@@ -10,6 +10,10 @@
 
 namespace dust {
 	namespace impl {
+
+		/*
+		 * Basic Garbage Collector
+		 */
 		class GC : public RuntimeStorage {
 			private:
 				size_t c_idx = 0, c_end = 0;

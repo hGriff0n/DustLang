@@ -5,6 +5,9 @@
 
 namespace dust {
 
+	/*
+	 * Random access stack wrapper of std::vector templated on Value
+	*/
 	template <typename Value>
 	class Stack {
 		private:

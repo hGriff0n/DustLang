@@ -8,11 +8,11 @@ namespace dust {
 	class EvalState;
 	typedef std::function<int(EvalState&)> Function;
 
-	// namespace impl { struct Value; }
-
 	namespace type {
-		class TypeSystem;
 
+		/*
+		 * Basic struct to hold information of dust types
+		 */
 		struct Type {
 			std::string name;
 			size_t id, parent;
@@ -26,7 +26,10 @@ namespace dust {
 			Type(std::string t, size_t s, Type p) : Type(t, s, p.id) {}
 		};
 
-		// std::less<T> uses operator< by default
+		/*
+		 * Special class used to store two types as keys in a map
+		 * overrides operator< for use by std::less<T>
+		 */
 		struct convPair : std::pair<size_t, size_t> {
 			convPair(size_t t1, size_t t2) : pair{ t1, t2 } {}
 			convPair(Type& t1, Type& t2) : pair{ t1.id, t2.id } {}

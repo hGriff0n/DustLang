@@ -11,14 +11,18 @@
 	// Should reduce possibilities of future errors (though I still need to find out how the error occurred (for extensibility))
 
 namespace dust {
+	struct Nil {};
+
 	namespace impl {
 		class GC;
 	}
 
-	struct Nil {};
-
 	namespace type {
 
+		/*
+		 * Traits is a basic type traits struct that abstracts the process
+		 * Of creating and accessing impl::Values for any type
+		 */
 		template <typename T>
 		struct Traits {
 			static size_t id;
