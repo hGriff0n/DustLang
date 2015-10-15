@@ -11,14 +11,13 @@ namespace dust {
 	// namespace impl { struct Value; }
 
 	namespace type {
-		// struct Value;
 		class TypeSystem;
 
 		struct Type {
 			std::string name;
 			size_t id, parent;
+			//impl::Table ops;							// Replace ops when I allow functions to be in Value
 			std::map<std::string, Function> ops;
-			//std::map<std::string, Value> fields;		// Replaces ops (Do I need to keep track of fields ???)
 				
 			// Default values and typed/const variables ???
 

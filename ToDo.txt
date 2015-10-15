@@ -44,9 +44,7 @@ Timeline
 			Would this trigger the Block action?
 
 	1 True Nil type and values
-		Change how TypeSystem stores its types so that Nil is at type[0]
-			Object changes to type[1], etc..
-			Might need some slight updates to account for the possibility
+		Possibly "readd" TypeSystem::NIL (rename of course)
 
 	2 Type Definitions and Table Syntax
 		Have the ability to create new types and assign inheritance relationships
