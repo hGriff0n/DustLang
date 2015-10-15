@@ -37,9 +37,7 @@ namespace dust {
 
 						operator size_t();
 				};
-
-				static const size_t NIL = -1;
-
+				
 			private:
 				std::vector<Type> types;								// Maintains type records, Indices are type_id (Could I maintain this as a tree, reduces O-cost of ancestor and isParentOf?)
 				std::map<convPair, std::array<size_t, 2>> conv;			// Tracks conversion precedence
@@ -71,6 +69,7 @@ namespace dust {
 				// Find op definition in type or in parent(type)
 				size_t findDef(size_t t, std::string fn);
 
+
 				// Find op definition in type without considering inheritance relationships
 				size_t isDefd(size_t t, std::string fn);
 				//size_t findLoc(size_t, std::string);
@@ -78,26 +77,23 @@ namespace dust {
 
 				// Common Type Resolution (Find a type that defines op and that both l and r can be cast to)
 				size_t com(size_t l, size_t r, std::string op);
-
 				size_t com(Type& l, Type& r, std::string op);
 
 
 				// Type Definition methods
 				// Create a type visitor to a new type with an optional parent
 				TypeVisitor newType(std::string t);
-
 				TypeVisitor newType(std::string t, Type& p);
-
 				TypeVisitor newType(std::string t, TypeVisitor& p);
+
 
 				// Gets a type visitor to a predefined type
 				TypeVisitor getType(size_t t);
-
 				TypeVisitor getType(std::string t);
+
 
 				// Get the implementation type (for eval, etc.)
 				Type get(size_t t);
-
 				Type get(std::string t);
 
 

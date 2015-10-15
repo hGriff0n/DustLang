@@ -29,8 +29,10 @@ Timeline
 		Improve the usefulness of the Testing suite by adding a review of the status of all (global) tests that were run
 			Possibly add in sub-test reviews if able
 			Could also replace the last statement of the run_tests
-		No Input causes error in repl loop (Stack error)
+		No Input causes error in repl loop (Stack error though)
 			" " causes error in tests
+		Update class TODO commentss
+		Improve comments (especially in recent classes and works)
 
 	IDEA FOR PARSING TABLES
 		Have a "table_inner" rule that matches everything until the closing bracket
@@ -42,12 +44,9 @@ Timeline
 			Would this trigger the Block action?
 
 	1 True Nil type and values
-		Add Nil/nil interaction API
-			Add a "Nil" struct and template definitions ???
-		Determine a way to "print" nil
-		Change pushNil from push(0) to push(impl::Value{})
-			An impl::Value with type_id == ts.NIL is the representation of nil
-		Update code to account for this possibility
+		Change how TypeSystem stores its types so that Nil is at type[0]
+			Object changes to type[1], etc..
+			Might need some slight updates to account for the possibility
 
 	2 Type Definitions and Table Syntax
 		Have the ability to create new types and assign inheritance relationships
@@ -61,10 +60,12 @@ Timeline
 				However, I'm not sure how this'll work with scoping
 					Possibly define a special "table_block" parse rule
 		Add a Table type and define operations/com resolution in relation to the it
+
 	4 Table Semantics
+		Convert Types to use impl::Table for storage
 		Allow impl::Table to store "Variables" of any type
 		Have the table parse action set the "table" and "save_scope" flags in Block on completion
-			First see if tables
+			First see if tables ???
 		Generalize RuntimeStorage and GC so that Tables can be stored
 			Modify Value so that tables can be stored
 		Determine how to interact with tables from an API standpoint

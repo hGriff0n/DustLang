@@ -53,10 +53,14 @@ namespace dust {
 		if (fn.at(0) != '_' || fn.at(2) != 'p') throw error::bad_api_call{ "Attempt to callOp on a non-operator" };
 
 		auto r = at(-2).type_id, l = at().type_id;
+
+		r = r == type::Traits<Nil>::id ? type::Traits<bool>::id : r;						// Allow Bool functions to be called on nil (temporary measure)
+		l = l == type::Traits<Nil>::id ? type::Traits<bool>::id : l;
+
 		auto com_t = ts.com(l, r, fn);						// find common type
 		auto dis_t = ts.findDef(com_t, fn);					// find dispatch type (where fn is defined)
 
-		if (dis_t == ts.NIL) throw error::dispatch_error{ "Method " + fn + " is not defined for objects of type " + ts.getName(l) + " and " + ts.getName(r) };
+		if (dis_t == type::Traits<Nil>::id) throw error::dispatch_error{ "Method " + fn + " is not defined for operands of type " + ts.getName(l) + " and " + ts.getName(r) };
 
 		// Determine whether com selected a converter and perform conversions
 		if ((com_t == l ^ com_t == r) && ts.convertible(l, r)) {
@@ -70,8 +74,11 @@ namespace dust {
 	}
 	// Methods
 	EvalState& EvalState::callMethod(const std::string& fn) {
-		auto dis_t = ts.findDef(at().type_id, fn);
-		if (dis_t == ts.NIL) throw error::dispatch_error{ "Method " + fn + " is not defined for objects of type " + ts.getName(at().type_id) };
+		auto curr_t = at().type_id;
+		if (curr_t == type::Traits<Nil>::id) curr_t = type::Traits<bool>::id;				// Allow Bool functions to be called on nil (temporary measure)
+
+		auto dis_t = ts.findDef(curr_t, fn);
+		if (dis_t == type::Traits<Nil>::id) throw error::dispatch_error{ "Method " + fn + " is not defined for objects of type " + ts.getName(at().type_id) };
 		
 		auto rets = ts.get(dis_t).ops[fn](*this);
 
@@ -80,9 +87,9 @@ namespace dust {
 
 	// Handles variable assignment interaction with constant and typing
 	void EvalState::setVar(impl::Variable& var, bool is_const, bool is_typed) {
-		if (var.val.type_id != ts.NIL) {
+		if (var.val.type_id != type::Traits<Nil>::id) {
 			if (var.is_const) throw error::illegal_operation{ "Attempt to reassign a constant variable" };
-			if (var.type_id != ts.NIL && !ts.isChildType(at().type_id, var.type_id)) {
+			if (var.type_id != type::Traits<Nil>::id && !ts.isChildType(at().type_id, var.type_id)) {
 				if (!ts.convertible(var.type_id, at().type_id))	throw error::converter_not_found{ "No converter from from the assigned value to the variable's static type" };
 				callMethod(ts.getName(var.type_id));
 			}
@@ -138,7 +145,7 @@ namespace dust {
 		auto& var = scp->getVar(name);
 
 		// If the typing change may require type conversion (ie. typ not Nil and !(type(var) <= typ))
-		if (typ != ts.NIL && !ts.isChildType(var.type_id, typ)) {
+		if (typ != type::Traits<Nil>::id && !ts.isChildType(var.type_id, typ)) {
 			if (!ts.convertible(var.type_id, typ)) throw error::converter_not_found{ "No converter from the current value to the given type" };
 
 			push(var.val);
@@ -156,7 +163,7 @@ namespace dust {
 	}
 	bool EvalState::isTyped(const std::string& name) {
 		auto scp = findScope(name, 0);
-		return scp && scp->getVar(name).type_id != ts.NIL;
+		return scp && scp->getVar(name).type_id != type::Traits<Nil>::id;
 	}
 
 	void EvalState::newScope() {
@@ -233,7 +240,7 @@ namespace dust {
 			if (!(bool)e)
 				e.callOp("_op=");
 			else {
-				e.pop();						// Don't handle references (unless EvalState/CallStack::pop does)
+				e.pop();
 				e.pop();
 				e.push(true);
 			}
@@ -248,7 +255,7 @@ namespace dust {
 			if (!(bool)e)
 				e.callOp("_op=");
 			else {
-				e.pop();						// Doesn't handle references
+				e.pop();
 				e.pop();
 				e.push(true);
 			}
