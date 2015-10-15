@@ -58,12 +58,16 @@ namespace dust {
 			throw error::conversion_error{ "Not convertible to String" };
 		}
 
-		template<> bool type::Traits<bool>::get(const impl::Value& v, impl::GC& gc) {
+		template<> bool Traits<bool>::get(const impl::Value& v, impl::GC& gc) {
 			if (v.type_id == Traits<bool>::id)
 				return v.val.i;
 
+			else if (v.type_id == Traits<Nil>::id)
+				return false;
+
 			return true;
 		}
+
 	}
 
 	namespace test {
@@ -124,6 +128,18 @@ namespace dust {
 			void newScope();				// Start a new scope with the current scope as parent
 			void endScope();				// Delete current scope (Cleans up memory)
 			void pushScope();				// Store scope in memory and push on the stack (tables, functions, etc.)
+
+			// Output
+			template <class Stream>
+			Stream& stream(Stream& s) {
+				if (is<std::string>())
+					return s << "\"" << pop<std::string>() << "\"";
+
+				else if (is<Nil>())
+					return s << (pop(), "nil");
+
+				return s << pop<std::string>();
+			}
 
 			friend void initState(EvalState&);
 			template <class Stream> friend class test::Tester;

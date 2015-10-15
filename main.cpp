@@ -67,7 +67,6 @@ int main(int argc, const char* argv[]) {
 
 	parse::AST parse_tree;
 	std::string input;
-	bool isResString;
 
 	EvalState e;
 	initState(e);
@@ -83,26 +82,17 @@ int main(int argc, const char* argv[]) {
 				pegtl::parse<grammar, action>(input, input, parse_tree, 0);
 
 				print(std::cout, parse_tree.at());
-				//std::dynamic_pointer_cast<parse::Block>(parse_tree.at())->global = true;
-				isResString = parse_tree.pop()->eval(e).is<std::string>();
-				//isResNil = e.is<Nil>();
-				//isResString = e.eval(parse_tree.pop()).is<std::string>();
+
+				parse_tree.pop()->eval(e).stream(std::cout << ":: ") << "\n";
+				//e.eval(parse_tree.pop()).stream(std::cout << ":: ") << "\n";
 
 				// Need to make a generic 'pop' here
 				// Or I can insist that printable equates to String convertible
 				// e >> input;		Define operator<< and operator>> for EvalState/Stack ???
-				//e.print(std::cout << ":: " << (isResString ? "\"" : ""))
-					//<< (isResString ? "\"\n" : "\n");
-
-				std::cout << ":: "
-					<< (isResString ? "\"" : "")
-					<< (std::string)e
-					//<< (isResNil ? (e.pop(), "nil") : (std::string)e)
-					<< (isResString ? "\"" : "")
-					<< "\n";
 
 			} catch (pegtl::parse_error& e) {
 				std::cout << e.what() << std::endl;
+
 			} catch (error::base& e) {
 				std::cout << e.what() << std::endl;
 			}

@@ -12,7 +12,7 @@ namespace dust {
 				t.require_type("3", "Int");									// 2
 				t.require_noerror("## Hello");								// 3
 				t.require_eval("3## Hello", 3);								// 4
-				t.require_noerror(" ");										// 5
+				t.require_noerror(" ");										// 5				# Failing to match expr
 
 				t.require_eval("\"3\"", "3");								// 6
 				t.require_type("\"3\"", "String");							// 7
@@ -68,7 +68,7 @@ namespace dust {
 			// Test boolean ternary statement
 			t.init_sub_test("Boolean Ternary");
 				t.require_eval("true and false or true", "true");			// 1		# Counter-intuitive. But this is how lua's ternary operator works
-				t.require_eval("c = 0 and 4 or 5", 4);						// 2
+				t.require_eval("!c and 4 or 5", 4);							// 2
 
 				t.require_excep<pegtl::parse_error>("false and a: 5");		// 3
 				t.require_eval("false and (a: 5)", false);					// 4
@@ -78,7 +78,7 @@ namespace dust {
 				t.require_true("a = 3");									// 7
 
 				// 0 => true. Should I keep this?
-				t.require_eval("b: c != 0 and 4 or (c: 5)", 5);				// 8
+				t.require_eval("b: c and 4 or (c: 5)", 5);					// 8
 				t.require_true("b = 5 and c = b");							// 9
 
 				t.require_eval("b: c and 4 or (c: 5)", 4);					// 10

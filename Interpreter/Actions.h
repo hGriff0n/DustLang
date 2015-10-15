@@ -41,8 +41,7 @@ namespace dust {
 
 		template <> struct action<k_nil> {
 			static void apply(const input& in, AST& ast, const int _) {
-				ast.push(makeNode<Literal>("0", type::Traits<bool>::id));
-				//ast.push(makeNode<Literal>("", -1));
+				ast.push(makeNode<Literal>("", type::Traits<Nil>::id));
 			}
 		};
 

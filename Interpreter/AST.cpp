@@ -48,6 +48,10 @@ namespace dust {
 
 			else if (id == type::Traits<std::string>::id)
 				e.push(val);
+
+			else if (id == type::Traits<Nil>::id)
+				e.pushNil();
+
 			else
 				throw error::dust_error{ "No literal can be constructed of the given type" };
 

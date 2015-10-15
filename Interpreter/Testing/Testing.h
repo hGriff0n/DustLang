@@ -179,8 +179,28 @@ namespace dust {
 						evaluate(code);
 
 						printMsg(true) << " Passed Test " << std::setw(5) << num_tests << "\"" << code << "\" did not throw an exception\n";
-					} catch (...) {
-						printMsg(false) << " Failed Test " << std::setw(5) << num_tests << "\"" << code << "\" threw an exception\n";
+					} catch (std::exception& err) {
+						printMsg(false) << " Failed Test " << std::setw(5) << num_tests << "\"" << code << "\" threw a " << typeid(err).name() << "\n";
+					}
+
+					exitTest();
+				}
+
+				// While executing the given code, an exception, of type 'Exception', is thrown
+				template <typename Exception>
+				void require_excep(const std::string& code) {
+					displayTestHeader(code) << "for exception of type " << error::name<Exception>::is << "\n";
+
+					try {
+						evaluate(code);
+
+						printMsg(false) << " Failed Test " << std::setw(5) << num_tests << "\"" << code << "\" did not throw an exception\n";
+
+					} catch (Exception& e) {
+						printMsg(true) << " Passed Test " << std::setw(5) << num_tests << "Caught: " << e.what() << "\n";
+
+					} catch (std::exception& e) {
+						printMsg(false) << " Failed Test " << std::setw(5) << num_tests << "Caught exception of type " << typeid(e).name() << "\n";
 					}
 
 					exitTest();
@@ -237,25 +257,6 @@ namespace dust {
 					return require_eval<std::string>(code, result);
 				}
 
-				// While executing the given code, an exception, of type 'Exception', is thrown
-				template <typename Exception>
-				void require_excep(const std::string& code) {
-					displayTestHeader(code) << "for exception of type " << error::name<Exception>::is << "\n";
-
-					try {
-						evaluate(code);
-
-						printMsg(false) << " Failed Test " << std::setw(5) << num_tests << "\"" << code << "\" did not throw an exception\n";
-
-					} catch (Exception& e) {
-						printMsg(true) << " Passed Test " << std::setw(5) << num_tests << "Caught: " << e.what() << "\n";
-
-					} catch (std::exception& e) {
-						printMsg(false) << " Failed Test " << std::setw(5) << num_tests << "Caught exception of type " << typeid(e).name() << "\n";
-					}
-
-					exitTest();
-				}
 		};
 
 		template <class Stream>

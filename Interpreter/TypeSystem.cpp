@@ -1,6 +1,7 @@
 #include "TypeSystem.h"
+#include "TypeTraits.h"
 #include "Exceptions\logic.h"
-#include <cctype>
+#include <cctype>					// std::isupper in TypeSystem::newType
 
 namespace dust {
 	namespace type {
@@ -25,10 +26,10 @@ namespace dust {
 		}
 
 		bool TypeSystem::isParentOf(size_t p, size_t t) {
-			while (t != p && t != NIL)
-				t = t > 0 ? types[t].parent : NIL;
+			while (t != p && t != Traits<Nil>::id)
+				t = t > 0 ? types[t].parent : Traits<Nil>::id;
 
-			return t != NIL;
+			return t != Traits<Nil>::id;
 		}
 
 		size_t TypeSystem::ancestor(size_t l, size_t r) {
@@ -44,9 +45,9 @@ namespace dust {
 		size_t TypeSystem::convert(size_t from, size_t to) {
 			auto idx = key(from, to);
 
-			if (conv.count(idx) == 0) return NIL;
+			if (conv.count(idx) == 0) return type::Traits<Nil>::id;
 			int id = conv[idx][conv[idx][0] == to ? 0 : 1];
-			if (id == 0) return NIL;
+			if (id == 0) return type::Traits<Nil>::id;
 
 			return id;
 		}
@@ -57,7 +58,7 @@ namespace dust {
 			int sidx = 0;
 
 			// Assign a default value to the array
-			if (conv.count(idx) == 0) conv[idx][1] = NIL;
+			if (conv.count(idx) == 0) conv[idx][1] = type::Traits<Nil>::id;
 
 			// Test for cases where the converter will have low precedence
 			if (conv[idx][1] == from) {
@@ -103,14 +104,14 @@ namespace dust {
 		}
 
 		size_t TypeSystem::findDef(size_t t, std::string fn) {
-			while (t != NIL && isDefd(t, fn) == NIL)
-				t = t > 0 ? types[t].parent : NIL;
+			while (t != type::Traits<Nil>::id && isDefd(t, fn) == type::Traits<Nil>::id)
+				t = t > 0 ? types[t].parent : type::Traits<Nil>::id;
 
 			return t;
 		}
 
 		size_t TypeSystem::isDefd(size_t t, std::string fn) {
-			return types[t].ops.count(fn) > 0 ? t : NIL;
+			return types[t].ops.count(fn) > 0 ? t : type::Traits<Nil>::id;
 		}
 
 		size_t TypeSystem::com(size_t l, size_t r, std::string op) {
@@ -122,10 +123,10 @@ namespace dust {
 			if (conv.count(idx) > 0) {							// If there is a defined conversion
 				auto convs = conv[idx];
 
-				if (findDef(convs[0], op) != NIL)				// Test the first precedence
+				if (findDef(convs[0], op) != type::Traits<Nil>::id)				// Test the first precedence
 					return convs[0];
 
-				if (findDef(convs[1], op) != NIL)				// Test the second precedence
+				if (findDef(convs[1], op) != type::Traits<Nil>::id)				// Test the second precedence
 					return convs[1];							// convs[1] defaults to 0 == Object.id
 			}
 
@@ -162,7 +163,7 @@ namespace dust {
 		}
 
 		std::string TypeSystem::getName(size_t t) {
-			if (t == NIL) return "Nil";
+			if (t == type::Traits<Nil>::id) return "Nil";
 			return types[t].name;
 		}
 

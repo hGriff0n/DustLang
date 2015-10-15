@@ -15,7 +15,10 @@ namespace dust {
 		class GC;
 	}
 
+	struct Nil {};
+
 	namespace type {
+
 		template <typename T>
 		struct Traits {
 			static size_t id;
@@ -29,6 +32,10 @@ namespace dust {
 			}
 		};
 
-		template<typename T> size_t Traits<T>::id = -1;
+		template<typename T> size_t Traits<T>::id = -2;
+		template <> size_t Traits<Nil>::id = -1;
+		template <> impl::Value Traits<Nil>::make(Nil v, impl::GC& gc) {
+			return{ 0, Traits<Nil>::id };
+		}
 	}
 }
