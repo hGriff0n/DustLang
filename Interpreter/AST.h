@@ -9,7 +9,11 @@ namespace dust {
 		// Possibly create grammars and actions for escaping/unescaping strings
 		std::string escape(std::string);
 		std::string unescape(std::string);
+		std::string trim(std::string);					// Needed to prevent errors when evaluating " "
 
+		/*
+		 * Base class for the AST structure
+		 */
 		class ASTNode {
 			private:
 			public:
@@ -22,6 +26,9 @@ namespace dust {
 				virtual std::string print_string(std::string buf);
 		};
 
+		/*
+		 * An iterable collection of nodes of a desired type
+		 */
 		template <class Node>
 		class List : public ASTNode {
 			private:
@@ -68,6 +75,9 @@ namespace dust {
 				size_t size() { return elems.size(); }
 		};
 
+		/*
+		 * Non-evaluable node used to simplify AST assembly (Seperate nodes)
+		 */
 		class Debug : public ASTNode {
 			private:
 				std::string msg;
@@ -82,6 +92,9 @@ namespace dust {
 				virtual std::string print_string(std::string buf);
 		};
 
+		/*
+		 * Represents a non-table literal
+		 */
 		class Literal : public ASTNode {
 			private:
 				std::string val;
@@ -97,6 +110,9 @@ namespace dust {
 				virtual std::string print_string(std::string buf);
 		};
 
+		/*
+		 * Represents unary and binary operations using infix/prefix operators
+		 */
 		class Operator : public ASTNode {
 			private:
 				std::shared_ptr<ASTNode> l, r;
@@ -113,6 +129,9 @@ namespace dust {
 				virtual std::string print_string(std::string buf);
 		};
 
+		/*
+		 * Represents a variable
+		 */
 		class VarName : public ASTNode {
 			private:
 				std::string name;
@@ -127,6 +146,9 @@ namespace dust {
 				virtual std::string print_string(std::string buf);
 		};
 
+		/*
+		 * Represents an assignment operation
+		 */
 		class Assign : public ASTNode {
 			typedef List<VarName> var_type;
 			typedef List<ASTNode> val_type;
@@ -151,6 +173,9 @@ namespace dust {
 
 		// class Keyword : public ASTNode {};
 
+		/*
+		 * Temporary representation of the and/or keywords
+		 */
 		class BinaryKeyword : public ASTNode {
 			private:
 				std::shared_ptr<ASTNode> l, r;
@@ -167,21 +192,32 @@ namespace dust {
 				virtual std::string print_string(std::string buf);
 		};
 
-		/*/
+		/*
+		 * Node for specifiying number of evaluations of a Block
+		 */
 		class Control : public ASTNode {
 			private:
+				std::shared_ptr<ASTNode> expr;
+				bool next = true;
+				char type;
+
 			public:
 				Control();
+				Control(char typ);
 				static std::string node_type;
 				
 				virtual EvalState& eval(EvalState& e);
+				virtual bool iterate(EvalState& e);
 				virtual void addChild(std::shared_ptr<ASTNode>& c);
 
 				virtual std::string to_string();
 				virtual std::string print_string(std::string buf);
-		};
-		//*/
 
+		};
+
+		/*
+		 * Node for a collection of expressions with a common scope
+		 */
 		class Block : public ASTNode {
 			private:
 				//std::shared_ptr<Control> control;
@@ -204,6 +240,9 @@ namespace dust {
 				virtual std::string print_string(std::string buf);
 		};
 
+		/*
+		 * Handles expression catching of sub-nodes
+		 */
 		class TryCatch : public ASTNode {
 			private:
 			std::shared_ptr<Block> try_code, catch_code;

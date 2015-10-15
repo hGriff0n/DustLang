@@ -12,16 +12,17 @@ namespace dust {
 				t.require_type("3", "Int");									// 2
 				t.require_noerror("## Hello");								// 3
 				t.require_eval("3## Hello", 3);								// 4
-				t.require_noerror(" ");										// 5				# Failing to match expr
+				t.require_noerror(" ");										// 5
+				t.require_type("", "Nil");									// 6
 
-				t.require_eval("\"3\"", "3");								// 6
-				t.require_type("\"3\"", "String");							// 7
+				t.require_eval("\"3\"", "3");								// 7
+				t.require_type("\"3\"", "String");							// 8
 
-				t.require_eval("3.3", 3.3);									// 8
-				t.require_type("3.3", "Float");								// 9
+				t.require_eval("3.3", 3.3);									// 9
+				t.require_type("3.3", "Float");								// 10
 
-				t.require_eval("true", true);								// 10
-				t.require_type("true", "Bool");								// 11
+				t.require_eval("true", true);								// 11
+				t.require_type("true", "Bool");								// 12
 			t.close_sub_test();
 
 			// Operator resolution tests
@@ -106,7 +107,7 @@ namespace dust {
 				t.require_eval("a\n+ b", 7);								// 1
 				t.require_excep<pegtl::parse_error>("3 + a: 3\n - 4");		// 2
 				t.require_eval("3 + a 3\n - 4", -1);						// 3
-				t.require_eval("3 + 3\n\n4 + 4", 8);						// 4
+				t.require_eval("3 + 3\n  \n4 + 4", 8);						// 4
 				t.require_eval("## Hello\n3", 3);							// 5
 
 				t.init_sub_test("Scoped Assignment");

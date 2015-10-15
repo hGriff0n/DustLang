@@ -67,10 +67,9 @@ int main(int argc, const char* argv[]) {
 
 	parse::AST parse_tree;
 	std::string input;
-
 	EvalState e;
-	initState(e);
 
+	initState(e);
 	test::run_tests(e);
 
 	std::cout << "> ";
@@ -79,7 +78,7 @@ int main(int argc, const char* argv[]) {
 
 		} else {
 			try {
-				pegtl::parse<grammar, action>(input, input, parse_tree, 0);
+				pegtl::parse<grammar, action>(parse::trim(input), input, parse_tree, 0);
 
 				print(std::cout, parse_tree.at());
 
@@ -101,18 +100,4 @@ int main(int argc, const char* argv[]) {
 		}
 		std::cout << "\n> ";
 	}
-}
-
-template <typename T>
-void assign_value(impl::Value& v, T val, impl::GC& gc) {
-	if (v.type_id == type::Traits<std::string>::id) gc.decRef(v.val.i);
-
-	v = make_value(val, gc);
-}
-
-void assign_value(impl::Value& v, impl::Value& a, impl::GC& gc) {
-	if (v.type_id == type::Traits<std::string>::id) gc.decRef(v.val.i);
-	if (a.type_id == type::Traits<std::string>::id) gc.incRef(a.val.i);
-
-	v = a;
 }

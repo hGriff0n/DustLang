@@ -1,5 +1,6 @@
 #include "AST.h"
 #include <regex>
+#include <cctype>
 
 #include "Exceptions\parsing.h"
 #include "Exceptions\dust.h"
@@ -16,6 +17,12 @@ namespace dust {
 			static std::regex escape{ "\\\\\"" };		// Escape \"
 
 			return std::regex_replace(s, escape, "\"");
+		}
+
+		std::string trim(std::string s) {
+			auto front = std::find_if_not(s.begin(), s.end(), std::isspace);
+			auto back = std::find_if_not(s.rbegin(), s.rend(), std::isspace).base();
+			return back <= front ? "" : std::string{front, back};
 		}
 
 		// ASTNode methods
@@ -188,6 +195,41 @@ namespace dust {
 			else throw error::operands_error{ "Attempt to add more than three operands to BinaryKeyword node" };
 		}
 
+		// Control methods
+		Control::Control() : Control{ -1 } {}
+		Control::Control(char typ) : type{ typ } {}
+		EvalState& Control::eval(EvalState& e) {
+			throw error::bad_node_eval{ "Attempt to evaluate a Control node" };
+		}
+		bool Control::iterate(EvalState& e) {
+			bool ret;
+
+			//auto top = e.size();
+
+			switch (type) {
+				case 0:				// for
+				case 1:				// while
+					//expr->eval(e);
+					//next = (bool)e;
+				case 2:				// do-while
+					//if (!next) break;
+				default:
+					next = !(ret = next);
+			}
+
+			//e.settop(top);
+
+			return ret;
+		}
+		void Control::addChild(std::shared_ptr<ASTNode>& c) {
+			if (expr) throw error::invalid_ast_construction{ "Attempt to construct control node from more than two expresions" };
+			expr = c;
+		}
+		std::string Control::to_string() { return ""; }
+		std::string Control::print_string(std::string buf) {
+			return "";
+		}
+
 		// Block methods
 		Block::Block() : save_scope{ false }, table{ false }, excep_if_empty{ true } {}
 		auto Block::begin() {
@@ -201,7 +243,11 @@ namespace dust {
 		}
 		EvalState& Block::eval(EvalState& e) {
 			if (expr.empty()) {
-				if (!excep_if_empty) return e;
+				if (!excep_if_empty) {
+					e.pushNil();
+					return e;
+				}
+
 				throw error::bad_node_eval{ "Attempt to evaluate an empty block" };
 			}
 
