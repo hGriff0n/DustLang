@@ -33,6 +33,9 @@ Timeline
 			Could just use "require_type" for these
 		Clean up code, especially Block::eval
 		Consider removing the Storage temp interface
+		Keywords can be recognized as variable names when not a part of any expression that uses it
+			Outside of true, false, and nil
+		See VagueToDo.txt
 
 	IDEA FOR PARSING TABLES
 		Have a "table_inner" rule that matches everything until the closing bracket
@@ -44,8 +47,8 @@ Timeline
 			Would this trigger the Block action?
 
 	1 Type Definitions and Table Syntax
-		Be able to recognize type syntax (complete with inheritance relationships)
 		Have the type syntax actually create new types in TypeSystem (with inheritance relationships)
+			Make a NewType node in ast.h
 			Have some interaction with type ids, if only for debugging purposes
 		Possibly add in type and typename functions (preliminary function syntax)
 		Add a Table type and define operations/com resolution in relation to the it

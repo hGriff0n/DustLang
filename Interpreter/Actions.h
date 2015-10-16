@@ -140,7 +140,7 @@ namespace dust {
 		template <> struct action<ee_4> : ee_actions<Operator> {};
 		template <> struct action<ee_5> : ee_actions<BinaryKeyword> {};
 		template <> struct action<ee_6> : ee_actions<BinaryKeyword> {};
-		template <> struct action<ee_x> : ee_actions<Assign> {};				// ee_x is Assignmnet, which needs and uses Assignment nodes. ee_acctions requires Operator nodes
+		template <> struct action<ee_7> : ee_actions<Assign> {};				// ee_x is Assignmnet, which needs and uses Assignment nodes. ee_acctions requires Operator nodes
 
 		// List Actions
 		template <class type>
@@ -226,6 +226,13 @@ namespace dust {
 				
 				auto b = std::dynamic_pointer_cast<Block>(ast.at());
 				b->table = true;
+			}
+		};
+
+		// Type Actions
+		template <> struct action<ee_type> {
+			static void apply(input& in, AST& ast, const int _) {
+
 			}
 		};
 	}

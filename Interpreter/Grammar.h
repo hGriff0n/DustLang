@@ -55,6 +55,7 @@ namespace dust {
 		template <class Str>
 		struct key : seq<Str, not_at<id_end>> {};
 
+		// This doesn't actually prevent the keywords from becoming variables
 		struct k_and : key_string("and");
 		struct k_true : key_string("true");
 		struct k_false : key_string("false");
@@ -64,6 +65,7 @@ namespace dust {
 		struct k_if : key_string("if");
 		struct k_type : key_string("type");
 		struct k_inherit : pstring("<-") {};											// Can't start an indentifier
+		struct keywords : sor<k_and, k_true, k_false, k_or, k_nil, k_do, k_if, k_type> {};
 
 
 		// Literal Tokens
@@ -72,10 +74,8 @@ namespace dust {
 		struct boolean : sor<k_true, k_false> {};
 		struct body : star<sor<seq<esc, quote>, unless<quote>>> {};						// ((\\\")|[^"])*
 		struct str : seq<quote, body, quote> {};										// \"{body}\"
-
-		// Tables?
-		struct table_inner : until<c_brack, expr> {};					// o_brack would push a node on (table_inner_t handles block assembly)
-		struct table : seq<o_brack, seps, table_inner> {};						// \[ *{expr}*]
+		struct table_inner : until<c_brack, expr> {};
+		struct table : seq<o_brack, seps, table_inner> {};								// \[ *{expr}*]
 		struct literals : sor<decimal, integer, boolean, table, str, k_nil> {};
 
 
@@ -121,10 +121,15 @@ namespace dust {
 		struct expr_list : s_list<expr_x> {};											// {expr_5} *, *
 
 		struct assign : seq<var_list, seps, op_x> {};									// assignments are right associative
-		struct ee_x : seq<assign, seps, expr_list> {};									// ensure that expr_6 doesn't trigger the expression reduction
-		struct expr_x : if_then_else<at<assign>, ee_x, expr_6> {};						// {var_list} *{op_5} * {expr_list}
+		struct ee_7 : seq<assign, seps, expr_list> {};									// ensure that expr_6 doesn't trigger the expression reduction
+		struct expr_7 : if_then_else<at<assign>, ee_7, expr_6> {};						// {var_list} *{op_5} * {expr_list}
+
+		struct ee_type : seq<k_type, seps, type_id, seps, table, opt<seps, k_inherit, seps, type_id>> {};
+		struct expr_type : sor<ee_type, expr_7> {};										// type *{type_id} *{table}( *<- *{type_id})?
 
 		// Organization Tokens
+		//struct expr_x : expr_7 {};
+		struct expr_x : expr_type {};
 		struct expr : sor<seq<expr_x, seps, opt<comment>>, seq<seps, comment>> {};
 
 		// Defines Scoping rules
@@ -165,7 +170,6 @@ namespace dust {
 		};
 
 		// Allows the first line of a block to be in-lined
-			// Supposed to only allow inlining of single expression loops
 		struct inline_block {
 			using analyze_t = block::analyze_t;
 
@@ -183,5 +187,4 @@ namespace dust {
 
 	// Grammar Token
 	struct grammar : pegtl::must<parse::file, pegtl::eolf> {};
-	//struct grammar : pegtl::seq<parse::file, pegtl::eolf> {};
 }

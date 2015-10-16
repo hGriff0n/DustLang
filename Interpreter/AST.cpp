@@ -202,24 +202,20 @@ namespace dust {
 			throw error::bad_node_eval{ "Attempt to evaluate a Control node" };
 		}
 		bool Control::iterate(EvalState& e) {
-			bool ret;
-
-			//auto top = e.size();
-
 			switch (type) {
 				case 0:				// for
 				case 1:				// while
-					//expr->eval(e);
-					//next = (bool)e;
+					return (bool)expr->eval(e);
 				case 2:				// do-while
-					//if (!next) break;
+					if (!next)
+						return (bool)expr->eval(e);
 				default:
-					next = !(ret = next);
+					next = !next;
+					return !next;
 			}
+			// Needs a "reset" function
 
-			//e.settop(top);
-
-			return ret;
+			// Settop is handled by Block::eval
 		}
 		void Control::addChild(std::shared_ptr<ASTNode>& c) {
 			if (expr) throw error::invalid_ast_construction{ "Attempt to construct control node from more than two expresions" };
@@ -254,6 +250,7 @@ namespace dust {
 			size_t x = e.size(), n_key = 1;
 			e.newScope();
 
+			//while (control->iterate(e)) {
 			for (const auto& i : *this) {
 				e.settop(x);							// Pops the results of the last expression (Not executed for the last expression)
 
@@ -335,6 +332,7 @@ namespace dust {
 		std::string VarName::node_type = "Variable";
 		std::string Assign::node_type = "Assignment";
 		std::string BinaryKeyword::node_type = "Boolean";
+		std::string Control::node_type = "Control";
 		std::string Block::node_type = "Block";
 		std::string TryCatch::node_type = "Try-Catch";
 	}

@@ -198,7 +198,7 @@ namespace dust {
 		class Control : public ASTNode {
 			private:
 				std::shared_ptr<ASTNode> expr;
-				bool next = true;
+				bool next = true;					// make public ???
 				char type;
 
 			public:
@@ -241,7 +241,7 @@ namespace dust {
 		};
 
 		/*
-		 * Handles expression catching of sub-nodes
+		 * Exception handling for sub-nodes
 		 */
 		class TryCatch : public ASTNode {
 			private:
