@@ -73,12 +73,10 @@ namespace dust {
 		struct body : star<sor<seq<esc, quote>, unless<quote>>> {};						// ((\\\")|[^"])*
 		struct str : seq<quote, body, quote> {};										// \"{body}\"
 
-		//struct table : seq<o_brack, opt<expr_list>, seps, c_brack> {};
-		struct table : seq<o_brack, seps, opt<inline_block>, seps, c_brack> {};		// \[ *{block}? *\]
-			// This doesn't allow [ 4 ] syntax (block relies on scoping changes to end parsing)
-				// Then tables can't be ended with a ']' unless it's on a newline and "de-scoped" (not that that's not good style)
-			// table_block struct ???
-		struct literals : sor<decimal, integer, boolean, str, k_nil> {};
+		// Tables?
+		struct table_inner : until<c_brack, expr> {};					// o_brack would push a node on (table_inner_t handles block assembly)
+		struct table : seq<o_brack, seps, table_inner> {};						// \[ *{expr}*]
+		struct literals : sor<decimal, integer, boolean, table, str, k_nil> {};
 
 
 		// Operator Tokens
@@ -128,8 +126,6 @@ namespace dust {
 
 		// Organization Tokens
 		struct expr : sor<seq<expr_x, seps, opt<comment>>, seq<seps, comment>> {};
-		//struct expr : seq<expr_x, opt<seps, comment>, seps> {};
-		//struct expr : seq<expr_x, seps, opt<comment>> {};
 
 		// Defines Scoping rules
 		struct block {
@@ -150,6 +146,7 @@ namespace dust {
 					else {
 						block::eat(in, depth);
 						Control<must<expr>>::template match<A, Action, Control>(in, ast, exit);
+						//Control<must<sor<expr, seps>>>::template match<A, Action, Control>(in, ast, exit);
 					}
 				}
 
@@ -186,4 +183,5 @@ namespace dust {
 
 	// Grammar Token
 	struct grammar : pegtl::must<parse::file, pegtl::eolf> {};
+	//struct grammar : pegtl::seq<parse::file, pegtl::eolf> {};
 }

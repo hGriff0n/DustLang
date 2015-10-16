@@ -214,33 +214,20 @@ namespace dust {
 		};
 
 		// Creating Tables ???
-		/*/
 		template <> struct action<o_brack> {
 			static void apply(input& in, AST& ast, const int _) {
-				ast.push(makeNode<Table>());
-			}
-		};
-
-		template <> struct action<table_inner> {
-			static void apply(input& in, AST& ast, const int _) {
-				pegtl::parse<block, action>(in, ast, _);
-				Control<must<block>>::template match(in, ast, _);
+				ast.push(makeNode<Debug>("NEW_SCOPE"));
 			}
 		};
 
 		template <> struct action<table> {
 			static void apply(input& in, AST& ast, const int _) {
-				std::shared_ptr<Block> t;
-
-				if (t = std::dynamic_pointer_cast<Block>(ast.at())) {
-					t->save_scope = true;
-					t->table = true;
-
-				} else throw error::missing_node_x{ "Attempt to construct a Table without a Block node" };
+				action<block>::apply(in, ast, _);
+				
+				auto b = std::dynamic_pointer_cast<Block>(ast.at());
+				b->table = true;
 			}
 		};
-
-		//*/
 	}
 
 	template <typename Rule>

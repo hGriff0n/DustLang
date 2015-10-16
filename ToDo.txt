@@ -44,17 +44,12 @@ Timeline
 			Would this trigger the Block action?
 
 	1 Type Definitions and Table Syntax
-		Have the ability to create new types and assign inheritance relationships
-		Have some interaction with type ids, if only for debugging purposes
-		Add a basic recognition of Table syntax (so that the grammar accepts tables)
-			Currently, tables are Blocks with the table flag set
-				An expression needs a default key if it is not an Assign node
-					Printing is still a problem
-					Would ',' then become an expression seperator (outside of the list functionality) ???
-					There's also the implications on the range syntax (would this need tables)
-				However, I'm not sure how this'll work with scoping
-					Possibly define a special "table_block" parse rule
+		Be able to recognize type syntax (complete with inheritance relationships)
+		Have the type syntax actually create new types in TypeSystem (with inheritance relationships)
+			Have some interaction with type ids, if only for debugging purposes
+		Possibly add in type and typename functions (preliminary function syntax)
 		Add a Table type and define operations/com resolution in relation to the it
+		Determine how basic types will work with regards to inheritance (especially String, etc.)
 
 	2 Table Semantics
 		Convert Types to use impl::Table for storage
@@ -70,6 +65,7 @@ Timeline
 		_nindex and _index metamethods
 		Arrays -> Tables (any key)
 		Empty Table => false
+
 	3 Keyword Recognition
 		Update pegtl library
 		Get the grammar to recognize various keywords

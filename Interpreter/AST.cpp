@@ -242,7 +242,7 @@ namespace dust {
 			return expr.size();
 		}
 		EvalState& Block::eval(EvalState& e) {
-			if (expr.empty()) {
+			if (expr.empty() && !table) {
 				if (!excep_if_empty) {
 					e.pushNil();
 					return e;
@@ -280,10 +280,10 @@ namespace dust {
 			return e;
 		}
 		std::string Block::to_string() {
-			return table ? "[]" : "";
+			return table ? " []" : "";
 		}
 		std::string Block::print_string(std::string buf) {
-			std::string ret = buf + "+- " + node_type + "\n";
+			std::string ret = buf + "+- " + node_type + to_string() + "\n";
 			buf += " ";
 
 			for (auto i : *this)

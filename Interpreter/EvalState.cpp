@@ -173,6 +173,7 @@ namespace dust {
 	}
 
 	void EvalState::pushScope() {
+		endScope();
 		// store scope
 		// push scope id onto stack
 		//curr_scp = curr_scp->getPar();
