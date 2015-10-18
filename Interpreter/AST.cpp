@@ -108,14 +108,26 @@ namespace dust {
 			return buf + "+- " + node_type + " " + name + "\n";
 		}
 
+		// TypeName methods
+		TypeName::TypeName(std::string n) : name{ n } {}
+		EvalState& TypeName::eval(EvalState& e) {
+			//e.getTS().getType(name);
+			return e;
+		}
+		std::string TypeName::to_string() { return name; }
+		std::string TypeName::print_string(std::string buf) {
+			return buf + "+- " + node_type + " " + name + "\n";
+		}
+
 		// NewType methods
 		NewType::NewType() : name{}, inherit { "Object" } {}
 		EvalState& NewType::eval(EvalState& e) {
 			auto& ts = e.getTS();
 			auto nType = ts.newType(name, ts.get(inherit));
 
-			//definition->eval(e);
-			e.pushNil();
+			definition->eval(e);
+
+			// associate table to type
 
 			return e;
 		}
@@ -124,7 +136,7 @@ namespace dust {
 			return buf + "+- " + node_type + " " + to_string() + "\n";
 		}
 		void NewType::addChild(std::shared_ptr<ASTNode>& c) {
-			if (std::dynamic_pointer_cast<Debug>(c))
+			if (std::dynamic_pointer_cast<TypeName>(c))
 				(name == "" ? name : inherit) = c->to_string();
 
 			else {
@@ -143,8 +155,13 @@ namespace dust {
 			
 			e.settop(x);
 
-			auto& ts = e.getTS();
-			e.push(ts.isChildType(res.type_id, ts.getId(type)));
+			if (res.type_id == type::Traits<Nil>::id)
+				e.push(type == "Nil");
+
+			else {
+				auto& ts = e.getTS();
+				e.push(ts.isChildType(res.type_id, ts.getId(type)));
+			}
 
 			return e;
 		}
@@ -153,7 +170,7 @@ namespace dust {
 			return buf + "+- " + node_type + " " + to_string() + "\n" + l->print_string(buf + " ");
 		}
 		void TypeCheck::addChild(std::shared_ptr<ASTNode>& c) {
-			if (std::dynamic_pointer_cast<Debug>(c))
+			if (std::dynamic_pointer_cast<TypeName>(c))
 				type = c->to_string();
 
 			else if (l)
@@ -386,7 +403,8 @@ namespace dust {
 		std::string Literal::node_type = "Literal";
 		std::string Operator::node_type = "Operator";
 		std::string VarName::node_type = "Variable";
-		std::string NewType::node_type = "Type";
+		std::string TypeName::node_type = "Type";
+		std::string NewType::node_type = "NewType";
 		std::string TypeCheck::node_type = "TypeCheck";
 		std::string Assign::node_type = "Assignment";
 		std::string BinaryKeyword::node_type = "Boolean";

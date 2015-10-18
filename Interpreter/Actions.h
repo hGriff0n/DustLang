@@ -226,6 +226,7 @@ namespace dust {
 				
 				auto b = std::dynamic_pointer_cast<Block>(ast.at());
 				b->table = true;
+				b->save_scope = true;
 			}
 		};
 
@@ -238,7 +239,7 @@ namespace dust {
 
 		template <> struct action<type_id> {
 			static void apply(input& in, AST& ast, const int _) {
-				ast.push(makeNode<Debug>(in.string()));
+				ast.push(makeNode<TypeName>(in.string()));
 			}
 		};
 

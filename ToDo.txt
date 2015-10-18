@@ -25,76 +25,91 @@ Timeline
 	0 Bugfixes / Improvements
 		Convert Block to use a Control node to stop assembly (instead of a NEW_NODE/empty) ## see VagueToDo.txt
 			Also convert to use Control::iterate in evaluation
-		Consider removing get- and setGlobal
 		Improve the usefulness of the Testing suite by adding a review of the status of all (global) tests that were run
 			Possibly add in sub-test reviews if able
 			Could also replace the last statement of the run_tests
 		Need to adapt Testing to handle non-printable values
 			Could just use "require_type" for these
-		Clean up code, especially Block::eval
-		Consider removing the Storage temp interface
-		Keywords can be recognized as variable names when not a part of any expression that uses it
-			Outside of true, false, and nil
+		Clean up code
+			Block::eval
+			Try to reduce the number of ASTNodes
+		Redo scope lookup so that it is performed by impl::Table, not by EvalState
+			In order to simplify the process of table lookup
+		Nil method resolution still needs work (esp. in callMethod)
+			The current process might catch some functions that shouldn't work on Nil types
+		See VagueToDo.txt
+
+	1 Type Definitions and Table Syntax
+		Determine how basic types will work with regards to inheritance (especially String, etc.)
+		Update tests to cover the new additions (where possible)
+			Don't remove any testing functions though
+
+	2 Table Semantics (need to rework the breakdown chart)
+		Scope as a value
+			Create a RuntimeStorage solution for impl::Table
+			Push/pop scopes on the stack
+		First-class Scopes
+			Be able to assign scopes to variables
+			Have the syntax and semantics for scope access (using [] and .)
+				Be able to assign variables in "tables"
+			Implement basic operator overloads
+		Generalize Scope into Table
+			Add in the ability to use int keys to impl::Table
+				Also have the ability to restrict key types
+			Add in the Bool conversions ([] = false, otherwise true)
+			Implement _nindex and _index metamethods
+		Complete Table type
+			Have the ability to index a Table using values of any type
+			Convert Types to have an impl::Table storage member (can't completely convert yet)
+			Add in some API functions
+			Complete operator overloads
+		Generalize RuntimeStorage and GC
+			Merge the Table RuntimeStorage and the String RuntimeStorage into one class (possibly templated)
+			Modify the GC to be able to handle both classes
+
+	3 Keyword Recognition
+		Update pegtl library
+			Possibly include the GSL as a submodule
+		Get the grammar to recognize all keywords (in correct precedence)
+		Prevent keywords from being interpreted as variable names when not part of an expression that uses it
+			This occurs for all keywords except for true, false, and nil (literals are matched first)
+		Work on the framework for adding keywords to the AST
+			BinaryKeyword is a temporary node to test and/or
+		Possibly clean up EvalState and Grammar
+
+	4 Exception and Error update
+		Update exceptions and errors to better fit the new features
+		Add exception catching and error functions
+		Improve Exception Error Messages
+			Mainly work on Exception constructors
+
+	5 Strict Parser Update
+		Update the parser so that wrong programs will ouput an error (as opposed to interpreting a subset)
+			I may have already done this (although I could make the errors more informative)
+		Possibly start implementing custom Control specializations
 		Standardize code standards
 			Particularly method name case
 			Change TypeSystem::getId to TypeSystem::getID (or get_id)
 		Improve expr_4 grammar to be more accurate
-			ee_tc can't realistically be performed more than once in a row
-		Clean up ASTNodes
-			Try to reduce number
-		Determine behavior of type checking when checking against Nil
-			Currently (nil <- Nil) = false
-		See VagueToDo.txt
+			ee_tc can't realistically be performed more than once in a row (outside of testing for Bool)
+				I could also have the result of evaluation be the left hand side
 
-	1 Type Definitions and Table Syntax
-		Define operations/com resolution on the Table type
-		Possibly add in a node to handle normal Type access (not creation)
-		Determine how basic types will work with regards to inheritance (especially String, etc.)
-
-	2 Table Semantics
-		Convert Types to use impl::Table for storage
-		Allow impl::Table to store "Variables" of any type
-		Have the table parse action set the "table" and "save_scope" flags in Block on completion
-			First see if tables ???
-		Generalize RuntimeStorage and GC so that Tables can be stored
-			Modify Value so that tables can be stored
-		Determine how to interact with tables from an API standpoint
-		Indexable arrays
-		Determine how to access the arrays
-		Assigning values to the arrays
-		_nindex and _index metamethods
-		Arrays -> Tables (any key)
-		Empty Table => false
-
-	3 Keyword Recognition
-		Update pegtl library
-		Get the grammar to recognize various keywords
-		Work on the framework for adding keywords to the AST
-			BinaryKeyword is a temporary addition to test and/or
-		Possibly clean up EvalState and Grammar
-	4 Exception and Error update
-		Update exceptions and errors to better fit the new features
-		Add exception catching and error functions
-		Add throw/catch (or whatever I call it in dust) functionality
-			I won't have the syntax yet though
-		Improve Exception Error Messages
-			Mainly work on Exception constructors
-	5 Strict Parser Update
-		Update the parser so that wrong programs will ouput an error (as opposed to interpreting a subset)
 	6 Function Calling		ie. print("Hello, World!")
+		Be able to store functions as values
+		Convert Types completely to impl::Table for storage concerns
+			Make Types indexable much like tables
 		Basic syntax and semantics (Argument passing, etc.)			## Get functions callable
 		Can assign functions and then call the assigned function	## a = print and a(3)
 			Would this necessitate having _op() syntax work be done???
 		_op() syntax (Metamethods ???)
 		Optional: No parens syntax
-	7 Keyword Framework Update
+
+	7 Grammar Framework Update
 		Potentially change the grammar to follow the basic framework in "lua53_parse.h"
-	8 Scoping Improvement Work
-	9 Control Structures
-	10 Table definition (This can go before scoping)
-	11 Function definition (no lambdas)
-	12 Metamethods (converting syntax into function calls)
-	...
+		Update all documents to ensure that they reflect the current language spec
+		Update the readme to show of recent aditions
+		Determine the next set of features that need to be implemented
+
 
 
 Notes (In case I forget some of my decisions)

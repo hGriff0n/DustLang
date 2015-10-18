@@ -145,7 +145,24 @@ namespace dust {
 				std::string to_string();
 				virtual std::string print_string(std::string buf);
 		};
-		
+
+		/*
+		 * Represents a type
+		 */
+		class TypeName : public ASTNode {
+			private:
+				std::string name;
+
+			public:
+				TypeName(std::string n);
+				static std::string node_type;
+
+				EvalState& eval(EvalState& e);
+
+				std::string to_string();
+				virtual std::string print_string(std::string buf);
+		};
+
 		/*
 		 * Represents an assignment operation
 		 */
