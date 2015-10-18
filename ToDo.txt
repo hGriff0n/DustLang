@@ -37,11 +37,18 @@ Timeline
 			Outside of true, false, and nil
 		Standardize code standards
 			Particularly method name case
+			Change TypeSystem::getId to TypeSystem::getID (or get_id)
+		Improve expr_4 grammar to be more accurate
+			ee_tc can't realistically be performed more than once in a row
+		Clean up ASTNodes
+			Try to reduce number
+		Determine behavior of type checking when checking against Nil
+			Currently (nil <- Nil) = false
 		See VagueToDo.txt
 
 	1 Type Definitions and Table Syntax
-		Add in <- syntax (higher priority than and/or)
 		Define operations/com resolution on the Table type
+		Possibly add in a node to handle normal Type access (not creation)
 		Determine how basic types will work with regards to inheritance (especially String, etc.)
 
 	2 Table Semantics

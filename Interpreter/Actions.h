@@ -249,10 +249,20 @@ namespace dust {
 				
 				auto typ = ast.pop(i++);
 
-				for (; i; ++i)
-					typ->addChild(ast.pop(i));
+				for (; i; ++i) typ->addChild(ast.pop(i));
 
 				ast.push(typ);
+			}
+		};
+
+		template <> struct action<ee_tc> {
+			static void apply(input& in, AST& ast, const int _) {
+				auto tc = makeNode<TypeCheck>();
+
+				tc->addChild(ast.pop());
+				tc->addChild(ast.pop());
+
+				ast.push(tc);
 			}
 		};
 	}

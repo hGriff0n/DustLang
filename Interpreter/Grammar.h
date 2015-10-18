@@ -106,7 +106,8 @@ namespace dust {
 		struct expr_3 : seq<expr_2, star<seps, ee_3>, seps> {};							// {expr_2}( *{op_3} *{expr_2})* *
 
 		struct ee_4 : if_must<op_4, seps, expr_3> {};
-		struct expr_4 : seq<expr_3, star<seps, ee_4>, seps> {};							// {expr_3}( *{op_4} *{expr_3})* *
+		struct ee_tc : if_must<k_inherit, seps, type_id> {};
+		struct expr_4 : seq<expr_3, star<seps, sor<ee_tc, ee_4>>, seps> {};				// {expr_3}( *({<- *{type_id})|({op_4} *{expr_3})* *
 
 		struct ee_5 : seq<pad<k_and, sep>, expr_4> {};
 		struct expr_5 : seq<expr_4, opt<seps, ee_5>, seps> {};							// {expr_4}( *and *{expr_4})? *

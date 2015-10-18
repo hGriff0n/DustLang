@@ -241,8 +241,8 @@ namespace dust {
 		};
 
 		/*
-		* Node for creating new types
-		*/
+		 * Node for creating new types
+		 */
 		class NewType : public ASTNode {
 			private:
 				std::string name, inherit;
@@ -250,6 +250,25 @@ namespace dust {
 
 			public:
 				NewType();
+				static std::string node_type;
+
+				EvalState& eval(EvalState& e);
+				void addChild(std::shared_ptr<ASTNode>& c);
+
+				std::string to_string();
+				virtual std::string print_string(std::string buf);
+		};
+
+		/*
+		 * Node for type checking
+		 */
+		class TypeCheck : public ASTNode {
+			private:
+				std::shared_ptr<ASTNode> l;
+				std::string type;
+
+			public:
+				TypeCheck();
 				static std::string node_type;
 
 				EvalState& eval(EvalState& e);
