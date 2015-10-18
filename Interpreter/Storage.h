@@ -53,21 +53,6 @@ namespace dust {
 				size_t setRef(size_t idx, str_record* s);						// Assign a temporary
 				size_t setRef(size_t idx, std::string s);						// Assign a string
 
-				// TEMPORARIES
-				str_record* tempRef(size_t s);							// Generate a temporary
-				str_record* tempRef(std::string s);
-				str_record* tempRef(str_record* s);
-
-				void setTemp(str_record* t, size_t s);						// Set a temporary
-				void setTemp(str_record* t, std::string s);
-				void setTemp(str_record* t, str_record* s);
-
-				void appTemp(str_record* t, size_t s);						// Append to a temporary
-				void appTemp(str_record* t, std::string s);
-				void appTemp(str_record* t, str_record* s);
-
-				void delTemp(str_record* t);								// Necessary because str_record's destructor is "hidden"
-
 				// REFERENCE COUNTING
 				void incRef(size_t r);
 				void decRef(size_t r);
