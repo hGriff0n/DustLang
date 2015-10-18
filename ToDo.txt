@@ -35,23 +35,13 @@ Timeline
 		Consider removing the Storage temp interface
 		Keywords can be recognized as variable names when not a part of any expression that uses it
 			Outside of true, false, and nil
+		Standardize code standards
+			Particularly method name case
 		See VagueToDo.txt
 
-	IDEA FOR PARSING TABLES
-		Have a "table_inner" rule that matches everything until the closing bracket
-		Then in action<inner_table>, run the Block rule on the matching code
-			How can I run block::match ???
-				Need template arguments that the Action class doesn't have
-				I could possibly define a Control class
-				Try the variation on the until (table_inner_t)
-			Would this trigger the Block action?
-
 	1 Type Definitions and Table Syntax
-		Have the type syntax actually create new types in TypeSystem (with inheritance relationships)
-			Make a NewType node in ast.h
-			Have some interaction with type ids, if only for debugging purposes
-		Possibly add in type and typename functions (preliminary function syntax)
-		Add a Table type and define operations/com resolution in relation to the it
+		Add in <- syntax (higher priority than and/or)
+		Define operations/com resolution on the Table type
 		Determine how basic types will work with regards to inheritance (especially String, etc.)
 
 	2 Table Semantics

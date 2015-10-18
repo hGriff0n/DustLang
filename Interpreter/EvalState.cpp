@@ -179,6 +179,10 @@ namespace dust {
 		//curr_scp = curr_scp->getPar();
 	}
 
+	type::TypeSystem& EvalState::getTS() {
+		return ts;
+	}
+
 
 	void initState(EvalState& e) {
 		initTypeSystem(e.ts);

@@ -145,7 +145,7 @@ namespace dust {
 				std::string to_string();
 				virtual std::string print_string(std::string buf);
 		};
-
+		
 		/*
 		 * Represents an assignment operation
 		 */
@@ -237,6 +237,25 @@ namespace dust {
 				virtual void addChild(std::shared_ptr<ASTNode>& c);
 
 				virtual std::string to_string();
+				virtual std::string print_string(std::string buf);
+		};
+
+		/*
+		* Node for creating new types
+		*/
+		class NewType : public ASTNode {
+			private:
+				std::string name, inherit;
+				std::shared_ptr<Block> definition;
+
+			public:
+				NewType();
+				static std::string node_type;
+
+				EvalState& eval(EvalState& e);
+				void addChild(std::shared_ptr<ASTNode>& c);
+
+				std::string to_string();
 				virtual std::string print_string(std::string buf);
 		};
 

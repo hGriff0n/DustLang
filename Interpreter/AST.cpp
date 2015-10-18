@@ -108,6 +108,34 @@ namespace dust {
 			return buf + "+- " + node_type + " " + name + "\n";
 		}
 
+		// NewType methods
+		NewType::NewType() : name{}, inherit { "Object" } {}
+		EvalState& NewType::eval(EvalState& e) {
+			auto& ts = e.getTS();
+			auto nType = ts.newType(name, ts.get(inherit));
+
+			//definition->eval(e);
+			e.pushNil();
+
+			return e;
+		}
+		std::string NewType::to_string() { return name + " extends " + inherit; }
+		std::string NewType::print_string(std::string buf) {
+			return buf + "+- " + node_type + " " + to_string() + "\n";
+		}
+		void NewType::addChild(std::shared_ptr<ASTNode>& c) {
+			if (std::dynamic_pointer_cast<Debug>(c))
+				(name == "" ? name : inherit) = c->to_string();
+
+			else {
+				definition.swap(std::dynamic_pointer_cast<Block>(c));
+
+				if (!definition)
+					throw error::invalid_ast_construction{ "Attempt to construct NewType node with a non Block node" };
+			}
+		}
+
+
 		// Assign methods
 		Assign::Assign(std::string _op, bool _const, bool _static) : setConst{ _const }, setStatic{ _static }, vars{ nullptr }, vals{ nullptr } {
 			op = _op.size() ? "_op" + _op : _op;
@@ -267,6 +295,7 @@ namespace dust {
 					++n_key;
 				}
 			}
+			//}
 
 			if (save_scope) {
 				e.settop(x);
@@ -330,6 +359,7 @@ namespace dust {
 		std::string Literal::node_type = "Literal";
 		std::string Operator::node_type = "Operator";
 		std::string VarName::node_type = "Variable";
+		std::string NewType::node_type = "Type";
 		std::string Assign::node_type = "Assignment";
 		std::string BinaryKeyword::node_type = "Boolean";
 		std::string Control::node_type = "Control";

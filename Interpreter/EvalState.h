@@ -133,6 +133,9 @@ namespace dust {
 			void endScope();				// Delete current scope (Cleans up memory)
 			void pushScope();				// Store scope in memory and push on the stack (tables, functions, etc.)
 
+			// TypeSystem Interaction
+			type::TypeSystem& getTS();
+
 			// Output
 			template <class Stream>
 			Stream& stream(Stream& s) {

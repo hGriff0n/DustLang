@@ -124,7 +124,8 @@ namespace dust {
 		struct ee_7 : seq<assign, seps, expr_list> {};									// ensure that expr_6 doesn't trigger the expression reduction
 		struct expr_7 : if_then_else<at<assign>, ee_7, expr_6> {};						// {var_list} *{op_5} * {expr_list}
 
-		struct ee_type : seq<k_type, seps, type_id, seps, table, opt<seps, k_inherit, seps, type_id>> {};
+		struct ee_inherit : seq<seps, k_inherit, seps, type_id> {};
+		struct ee_type : seq<k_type, seps, type_id, seps, table, opt<ee_inherit>> {};
 		struct expr_type : sor<ee_type, expr_7> {};										// type *{type_id} *{table}( *<- *{type_id})?
 
 		// Organization Tokens

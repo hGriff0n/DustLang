@@ -230,9 +230,29 @@ namespace dust {
 		};
 
 		// Type Actions
+		template <> struct action<k_type> {
+			static void apply(input& in, AST& ast, const int _) {
+				ast.push(makeNode<NewType>());
+			}
+		};
+
+		template <> struct action<type_id> {
+			static void apply(input& in, AST& ast, const int _) {
+				ast.push(makeNode<Debug>(in.string()));
+			}
+		};
+
 		template <> struct action<ee_type> {
 			static void apply(input& in, AST& ast, const int _) {
+				int i = -1;
+				while (!std::dynamic_pointer_cast<NewType>(ast.at(i))) --i;
+				
+				auto typ = ast.pop(i++);
 
+				for (; i; ++i)
+					typ->addChild(ast.pop(i));
+
+				ast.push(typ);
 			}
 		};
 	}
