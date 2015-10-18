@@ -117,11 +117,7 @@ namespace dust {
 			void get(const std::string& var);
 			void set(bool is_const = false, bool is_typed = false);
 			void get();
-
-			// Might remove these interfaces (no need)
-			void setGlobal(const std::string& name, bool isConst = false, bool isTyped = false);
-			void getGlobal(const std::string& name);
-
+			
 			// Variable flags (setters & getters)
 			void markConst(const std::string& name);
 			void markTyped(const std::string& name, size_t typ);
@@ -132,6 +128,9 @@ namespace dust {
 			void newScope();				// Start a new scope with the current scope as parent
 			void endScope();				// Delete current scope (Cleans up memory)
 			void pushScope();				// Store scope in memory and push on the stack (tables, functions, etc.)
+
+			// TypeSystem Interaction
+			type::TypeSystem& getTS();
 
 			// Output
 			template <class Stream>

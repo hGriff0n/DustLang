@@ -108,6 +108,78 @@ namespace dust {
 			return buf + "+- " + node_type + " " + name + "\n";
 		}
 
+		// TypeName methods
+		TypeName::TypeName(std::string n) : name{ n } {}
+		EvalState& TypeName::eval(EvalState& e) {
+			//e.getTS().getType(name);
+			return e;
+		}
+		std::string TypeName::to_string() { return name; }
+		std::string TypeName::print_string(std::string buf) {
+			return buf + "+- " + node_type + " " + name + "\n";
+		}
+
+		// NewType methods
+		NewType::NewType() : name{}, inherit { "Object" } {}
+		EvalState& NewType::eval(EvalState& e) {
+			auto& ts = e.getTS();
+			auto nType = ts.newType(name, ts.get(inherit));
+
+			definition->eval(e);
+
+			// associate table to type
+
+			return e;
+		}
+		std::string NewType::to_string() { return name + " extends " + inherit; }
+		std::string NewType::print_string(std::string buf) {
+			return buf + "+- " + node_type + " " + to_string() + "\n";
+		}
+		void NewType::addChild(std::shared_ptr<ASTNode>& c) {
+			if (std::dynamic_pointer_cast<TypeName>(c))
+				(name == "" ? name : inherit) = c->to_string();
+
+			else {
+				definition.swap(std::dynamic_pointer_cast<Block>(c));
+
+				if (!definition)
+					throw error::invalid_ast_construction{ "Attempt to construct NewType node with a non Block node" };
+			}
+		}
+
+		// TypeCheck methods
+		TypeCheck::TypeCheck() {}
+		EvalState& TypeCheck::eval(EvalState& e) {
+			auto x = e.size();
+			auto res = l->eval(e).pop();						// Possible issue with multiple returns
+			
+			e.settop(x);
+
+			if (res.type_id == type::Traits<Nil>::id)
+				e.push(type == "Nil");
+
+			else {
+				auto& ts = e.getTS();
+				e.push(ts.isChildType(res.type_id, ts.getId(type)));
+			}
+
+			return e;
+		}
+		std::string TypeCheck::to_string() { return type; }
+		std::string TypeCheck::print_string(std::string buf) {
+			return buf + "+- " + node_type + " " + to_string() + "\n" + l->print_string(buf + " ");
+		}
+		void TypeCheck::addChild(std::shared_ptr<ASTNode>& c) {
+			if (std::dynamic_pointer_cast<TypeName>(c))
+				type = c->to_string();
+
+			else if (l)
+				throw error::invalid_ast_construction{ "Attempt to construct TypeCheck node with more than one expression" };
+
+			else
+				l.swap(c);
+		}
+
 		// Assign methods
 		Assign::Assign(std::string _op, bool _const, bool _static) : setConst{ _const }, setStatic{ _static }, vars{ nullptr }, vals{ nullptr } {
 			op = _op.size() ? "_op" + _op : _op;
@@ -202,24 +274,20 @@ namespace dust {
 			throw error::bad_node_eval{ "Attempt to evaluate a Control node" };
 		}
 		bool Control::iterate(EvalState& e) {
-			bool ret;
-
-			//auto top = e.size();
-
 			switch (type) {
 				case 0:				// for
 				case 1:				// while
-					//expr->eval(e);
-					//next = (bool)e;
+					return (bool)expr->eval(e);
 				case 2:				// do-while
-					//if (!next) break;
+					if (!next)
+						return (bool)expr->eval(e);
 				default:
-					next = !(ret = next);
+					next = !next;
+					return !next;
 			}
+			// Needs a "reset" function
 
-			//e.settop(top);
-
-			return ret;
+			// Settop is handled by Block::eval
 		}
 		void Control::addChild(std::shared_ptr<ASTNode>& c) {
 			if (expr) throw error::invalid_ast_construction{ "Attempt to construct control node from more than two expresions" };
@@ -242,7 +310,7 @@ namespace dust {
 			return expr.size();
 		}
 		EvalState& Block::eval(EvalState& e) {
-			if (expr.empty()) {
+			if (expr.empty() && !table) {
 				if (!excep_if_empty) {
 					e.pushNil();
 					return e;
@@ -254,6 +322,7 @@ namespace dust {
 			size_t x = e.size(), n_key = 1;
 			e.newScope();
 
+			//while (control->iterate(e)) {
 			for (const auto& i : *this) {
 				e.settop(x);							// Pops the results of the last expression (Not executed for the last expression)
 
@@ -270,6 +339,7 @@ namespace dust {
 					++n_key;
 				}
 			}
+			//}
 
 			if (save_scope) {
 				e.settop(x);
@@ -280,10 +350,10 @@ namespace dust {
 			return e;
 		}
 		std::string Block::to_string() {
-			return table ? "[]" : "";
+			return table ? " []" : "";
 		}
 		std::string Block::print_string(std::string buf) {
-			std::string ret = buf + "+- " + node_type + "\n";
+			std::string ret = buf + "+- " + node_type + to_string() + "\n";
 			buf += " ";
 
 			for (auto i : *this)
@@ -333,8 +403,12 @@ namespace dust {
 		std::string Literal::node_type = "Literal";
 		std::string Operator::node_type = "Operator";
 		std::string VarName::node_type = "Variable";
+		std::string TypeName::node_type = "Type";
+		std::string NewType::node_type = "NewType";
+		std::string TypeCheck::node_type = "TypeCheck";
 		std::string Assign::node_type = "Assignment";
 		std::string BinaryKeyword::node_type = "Boolean";
+		std::string Control::node_type = "Control";
 		std::string Block::node_type = "Block";
 		std::string TryCatch::node_type = "Try-Catch";
 	}

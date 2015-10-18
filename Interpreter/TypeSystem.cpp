@@ -108,6 +108,8 @@ namespace dust {
 		}
 
 		size_t TypeSystem::findDef(size_t t, std::string fn) {
+			t = (t == Traits<Nil>::id ? Traits<bool>::id : t);
+
 			while (t != NO_DEF && isDefd(t, fn) == NO_DEF)
 				t = types[t].parent;
 
@@ -119,9 +121,11 @@ namespace dust {
 		}
 
 		size_t TypeSystem::com(size_t l, size_t r, std::string op) {
-			// Try for same type (not strictly needed as ancestor(l, l) = l, however this isn't something that needs to be memoized)
-			if (l == r) return l;
+			if (l == r) return l;																// Avoid memoizing ancestor(l, l) == l
 
+			if (l == Traits<Nil>::id || r == Traits<Nil>::id) return Traits<Nil>::id;			// Handle Nil and Table cases
+			if (l == getId("Table") || r == getId("Table")) return getId("Table");
+			
 			// Try for direct conversion
 			auto idx = key(l, r);
 			if (conv.count(idx) > 0) {							// If there is a defined conversion

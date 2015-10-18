@@ -140,7 +140,7 @@ namespace dust {
 		template <> struct action<ee_4> : ee_actions<Operator> {};
 		template <> struct action<ee_5> : ee_actions<BinaryKeyword> {};
 		template <> struct action<ee_6> : ee_actions<BinaryKeyword> {};
-		template <> struct action<ee_x> : ee_actions<Assign> {};				// ee_x is Assignmnet, which needs and uses Assignment nodes. ee_acctions requires Operator nodes
+		template <> struct action<ee_7> : ee_actions<Assign> {};				// ee_x is Assignmnet, which needs and uses Assignment nodes. ee_acctions requires Operator nodes
 
 		// List Actions
 		template <class type>
@@ -214,33 +214,58 @@ namespace dust {
 		};
 
 		// Creating Tables ???
-		/*/
 		template <> struct action<o_brack> {
 			static void apply(input& in, AST& ast, const int _) {
-				ast.push(makeNode<Table>());
-			}
-		};
-
-		template <> struct action<table_inner> {
-			static void apply(input& in, AST& ast, const int _) {
-				pegtl::parse<block, action>(in, ast, _);
-				Control<must<block>>::template match(in, ast, _);
+				ast.push(makeNode<Debug>("NEW_SCOPE"));
 			}
 		};
 
 		template <> struct action<table> {
 			static void apply(input& in, AST& ast, const int _) {
-				std::shared_ptr<Block> t;
-
-				if (t = std::dynamic_pointer_cast<Block>(ast.at())) {
-					t->save_scope = true;
-					t->table = true;
-
-				} else throw error::missing_node_x{ "Attempt to construct a Table without a Block node" };
+				action<block>::apply(in, ast, _);
+				
+				auto b = std::dynamic_pointer_cast<Block>(ast.at());
+				b->table = true;
+				b->save_scope = true;
 			}
 		};
 
-		//*/
+		// Type Actions
+		template <> struct action<k_type> {
+			static void apply(input& in, AST& ast, const int _) {
+				ast.push(makeNode<NewType>());
+			}
+		};
+
+		template <> struct action<type_id> {
+			static void apply(input& in, AST& ast, const int _) {
+				ast.push(makeNode<TypeName>(in.string()));
+			}
+		};
+
+		template <> struct action<ee_type> {
+			static void apply(input& in, AST& ast, const int _) {
+				int i = -1;
+				while (!std::dynamic_pointer_cast<NewType>(ast.at(i))) --i;
+				
+				auto typ = ast.pop(i++);
+
+				for (; i; ++i) typ->addChild(ast.pop(i));
+
+				ast.push(typ);
+			}
+		};
+
+		template <> struct action<ee_tc> {
+			static void apply(input& in, AST& ast, const int _) {
+				auto tc = makeNode<TypeCheck>();
+
+				tc->addChild(ast.pop());
+				tc->addChild(ast.pop());
+
+				ast.push(tc);
+			}
+		};
 	}
 
 	template <typename Rule>

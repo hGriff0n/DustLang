@@ -147,6 +147,23 @@ namespace dust {
 		};
 
 		/*
+		 * Represents a type
+		 */
+		class TypeName : public ASTNode {
+			private:
+				std::string name;
+
+			public:
+				TypeName(std::string n);
+				static std::string node_type;
+
+				EvalState& eval(EvalState& e);
+
+				std::string to_string();
+				virtual std::string print_string(std::string buf);
+		};
+
+		/*
 		 * Represents an assignment operation
 		 */
 		class Assign : public ASTNode {
@@ -198,7 +215,7 @@ namespace dust {
 		class Control : public ASTNode {
 			private:
 				std::shared_ptr<ASTNode> expr;
-				bool next = true;
+				bool next = true;					// make public ???
 				char type;
 
 			public:
@@ -241,7 +258,45 @@ namespace dust {
 		};
 
 		/*
-		 * Handles expression catching of sub-nodes
+		 * Node for creating new types
+		 */
+		class NewType : public ASTNode {
+			private:
+				std::string name, inherit;
+				std::shared_ptr<Block> definition;
+
+			public:
+				NewType();
+				static std::string node_type;
+
+				EvalState& eval(EvalState& e);
+				void addChild(std::shared_ptr<ASTNode>& c);
+
+				std::string to_string();
+				virtual std::string print_string(std::string buf);
+		};
+
+		/*
+		 * Node for type checking
+		 */
+		class TypeCheck : public ASTNode {
+			private:
+				std::shared_ptr<ASTNode> l;
+				std::string type;
+
+			public:
+				TypeCheck();
+				static std::string node_type;
+
+				EvalState& eval(EvalState& e);
+				void addChild(std::shared_ptr<ASTNode>& c);
+
+				std::string to_string();
+				virtual std::string print_string(std::string buf);
+		};
+
+		/*
+		 * Exception handling for sub-nodes
 		 */
 		class TryCatch : public ASTNode {
 			private:

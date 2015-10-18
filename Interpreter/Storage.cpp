@@ -93,57 +93,6 @@ namespace dust {
 			return idx;
 		}
 
-		str_record* RuntimeStorage::tempRef(std::string s) {
-			auto ret = new str_record{};
-			setTemp(ret, s);
-			return ret;
-		}
-
-		str_record* RuntimeStorage::tempRef(str_record* s) {
-			auto ret = new str_record{};
-			setTemp(ret, s);
-			return ret;
-		}
-
-		str_record* RuntimeStorage::tempRef(size_t s) {
-			auto ret = new str_record{};
-			setTemp(ret, s);
-			return ret;
-		}
-
-		void RuntimeStorage::setTemp(str_record* t, str_record* s) {
-			return setTemp(t, s->s);
-		}
-
-		void RuntimeStorage::setTemp(str_record* t, size_t s) {
-			if (!validIndex(s)) throw std::string{ "Invalid Record Access" };
-			return setTemp(t, store[s]->s);
-		}
-
-		void RuntimeStorage::setTemp(str_record* t, std::string s) {
-			if (!t) throw std::string{ "Nullptr Exception" };
-			t->s = s;
-		}
-
-		void RuntimeStorage::appTemp(str_record* t, size_t s) {
-			if (!validIndex(s)) throw std::string{ "Invalid Record Access" };
-			appTemp(t, store[s]->s);
-		}
-
-		void RuntimeStorage::appTemp(str_record* t, str_record* s) {
-			if (!s) throw std::string{ "Nullptr Exception" };
-			appTemp(t, s->s);
-		}
-
-		void RuntimeStorage::appTemp(str_record* t, std::string s) {
-			if (!t) throw std::string{ "Nullptr Exception" };
-			t->s += s;
-		}
-
-		void RuntimeStorage::delTemp(str_record* t) {
-			delete t;
-		}
-
 		void RuntimeStorage::incRef(size_t r) {
 			if (!validIndex(r)) throw std::string{ "Invalid Record Access" };
 			store[r]->numRefs++;

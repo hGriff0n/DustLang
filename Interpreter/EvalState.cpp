@@ -121,13 +121,6 @@ namespace dust {
 	void EvalState::set(bool is_const, bool is_typed) {
 		set(pop<std::string>(), is_const, is_typed);
 	}
-	void EvalState::setGlobal(const std::string& name, bool is_const, bool is_typed) {
-		setVar(global.getVar(name.substr(forcedLevel(name))), is_const, is_typed);
-	}
-	void EvalState::getGlobal(const std::string& name) {
-		auto var = name.substr(forcedLevel(name));
-		global.has(var) ? push(global.getVal(var)) : pushNil();
-	}
 
 	void EvalState::markConst(const std::string& name) {
 		auto scp = findScope(name, 0);
@@ -173,9 +166,14 @@ namespace dust {
 	}
 
 	void EvalState::pushScope() {
+		endScope();
 		// store scope
 		// push scope id onto stack
 		//curr_scp = curr_scp->getPar();
+	}
+
+	type::TypeSystem& EvalState::getTS() {
+		return ts;
 	}
 
 
@@ -227,6 +225,7 @@ namespace dust {
 		auto Float = ts.getType("Float");
 		auto String = ts.getType("String");
 		auto Bool = ts.getType("Bool");
+		auto Table = ts.getType("Table");
 
 		//! -
 		//^ * / + - % < = > <= != >=
@@ -266,6 +265,14 @@ namespace dust {
 			e.callOp("_ou!");
 			return 1;
 		});
+		/*
+		Object.addOp("_op=", [](EvalState& e) {
+			e.push((bool)e == (bool)e); return 1;
+		});
+		Object.addOp("_ou!", [](EvalState& e) {
+			e.push(!(bool)e); return 1;
+		});
+		*/
 
 		Int.addOp("_op+", [](EvalState& e) { e.push((int)e + (int)e); return 1; });
 		Int.addOp("_op/", [](EvalState& e) { e.push((double)e / (double)e); return 1; });		// Could be moved to Number
@@ -304,9 +311,5 @@ namespace dust {
 
 		Bool.addOp("_op=", [](EvalState& e) { e.push((bool)e == (bool)e); return 1; });
 		Bool.addOp("_ou!", [](EvalState& e) { e.push(!(bool)e);  return 1; });
-
-		Nil.addOp("_op=", [](EvalState& e) { e.push((bool)e == (bool)e); return 1; });
-		Nil.addOp("_op!=", [](EvalState& e) { e.push((bool)e != (bool)e); return 1; });
-		Nil.addOp("_ou!", [](EvalState& e) { e.push(!(bool)e); return 1; });
 	}
 }
