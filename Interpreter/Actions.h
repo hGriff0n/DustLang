@@ -174,12 +174,11 @@ namespace dust {
 		template <> struct action<block> {
 			static void apply(input& in, AST& ast, const int _) {
 				auto b = makeNode<Block>();
-				bool at_marker = false;
 
-				while (!ast.empty() && !(at_marker = ast.at()->to_string() == "NEW_SCOPE"))
-					b->addChild(ast.pop());
+				do
+					b->addChild(ast.at());
+				while (!std::dynamic_pointer_cast<Control>(ast.pop()));
 
-				if (at_marker) ast.pop();
 				ast.push(b);
 			}
 		};
@@ -216,7 +215,7 @@ namespace dust {
 		// Creating Tables ???
 		template <> struct action<o_brack> {
 			static void apply(input& in, AST& ast, const int _) {
-				ast.push(makeNode<Debug>("NEW_SCOPE"));
+				ast.push(makeNode<Control>());
 			}
 		};
 

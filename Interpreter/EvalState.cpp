@@ -11,12 +11,16 @@ namespace dust {
 		swap(idx, -1);								// Restore the stack positions
 	}
 
-	impl::Table* EvalState::findScope(const std::string& var, int off, bool not_null) {
-		if (!curr_scp) return &global;
+	impl::Table* EvalState::findScope(const std::string& var, int lvl, bool not_null) {
+		impl::Table* scp = curr_scp;
 
-		return findScope([&](impl::Table* s) { return s->has(var); }, off, not_null);
+		while (scp && lvl-- && (scp = scp->findDef(var)))
+			if (lvl) scp = scp->getPar();
+
+		return (!scp && not_null) ? &global : scp;
 	}
 
+	/*/
 	impl::Table* EvalState::findScope(impl::Table* scp, const std::function<bool(impl::Table*)>& pred) {
 		while (!pred(scp) && (scp = scp->getPar()));
 		return scp;
@@ -30,6 +34,7 @@ namespace dust {
 
 		return (!scp && not_null) ? &global : scp;			// Wouldn't need this code if the above is taken
 	}
+	//*/
 
 	int EvalState::forcedLevel(const std::string& var) {
 		return var.find_first_not_of('.');

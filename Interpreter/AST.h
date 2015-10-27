@@ -215,21 +215,27 @@ namespace dust {
 		class Control : public ASTNode {
 			private:
 				std::shared_ptr<ASTNode> expr;
-				bool next = true;					// make public ???
-				char type;
+				bool next;
+				int type;
 
 			public:
 				Control();
-				Control(char typ);
+				Control(int typ);
 				static std::string node_type;
+				static enum Type {
+					FOR,
+					WHILE,
+					DO_WHILE
+				};
 				
 				virtual EvalState& eval(EvalState& e);
-				virtual bool iterate(EvalState& e);
 				virtual void addChild(std::shared_ptr<ASTNode>& c);
 
 				virtual std::string to_string();
 				virtual std::string print_string(std::string buf);
 
+				bool iterate(EvalState& e);
+				void reset();
 		};
 
 		/*
@@ -237,7 +243,7 @@ namespace dust {
 		 */
 		class Block : public ASTNode {
 			private:
-				//std::shared_ptr<Control> control;
+				std::shared_ptr<Control> control;
 				std::vector<std::shared_ptr<ASTNode>> expr;
 
 			protected:

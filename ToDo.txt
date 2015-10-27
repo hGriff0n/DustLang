@@ -23,28 +23,19 @@ Opinions on adapting code to use the C++ Common Code Standards and the GSL
 
 Timeline
 	0 Bugfixes / Improvements
-		Convert Block to use a Control node to stop assembly (instead of a NEW_NODE/empty) ## see VagueToDo.txt
-			Also convert to use Control::iterate in evaluation
+		Nil method resolution still needs work (esp. in callMethod)
+			The current process might catch some functions that shouldn't work on Nil types
+		Need to adapt Testing to handle non-printable values
+			Could just use "require_type" for these (or the type checking syntax)
 		Improve the usefulness of the Testing suite by adding a review of the status of all (global) tests that were run
 			Possibly add in sub-test reviews if able
 			Could also replace the last statement of the run_tests
-		Need to adapt Testing to handle non-printable values
-			Could just use "require_type" for these
 		Clean up code
 			Block::eval
 			Try to reduce the number of ASTNodes
-		Redo scope lookup so that it is performed by impl::Table, not by EvalState
-			In order to simplify the process of table lookup
-		Nil method resolution still needs work (esp. in callMethod)
-			The current process might catch some functions that shouldn't work on Nil types
 		See VagueToDo.txt
 
-	1 Type Definitions and Table Syntax
-		Determine how basic types will work with regards to inheritance (especially String, etc.)
-		Update tests to cover the new additions (where possible)
-			Don't remove any testing functions though
-
-	2 Table Semantics (need to rework the breakdown chart)
+	1 Table Semantics (need to rework the breakdown chart)
 		Scope as a value
 			Create a RuntimeStorage solution for impl::Table
 			Push/pop scopes on the stack
@@ -67,7 +58,7 @@ Timeline
 			Merge the Table RuntimeStorage and the String RuntimeStorage into one class (possibly templated)
 			Modify the GC to be able to handle both classes
 
-	3 Keyword Recognition
+	2 Keyword Recognition
 		Update pegtl library
 			Possibly include the GSL as a submodule
 		Get the grammar to recognize all keywords (in correct precedence)
@@ -77,13 +68,13 @@ Timeline
 			BinaryKeyword is a temporary node to test and/or
 		Possibly clean up EvalState and Grammar
 
-	4 Exception and Error update
+	3 Exception and Error update
 		Update exceptions and errors to better fit the new features
 		Add exception catching and error functions
 		Improve Exception Error Messages
 			Mainly work on Exception constructors
 
-	5 Strict Parser Update
+	4 Strict Parser Update
 		Update the parser so that wrong programs will ouput an error (as opposed to interpreting a subset)
 			I may have already done this (although I could make the errors more informative)
 		Possibly start implementing custom Control specializations
@@ -94,7 +85,7 @@ Timeline
 			ee_tc can't realistically be performed more than once in a row (outside of testing for Bool)
 				I could also have the result of evaluation be the left hand side
 
-	6 Function Calling		ie. print("Hello, World!")
+	5 Function Calling		ie. print("Hello, World!")
 		Be able to store functions as values
 		Convert Types completely to impl::Table for storage concerns
 			Make Types indexable much like tables
@@ -104,7 +95,7 @@ Timeline
 		_op() syntax (Metamethods ???)
 		Optional: No parens syntax
 
-	7 Grammar Framework Update
+	6 Grammar Framework Update
 		Potentially change the grammar to follow the basic framework in "lua53_parse.h"
 		Update all documents to ensure that they reflect the current language spec
 		Update the readme to show of recent aditions
