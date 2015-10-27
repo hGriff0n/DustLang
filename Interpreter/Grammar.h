@@ -138,22 +138,22 @@ namespace dust {
 		struct block {
 			using analyze_t = analysis::counted<analysis::rule_type::PLUS, 1, expr, block>;
 
-			template <apply_mode A, template<typename...> class Action, template<typename...> class Control>
+			template <apply_mode A, template<typename...> class Action, template<typename...> class Error>
 			static bool match(input& in, AST& ast, const int exit) {
-				int depth;
-				ast.push(makeNode<Debug>("NEW_SCOPE"));														// Push sentinel node
+				int depth = -1;
+				ast.push(makeNode<Control>());															// Push sentinel node
 
 				// Parse until the scope depth decreases or the file ends
 				while (in.size() > 0 && (depth = block::depth(in)) >= exit) {
 					// If the scope depth increases, parse a new block
 					if (depth > exit)
-						Control<must<block>>::template match<A, Action, Control>(in, ast, exit + 1);		// Increment to depth in order to handle deep scoping (Needs optimizing for empty Blocks)
+						Error<must<block>>::template match<A, Action, Error>(in, ast, exit + 1);		// Increment to depth in order to handle deep scoping (Needs optimizing for empty Blocks)
 
 					// Otherwise, parse an expression
 					else {
 						block::eat(in, depth);
-						Control<must<expr>>::template match<A, Action, Control>(in, ast, exit);
-						//Control<must<sor<expr, seps>>>::template match<A, Action, Control>(in, ast, exit);
+						Error<must<expr>>::template match<A, Action, Error>(in, ast, exit);
+						//Error<must<sor<expr, seps>>>::template match<A, Action, Error>(in, ast, exit);
 					}
 				}
 

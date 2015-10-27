@@ -74,7 +74,6 @@ namespace dust {
 
 				void evaluate(const std::string& code) {
 					pegtl::parse<grammar, action>(parse::trim(code), code, tree, 0);
-					//pegtl::parse<grammar, action>(code, code, tree, 0);
 					tree.pop()->eval(e);
 				}
 

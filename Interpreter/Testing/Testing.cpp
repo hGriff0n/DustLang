@@ -18,11 +18,12 @@ namespace dust {
 				t.require_eval("\"3\"", "3");								// 7
 				t.require_type("\"3\"", "String");							// 8
 
-				t.require_eval("3.3", 3.3);									// 9
-				t.require_type("3.3", "Float");								// 10
+				t.require_error(".3");										// 9
+				t.require_eval("3.3", 3.3);									// 10
+				t.require_type("3.3", "Float");								// 11
 
-				t.require_eval("true", true);								// 11
-				t.require_type("true", "Bool");								// 12
+				t.require_eval("true", true);								// 12
+				t.require_type("true", "Bool");								// 13
 			t.close_sub_test();
 
 			// Operator resolution tests
@@ -101,6 +102,11 @@ namespace dust {
 				t.eval("a: 2");
 				t.require_eval("(a: 3) + 3 * a", 12);						// 8
 				t.require_true("a = 3");									// 9
+			t.close_sub_test();
+
+			t.init_sub_test("Type System");
+				t.require_true("3 <- Int");									// 1
+				t.require_true("3 + 0.3 <- Float");							// 2
 			t.close_sub_test();
 
 			t.init_sub_test("Multiline Parsing");				// Need to escape output

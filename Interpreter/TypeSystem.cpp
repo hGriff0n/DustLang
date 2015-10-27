@@ -123,8 +123,8 @@ namespace dust {
 		size_t TypeSystem::com(size_t l, size_t r, std::string op) {
 			if (l == r) return l;																// Avoid memoizing ancestor(l, l) == l
 
-			if (l == Traits<Nil>::id || r == Traits<Nil>::id) return Traits<Nil>::id;			// Handle Nil and Table cases
-			if (l == getId("Table") || r == getId("Table")) return getId("Table");
+			if (l == getId("Table") || r == getId("Table")) return getId("Table");				// Handle Nil and Table cases
+			if (l == Traits<Nil>::id || r == Traits<Nil>::id) return Traits<Nil>::id;
 			
 			// Try for direct conversion
 			auto idx = key(l, r);

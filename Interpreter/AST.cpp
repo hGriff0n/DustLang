@@ -269,9 +269,25 @@ namespace dust {
 
 		// Control methods
 		Control::Control() : Control{ -1 } {}
-		Control::Control(char typ) : type{ typ } {}
+		Control::Control(int typ) : type{ typ }, next{ true } {}
 		EvalState& Control::eval(EvalState& e) {
-			throw error::bad_node_eval{ "Attempt to evaluate a Control node" };
+			switch (type) {
+				case Type::FOR:
+					break;
+				case Type::WHILE:
+					break;
+				default:
+			}
+
+			return e;
+		}
+		void Control::addChild(std::shared_ptr<ASTNode>& c) {
+			if (expr) throw error::invalid_ast_construction{ "Attempt to construct control node from more than two expresions" };
+			expr = c;
+		}
+		std::string Control::to_string() { return ""; }
+		std::string Control::print_string(std::string buf) {
+			return "";
 		}
 		bool Control::iterate(EvalState& e) {
 			switch (type) {
@@ -289,13 +305,8 @@ namespace dust {
 
 			// Settop is handled by Block::eval
 		}
-		void Control::addChild(std::shared_ptr<ASTNode>& c) {
-			if (expr) throw error::invalid_ast_construction{ "Attempt to construct control node from more than two expresions" };
-			expr = c;
-		}
-		std::string Control::to_string() { return ""; }
-		std::string Control::print_string(std::string buf) {
-			return "";
+		void Control::reset() {
+			next = true;
 		}
 
 		// Block methods
@@ -322,24 +333,28 @@ namespace dust {
 			size_t x = e.size(), n_key = 1;
 			e.newScope();
 
-			//while (control->iterate(e)) {
-			for (const auto& i : *this) {
-				e.settop(x);							// Pops the results of the last expression (Not executed for the last expression)
+			control->eval(e);								// Perform loop setup (if needed)
 
-				try {
-					i->eval(e);							// Dust Exceptions are handled by a surrounding TryCatch node (Block just needs to reset scoping)
+			while (control->iterate(e)) {
+				for (const auto& i : *this) {
+					e.settop(x);							// Pops the results of the last expression (Not executed for the last expression)
 
-				} catch (...) {
-					e.endScope();
-					throw;
-				}
+					try {
+						i->eval(e);							// Dust Exceptions are handled by a surrounding TryCatch node (Block just needs to reset scoping)
 
-				if (table && !std::dynamic_pointer_cast<Assign>(i)) {
-					// perform default assignment
-					++n_key;
+					} catch (...) {
+						e.endScope();
+						throw;
+					}
+
+					if (table && !std::dynamic_pointer_cast<Assign>(i)) {
+						// perform default assignment
+						++n_key;
+					}
 				}
 			}
-			//}
+
+			control->reset();
 
 			if (save_scope) {
 				e.settop(x);
@@ -362,7 +377,11 @@ namespace dust {
 			return ret;
 		}
 		void Block::addChild(std::shared_ptr<ASTNode>& c) {
-			expr.push_back(c);
+			if (std::dynamic_pointer_cast<Control>(c)) {
+				if (control) throw error::invalid_ast_construction{ "Attempt to construct Block with multiple Control nodes" };
+				control.swap(std::dynamic_pointer_cast<Control>(c));
+			} else
+				expr.push_back(c);
 		}
 
 		// TryCatch methods
