@@ -95,8 +95,8 @@ namespace dust {
 			void forceType(int, size_t);
 
 			impl::Table* findScope(const std::string&, int, bool = false);
-			impl::Table* findScope(const std::function<bool(impl::Table*)>&, int, bool = false);
-			impl::Table* findScope(impl::Table*, const std::function<bool(impl::Table*)>&);
+			//impl::Table* findScope(const std::function<bool(impl::Table*)>&, int, bool = false);
+			//impl::Table* findScope(impl::Table*, const std::function<bool(impl::Table*)>&);
 
 			int forcedLevel(const std::string&);
 			void setVar(impl::Variable&, bool, bool);

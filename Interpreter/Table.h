@@ -27,11 +27,11 @@ namespace dust {
 				Table(Table* p);
 
 				Variable& getVar(const key_type& key);
-				void associate(const key_type& key, Variable val);
 				bool has(const key_type& key);
 				Value getVal(const key_type& key);
 
 				Table* getPar();
+				Table* findDef(const key_type& key);
 		};
 
 		// class Scope : public Table;									// All internal operations work on Scope. API calls and storage use Table?

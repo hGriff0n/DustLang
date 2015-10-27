@@ -5,11 +5,7 @@ namespace dust {
 
 		Table::Table() : parent{ nullptr } {}
 		Table::Table(Table* p) : parent{ p } {}
-
-		void Table::associate(const key_type& key, impl::Variable val) {
-			vars[key] = val;
-		}
-
+		
 		bool Table::has(const key_type& key) {
 			return vars.count(key);
 		}
@@ -24,6 +20,14 @@ namespace dust {
 
 		Table* Table::getPar() {
 			return parent;
+		}
+
+		Table* Table::findDef(const key_type& key) {
+			Table* search = this;
+
+			while (search && !search->has(key)) search = search->parent;
+
+			return search;
 		}
 	}
 }
