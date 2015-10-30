@@ -20,7 +20,7 @@ namespace dust {
 					return v.val.i;
 
 				else if (v.type_id == Traits<std::string>::id)
-					return std::stoi(gc.deref(v.val.i));
+					return std::stoi(gc.getStrings().deref(v.val.i));
 			} catch (...) {}
 
 			throw error::conversion_error{ "Not convertible to Int" };
@@ -35,7 +35,7 @@ namespace dust {
 					return v.val.i;
 
 				else if (v.type_id == Traits<std::string>::id) {
-					return std::stod(gc.deref(v.val.i));
+					return std::stod(gc.getStrings().deref(v.val.i));
 				}
 			} catch (...) {}
 
@@ -44,7 +44,7 @@ namespace dust {
 
 		template<> std::string Traits<std::string>::get(const impl::Value& v, impl::GC& gc) {
 			if (v.type_id == Traits<std::string>::id)
-				return gc.deref(v.val.i);
+				return gc.getStrings().deref(v.val.i);
 
 			else if (v.type_id == Traits<bool>::id)
 				return v.val.i ? "true" : "false";
@@ -68,6 +68,12 @@ namespace dust {
 			return true;
 		}
 
+		//*/
+		template<> Table Traits<Table>::get(const impl::Value& v, impl::GC& gc) {
+			if (v.type_id == Traits<Table>::id)
+				return gc.getTables().deref(v.val.i);
+		}
+		//*/
 	}
 
 	namespace test {

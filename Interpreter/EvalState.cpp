@@ -203,6 +203,7 @@ namespace dust {
 		type::Traits<double>::id = Float;
 		type::Traits<std::string>::id = String;
 		type::Traits<bool>::id = Bool;
+		type::Traits<dust::Table>::id = Table;
 	}
 
 	void initConversions(type::TypeSystem& ts) {
@@ -220,7 +221,6 @@ namespace dust {
 		String.addOp("Int", [](EvalState& e) { e.push((int)e); return 1; });
 		String.addOp("Float", [](EvalState& e) { e.push((float)e); return 1; });
 
-		//Nil.addOp("Bool", [](EvalState& e) { e.pop<Nil>(); e.push(false); return 1; });
 	}
 
 	void initOperations(type::TypeSystem& ts) {
@@ -316,5 +316,7 @@ namespace dust {
 
 		Bool.addOp("_op=", [](EvalState& e) { e.push((bool)e == (bool)e); return 1; });
 		Bool.addOp("_ou!", [](EvalState& e) { e.push(!(bool)e);  return 1; });
+
+		//Table.addOp("_op+", [](EvalState& e) { return 0; });
 	}
 }

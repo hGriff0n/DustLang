@@ -25,6 +25,8 @@ Timeline
 	0 Bugfixes / Improvements
 		Nil method resolution still needs work (esp. in callMethod)
 			The current process might catch some functions that shouldn't work on Nil types
+		RuntimeStorage Exceptions
+			RuntimeStorage still uses std::string for some throws
 		Need to adapt Testing to handle non-printable values
 			Could just use "require_type" for these (or the type checking syntax)
 		Improve the usefulness of the Testing suite by adding a review of the status of all (global) tests that were run
@@ -33,11 +35,13 @@ Timeline
 		Clean up code
 			Block::eval
 			Try to reduce the number of ASTNodes
+		Improve the implementation of GC
+		Consider converting impl::Table* to typedef (dust::Table)
 		See VagueToDo.txt
 
 	1 Table Semantics (need to rework the breakdown chart)
 		Scope as a value
-			Create a RuntimeStorage solution for impl::Table
+			Add in GC methods and necessary calls to ASTNode::eval methods
 			Push/pop scopes on the stack
 		First-class Scopes
 			Be able to assign scopes to variables
@@ -67,6 +71,7 @@ Timeline
 		Work on the framework for adding keywords to the AST
 			BinaryKeyword is a temporary node to test and/or
 		Possibly clean up EvalState and Grammar
+		Update the ReadME to account for the recent additions
 
 	3 Exception and Error update
 		Update exceptions and errors to better fit the new features

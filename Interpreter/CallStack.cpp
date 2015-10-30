@@ -7,11 +7,11 @@ namespace dust {
 		CallStack::CallStack(impl::GC& g) : gc{ g } {}
 
 		void CallStack::try_incRef(impl::Value& val) {
-			if (val.type_id == type::Traits<std::string>::id) gc.incRef(val.val.i);
+			if (val.type_id == type::Traits<std::string>::id) gc.getStrings().incRef(val.val.i);
 		}
 
 		void CallStack::try_decRef(impl::Value& val) {
-			if (val.type_id == type::Traits<std::string>::id) gc.decRef(val.val.i);
+			if (val.type_id == type::Traits<std::string>::id) gc.getStrings().decRef(val.val.i);
 		}
 
 		void CallStack::push(const char* val) {

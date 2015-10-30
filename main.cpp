@@ -5,6 +5,8 @@
 #include <iostream>
 #include <pegtl/analyze.hh>
 
+#include "Interpreter\DualGC.h"
+
 #define p(x) std::cout << (x)
 #define ps(x) p(x) << " :: "
 #define pl(x) p(x) << "\n"
@@ -32,12 +34,6 @@
 
 using namespace dust;
 
-// Assign a Value
-template <typename T>
-void assign_value(impl::Value&, T, impl::GC&);
-void assign_value(impl::Value&, impl::Value&, impl::GC&);
-
-
 template <class ostream>
 void print(ostream& s, std::shared_ptr<parse::ASTNode>& ast) {
 	(s << ast->print_string("|")).flush();
@@ -58,7 +54,6 @@ istream& getmultiline(istream& in, std::string& s) {
 
 	return in;
 }
-
 
 int main(int argc, const char* argv[]) {
 	std::cout << "Analyzing `dust::grammar`.....\n";
@@ -100,4 +95,6 @@ int main(int argc, const char* argv[]) {
 		}
 		std::cout << "\n> ";
 	}
+
+	return 0;
 }
