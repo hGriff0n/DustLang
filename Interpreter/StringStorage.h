@@ -1,10 +1,7 @@
 #pragma once
 
-#include <vector>
-#include <unordered_map>
+#include "RuntimeStorage.h"
 #include <string>
-
-auto pop(std::vector<size_t>&);
 
 namespace dust {
 	namespace impl {
@@ -25,47 +22,39 @@ namespace dust {
 		/*
 		 * Stores and controls access to str_record (and other allocable resources)
 		 */
-		class RuntimeStorage {
+		class StringStorage : public RuntimeStorage {
 			private:
 			protected:
 				std::vector<str_record*> store;
 				std::unordered_map<std::string, size_t> registry;
-				std::vector<size_t> open;
-
-				size_t lastIndex();
-				void mark_free(size_t);
-				void try_mark_free(size_t);
 
 				bool isCollectableResource(size_t);
-				bool validIndex(size_t);
 
+				void markFree(size_t);
+				bool validIndex(size_t);
 				size_t nxt_record(std::string);
 
 			public:
-				RuntimeStorage();
+				StringStorage();
 
 				// INITIALIZATION/MODIFICATION
-				//size_t loadRef(size_t);								// New reference
+				//size_t loadRef(size_t);											// New reference
 				size_t loadRef(std::string s);
-				//size_t loadRef(str_record*);
 
-				size_t setRef(size_t idx, size_t s);							// Assign a ref
-				size_t setRef(size_t idx, str_record* s);						// Assign a temporary
-				size_t setRef(size_t idx, std::string s);						// Assign a string
+				size_t setRef(size_t ref, size_t s);							// Assign a ref
+				size_t setRef(size_t ref, std::string s);						// Assign a string
 
 				// REFERENCE COUNTING
-				void incRef(size_t r);
-				void decRef(size_t r);
+				void incRef(size_t ref);
+				void decRef(size_t ref);
 
 				// EXTRACTION
-				std::string deref(size_t idx);
-				std::string deref(str_record* s);
+				std::string deref(size_t ref);
 
 				// Debug functions
-				int num_records();
+				size_t size();
+				int num_refs(size_t ref);
 				int num_refs(std::string s);
-				int collected();
-				void printAll();
 		};
 
 	}
