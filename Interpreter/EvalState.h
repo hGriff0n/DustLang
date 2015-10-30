@@ -147,6 +147,9 @@ namespace dust {
 				else if (is<Nil>())
 					return s << (pop(), "nil");
 
+				else if (is<Table>())
+					return s << "Table #" << (pop().val.i);
+
 				return s << pop<std::string>();
 			}
 

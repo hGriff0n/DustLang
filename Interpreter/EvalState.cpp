@@ -171,10 +171,13 @@ namespace dust {
 	}
 
 	void EvalState::pushScope() {
-		endScope();
+		Table sav = curr_scp;
+		curr_scp = sav->getPar();
+
+		push(sav);
+
 		// store scope
 		// push scope id onto stack
-		//curr_scp = curr_scp->getPar();
 	}
 
 	type::TypeSystem& EvalState::getTS() {
