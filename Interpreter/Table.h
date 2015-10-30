@@ -37,4 +37,6 @@ namespace dust {
 		// class Scope : public Table;									// All internal operations work on Scope. API calls and storage use Table?
 
 	}
+
+	typedef impl::Table* Table;
 }

@@ -222,7 +222,7 @@ namespace dust {
 				Control();
 				Control(int typ);
 				static std::string node_type;
-				static enum Type {
+				enum Type {
 					FOR,
 					WHILE,
 					DO_WHILE

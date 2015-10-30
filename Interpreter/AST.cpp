@@ -277,6 +277,7 @@ namespace dust {
 				case Type::WHILE:
 					break;
 				default:
+					break;										// Removing this line causes C2059: syntax error: '}'
 			}
 
 			return e;
