@@ -56,6 +56,29 @@ namespace dust {
 			}
 		};
 
+		template <> struct action<var_lookup> {
+			static void apply(input& in, AST& ast, const int _) {
+				ast.push(makeNode<Debug>(in.string()));
+			}
+		};
+
+		template <> struct action<var_name> {
+			static void apply(input& in, AST& ast, const int _) {
+				size_t siz = ast.size() - 1;
+
+				while (!std::dynamic_pointer_cast<Debug>(ast.at(siz)))
+					--siz;
+
+				std::shared_ptr<VarName> ref = std::dynamic_pointer_cast<VarName>(ast.pop(siz + 1));
+				ref->addLevel(ast.pop(siz)->to_string());
+
+				while (siz != ast.size())
+					ref->addChild(ast.pop(siz));
+				
+				ast.push(std::dynamic_pointer_cast<ASTNode>(ref));
+			}
+		};
+
 		// Keyword Actions
 		template <> struct action<k_and> {
 			static void apply(const input& in, AST& ast, const int _) {
@@ -169,8 +192,7 @@ namespace dust {
 		template <> struct action<var_list> : list_actions<VarName> {};
 		template <> struct action<expr_list> : list_actions<ASTNode> {};
 
-		// Block and Scoping Actions
-			// A block is constructed "after" it's nodes
+		// Block/Table/Scoping Actions
 		template <> struct action<block> {
 			static void apply(input& in, AST& ast, const int _) {
 				auto b = makeNode<Block>();
@@ -193,26 +215,6 @@ namespace dust {
 			}
 		};
 
-		// Other Actions
-		template <> struct action<o_paren> {
-			static void apply(input& in, AST& ast, const int _) {
-				ast.push(makeNode<Debug>("("));
-			}
-		};
-
-		template <> struct action<c_paren> {
-			static void apply(input& in, AST& ast, const int _) {
-				ast.swap(); ast.pop();			// Might use some testing (empty parens)
-			}
-		};
-
-		template <> struct action<comma> {
-			static void apply(input& in, AST& ast, const int _) {
-				ast.push(makeNode<Debug>(in.string()));
-			}
-		};
-
-		// Creating Tables ???
 		template <> struct action<o_brack> {
 			static void apply(input& in, AST& ast, const int _) {
 				ast.push(makeNode<Control>());
@@ -265,6 +267,26 @@ namespace dust {
 				ast.push(tc);
 			}
 		};
+
+		// Other Actions (I forget what they're called)
+		template <> struct action<o_paren> {
+			static void apply(input& in, AST& ast, const int _) {
+				ast.push(makeNode<Debug>("("));
+			}
+		};
+
+		template <> struct action<c_paren> {
+			static void apply(input& in, AST& ast, const int _) {
+				ast.swap(); ast.pop();			// Might use some testing (empty parens)
+			}
+		};
+
+		template <> struct action<comma> {
+			static void apply(input& in, AST& ast, const int _) {
+				ast.push(makeNode<Debug>(in.string()));
+			}
+		};
+
 	}
 
 	template <typename Rule>

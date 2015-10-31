@@ -135,15 +135,20 @@ namespace dust {
 		class VarName : public ASTNode {
 			private:
 				std::string name;
+				std::vector<std::shared_ptr<VarName>> sub_fields;
 
 			public:
 				VarName(std::string var);
 				static std::string node_type;
 
 				EvalState& eval(EvalState& e);
+				void addChild(std::shared_ptr<ASTNode>& c);
 
 				std::string to_string();
 				virtual std::string print_string(std::string buf);
+
+				void addLevel(const std::string& dots);
+				EvalState& set(EvalState& e, bool is_const, bool is_static);
 		};
 
 		/*

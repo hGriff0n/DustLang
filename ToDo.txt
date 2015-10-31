@@ -40,20 +40,17 @@ Timeline
 		See VagueToDo.txt
 
 	1 Table Semantics (need to rework the breakdown chart)
-		Scope as a value
-			Add in GC methods and necessary calls to ASTNode::eval methods
-			Push/pop scopes on the stack
 		First-class Scopes
-			Be able to assign scopes to variables
-			Have the syntax and semantics for scope access (using [] and .)
-				Be able to assign variables in "tables"
+			Enable '[]' syntax for accessing tables with variables and string literals
 			Implement basic operator overloads
+				Or at least determine how to interact with tables
 		Generalize Scope into Table
 			Add in the ability to use int keys to impl::Table
 				Also have the ability to restrict key types
 			Add in the Bool conversions ([] = false, otherwise true)
 			Implement _nindex and _index metamethods
 		Complete Table type
+			Determine whether tables are references or copy-on-write
 			Have the ability to index a Table using values of any type
 			Convert Types to have an impl::Table storage member (can't completely convert yet)
 			Add in some API functions

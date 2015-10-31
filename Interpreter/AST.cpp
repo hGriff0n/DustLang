@@ -100,12 +100,40 @@ namespace dust {
 		// VarName methods
 		VarName::VarName(std::string var) : name{ var } {}
 		EvalState& VarName::eval(EvalState& e) {
-			e.get(name);
+			e.getGlobal(name);
+
+			for (auto k : sub_fields)
+				e.get(k->to_string());
+
 			return e;
+		}
+		void VarName::addChild(std::shared_ptr<ASTNode>& c) {
+			if (!std::dynamic_pointer_cast<VarName>(c))
+				throw error::invalid_ast_construction{ "Attempt to construct chained VarName node with a non-VarName node" };
+
+			sub_fields.emplace_back(std::dynamic_pointer_cast<VarName>(c));
 		}
 		std::string VarName::to_string() { return name; }
 		std::string VarName::print_string(std::string buf) {
 			return buf + "+- " + node_type + " " + name + "\n";
+		}
+		void VarName::addLevel(const std::string& dots) {
+			name = dots + name;
+		}
+		EvalState& VarName::set(EvalState& e, bool is_const, bool is_static) {
+			if (sub_fields.empty()) 
+				e.setGlobal(name, is_const, is_static);
+
+			else {
+				e.getGlobal(name);
+
+				for (int i = 0; i != sub_fields.size() - 1; ++i)
+					e.get(sub_fields[i]->to_string());
+
+				e.set(sub_fields.back()->to_string());
+			}
+
+			return e;
 		}
 
 		// TypeName methods
@@ -213,12 +241,13 @@ namespace dust {
 			//auto last_var = r_var;
 			while (r_var != l_var) {
 				if (op.size()) (*r_var)->eval(e).callOp(op);
-				e.set((*r_var++)->to_string(), setConst, setStatic);
+				
+				(*r_var++)->set(e, setConst, setStatic);
+				//e.setGlobal((*r_var++)->to_string(), setConst, setStatic);
 			}
 
 			//return last_var->eval(e);
 			return (*vars->rbegin())->eval(e);
-
 		}
 		std::string Assign::to_string() { return op; }
 		std::string Assign::print_string(std::string buf) {

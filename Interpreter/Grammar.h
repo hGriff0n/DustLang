@@ -48,7 +48,9 @@ namespace dust {
 		// Identifier Tokens
 		struct id_end : identifier_other {};
 		struct type_id : seq<range<'A', 'Z'>, star<id_end>> {};							// [A-Z]{id_end}*
-		struct var_id : seq<star<one<'.'>>, range<'a', 'z'>, star<id_end>> {};			// \.*[a-z]{id_end}*
+		struct var_id : seq<range<'a', 'z'>, star<id_end>> {};							// [a-z]{id_end}*
+		struct var_lookup : seq<star<one<'.'>>, at<var_id>> {};
+		struct var_name : seq<var_lookup, var_id, star<one<'.'>, var_id>> {};			// \.*{var_id}(\.{var_id})*			# only handles dot syntax
 
 
 		// Keyword Tokens
@@ -94,7 +96,7 @@ namespace dust {
 
 
 		// Expression Tokens
-		struct expr_0 : sor<literals, var_id, unary, parens> {};						// {number}|{var_id}|{unary}|{parens}
+		struct expr_0 : sor<literals, var_name, unary, parens> {};						// {number}|{var_name}|{unary}|{parens}
 
 		struct ee_1 : if_must<op_1, seps, expr_0> {};									// Structures the parsing to allow the ast to be constructed left->right
 		struct expr_1 : seq<expr_0, star<seps, ee_1>, seps> {};							// {expr_0}( *{op_1} *{expr_0})* *
@@ -118,7 +120,7 @@ namespace dust {
 
 		// Multiple Assignment
 		// expr_x is going to be a fairly high level expression
-		struct var_list : s_list<var_id> {};											// AST and lookahead? (seq<var_id, seps, sor<one<','>, op_5>>)  // this could technically match an expression list
+		struct var_list : s_list<var_name> {};											// AST and lookahead? (seq<var_name, seps, sor<one<','>, op_5>>)  // this could technically match an expression list
 		struct expr_list : s_list<expr_x> {};											// {expr_5} *, *
 
 		struct assign : seq<var_list, seps, op_x> {};									// assignments are right associative

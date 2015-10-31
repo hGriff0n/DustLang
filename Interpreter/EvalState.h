@@ -119,10 +119,15 @@ namespace dust {
 			//EvalState& eval(std::shared_ptr<parse::ASTNode>&);
 
 			// Set/Get Variables
-			void set(const std::string& name, bool is_const = false, bool is_typed = false);
-			void get(const std::string& var);
-			void set(bool is_const = false, bool is_typed = false);
+			void setGlobal(const std::string& name, bool is_const = false, bool is_typed = false);
+			void getGlobal(const std::string& var);
+			void setGlobal(bool is_const = false, bool is_typed = false);
+			void getGlobal();
+
 			void get();
+			void get(const std::string& var);
+			void set();
+			void set(const std::string& name);
 			
 			// Variable flags (setters & getters)
 			void markConst(const std::string& name);

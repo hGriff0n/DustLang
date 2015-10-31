@@ -1,6 +1,8 @@
 #include "EvalState.h"
 #include "Exceptions\dust.h"
 
+#include <iostream>
+
 namespace dust {
 
 	void EvalState::forceType(int idx, size_t type) {
@@ -19,22 +21,6 @@ namespace dust {
 
 		return (!scp && not_null) ? &global : scp;
 	}
-
-	/*/
-	impl::Table* EvalState::findScope(impl::Table* scp, const std::function<bool(impl::Table*)>& pred) {
-		while (!pred(scp) && (scp = scp->getPar()));
-		return scp;
-	}
-	
-	impl::Table* EvalState::findScope(const std::function<bool(impl::Table*)>& pred, int lvl, bool not_null) {
-		impl::Table* scp = curr_scp;
-
-		while (scp && lvl-- && (scp = findScope(scp, pred)))
-			if (lvl) scp = scp->getPar();
-
-		return (!scp && not_null) ? &global : scp;			// Wouldn't need this code if the above is taken
-	}
-	//*/
 
 	int EvalState::forcedLevel(const std::string& var) {
 		return var.find_first_not_of('.');
@@ -106,25 +92,53 @@ namespace dust {
 	}
 	
 	// Assign the top value on the stack to the given variable with the given flags
-	void EvalState::set(const std::string& name, bool is_const, bool is_typed) {
+	void EvalState::setGlobal(const std::string& name, bool is_const, bool is_typed) {
 		int lvl = forcedLevel(name);
-		setVar(findScope(name.substr(lvl), lvl, true)->getVar(name), is_const, is_typed);
+		std::string var = name.substr(lvl);
+
+		push(findScope(var, lvl, true));
+		set(var);
 	}
 
 	// Push the variable onto the stack (nil if it doesn't exist)
-	void EvalState::get(const std::string& name) {
+	void EvalState::getGlobal(const std::string& name) {
 		int lvl = forcedLevel(name);						// Strip leveling from the string
 		std::string var = name.substr(lvl);
 
 		auto scp = findScope(var, lvl + 1, lvl);
-		scp ? push(scp->getVal(var)) : pushNil();
+		scp ? push(scp) : pushNil();
+		get(var);
 	}
 
+	void EvalState::getGlobal() {
+		getGlobal(pop<std::string>());
+	}
+
+	void EvalState::setGlobal(bool is_const, bool is_typed) {
+		setGlobal(pop<std::string>(), is_const, is_typed);
+	}
+
+	// Workspace
 	void EvalState::get() {
 		get(pop<std::string>());
 	}
-	void EvalState::set(bool is_const, bool is_typed) {
-		set(pop<std::string>(), is_const, is_typed);
+
+	void EvalState::get(const std::string& var) {
+		if (is<Nil>()) return;
+		if (!is<Table>()) return pop(), pushNil();
+
+		Table t = pop<Table>();
+		t->has(var) ? push(t->getVal(var)) : pushNil();
+	}
+
+	void EvalState::set() {
+		set(pop<std::string>());
+	}
+
+	void EvalState::set(const std::string& var) {
+		if (!is<Table>()) throw error::dust_error{ "Attempt to initialize a non-stored variable" };
+
+		setVar(pop<Table>()->getVar(var), false, false);
 	}
 
 	void EvalState::markConst(const std::string& name) {
@@ -175,9 +189,6 @@ namespace dust {
 		curr_scp = sav->getPar();
 
 		push(sav);
-
-		// store scope
-		// push scope id onto stack
 	}
 
 	type::TypeSystem& EvalState::getTS() {
