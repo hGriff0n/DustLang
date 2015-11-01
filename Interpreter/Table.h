@@ -20,6 +20,7 @@ namespace dust {
 				storage_type vars;										// how to implement this though (in regards to tables)
 				// std::map<size_t, std::map<Value, Variable>>
 				// std::map<Value, Variable>							Simplest to implement, possible conflicts
+				size_t next_arr = 1;
 
 			protected:
 			public:
@@ -30,7 +31,11 @@ namespace dust {
 				bool has(const key_type& key);
 				Value getVal(const key_type& key);
 
+				Variable& getNext();
 				size_t size();
+
+				storage_type::iterator begin();
+				storage_type::iterator end();
 
 				Table* getPar();
 				Table* findDef(const key_type& key);

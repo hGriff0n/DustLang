@@ -360,9 +360,9 @@ namespace dust {
 				throw error::bad_node_eval{ "Attempt to evaluate an empty block" };
 			}
 
-			size_t x = e.size(), n_key = 1;
-			e.newScope();
+			size_t x = e.size();
 
+			e.newScope();
 			control->eval(e);								// Perform loop setup (if needed)
 
 			while (control->iterate(e)) {
@@ -378,8 +378,7 @@ namespace dust {
 					}
 
 					if (table && !std::dynamic_pointer_cast<Assign>(i)) {
-						// perform default assignment
-						++n_key;
+						//Table::getNext
 					}
 				}
 			}

@@ -22,6 +22,10 @@ namespace dust {
 			return vars.size();
 		}
 
+		Variable& Table::getNext() {
+			return vars[std::to_string(next_arr++)];
+		}
+
 		Table* Table::getPar() {
 			return parent;
 		}
@@ -33,5 +37,14 @@ namespace dust {
 
 			return search;
 		}
+
+		Table::storage_type::iterator Table::begin() {
+			return vars.begin();
+		}
+
+		Table::storage_type::iterator Table::end() {
+			return vars.end();
+		}
+
 	}
 }

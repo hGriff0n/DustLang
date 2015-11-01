@@ -55,6 +55,18 @@ namespace dust {
 			else if (v.type_id == Traits<double>::id)
 				return std::to_string(v.val.d);
 
+			else if (v.type_id == Traits<Table>::id) {
+				std::string t = "[";
+				bool notFirst = false;
+
+				for (auto pair : *(gc.getTables().deref(v.val.i))) {
+					t += ((notFirst ? ", ": " ") + pair.first + ": " + Traits<std::string>::get(pair.second.val, gc));
+					notFirst = true;
+				}
+
+				return t + " ]";
+			}
+
 			throw error::conversion_error{ "Not convertible to String" };
 		}
 
@@ -157,9 +169,6 @@ namespace dust {
 
 				else if (is<Nil>())
 					return s << (pop(), "nil");
-
-				else if (is<Table>())
-					return s << "Table #" << (pop().val.i);
 
 				return s << pop<std::string>();
 			}
