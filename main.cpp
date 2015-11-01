@@ -69,8 +69,6 @@ int main(int argc, const char* argv[]) {
 
 	std::cout << "> ";
 
-	// a: [ b : 3 ] => Table ## That table has 1 member, b = 3
-	// a.b => Nil ???
 	while (getmultiline(std::cin, input) && input != "exit") {
 		if (input == "gc") {
 

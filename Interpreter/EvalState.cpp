@@ -1,8 +1,6 @@
 #include "EvalState.h"
 #include "Exceptions\dust.h"
 
-#include <iostream>
-
 namespace dust {
 
 	void EvalState::forceType(int idx, size_t type) {

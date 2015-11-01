@@ -18,6 +18,10 @@ namespace dust {
 			return getVar(key).val;
 		}
 
+		size_t Table::size() {
+			return vars.size();
+		}
+
 		Table* Table::getPar() {
 			return parent;
 		}

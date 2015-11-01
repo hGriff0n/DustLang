@@ -30,6 +30,8 @@ namespace dust {
 				bool has(const key_type& key);
 				Value getVal(const key_type& key);
 
+				size_t size();
+
 				Table* getPar();
 				Table* findDef(const key_type& key);
 		};

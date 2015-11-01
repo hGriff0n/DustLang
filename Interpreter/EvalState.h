@@ -65,15 +65,21 @@ namespace dust {
 			else if (v.type_id == Traits<Nil>::id)
 				return false;
 
+			else if (v.type_id == Traits<Table>::id) {
+				return gc.getTables().deref(v.val.i)->size() != 0;
+			}
+
 			return true;
 		}
 
-		//*/
 		template<> Table Traits<Table>::get(const impl::Value& v, impl::GC& gc) {
 			if (v.type_id == Traits<Table>::id)
 				return gc.getTables().deref(v.val.i);
+
+			/*
+			else
+			*/
 		}
-		//*/
 	}
 
 	namespace test {

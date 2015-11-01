@@ -36,35 +36,40 @@ Timeline
 			Block::eval
 			Try to reduce the number of ASTNodes
 		Improve the implementation of GC
-		Consider converting impl::Table* to typedef (dust::Table)
+			Possibly convert RuntimeStorage to be templated
 		See VagueToDo.txt
 
 	1 Table Semantics (need to rework the breakdown chart)
 		First-class Scopes
-			Enable '[]' syntax for accessing tables with variables and string literals
 			Implement basic operator overloads
-				Or at least determine how to interact with tables
+				com(Table, X, X) = Table
+				Actual interaction can delay until the next step
 		Generalize Scope into Table
-			Add in the ability to use int keys to impl::Table
-				Also have the ability to restrict key types
-			Add in the Bool conversions ([] = false, otherwise true)
-			Implement _nindex and _index metamethods
+			Generalize Table to be able to use keys of any types (at least allow string/int)
+				Modify '.' syntax for string/int differentiation
+				Add in the capability (internally) to restrict key types (?)
+			Enable '[]' syntax for accessing tables with variables and literals
+				Have to ensure that Table can handle keys of (any) types
+				I'll have to completely rewrite the grammar and how get/set are handled
+			Implement some table operators
+			Implement _nindex and _index metamethods (internally)
+				Possibly start to add in evaluation hooks
 		Complete Table type
 			Determine whether tables are references or copy-on-write
-			Have the ability to index a Table using values of any type
-			Convert Types to have an impl::Table storage member (can't completely convert yet)
+				Current semantics is references
+			Convert Types to have an impl::Table storage member
+				Can't completely convert yet (functions aren't implemented)
 			Add in some API functions
-			Complete operator overloads
-		Generalize RuntimeStorage and GC
-			Merge the Table RuntimeStorage and the String RuntimeStorage into one class (possibly templated)
-			Modify the GC to be able to handle both classes
+				Possibly be able to index non-table values (to access type members)
+			Complete operator overload implementations
 
 	2 Keyword Recognition
 		Update pegtl library
 			Possibly include the GSL as a submodule
+			Look for more libraries
 		Get the grammar to recognize all keywords (in correct precedence)
-		Prevent keywords from being interpreted as variable names when not part of an expression that uses it
-			This occurs for all keywords except for true, false, and nil (literals are matched first)
+			Prevent keywords from being recognized as variables in certain situations
+				This doesn't occur for true and false (literals are matched first)
 		Work on the framework for adding keywords to the AST
 			BinaryKeyword is a temporary node to test and/or
 		Possibly clean up EvalState and Grammar
@@ -79,13 +84,14 @@ Timeline
 	4 Strict Parser Update
 		Update the parser so that wrong programs will ouput an error (as opposed to interpreting a subset)
 			I may have already done this (although I could make the errors more informative)
-		Possibly start implementing custom Control specializations
+		Possibly start implementing custom Control specializations (standardize error types)
 		Standardize code standards
-			Particularly method name case
-			Change TypeSystem::getId to TypeSystem::getID (or get_id)
-		Improve expr_4 grammar to be more accurate
+			classes: PascalCase (?)
+			methods: camelCase (?)
+			variables: snake_case (?)
+		Improve expr_4 grammar to be more accurate (?)
 			ee_tc can't realistically be performed more than once in a row (outside of testing for Bool)
-				I could also have the result of evaluation be the left hand side
+				I could also have the result of evaluation be the left hand side (this doesn't make much sense)
 
 	5 Function Calling		ie. print("Hello, World!")
 		Be able to store functions as values
