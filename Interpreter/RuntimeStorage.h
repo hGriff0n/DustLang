@@ -6,6 +6,18 @@
 namespace dust {
 	namespace impl {
 
+		/*
+		template <typename s, typename k = s>
+		class RuntimeStorage {
+			private:
+			protected:
+				std::vector<s> store;
+				std::unordered_map<k, size_t> registry;
+				std::vector<size_t> open;
+			...
+		}
+		*/
+
 		class RuntimeStorage {
 			protected:
 				std::vector<size_t> open;

@@ -25,8 +25,6 @@ Timeline
 	0 Bugfixes / Improvements
 		Nil method resolution still needs work (esp. in callMethod)
 			The current process might catch some functions that shouldn't work on Nil types
-		RuntimeStorage Exceptions
-			RuntimeStorage still uses std::string for some throws
 		Need to adapt Testing to handle non-printable values
 			Could just use "require_type" for these (or the type checking syntax)
 		Improve the usefulness of the Testing suite by adding a review of the status of all (global) tests that were run
@@ -40,10 +38,6 @@ Timeline
 		See VagueToDo.txt
 
 	1 Table Semantics (need to rework the breakdown chart)
-		First-class Scopes
-			Implement basic operator overloads
-				com(Table, X, X) = Table
-				Actual interaction can delay until the next step
 		Generalize Scope into Table
 			Generalize Table to be able to use keys of any types (at least allow string/int)
 				Modify '.' syntax for string/int differentiation
@@ -62,7 +56,10 @@ Timeline
 			Add in some API functions
 				Possibly be able to index non-table values (to access type members)
 			Complete operator overload implementations
-
+		Generalize '.' syntax even further
+			Allow for non-table values/variables to index type members with '.'
+			Allow for type names to be indexable with '.'
+		 
 	2 Keyword Recognition
 		Update pegtl library
 			Possibly include the GSL as a submodule

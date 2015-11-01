@@ -8,18 +8,6 @@ namespace dust {
 		struct str_record;
 
 		/*
-		template <typename s, typename k = s>
-		class RuntimeStorage {
-			private:
-			protected:
-				std::vector<s> store;
-				std::unordered_map<k, size_t> registry;
-				std::vector<size_t> open;
-				...
-		}
-		*/
-
-		/*
 		 * Stores and controls access to str_record (and other allocable resources)
 		 */
 		class StringStorage : public RuntimeStorage {

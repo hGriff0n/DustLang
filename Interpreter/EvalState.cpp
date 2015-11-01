@@ -5,6 +5,10 @@ namespace dust {
 
 	void EvalState::forceType(int idx, size_t type) {
 		if (at(idx).type_id == type) return;
+		if (type == type::Traits<Table>::id) {		// Special handling for tables
+			std::cout << "Hello\n";
+			return;
+		}
 
 		swap(idx, -1);								// Ensure the value is at the top of the stack
 		callMethod(ts.getName(type));				// Call the converter (if execution reaches here, the converter exists)
@@ -48,7 +52,7 @@ namespace dust {
 		if (dis_t == ts.NO_DEF) throw error::dispatch_error{ "Method " + fn + " is not defined for operands of type " + ts.getName(l) + " and " + ts.getName(r) };
 		
 		// Determine whether com selected a converter and perform conversions
-		if ((com_t == l ^ com_t == r) && ts.convertible(l, r)) {
+		if ((com_t == l ^ com_t == r) && (com_t == type::Traits<Table>::id || ts.convertible(l, r))) {
 			forceType(-1, com_t);					// Forces the value at the given index to have the given type by calling a converter if necessary
 			forceType(-2, com_t);
 		}
@@ -329,6 +333,15 @@ namespace dust {
 		Bool.addOp("_op=", [](EvalState& e) { e.push((bool)e == (bool)e); return 1; });
 		Bool.addOp("_ou!", [](EvalState& e) { e.push(!(bool)e);  return 1; });
 
-		//Table.addOp("_op+", [](EvalState& e) { return 0; });
+		// Addition
+		Table.addOp("_op+", [](EvalState& e) { return 0; });
+		// Subtraction
+		Table.addOp("_op-", [](EvalState& e) { return 0; });
+		// Union
+		Table.addOp("_op*", [](EvalState& e) { return 0; });
+		// Intersection
+		Table.addOp("_op^", [](EvalState& e) { return 0; });
+		// Comparison
+		Table.addOp("_op=", [](EvalState& e) { return 0; });
 	}
 }
