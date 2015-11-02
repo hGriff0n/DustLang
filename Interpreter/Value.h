@@ -37,6 +37,7 @@ namespace dust {
 		 */
 		struct Value {
 			Atom val;
+			//char idu;
 			size_t type_id;
 
 			Value() { type_id = 0; }
@@ -44,6 +45,12 @@ namespace dust {
 			Value(const Value& v) : val{ v.val }, type_id{ v.type_id } {}
 
 			operator size_t() { return type_id; }
+
+			friend bool operator<(const Value& lhs, const Value& rhs) {
+				if (lhs.type_id != rhs.type_id) return lhs.type_id < rhs.type_id;				// Doesn't force ints to be lowest (Int::id = 3, only Number, Object and Nil are lower)
+
+				return lhs.val.d < rhs.val.d;
+			}
 		};
 
 		/*
@@ -56,6 +63,7 @@ namespace dust {
 
 			Variable() { type_id = 0; }
 			Variable(Value v, size_t t, bool c) : type_id{ t }, val{ v }, is_const{ c } {}
+
 		};
 	}
 }

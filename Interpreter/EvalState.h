@@ -2,13 +2,12 @@
 
 #include "CallStack.h"
 #include "TypeSystem.h"
+
 #include "Table.h"
+typedef dust::impl::Table table_type;
+
 
 namespace dust {
-	void initTypeSystem(dust::type::TypeSystem&);
-	void initConversions(dust::type::TypeSystem&);
-	void initOperations(dust::type::TypeSystem&);
-
 	namespace type {
 		// Traits conversion specializations (Could I move these into TypeTraits.h ???)
 		template<> int Traits<int>::get(const impl::Value& v, impl::GC& gc) {
@@ -59,9 +58,10 @@ namespace dust {
 				std::string t = "[";
 				bool notFirst = false;
 
+				t += " impl::Values not yet \"printable\"";
 				for (auto pair : *(gc.getTables().deref(v.val.i))) {
-					t += ((notFirst ? ", ": " ") + pair.first + ": " + Traits<std::string>::get(pair.second.val, gc));
-					notFirst = true;
+					//t += ((notFirst ? ", ": " ") + pair.first + ": " + Traits<std::string>::get(pair.second.val, gc));
+					//notFirst = true;
 				}
 
 				return t + " ]";
@@ -91,6 +91,7 @@ namespace dust {
 			/*
 			else
 			*/
+			return nullptr;
 		}
 	}
 
@@ -106,8 +107,8 @@ namespace dust {
 	 */
 	class EvalState : public impl::CallStack {
 		private:
-			impl::Table* curr_scp;
-			impl::Table global;
+			Table curr_scp;
+			table_type global;
 			type::TypeSystem ts;
 
 			//impl::RuntimeStorage<str_record> strings;
@@ -118,11 +119,8 @@ namespace dust {
 		protected:
 			void forceType(int, size_t);
 
-			impl::Table* findScope(const std::string&, int, bool = false);
-			//impl::Table* findScope(const std::function<bool(impl::Table*)>&, int, bool = false);
-			//impl::Table* findScope(impl::Table*, const std::function<bool(impl::Table*)>&);
+			Table findScope(const impl::Value&, int, bool = false);
 
-			int forcedLevel(const std::string&);
 			void setVar(impl::Variable&, bool, bool);
 
 		public:
@@ -137,21 +135,21 @@ namespace dust {
 			//EvalState& eval(std::shared_ptr<parse::ASTNode>&);
 
 			// Set/Get Variables
-			void setGlobal(const std::string& name, bool is_const = false, bool is_typed = false);
-			void getGlobal(const std::string& var);
-			void setGlobal(bool is_const = false, bool is_typed = false);
-			void getGlobal();
+			void setScoped(const impl::Value& name, int lvl = 0, bool is_const = false, bool is_typed = false);
+			void setScoped(int lvl = 0, bool is_const = false, bool is_typed = false);
+			void getScoped(const impl::Value& var, int lvl = 0);
+			void getScoped(int lvl = 0);
 
 			void get();
-			void get(const std::string& var);
+			void get(const impl::Value& var);
 			void set();
-			void set(const std::string& name);
+			void set(const impl::Value& name);
 			
 			// Variable flags (setters & getters)
-			void markConst(const std::string& name);
-			void markTyped(const std::string& name, size_t typ);
-			bool isConst(const std::string& name);
-			bool isTyped(const std::string& name);
+			void markConst(const impl::Value& name);
+			void markTyped(const impl::Value& name, size_t typ);
+			bool isConst(const impl::Value& name);
+			bool isTyped(const impl::Value& name);
 
 			// Scope Interaction
 			void newScope();				// Start a new scope with the current scope as parent

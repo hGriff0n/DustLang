@@ -1,11 +1,8 @@
-
 #include "Interpreter\Actions.h"
 #include "Interpreter\Testing\Testing.h"
 
 #include <iostream>
 #include <pegtl/analyze.hh>
-
-#include "Interpreter\DualGC.h"
 
 #define p(x) std::cout << (x)
 #define ps(x) p(x) << " :: "
@@ -20,12 +17,7 @@
 	// Improving and updating documentation
 
 // Other Stuff and Pipe Dreams
-	// Generalize Storage and move the Garbage Collecter to "targeting" Storage (instead of inheriting)
-		// Strings would have a different RuntimeStorage instance than tables, userdata, etc. (though most of the functions can be reused)
-		// Perform these changes at the same time if I perform them at all
-			// Generalizing the Garbage Collecter to "target" storage does not exactly require generalizing Storage however
 	// Consider changing name of _op() due to semantical differences
-	// Consider adding a push_ref method to CallStack (roughly mirrors pop_ref)
 	// Consider specializing the control template argument (see PEGTL for more)
 		// This would give me greater control over error messages and throwing from the parser stage
 	// Way of formatting float -> string conversion ???
@@ -34,12 +26,7 @@
 
 using namespace dust;
 
-template <class ostream>
-void print(ostream& s, std::shared_ptr<parse::ASTNode>& ast) {
-	(s << ast->print_string("|")).flush();
-}
-
-// Wrapper around std::getline that waits for [ENTER] to be hit twice before accepting input
+// Wrapper around std::getline that waits for [ENTER] to be hit twice before accepting input (allows multiline repl testing)
 template <class istream>
 istream& getmultiline(istream& in, std::string& s) {
 	std::getline(in, s);
@@ -76,7 +63,7 @@ int main(int argc, const char* argv[]) {
 			try {
 				pegtl::parse<grammar, action>(parse::trim(input), input, parse_tree, 0);
 
-				print(std::cout, parse_tree.at());
+				printAST(std::cout, parse_tree.at());
 
 				parse_tree.pop()->eval(e).stream(std::cout << ":: ") << "\n";
 				//e.eval(parse_tree.pop()).stream(std::cout << ":: ") << "\n";

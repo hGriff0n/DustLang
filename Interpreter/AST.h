@@ -136,6 +136,7 @@ namespace dust {
 			private:
 				std::string name;
 				std::vector<std::shared_ptr<VarName>> sub_fields;
+				int lvl = 0;
 
 			public:
 				VarName(std::string var);
@@ -240,7 +241,6 @@ namespace dust {
 				virtual std::string print_string(std::string buf);
 
 				bool iterate(EvalState& e);
-				void reset();
 		};
 
 		/*
@@ -332,4 +332,10 @@ namespace dust {
 	std::shared_ptr<parse::ASTNode> makeNode(Args&... args) {
 		return std::make_shared<T>(args...);
 	}
+
+	template <class ostream>
+	void printAST(ostream& s, std::shared_ptr<parse::ASTNode>& ast) {
+		(s << ast->print_string("|")).flush();
+	}
 }
+

@@ -1,13 +1,14 @@
 #include "Table.h"
+#include "TypeTraits.h"
 
 namespace dust {
 	namespace impl {
 
 		Table::Table() : parent{ nullptr } {}
 		Table::Table(Table* p) : parent{ p } {}
-		
+
 		bool Table::has(const key_type& key) {
-			return vars.count(key);
+			return vars.count(key) > 0;
 		}
 
 		Variable& Table::getVar(const key_type& key) {
@@ -18,12 +19,20 @@ namespace dust {
 			return getVar(key).val;
 		}
 
+		Variable& Table::getNext() {
+			return vars[impl::Value{ next++, type::Traits<int>::id }];
+		}
+
 		size_t Table::size() {
 			return vars.size();
 		}
 
-		Variable& Table::getNext() {
-			return vars[std::to_string(next_arr++)];
+		Table::storage::iterator Table::begin() {
+			return vars.begin();
+		}
+
+		Table::storage::iterator Table::end() {
+			return vars.end();
 		}
 
 		Table* Table::getPar() {
@@ -33,17 +42,10 @@ namespace dust {
 		Table* Table::findDef(const key_type& key) {
 			Table* search = this;
 
-			while (search && !search->has(key)) search = search->parent;
+			while (search && !search->has(key))
+				search = search->parent;
 
 			return search;
-		}
-
-		Table::storage_type::iterator Table::begin() {
-			return vars.begin();
-		}
-
-		Table::storage_type::iterator Table::end() {
-			return vars.end();
 		}
 
 	}

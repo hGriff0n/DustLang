@@ -15,17 +15,13 @@ namespace dust {
 		swap(idx, -1);								// Restore the stack positions
 	}
 
-	impl::Table* EvalState::findScope(const std::string& var, int lvl, bool not_null) {
-		impl::Table* scp = curr_scp;
+	Table EvalState::findScope(const impl::Value& var, int lvl, bool not_null) {
+		Table scp = curr_scp;
 
 		while (scp && lvl-- && (scp = scp->findDef(var)))
 			if (lvl) scp = scp->getPar();
 
 		return (!scp && not_null) ? &global : scp;
-	}
-
-	int EvalState::forcedLevel(const std::string& var) {
-		return var.find_first_not_of('.');
 	}
 
 	// Constructor
@@ -94,38 +90,31 @@ namespace dust {
 	}
 	
 	// Assign the top value on the stack to the given variable with the given flags
-	void EvalState::setGlobal(const std::string& name, bool is_const, bool is_typed) {
-		int lvl = forcedLevel(name);
-		std::string var = name.substr(lvl);
-
-		push(findScope(var, lvl, true));
-		set(var);
+	void EvalState::setScoped(const impl::Value& name, int _lvl, bool is_const, bool is_typed) {
+		push(findScope(name, _lvl, true));
+		set(name);
 	}
 
 	// Push the variable onto the stack (nil if it doesn't exist)
-	void EvalState::getGlobal(const std::string& name) {
-		int lvl = forcedLevel(name);						// Strip leveling from the string
-		std::string var = name.substr(lvl);
-
-		auto scp = findScope(var, lvl + 1, lvl);
-		scp ? push(scp) : pushNil();
-		get(var);
+	void EvalState::getScoped(const impl::Value& name, int _lvl) {
+		push(findScope(name, _lvl + 1, true));
+		get(name);
 	}
 
-	void EvalState::getGlobal() {
-		getGlobal(pop<std::string>());
+	void EvalState::getScoped(int lvl) {
+		getScoped(pop(), lvl);
 	}
 
-	void EvalState::setGlobal(bool is_const, bool is_typed) {
-		setGlobal(pop<std::string>(), is_const, is_typed);
+	void EvalState::setScoped(int lvl, bool is_const, bool is_typed) {
+		setScoped(pop(), lvl, is_const, is_typed);
 	}
 
 	// Workspace
 	void EvalState::get() {
-		get(pop<std::string>());
+		get(pop());
 	}
 
-	void EvalState::get(const std::string& var) {
+	void EvalState::get(const impl::Value& var) {
 		if (is<Nil>()) return;
 		if (!is<Table>()) return pop(), pushNil();
 
@@ -134,24 +123,26 @@ namespace dust {
 	}
 
 	void EvalState::set() {
-		set(pop<std::string>());
+		set(pop());
 	}
 
-	void EvalState::set(const std::string& var) {
+	void EvalState::set(const impl::Value& var) {
 		if (!is<Table>()) throw error::dust_error{ "Attempt to initialize a non-stored variable" };
-
+		
 		setVar(pop<Table>()->getVar(var), false, false);
 	}
 
-	void EvalState::markConst(const std::string& name) {
+	void EvalState::markConst(const impl::Value& name) {
 		auto scp = findScope(name, 0);
+
 		if (scp) scp->getVar(name).is_const = !scp->getVar(name).is_const;
-			//bool& ic = scp->getVar(name).is_const;
-			//ic = !ic;
+		//bool& ic = scp->getVar(name).is_const;
+		//ic = !ic;
 	}
-	void EvalState::markTyped(const std::string& name, size_t typ) {
+	void EvalState::markTyped(const impl::Value& name, size_t typ) {
 		auto scp = findScope(name, 0);
 		if (!scp) return;		// throw error::base{ "Attempt to static type a nil value" };
+		
 		auto& var = scp->getVar(name);
 
 		// If the typing change may require type conversion (ie. typ not Nil and !(type(var) <= typ))
@@ -166,18 +157,19 @@ namespace dust {
 
 		var.val.type_id = typ;
 	}
-	bool EvalState::isConst(const std::string& name) {
-		// if (name[0] = '.') throw "isConst cannot not be called on non-local variables";
+	bool EvalState::isConst(const impl::Value& name) {
 		auto scp = findScope(name, 0);
+
 		return scp && scp->getVar(name).is_const;
 	}
-	bool EvalState::isTyped(const std::string& name) {
+	bool EvalState::isTyped(const impl::Value& name) {
 		auto scp = findScope(name, 0);
+
 		return scp && scp->getVar(name).type_id != type::Traits<Nil>::id;
 	}
 
 	void EvalState::newScope() {
-		curr_scp = curr_scp ? new impl::Table{ curr_scp } : &global;
+		curr_scp = curr_scp ? new table_type{ curr_scp } : &global;
 	}
 
 	void EvalState::endScope() {

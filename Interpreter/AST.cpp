@@ -100,10 +100,13 @@ namespace dust {
 		// VarName methods
 		VarName::VarName(std::string var) : name{ var } {}
 		EvalState& VarName::eval(EvalState& e) {
-			e.getGlobal(name);
+			e.push(name);
+			e.getScoped(lvl);
 
-			for (auto k : sub_fields)
-				e.get(k->to_string());
+			for (auto k : sub_fields) {
+				e.push(k->to_string());
+				e.get();
+			}
 
 			return e;
 		}
@@ -118,19 +121,24 @@ namespace dust {
 			return buf + "+- " + node_type + " " + name + "\n";
 		}
 		void VarName::addLevel(const std::string& dots) {
-			name = dots + name;
+			lvl = dots.size();
 		}
 		EvalState& VarName::set(EvalState& e, bool is_const, bool is_static) {
-			if (sub_fields.empty()) 
-				e.setGlobal(name, is_const, is_static);
+			if (sub_fields.empty()) {
+				e.push(name);
+				e.setScoped(lvl, is_const, is_static);
 
-			else {
-				e.getGlobal(name);
+			} else {
+				e.push(name);
+				e.getScoped(lvl);
 
-				for (int i = 0; i != sub_fields.size() - 1; ++i)
-					e.get(sub_fields[i]->to_string());
+				for (int i = 0; i != sub_fields.size() - 1; ++i) {
+					e.push(sub_fields[i]->to_string());
+					e.get();
+				}
 
-				e.set(sub_fields.back()->to_string());
+				e.push(sub_fields.back()->to_string());
+				e.set();
 			}
 
 			return e;
@@ -306,6 +314,7 @@ namespace dust {
 				case Type::WHILE:
 					break;
 				default:
+					next = true;
 					break;										// Removing this line causes C2059: syntax error: '}'
 			}
 
@@ -335,9 +344,6 @@ namespace dust {
 
 			// Settop is handled by Block::eval
 		}
-		void Control::reset() {
-			next = true;
-		}
 
 		// Block methods
 		Block::Block() : save_scope{ false }, table{ false }, excep_if_empty{ true } {}
@@ -360,7 +366,7 @@ namespace dust {
 				throw error::bad_node_eval{ "Attempt to evaluate an empty block" };
 			}
 
-			size_t x = e.size();
+			size_t x = e.size(), next = 1;
 
 			e.newScope();
 			control->eval(e);								// Perform loop setup (if needed)
@@ -378,12 +384,11 @@ namespace dust {
 					}
 
 					if (table && !std::dynamic_pointer_cast<Assign>(i)) {
-						//Table::getNext
+						e.push<int>(next++);
+						e.setScoped();					// WARNING! Might give "wrong" answers
 					}
 				}
 			}
-
-			control->reset();
 
 			if (save_scope) {
 				e.settop(x);
