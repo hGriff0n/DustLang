@@ -41,23 +41,29 @@ Timeline
 			Determines selection of i/d/u fields for low-level code (operator<(impl::Value))
 			Could also just delay definition until TypeTraits is specified
 		Determine whether 0 should be equal to true or false
+		Modify '.' to interpret a integer if the key is numeric
+			Would first need to modify the grammar so that parses (without error)
 		See VagueToDo.txt
 
 	1 Table Semantics (need to rework the breakdown chart)
 		Generalize Scope into Array
-			Exapnd Table to allow integer keys
-				Modify '.' when the key is numeric (?)
 			Enable '[]' syntax for accessing tables with variables and literals
-				Remove the "abstraction" layer stuff in EvalState
+				Modify VarName to allow for non-variable sub-steps
+					Change eval to have a "unnecessary" bool arg that defaults to true
+					This arg is only considered by VarName nodes (as push(name))
+						But what about "a.b[b.c]" VarName{ a, VarName{ b }, VarName{ b, c } }
+							Only if sub_field.size() == 0 ???
+				Determine why "3: 3" throws errors (inside the global scope and tables)
+					Then stop the error from occurring
 				Work on improving Table's api (and how interaction is handled by the interpreter)
 					This is particularly important with regards to "appending" to the table (uses the next open int)
-				I'll have to completely rewrite the grammar and how get/set are handled
 			Implement some table operators
 			Implement _nindex and _index metamethods (internally)
 				Possibly start to add in evaluation hooks
 		Generalize Array into Table
 			Generalize Table to be able to use keys of any types
 				Add in the capability (internally) to restrict key types (?)
+					Cause "3: 3" to throw a dust_error (when performed in the global scope)
 			Determine whether tables are references or copy-on-write
 				Current semantics is references
 			Convert Types to have an impl::Table storage member

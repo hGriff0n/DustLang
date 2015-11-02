@@ -50,7 +50,7 @@ namespace dust {
 		struct type_id : seq<range<'A', 'Z'>, star<id_end>> {};							// [A-Z]{id_end}*
 		struct var_id : seq<range<'a', 'z'>, star<id_end>> {};							// [a-z]{id_end}*
 		struct var_lookup : seq<star<one<'.'>>, at<var_id>> {};
-		struct var_name : seq<var_lookup, var_id, star<one<'.'>, var_id>> {};			// \.*{var_id}(\.{var_id})*			# only handles dot syntax
+		struct var_name : seq<var_lookup, var_id> {};									// \.*{var_id}
 
 
 		// Keyword Tokens
@@ -93,12 +93,17 @@ namespace dust {
 		// Atomic Tokens
 		struct unary : seq<op_0, expr_0> {};
 		struct parens : if_must<o_paren, seps, expr, seps, c_paren> {};
-
+		struct lvalue : sor<literals, var_name, unary, parens> {};						// {number}|{var_name}|{unary}|{parens}
 
 		// Expression Tokens
-		struct expr_0 : sor<literals, var_name, unary, parens> {};						// {number}|{var_name}|{unary}|{parens}
 
-		struct ee_1 : if_must<op_1, seps, expr_0> {};									// Structures the parsing to allow the ast to be constructed left->right
+		// Possible "indexable" grammar
+		struct dot_index : seq<one<'.'>, sor<var_id, integer>> {};
+		//struct expr_0 : seq<lvalue, star<dot_index>> {};
+		struct brac_index : seq<one<'['>, seps, lvalue, seps, one<']'>> {};
+		struct expr_0 : seq<lvalue, star<sor<dot_index, brac_index>>> {};
+
+		struct ee_1 : if_must<op_1, seps, expr_0> {};									// ee_#'s structure the parsing to allow ast to be constructed left->right
 		struct expr_1 : seq<expr_0, star<seps, ee_1>, seps> {};							// {expr_0}( *{op_1} *{expr_0})* *
 
 		struct ee_2 : if_must<op_2, seps, expr_1> {};									// change name to left_assoc_# (or something similar)
@@ -119,8 +124,7 @@ namespace dust {
 
 
 		// Multiple Assignment
-		// expr_x is going to be a fairly high level expression
-		struct var_list : s_list<var_name> {};											// AST and lookahead? (seq<var_name, seps, sor<one<','>, op_5>>)  // this could technically match an expression list
+		struct var_list : s_list<expr_0> {};											// AST and lookahead? (seq<var_name, seps, sor<one<','>, op_5>>)  // this could technically match an expression list
 		struct expr_list : s_list<expr_x> {};											// {expr_5} *, *
 
 		struct assign : seq<var_list, seps, op_x> {};									// assignments are right associative

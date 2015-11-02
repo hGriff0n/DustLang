@@ -103,7 +103,9 @@ namespace dust {
 			e.push(name);
 			e.getScoped(lvl);
 
+			// assumes sub_fields to be VarName
 			for (auto k : sub_fields) {
+				//k->eval(e, false);				// Add in a bool argument to eval (defaults to true), ignore in basically everything
 				e.push(k->to_string());
 				e.get();
 			}
@@ -111,10 +113,10 @@ namespace dust {
 			return e;
 		}
 		void VarName::addChild(std::shared_ptr<ASTNode>& c) {
-			if (!std::dynamic_pointer_cast<VarName>(c))
-				throw error::invalid_ast_construction{ "Attempt to construct chained VarName node with a non-VarName node" };
+			//if (!std::dynamic_pointer_cast<VarName>(c))
+			//	throw error::invalid_ast_construction{ "Attempt to construct chained VarName node with a non-VarName node" };
 
-			sub_fields.emplace_back(std::dynamic_pointer_cast<VarName>(c));
+			sub_fields.emplace_back(c);
 		}
 		std::string VarName::to_string() { return name; }
 		std::string VarName::print_string(std::string buf) {
@@ -163,7 +165,9 @@ namespace dust {
 
 			definition->eval(e);
 
+			//e.pushScope();
 			// associate table to type
+			//e.pop();
 
 			return e;
 		}
@@ -282,13 +286,13 @@ namespace dust {
 
 			l->eval(e).copy();						// Copy does perform reference incrementing
 
-													// Short circuit evaluation
+			// Short circuit evaluation
 			if (isAnd) {
 				if (!e.pop<bool>())	return e;		// and: if lhs == false return immediately
 
-			} else if (e.pop<bool>()) {
+			} else if (e.pop<bool>())
 				return e;							// or: if lhs == true return immediately
-			}
+			
 
 			// Otherwise leave the right argument on the stack
 			e.pop();

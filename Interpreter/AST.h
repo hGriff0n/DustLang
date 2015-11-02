@@ -135,7 +135,8 @@ namespace dust {
 		class VarName : public ASTNode {
 			private:
 				std::string name;
-				std::vector<std::shared_ptr<VarName>> sub_fields;
+				std::vector<std::shared_ptr<ASTNode>> sub_fields;
+				//std::vector<std::shared_ptr<VarName>> sub_fields;
 				int lvl = 0;
 
 			public:
