@@ -104,10 +104,10 @@ namespace dust {
 				Literal(std::string _val, size_t t);
 				static std::string node_type;
 
-				virtual EvalState& eval(EvalState& e);	// Based off of the old ast implementation
+				EvalState& eval(EvalState& e);
 
-				virtual std::string to_string();		// Possibly temporary implementation
-				virtual std::string print_string(std::string buf);
+				std::string to_string();		// Possibly temporary implementation
+				std::string print_string(std::string buf);
 		};
 
 		/*
@@ -137,7 +137,7 @@ namespace dust {
 				std::string name;
 				std::vector<std::shared_ptr<ASTNode>> sub_fields;
 				//std::vector<std::shared_ptr<VarName>> sub_fields;
-				int lvl = 0;
+				int lvl = 0; bool sub_var = false;
 
 			public:
 				VarName(std::string var);
@@ -150,6 +150,7 @@ namespace dust {
 				virtual std::string print_string(std::string buf);
 
 				void addLevel(const std::string& dots);
+				void setSubStatus();
 				EvalState& set(EvalState& e, bool is_const, bool is_static);
 		};
 
@@ -312,7 +313,7 @@ namespace dust {
 		 */
 		class TryCatch : public ASTNode {
 			private:
-			std::shared_ptr<Block> try_code, catch_code;
+				std::shared_ptr<Block> try_code, catch_code;
 
 			public:
 				TryCatch();

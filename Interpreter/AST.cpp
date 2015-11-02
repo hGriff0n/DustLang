@@ -100,27 +100,25 @@ namespace dust {
 		// VarName methods
 		VarName::VarName(std::string var) : name{ var } {}
 		EvalState& VarName::eval(EvalState& e) {
+			if (sub_var) return e.push(name), e;
+
 			e.push(name);
 			e.getScoped(lvl);
 
-			// assumes sub_fields to be VarName
-			for (auto k : sub_fields) {
-				//k->eval(e, false);				// Add in a bool argument to eval (defaults to true), ignore in basically everything
-				e.push(k->to_string());
-				e.get();
-			}
+			for (auto k : sub_fields)
+				k->eval(e).get();
 
 			return e;
 		}
 		void VarName::addChild(std::shared_ptr<ASTNode>& c) {
-			//if (!std::dynamic_pointer_cast<VarName>(c))
-			//	throw error::invalid_ast_construction{ "Attempt to construct chained VarName node with a non-VarName node" };
-
 			sub_fields.emplace_back(c);
 		}
 		std::string VarName::to_string() { return name; }
 		std::string VarName::print_string(std::string buf) {
 			return buf + "+- " + node_type + " " + name + "\n";
+		}
+		void VarName::setSubStatus() {
+			sub_var = !sub_var;
 		}
 		void VarName::addLevel(const std::string& dots) {
 			lvl = dots.size();
@@ -134,13 +132,10 @@ namespace dust {
 				e.push(name);
 				e.getScoped(lvl);
 
-				for (int i = 0; i != sub_fields.size() - 1; ++i) {
-					e.push(sub_fields[i]->to_string());
-					e.get();
-				}
+				for (int i = 0; i != sub_fields.size() - 1; ++i)
+					sub_fields[i]->eval(e).get();
 
-				e.push(sub_fields.back()->to_string());
-				e.set();
+				sub_fields.back()->eval(e).set();
 			}
 
 			return e;

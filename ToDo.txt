@@ -48,11 +48,7 @@ Timeline
 	1 Table Semantics (need to rework the breakdown chart)
 		Generalize Scope into Array
 			Enable '[]' syntax for accessing tables with variables and literals
-				Modify VarName to allow for non-variable sub-steps
-					Change eval to have a "unnecessary" bool arg that defaults to true
-					This arg is only considered by VarName nodes (as push(name))
-						But what about "a.b[b.c]" VarName{ a, VarName{ b }, VarName{ b, c } }
-							Only if sub_field.size() == 0 ???
+				Ensure that integer indexing works with []
 				Determine why "3: 3" throws errors (inside the global scope and tables)
 					Then stop the error from occurring
 				Work on improving Table's api (and how interaction is handled by the interpreter)

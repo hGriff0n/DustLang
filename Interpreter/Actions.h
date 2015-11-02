@@ -15,13 +15,15 @@ namespace dust {
 		// Workspace
 		template <> struct action<dot_index> {
 			static void apply(const input& in, AST& ast, const int _) {
+				std::shared_ptr<VarName> t = std::dynamic_pointer_cast<VarName>(ast.at());
+				if (t) t->setSubStatus();
+
 				ast.at(-2)->addChild(ast.pop());
 			}
 		};
 
 		template <> struct action<brac_index> {
 			static void apply(const input& in, AST& ast, const int _) {
-				// Throws: VarName only accepts VarName children
 				ast.at(-2)->addChild(ast.pop());
 			}
 		};
@@ -40,26 +42,7 @@ namespace dust {
 
 		template <> struct action<var_name> {
 			static void apply(input& in, AST& ast, const int _) {
-				/*/
-
-				size_t siz = ast.size() - 1;
-
-				while (!std::dynamic_pointer_cast<Debug>(ast.at(siz)))
-					--siz;
-
-				std::shared_ptr<VarName> ref = std::dynamic_pointer_cast<VarName>(ast.pop(siz + 1));
-				ref->addLevel(ast.pop(siz)->to_string());
-
-				while (siz != ast.size())
-					ref->addChild(ast.pop(siz));
-
-				ast.push(std::dynamic_pointer_cast<ASTNode>(ref));
-
-				/*/
-
 				std::dynamic_pointer_cast<VarName>(ast.at())->addLevel(ast.pop(-2)->to_string());
-
-				//*/
 			}
 		};
 
