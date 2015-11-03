@@ -13,10 +13,10 @@ namespace dust {
 			void* u;			// 4
 
 			Atom() {}
-			Atom(int v) : i{ v } {}
+			Atom(int v) : d{} { i = v; }
 			Atom(double v) : d{ v } {}
-			Atom(size_t v) : i{ static_cast<int>(v) } {}
-			Atom(void* v) : u{ v } {}
+			Atom(size_t v) : d{} { i = v; }
+			Atom(void* v) : d{} { u = v; }
 			Atom(const Atom& copy) {
 				*this = copy;
 			}
@@ -49,7 +49,7 @@ namespace dust {
 			friend bool operator<(const Value& lhs, const Value& rhs) {
 				if (lhs.type_id != rhs.type_id) return lhs.type_id < rhs.type_id;				// Doesn't force ints to be lowest (Int::id = 3, only Number, Object and Nil are lower)
 
-				return lhs.val.d > rhs.val.d;
+				return lhs.val.d < rhs.val.d;
 			}
 
 			friend bool operator==(const Value& lhs, const Value& rhs) {

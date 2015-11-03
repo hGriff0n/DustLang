@@ -137,6 +137,32 @@ namespace dust {
 				t.close_sub_test();
 			t.close_sub_test();
 
+			t.init_sub_test("Table Testing");
+				t.eval("a: [ 1 ]\nb: 1");
+				t.require_eval("a.1", 1);
+				t.require_true("a[1] = a[b]");
+
+				t.eval("a.a: [ a: 3 ]");
+				t.require_eval("a", "[ 1, a: [ a: 3 ] ]");
+				t.require_eval("a.a", "[ a: 3 ]");
+				t.require_eval("a.a.b: 2", 2);
+				t.require_eval("a.a", "[ a: 3, b: 2 ]");
+
+				t.init_sub_test("Table Operators");
+					t.eval("a: [ 1 2 3 2 5 5 4 ]");
+					t.eval("b: [ 1 3 ]");
+					t.eval("c: 5");
+					t.require_true("(a ^ b) = b");
+					t.require_eval("a ^ c", "[ 5, 5 ]");
+					t.require_eval("b + c", "[ 1, 3, 5 ]");
+					t.require_eval("a - b", "[ 2, 2, 5, 5, 4 ]");
+					t.require_eval("b * c", "[ 1, 3, 5 ]");
+				t.close_sub_test();
+
+				t.require_eval("a[b[2]]", 3);
+				t.require_eval("a[b[2] * 2]", 5);
+
+			t.close_sub_test();
 			//t.init_sub_test("API Testing");
 			//t.close_sub_test();
 
