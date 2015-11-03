@@ -28,6 +28,12 @@ namespace dust {
 			}
 		};
 
+		template <> struct action<lvalue> {
+			static void apply(input& in, AST& ast, const int _) {
+
+			}
+		};
+
 		template <> struct action<var_id> {
 			static void apply(input& in, AST& ast, const int _) {
 				ast.push(makeNode<VarName>(in.string()));

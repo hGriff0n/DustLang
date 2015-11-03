@@ -391,7 +391,7 @@ namespace dust {
 
 			if (save_scope) {
 				e.settop(x);
-				e.pushScope();
+				e.pushScope(next);
 			} else
 				e.endScope();
 

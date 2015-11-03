@@ -19,9 +19,9 @@ namespace dust {
 			return getVar(key).val;
 		}
 
-		Variable& Table::getNext() {
-			return vars[impl::Value{ next++, type::Traits<int>::id }];
-		}
+		//Variable& Table::getNext() {
+		//	return vars[impl::Value{ next++, type::Traits<int>::id }];
+		//}
 
 		size_t Table::size() {
 			return vars.size();
@@ -46,6 +46,14 @@ namespace dust {
 				search = search->parent;
 
 			return search;
+		}
+
+		void Table::setNext(int n) {
+			next = n;
+		}
+
+		int Table::getNext() {
+			return next++;
 		}
 
 	}

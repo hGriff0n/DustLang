@@ -25,7 +25,7 @@ namespace dust {
 				bool has(const key_type& key);
 				Value getVal(const key_type& key);
 
-				Variable& getNext();
+				//Variable& getNext();
 				size_t size();
 
 				storage::iterator begin();
@@ -33,6 +33,9 @@ namespace dust {
 
 				Table* getPar();
 				Table* findDef(const key_type& key);
+
+				void setNext(int n);
+				int getNext();
 		};
 
 	}

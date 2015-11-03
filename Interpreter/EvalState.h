@@ -58,10 +58,9 @@ namespace dust {
 				std::string t = "[";
 				bool notFirst = false;
 
-				t += " impl::Values not yet \"printable\"";
 				for (auto pair : *(gc.getTables().deref(v.val.i))) {
-					//t += ((notFirst ? ", ": " ") + pair.first + ": " + Traits<std::string>::get(pair.second.val, gc));
-					//notFirst = true;
+					t += ((notFirst ? ", " : " ") + Traits<std::string>::get(pair.first, gc) + ": " + Traits<std::string>::get(pair.second.val, gc));
+					notFirst = true;
 				}
 
 				return t + " ]";
@@ -154,7 +153,7 @@ namespace dust {
 			// Scope Interaction
 			void newScope();				// Start a new scope with the current scope as parent
 			void endScope();				// Delete current scope (Cleans up memory)
-			void pushScope();				// Store scope in memory and push on the stack (tables, functions, etc.)
+			void pushScope(int nxt = 1);	// Store scope in memory and push on the stack (tables, functions, etc.)
 
 			// TypeSystem Interaction
 			type::TypeSystem& getTS();
