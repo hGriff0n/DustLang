@@ -1,6 +1,8 @@
 #include "Table.h"
 #include "TypeTraits.h"
 
+#include <algorithm>
+
 namespace dust {
 	namespace impl {
 
@@ -54,6 +56,12 @@ namespace dust {
 
 		int Table::getNext() {
 			return next++;
+		}
+
+		bool Table::contains(const impl::Value& val) {
+			return std::find_if(vars.begin(), vars.end(), [&](auto pair) {
+				return pair.second.val == val;
+			}) != vars.end();
 		}
 
 	}

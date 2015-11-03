@@ -36,6 +36,8 @@ namespace dust {
 
 				void setNext(int n);
 				int getNext();
+
+				bool contains(const impl::Value& val);
 		};
 
 	}

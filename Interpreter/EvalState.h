@@ -59,7 +59,9 @@ namespace dust {
 				bool notFirst = false;
 
 				for (auto pair : *(gc.getTables().deref(v.val.i))) {
-					t += ((notFirst ? ", " : " ") + Traits<std::string>::get(pair.first, gc) + ": " + Traits<std::string>::get(pair.second.val, gc));
+					t += ((notFirst ? ", " : " ") +
+						(pair.first.type_id == Traits<int>::id ? "" : Traits<std::string>::get(pair.first, gc) + ": ") +
+						Traits<std::string>::get(pair.second.val, gc));
 					notFirst = true;
 				}
 

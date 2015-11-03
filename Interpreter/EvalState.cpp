@@ -1,17 +1,23 @@
 #include "EvalState.h"
 #include "Exceptions\dust.h"
 
+#include <unordered_set>
+
 namespace dust {
 
 	void EvalState::forceType(int idx, size_t type) {
 		if (at(idx).type_id == type) return;
+		swap(idx, -1);								// Ensure the value is at the top of the stack
+
 		if (type == type::Traits<Table>::id) {		// Special handling for tables
-			std::cout << "Hello\n";
-			return;
+			newScope();
+			push(1);
+			setScoped();
+			pushScope(2);
+		} else {
+			callMethod(ts.getName(type));			// Otherwise call the converter (if execution reaches here, the converter exists)
 		}
 
-		swap(idx, -1);								// Ensure the value is at the top of the stack
-		callMethod(ts.getName(type));				// Call the converter (if execution reaches here, the converter exists)
 		swap(idx, -1);								// Restore the stack positions
 	}
 
@@ -326,39 +332,86 @@ namespace dust {
 		Bool.addOp("_op=", [](EvalState& e) { e.push((bool)e == (bool)e); return 1; });
 		Bool.addOp("_ou!", [](EvalState& e) { e.push(!(bool)e);  return 1; });
 
+		// Table functions
+			// Currently these functions "erase" non-integer key values
+				// This means that they migrate the values existence into the new table
+				// However the value is assigned based on the current open integer key
+
 		// Append element(s) to table
 		Table.addOp("_op+", [](EvalState& e) {
-			dust::Table rt = e.pop<dust::Table>(), lt = e.pop<dust::Table>();
+			dust::Table lt = e.pop<dust::Table>(), rt = e.pop<dust::Table>();
+			e.newScope();
+			int nxt = 1;
 
 			// Rework once set has a nice behavior
 			for (auto r_elem : *rt) {
-				e.push(lt->getNext());
-				e.push(lt);
 				e.push(r_elem.second.val);
-				e.set();
+				e.push(nxt++);
+				e.setScoped();
 			}
 
+			e.pushScope(nxt);
 			return 1;
 		});
 		// Remove element(s) from table
 		Table.addOp("_op-", [](EvalState& e) {
-			dust::Table rt = e.pop<dust::Table>(), lt = e.pop<dust::Table>();
+			dust::Table lt = e.pop<dust::Table>(), rt = e.pop<dust::Table>();
 
-			// copy lt
+			e.newScope();
+			int nxt = 1;
 
-			// for elem in rt
-				// if !(elem ^ lt)
-					// add to table on stack
+			for (auto l_elem : *lt)
+				if (!rt->contains(l_elem.second.val)) {
+					e.push(l_elem.second.val);
+					e.push(nxt++);
+					e.setScoped();
+				}
 
-			return 0;
+			e.pushScope(nxt);
+			return 1;
 		});
 		// Union (Append and remove duplicates)
+			// This definition is currently the Set constructor
+			// The union definition will eventually be implemented
 		Table.addOp("_op*", [](EvalState& e) {
+			dust::Table lt = e.pop<dust::Table>(), rt = e.pop<dust::Table>();
+
+			std::unordered_set<impl::Value> nt{};
+
+			for (auto l_elem : *lt)
+				nt.insert(l_elem.second.val);
+
+			for (auto r_elem : *rt)
+				nt.insert(r_elem.second.val);
+
+			e.newScope();
+			int nxt = 1;
+
+			for (auto elem : nt) {
+				e.push(elem);
+				e.push(nxt++);
+				e.setScoped();
+			}
+
+			e.pushScope(nxt);
 			return 0;
 		});
 		// Intersection (Elements in both tables)
 		Table.addOp("_op^", [](EvalState& e) {
-			return 0;
+			dust::Table lt = e.pop<dust::Table>(), rt = e.pop<dust::Table>();
+
+			e.newScope();
+			int nxt = 1;
+
+			for (auto l_elem : *lt)
+				if (rt->contains(l_elem.second.val)) {
+					e.push(l_elem.second.val);
+					e.push(nxt++);
+					e.setScoped();
+				}
+
+			e.pushScope(nxt);
+			return 1;
 		});
 		// Comparison
 		Table.addOp("_op=", [](EvalState& e) {

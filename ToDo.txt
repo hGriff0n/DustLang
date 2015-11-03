@@ -53,16 +53,8 @@ Timeline
 
 	1 Table Semantics (need to rework the breakdown chart)
 		Generalize Scope into Array
-			Implement table operators
-				Implement conversions to tables in EvalState
-				Implement +,-,*,^ operators
-			Change the behavior pattern of set
-				Currently: ..., value, table, key => ...
-				Should Be: ..., table, key, value => ..., table
 			Implement _nindex and _index metamethods (internally)
 			Work on improving Table's api (and how interaction is handled by the interpreter)
-				This is particularly important with regards to "appending" to the table (uses the next open int)
-				Possibly start to add in evaluation hooks
 		Generalize Array into Table
 			Generalize Table to be able to use keys of any types (mostly done)
 				Fix impl::Value::operator< so that equivalence can be determined for non-stored values
@@ -81,6 +73,14 @@ Timeline
 			Allow for non-table values/variables to index type members with '.'
 			Allow for type names to be indexable with '.'
 		Create the testing suite
+			Might need to modify the testing suite to more easily query tables
+			Create tests to check all the recent table updates
+		Improve the Table API
+			Change the behavior pattern of set/get
+				I'm not sure of the current expected behavior
+					Want: ..., table, key, value => ..., table
+			This is particularly important with regards to "appending" to the table (uses the next open int)
+			Possibly start to add in evaluation hooks
 		 
 	2 Keyword Recognition
 		Update pegtl library
@@ -111,7 +111,10 @@ Timeline
 			ee_tc can't realistically be performed more than once in a row (outside of testing for Bool)
 				I could also have the result of evaluation be the left hand side (this doesn't make much sense)
 
-	4 Function Calling		ie. print("Hello, World!")
+	4 Parser Rewrite v. II
+		Rewrite the parser so that everything works well together
+
+	5 Function Calling		ie. print("Hello, World!")
 		Be able to store functions as values
 		Convert Types completely to impl::Table for storage concerns
 			Make Types indexable much like tables
@@ -121,7 +124,7 @@ Timeline
 		_op() syntax (Metamethods ???)
 		Optional: No parens syntax
 
-	5 Grammar Framework Update
+	6 Grammar Framework Update
 		Potentially change the grammar to follow the basic framework in "lua53_parse.h"
 		Update all documents to ensure that they reflect the current language spec
 		Update the readme to show of recent aditions

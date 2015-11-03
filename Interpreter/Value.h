@@ -49,7 +49,11 @@ namespace dust {
 			friend bool operator<(const Value& lhs, const Value& rhs) {
 				if (lhs.type_id != rhs.type_id) return lhs.type_id < rhs.type_id;				// Doesn't force ints to be lowest (Int::id = 3, only Number, Object and Nil are lower)
 
-				return lhs.val.d < rhs.val.d;
+				return lhs.val.d > rhs.val.d;
+			}
+
+			friend bool operator==(const Value& lhs, const Value& rhs) {
+				return lhs.type_id == rhs.type_id && lhs.val.d == rhs.val.d;
 			}
 		};
 
