@@ -344,6 +344,12 @@ namespace dust {
 			int nxt = 1;
 
 			// Rework once set has a nice behavior
+			for (auto l_elem : *lt) {
+				e.push(l_elem.second.val);
+				e.push(nxt++);
+				e.setScoped();
+			}
+
 			for (auto r_elem : *rt) {
 				e.push(r_elem.second.val);
 				e.push(nxt++);
