@@ -13,8 +13,44 @@ namespace dust {
 		struct action : nothing<Rule> {};
 
 		// Workspace
+		template <> struct action<dot_index> {
+			static void apply(const input& in, AST& ast, const int _) {
+				std::shared_ptr<VarName> t = std::dynamic_pointer_cast<VarName>(ast.at());
+				if (t) t->setSubStatus();
 
+				ast.at(-2)->addChild(ast.pop());
+			}
+		};
 
+		template <> struct action<brac_index> {
+			static void apply(const input& in, AST& ast, const int _) {
+				ast.at(-2)->addChild(ast.pop());
+			}
+		};
+
+		template <> struct action<lvalue> {
+			static void apply(input& in, AST& ast, const int _) {
+
+			}
+		};
+
+		template <> struct action<var_id> {
+			static void apply(input& in, AST& ast, const int _) {
+				ast.push(makeNode<VarName>(in.string()));
+			}
+		};
+
+		template <> struct action<var_lookup> {
+			static void apply(input& in, AST& ast, const int _) {
+				ast.push(makeNode<Debug>(in.string()));
+			}
+		};
+
+		template <> struct action<var_name> {
+			static void apply(input& in, AST& ast, const int _) {
+				std::dynamic_pointer_cast<VarName>(ast.at())->addLevel(ast.pop(-2)->to_string());
+			}
+		};
 
 
 		// Literal Actions
@@ -48,36 +84,6 @@ namespace dust {
 			}
 		};
 
-
-		// Identifier Actions
-		template <> struct action<var_id> {
-			static void apply(input& in, AST& ast, const int _) {
-				ast.push(makeNode<VarName>(in.string()));
-			}
-		};
-
-		template <> struct action<var_lookup> {
-			static void apply(input& in, AST& ast, const int _) {
-				ast.push(makeNode<Debug>(in.string()));
-			}
-		};
-
-		template <> struct action<var_name> {
-			static void apply(input& in, AST& ast, const int _) {
-				size_t siz = ast.size() - 1;
-
-				while (!std::dynamic_pointer_cast<Debug>(ast.at(siz)))
-					--siz;
-
-				std::shared_ptr<VarName> ref = std::dynamic_pointer_cast<VarName>(ast.pop(siz + 1));
-				ref->addLevel(ast.pop(siz)->to_string());
-
-				while (siz != ast.size())
-					ref->addChild(ast.pop(siz));
-				
-				ast.push(std::dynamic_pointer_cast<ASTNode>(ref));
-			}
-		};
 
 		// Keyword Actions
 		template <> struct action<k_and> {

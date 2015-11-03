@@ -178,10 +178,11 @@ namespace dust {
 		curr_scp = sav;
 	}
 
-	void EvalState::pushScope() {
+	void EvalState::pushScope(int nxt) {
 		Table sav = curr_scp;
 		curr_scp = sav->getPar();
 
+		sav->setNext(nxt);
 		push(sav);
 	}
 
@@ -325,15 +326,70 @@ namespace dust {
 		Bool.addOp("_op=", [](EvalState& e) { e.push((bool)e == (bool)e); return 1; });
 		Bool.addOp("_ou!", [](EvalState& e) { e.push(!(bool)e);  return 1; });
 
-		// Addition
-		Table.addOp("_op+", [](EvalState& e) { return 0; });
-		// Subtraction
-		Table.addOp("_op-", [](EvalState& e) { return 0; });
-		// Union
-		Table.addOp("_op*", [](EvalState& e) { return 0; });
-		// Intersection
-		Table.addOp("_op^", [](EvalState& e) { return 0; });
+		// Append element(s) to table
+		Table.addOp("_op+", [](EvalState& e) {
+			dust::Table rt = e.pop<dust::Table>(), lt = e.pop<dust::Table>();
+
+			// Rework once set has a nice behavior
+			for (auto r_elem : *rt) {
+				e.push(lt->getNext());
+				e.push(lt);
+				e.push(r_elem.second.val);
+				e.set();
+			}
+
+			return 1;
+		});
+		// Remove element(s) from table
+		Table.addOp("_op-", [](EvalState& e) {
+			dust::Table rt = e.pop<dust::Table>(), lt = e.pop<dust::Table>();
+
+			// copy lt
+
+			// for elem in rt
+				// if !(elem ^ lt)
+					// add to table on stack
+
+			return 0;
+		});
+		// Union (Append and remove duplicates)
+		Table.addOp("_op*", [](EvalState& e) {
+			return 0;
+		});
+		// Intersection (Elements in both tables)
+		Table.addOp("_op^", [](EvalState& e) {
+			return 0;
+		});
 		// Comparison
-		Table.addOp("_op=", [](EvalState& e) { return 0; });
+		Table.addOp("_op=", [](EvalState& e) {
+			if (e.at().val.i == e.at(-2).val.i) {
+				e.pop();
+				e.pop();
+				e.push(true);
+
+			} else {
+				dust::Table rt = e.pop<dust::Table>(), lt = e.pop<dust::Table>();
+
+				if (lt->size() == rt->size()) {
+					auto lt_iter = lt->begin();
+
+					for (auto rt_elem : *rt) {
+						e.push(lt_iter->second.val);
+						e.push(rt_elem.second.val);
+						e.callOp("_op=");
+
+						if (!e.at().val.i) return 1;
+
+						e.pop();
+						++lt_iter;
+					}
+
+					e.push(true);
+				} else
+					e.push(false);
+			}
+
+			return 1;
+		});
 	}
 }
