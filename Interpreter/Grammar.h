@@ -22,7 +22,7 @@ namespace dust {
 
 		// Forward declarations
 		struct expr;	struct expr_0;			struct expr_x;
-		struct block;	struct inline_block;	struct lvalue;
+		struct block;	struct inline_block;	struct expr_7;
 		struct comma;	struct sep;
 
 
@@ -74,7 +74,9 @@ namespace dust {
 
 		// Literal Tokens
 		struct integer : plus<digit> {};												// [0-9]+
-		struct decimal : seq<plus<digit>, one<'.'>, star<digit>> {};					// [0-9]+\.[0-9]*
+		// Change grammer to make 3.abs to not trigger decimal
+		struct decimal : seq<plus<digit>, one<'.'>, not_at<var_id>, star<digit>> {};
+		//struct decimal : seq<plus<digit>, one<'.'>, star<digit>> {};					// [0-9]+\.[0-9]*
 		struct boolean : sor<k_true, k_false> {};
 		struct body : star<sor<seq<esc, quote>, unless<quote>>> {};						// ((\\\")|[^"])*
 		struct str : seq<quote, body, quote> {};										// \"{body}\"
@@ -102,8 +104,7 @@ namespace dust {
 
 		// Possible "indexable" grammar
 		struct dot_index : seq<one<'.'>, sor<var_id, integer>> {};
-		//struct expr_0 : seq<lvalue, star<dot_index>> {};
-		struct brac_index : seq<one<'['>, seps, lvalue, seps, one<']'>> {};
+		struct brac_index : seq<one<'['>, seps, expr_7, seps, one<']'>> {};				// will need to update if I add a layer above expr_7
 		struct expr_0 : seq<lvalue, star<sor<dot_index, brac_index>>> {};
 
 		// Operator '^'

@@ -37,50 +37,35 @@ Timeline
 			Ensure that this is correct
 		Improve the implementation of GC
 			Possibly convert RuntimeStorage to be templated
-		Consider adding a new field to impl::Value, 'idu'
-			Determines selection of i/d/u fields for low-level code (operator<(impl::Value))
-			Could also just delay definition until TypeTraits is specified
 		Determine whether 0 should be equal to true or false
-		Modify '.' to interpret a integer if the key is numeric
-			Would first need to modify the grammar so that parses (without error)
 		Think of changing how operator resolution is handled (especially for equals)
 			Currently "[3] = 3" evaluates to true
 		Fix "3: 3" throwing errors (inside of table definitions)
 			"3" is considered to be a VarName (which is expected by Assign::var_type)
 				Assign actually needs the set method (although this could *possibly* be redone if it's too bad) 
 		Comment code to document behavior
+		Improve testing suit with table specific functions
 		See VagueToDo.txt
 
 	1 Table Semantics (need to rework the breakdown chart)
-		Generalize Scope into Array
-			Implement _nindex and _index metamethods (internally)
-			Work on improving Table's api (and how interaction is handled by the interpreter)
 		Generalize Array into Table
-			Generalize Table to be able to use keys of any types (mostly done)
-				Fix impl::Value::operator< so that equivalence can be determined for non-stored values
-					This would fix the problem with "a[1]" returning nil for a = [ 1 ]
-					Basically implement the idu selector switch
-				Add in the capability (internally) to restrict key types (?)
-					Cause "3: 3" to throw a dust_error (when performed in the global scope)
 			Determine whether tables are references or copy-on-write
 				Current semantics is references
-			Convert Types to have an impl::Table storage member
-				Can't completely convert yet (functions aren't implemented)
-			Add in some API functions
-				Possibly be able to index non-table values (to access type members)
-			Improve operator implementations
+				copy-on-write can be done easily by just setting parent
+			
 		Generalize '.' syntax even further
 			Allow for non-table values/variables to index type members with '.'
+				3.abs => Attempt to add child to node
 			Allow for type names to be indexable with '.'
-		Create the testing suite
-			Might need to modify the testing suite to more easily query tables
-			Create tests to check all the recent table updates
+				currently parse error (type_id's fault though)
+
 		Improve the Table API
 			Change the behavior pattern of set/get
 				I'm not sure of the current expected behavior
 					Want: ..., table, key, value => ..., table
 			This is particularly important with regards to "appending" to the table (uses the next open int)
 			Possibly start to add in evaluation hooks
+			Add in more API functions
 		 
 	2 Keyword Recognition
 		Update pegtl library
@@ -100,6 +85,11 @@ Timeline
 			Add exception catching and error functions
 			Improve Exception Error Messages
 				Mainly work on Exception constructors
+		Table Improvements
+			Figure out where to add in hooks to allow for restricting key/value types in tables
+				Force "3: 3" to throw a dust_error (when performed in the global scope)
+					Throw for a different reason than current execution
+				Would need to add the type system (as an argument or something)
 		Update the parser so that wrong programs will ouput an error (as opposed to interpreting a subset)
 			I may have already done this (although I could make the errors more informative)
 		Possibly start implementing custom Control specializations (standardize error types)
@@ -114,7 +104,10 @@ Timeline
 	4 Parser Rewrite v. II
 		Rewrite the parser so that everything works well together
 
-	5 Function Calling		ie. print("Hello, World!")
+	5 Control Statements (For/While/Do-While/If/Else/...)
+			
+
+	6 Function Calling		ie. print("Hello, World!")
 		Be able to store functions as values
 		Convert Types completely to impl::Table for storage concerns
 			Make Types indexable much like tables
@@ -124,11 +117,13 @@ Timeline
 		_op() syntax (Metamethods ???)
 		Optional: No parens syntax
 
-	6 Grammar Framework Update
+	7 Grammar Framework Update
 		Potentially change the grammar to follow the basic framework in "lua53_parse.h"
 		Update all documents to ensure that they reflect the current language spec
 		Update the readme to show of recent aditions
 		Determine the next set of features that need to be implemented
+
+	8 Type/Table metamethods
 
 
 
