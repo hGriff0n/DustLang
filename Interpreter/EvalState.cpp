@@ -241,6 +241,7 @@ namespace dust {
 	void initOperations(type::TypeSystem& ts) {
 		auto Nil = ts.getType("Nil");
 		auto Object = ts.getType("Object");
+		auto Number = ts.getType("Number");
 		auto Int = ts.getType("Int");
 		auto Float = ts.getType("Float");
 		auto String = ts.getType("String");
@@ -294,15 +295,16 @@ namespace dust {
 		});
 		*/
 
-		Int.addOp("_op+", [](EvalState& e) { e.push((int)e + (int)e); return 1; });
-		Int.addOp("_op/", [](EvalState& e) { e.push((double)e / (double)e); return 1; });		// Could be moved to Number
-		Int.addOp("_op-", [](EvalState& e) { e.push((int)e - (int)e); return 1; });
-		Int.addOp("_op*", [](EvalState& e) { e.push((int)e * (int)e); return 1; });
-		Int.addOp("_op^", [](EvalState& e) {
+		Number.addOp("_op^", [](EvalState& e) {
 			auto base = (double)e;
 			e.push(pow(base, (double)e));
 			return 1;
-		});											// Could be moved to Number
+		});
+		Number.addOp("_op/", [](EvalState& e) { e.push((double)e / (double)e); return 1; });
+
+		Int.addOp("_op+", [](EvalState& e) { e.push((int)e + (int)e); return 1; });
+		Int.addOp("_op-", [](EvalState& e) { e.push((int)e - (int)e); return 1; });
+		Int.addOp("_op*", [](EvalState& e) { e.push((int)e * (int)e); return 1; });
 		Int.addOp("_op%", [](EvalState& e) { e.push((int)e % (int)e); return 1; });
 		Int.addOp("_op<", [](EvalState& e) { e.push((int)e < (int)e); return 1; });		// 
 		Int.addOp("_op=", [](EvalState& e) { e.push((int)e == (int)e); return 1; });
@@ -315,18 +317,11 @@ namespace dust {
 
 
 		Float.addOp("_op+", [](EvalState& e) { e.push((double)e + (double)e); return 1; });
-		Float.addOp("_op/", [](EvalState& e) { e.push((double)e / (double)e); return 1; });
 		Float.addOp("_op-", [](EvalState& e) { e.push((double)e - (double)e); return 1; });
 		Float.addOp("_op*", [](EvalState& e) { e.push((double)e * (double)e); return 1; });
-		Float.addOp("_op^", [](EvalState& e) {
-			auto base = (double)e;
-			e.push(pow(base, (double)e));
-			return 1;
-		});
 		Float.addOp("_op<", [](EvalState& e) { e.push((double)e < (double)e); return 1; });		// 
 		Float.addOp("_op=", [](EvalState& e) { e.push((double)e == (double)e); return 1; });
 		Float.addOp("_op>", [](EvalState& e) { e.push((double)e >(double)e); return 1; });
-		Float.addOp("_ou-", [](EvalState& e) { e.push(-(double)e); return 1; });
 		Float.addOp("_ou-", [](EvalState& e) { e.push(-(double)e); return 1; });
 
 		Bool.addOp("_op=", [](EvalState& e) { e.push((bool)e == (bool)e); return 1; });
@@ -377,8 +372,6 @@ namespace dust {
 			return 1;
 		});
 		// Union (Append and remove duplicates)
-			// This definition is currently the Set constructor
-			// The union definition will eventually be implemented
 		Table.addOp("_op*", [](EvalState& e) {
 			dust::Table lt = e.pop<dust::Table>(), rt = e.pop<dust::Table>();
 

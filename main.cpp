@@ -65,6 +65,7 @@ int main(int argc, const char* argv[]) {
 
 				printAST(std::cout, parse_tree.at());
 
+
 				parse_tree.pop()->eval(e).stream(std::cout << ":: ") << "\n";
 				//e.eval(parse_tree.pop()).stream(std::cout << ":: ") << "\n";
 
