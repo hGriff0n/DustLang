@@ -27,7 +27,7 @@ namespace dust {
 
 		// ASTNode methods
 		void ASTNode::addChild(std::shared_ptr<ASTNode>& c) {
-			throw error::operands_error{ "Attempt to add child to node" };
+			throw error::operands_error{ "Attempt to add child to ASTNode" };
 		}
 		std::string ASTNode::print_string(std::string buf) {
 			return buf + "+- " + node_type + "\n";
@@ -115,7 +115,13 @@ namespace dust {
 		}
 		std::string VarName::to_string() { return name; }
 		std::string VarName::print_string(std::string buf) {
-			return buf + "+- " + node_type + " " + name + "\n";
+			std::string ret = buf + "+- " + node_type + " " + name + "\n";
+			buf += " ";
+
+			for (auto i : sub_fields)
+				ret += i->print_string(buf);
+
+			return ret;
 		}
 		void VarName::setSubStatus() {
 			sub_var = !sub_var;
