@@ -120,6 +120,10 @@ namespace dust {
 						printMsg(false) << "Exception: \"" << e.what() << "\"\n";
 
 						return exitTest();
+					} catch (std::exception& e) {
+						printMsg(false) << "Exception: \"" << e.what() << "\"\n";
+
+						return exitTest();
 					}
 
 					if (e.size() == siz)
@@ -142,6 +146,10 @@ namespace dust {
 
 						return exitTest();
 					} catch (error::base& e) {
+						printMsg(false) << "Exception: \"" << e.what() << "\"\n";
+
+						return exitTest();
+					} catch (std::exception& e) {
 						printMsg(false) << "Exception: \"" << e.what() << "\"\n";
 
 						return exitTest();
@@ -221,6 +229,10 @@ namespace dust {
 						printMsg(false) << "Exception: \"" << e.what() << "\"\n";
 
 						return exitTest();
+					} catch (std::exception& e) {
+						printMsg(false) << "Exception: \"" << e.what() << "\"\n";
+						
+						return exitTest();
 					}
 
 					if (e.pop<bool>())
@@ -248,6 +260,8 @@ namespace dust {
 					} catch (pegtl::parse_error& e) {
 						printMsg(false) << "Exception: \"" << e.what() << "\"\n";
 					} catch (error::base& e) {
+						printMsg(false) << "Exception: \"" << e.what() << "\"\n";
+					} catch (std::exception& e) {
 						printMsg(false) << "Exception: \"" << e.what() << "\"\n";
 					}
 

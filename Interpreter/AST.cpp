@@ -27,7 +27,7 @@ namespace dust {
 
 		// ASTNode methods
 		void ASTNode::addChild(std::shared_ptr<ASTNode>& c) {
-			throw error::operands_error{ "Attempt to add child to node" };
+			throw error::operands_error{ "Attempt to add child to ASTNode" };
 		}
 		std::string ASTNode::print_string(std::string buf) {
 			return buf + "+- " + node_type + "\n";
@@ -100,12 +100,54 @@ namespace dust {
 		// VarName methods
 		VarName::VarName(std::string var) : name{ var } {}
 		EvalState& VarName::eval(EvalState& e) {
-			e.get(name);
+			if (sub_var) return e.push(name), e;
+
+			e.push(name);
+			e.getScoped(lvl);
+
+			for (auto k : sub_fields)
+				k->eval(e).get();
+
 			return e;
+		}
+		void VarName::addChild(std::shared_ptr<ASTNode>& c) {
+			sub_fields.emplace_back(c);
 		}
 		std::string VarName::to_string() { return name; }
 		std::string VarName::print_string(std::string buf) {
-			return buf + "+- " + node_type + " " + name + "\n";
+			std::string ret = buf + "+- " + node_type + " " + name + "\n";
+			buf += " ";
+
+			for (auto i : sub_fields)
+				ret += i->print_string(buf);
+
+			return ret;
+		}
+		void VarName::setSubStatus() {
+			sub_var = !sub_var;
+		}
+		void VarName::addLevel(const std::string& dots) {
+			lvl = dots.size();
+		}
+		EvalState& VarName::set(EvalState& e, bool is_const, bool is_static) {
+			if (sub_fields.empty()) {
+				e.push(name);
+				e.swap();
+				e.setScoped(lvl, is_const, is_static);
+
+			} else {
+				e.push(name);
+				e.getScoped(lvl);
+
+				for (int i = 0; i != sub_fields.size() - 1; ++i)
+					sub_fields[i]->eval(e).get();
+
+				e.swap();
+				sub_fields.back()->eval(e).swap();
+				e.set();
+			}
+
+			return e;
 		}
 
 		// TypeName methods
@@ -127,7 +169,9 @@ namespace dust {
 
 			definition->eval(e);
 
+			//e.pushScope();
 			// associate table to type
+			//e.pop();
 
 			return e;
 		}
@@ -213,12 +257,12 @@ namespace dust {
 			//auto last_var = r_var;
 			while (r_var != l_var) {
 				if (op.size()) (*r_var)->eval(e).callOp(op);
-				e.set((*r_var++)->to_string(), setConst, setStatic);
+				
+				(*r_var++)->set(e, setConst, setStatic);
 			}
 
 			//return last_var->eval(e);
 			return (*vars->rbegin())->eval(e);
-
 		}
 		std::string Assign::to_string() { return op; }
 		std::string Assign::print_string(std::string buf) {
@@ -245,13 +289,13 @@ namespace dust {
 
 			l->eval(e).copy();						// Copy does perform reference incrementing
 
-													// Short circuit evaluation
+			// Short circuit evaluation
 			if (isAnd) {
 				if (!e.pop<bool>())	return e;		// and: if lhs == false return immediately
 
-			} else if (e.pop<bool>()) {
+			} else if (e.pop<bool>())
 				return e;							// or: if lhs == true return immediately
-			}
+			
 
 			// Otherwise leave the right argument on the stack
 			e.pop();
@@ -277,6 +321,8 @@ namespace dust {
 				case Type::WHILE:
 					break;
 				default:
+					next = true;
+					break;										// Removing this line causes C2059: syntax error: '}'
 			}
 
 			return e;
@@ -305,9 +351,6 @@ namespace dust {
 
 			// Settop is handled by Block::eval
 		}
-		void Control::reset() {
-			next = true;
-		}
 
 		// Block methods
 		Block::Block() : save_scope{ false }, table{ false }, excep_if_empty{ true } {}
@@ -330,9 +373,9 @@ namespace dust {
 				throw error::bad_node_eval{ "Attempt to evaluate an empty block" };
 			}
 
-			size_t x = e.size(), n_key = 1;
-			e.newScope();
+			size_t x = e.size(), next = 1;
 
+			e.newScope();
 			control->eval(e);								// Perform loop setup (if needed)
 
 			while (control->iterate(e)) {
@@ -348,17 +391,16 @@ namespace dust {
 					}
 
 					if (table && !std::dynamic_pointer_cast<Assign>(i)) {
-						// perform default assignment
-						++n_key;
+						e.push<int>(next++);
+						e.swap();
+						e.setScoped();					// WARNING! Might give "wrong" answers
 					}
 				}
 			}
 
-			control->reset();
-
 			if (save_scope) {
 				e.settop(x);
-				e.pushScope();
+				e.pushScope(next);
 			} else
 				e.endScope();
 

@@ -13,8 +13,45 @@ namespace dust {
 		struct action : nothing<Rule> {};
 
 		// Workspace
+		template <> struct action<dot_index> {
+			static void apply(const input& in, AST& ast, const int _) {
+				// This needs a VarName node
+				std::shared_ptr<VarName> t = std::dynamic_pointer_cast<VarName>(ast.at());
+				if (t) t->setSubStatus();
 
+				ast.at(-2)->addChild(ast.pop());
+			}
+		};
 
+		template <> struct action<brac_index> {
+			static void apply(const input& in, AST& ast, const int _) {
+				ast.at(-2)->addChild(ast.pop());
+			}
+		};
+
+		template <> struct action<lvalue> {
+			static void apply(input& in, AST& ast, const int _) {
+
+			}
+		};
+
+		template <> struct action<var_id> {
+			static void apply(input& in, AST& ast, const int _) {
+				ast.push(makeNode<VarName>(in.string()));
+			}
+		};
+
+		template <> struct action<var_lookup> {
+			static void apply(input& in, AST& ast, const int _) {
+				ast.push(makeNode<Debug>(in.string()));
+			}
+		};
+
+		template <> struct action<var_name> {
+			static void apply(input& in, AST& ast, const int _) {
+				std::dynamic_pointer_cast<VarName>(ast.at())->addLevel(ast.pop(-2)->to_string());
+			}
+		};
 
 
 		// Literal Actions
@@ -48,13 +85,6 @@ namespace dust {
 			}
 		};
 
-
-		// Identifier Actions
-		template <> struct action<var_id> {
-			static void apply(input& in, AST& ast, const int _) {
-				ast.push(makeNode<VarName>(in.string()));
-			}
-		};
 
 		// Keyword Actions
 		template <> struct action<k_and> {
@@ -169,8 +199,7 @@ namespace dust {
 		template <> struct action<var_list> : list_actions<VarName> {};
 		template <> struct action<expr_list> : list_actions<ASTNode> {};
 
-		// Block and Scoping Actions
-			// A block is constructed "after" it's nodes
+		// Block/Table/Scoping Actions
 		template <> struct action<block> {
 			static void apply(input& in, AST& ast, const int _) {
 				auto b = makeNode<Block>();
@@ -193,26 +222,6 @@ namespace dust {
 			}
 		};
 
-		// Other Actions
-		template <> struct action<o_paren> {
-			static void apply(input& in, AST& ast, const int _) {
-				ast.push(makeNode<Debug>("("));
-			}
-		};
-
-		template <> struct action<c_paren> {
-			static void apply(input& in, AST& ast, const int _) {
-				ast.swap(); ast.pop();			// Might use some testing (empty parens)
-			}
-		};
-
-		template <> struct action<comma> {
-			static void apply(input& in, AST& ast, const int _) {
-				ast.push(makeNode<Debug>(in.string()));
-			}
-		};
-
-		// Creating Tables ???
 		template <> struct action<o_brack> {
 			static void apply(input& in, AST& ast, const int _) {
 				ast.push(makeNode<Control>());
@@ -265,6 +274,26 @@ namespace dust {
 				ast.push(tc);
 			}
 		};
+
+		// Other Actions (I forget what they're called)
+		template <> struct action<o_paren> {
+			static void apply(input& in, AST& ast, const int _) {
+				ast.push(makeNode<Debug>("("));
+			}
+		};
+
+		template <> struct action<c_paren> {
+			static void apply(input& in, AST& ast, const int _) {
+				ast.swap(); ast.pop();			// Might use some testing (empty parens)
+			}
+		};
+
+		template <> struct action<comma> {
+			static void apply(input& in, AST& ast, const int _) {
+				ast.push(makeNode<Debug>(in.string()));
+			}
+		};
+
 	}
 
 	template <typename Rule>

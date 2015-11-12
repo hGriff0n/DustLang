@@ -1,43 +1,35 @@
 #include "EvalState.h"
 #include "Exceptions\dust.h"
 
+#include <unordered_set>
+
 namespace dust {
 
 	void EvalState::forceType(int idx, size_t type) {
 		if (at(idx).type_id == type) return;
-
 		swap(idx, -1);								// Ensure the value is at the top of the stack
-		callMethod(ts.getName(type));				// Call the converter (if execution reaches here, the converter exists)
+
+		if (type == type::Traits<Table>::id) {		// Special handling for tables
+			newScope();
+			push(1);
+			swap();
+			setScoped();
+			pushScope(2);
+
+		} else {
+			callMethod(ts.getName(type));			// Otherwise call the converter (if execution reaches here, the converter exists)
+		}
+
 		swap(idx, -1);								// Restore the stack positions
 	}
 
-	impl::Table* EvalState::findScope(const std::string& var, int lvl, bool not_null) {
-		impl::Table* scp = curr_scp;
+	Table EvalState::findScope(const impl::Value& var, int lvl, bool not_null) {
+		Table scp = curr_scp;
 
 		while (scp && lvl-- && (scp = scp->findDef(var)))
 			if (lvl) scp = scp->getPar();
 
 		return (!scp && not_null) ? &global : scp;
-	}
-
-	/*/
-	impl::Table* EvalState::findScope(impl::Table* scp, const std::function<bool(impl::Table*)>& pred) {
-		while (!pred(scp) && (scp = scp->getPar()));
-		return scp;
-	}
-	
-	impl::Table* EvalState::findScope(const std::function<bool(impl::Table*)>& pred, int lvl, bool not_null) {
-		impl::Table* scp = curr_scp;
-
-		while (scp && lvl-- && (scp = findScope(scp, pred)))
-			if (lvl) scp = scp->getPar();
-
-		return (!scp && not_null) ? &global : scp;			// Wouldn't need this code if the above is taken
-	}
-	//*/
-
-	int EvalState::forcedLevel(const std::string& var) {
-		return var.find_first_not_of('.');
 	}
 
 	// Constructor
@@ -64,7 +56,7 @@ namespace dust {
 		if (dis_t == ts.NO_DEF) throw error::dispatch_error{ "Method " + fn + " is not defined for operands of type " + ts.getName(l) + " and " + ts.getName(r) };
 		
 		// Determine whether com selected a converter and perform conversions
-		if ((com_t == l ^ com_t == r) && ts.convertible(l, r)) {
+		if ((com_t == l ^ com_t == r) && (com_t == type::Traits<Table>::id || ts.convertible(l, r))) {
 			forceType(-1, com_t);					// Forces the value at the given index to have the given type by calling a converter if necessary
 			forceType(-2, com_t);
 		}
@@ -86,6 +78,7 @@ namespace dust {
 	// Handles variable assignment interaction with constant and typing
 	void EvalState::setVar(impl::Variable& var, bool is_const, bool is_typed) {
 		if (var.is_const) throw error::illegal_operation{ "Attempt to reassign a constant variable" };
+		// add check for table ???
 
 		// if the variable held a value (static typing is only possible here)
 		if (var.val.type_id != type::Traits<Nil>::id) {
@@ -104,38 +97,70 @@ namespace dust {
 		var.is_const = is_const;
 		if (is_typed) var.type_id = var.val.type_id;
 	}
+
+	void EvalState::getVar(Table tbl, const impl::Value& var) {
+		tbl->has(var) ? push(tbl->getVal(var)) : pushNil();
+	}
 	
 	// Assign the top value on the stack to the given variable with the given flags
-	void EvalState::set(const std::string& name, bool is_const, bool is_typed) {
-		int lvl = forcedLevel(name);
-		setVar(findScope(name.substr(lvl), lvl, true)->getVar(name), is_const, is_typed);
+	void EvalState::setScoped(const impl::Value& name, int _lvl, bool is_const, bool is_typed) {
+		setVar(findScope(name, _lvl, true)->getVar(name), is_const, is_typed);
 	}
 
 	// Push the variable onto the stack (nil if it doesn't exist)
-	void EvalState::get(const std::string& name) {
-		int lvl = forcedLevel(name);						// Strip leveling from the string
-		std::string var = name.substr(lvl);
-
-		auto scp = findScope(var, lvl + 1, lvl);
-		scp ? push(scp->getVal(var)) : pushNil();
+	void EvalState::getScoped(const impl::Value& name, int _lvl) {
+		getVar(findScope(name, _lvl + 1, true), name);
 	}
 
+	void EvalState::getScoped(int lvl) {
+		getScoped(pop(), lvl);
+	}
+
+	// setScoped: ..., {var}, {val}
+	void EvalState::setScoped(int lvl, bool is_const, bool is_typed) {
+		setScoped(pop(-2), lvl, is_const, is_typed);
+	}
+
+	// Workspace
+	// stack: ..., {table}, {var}
 	void EvalState::get() {
-		get(pop<std::string>());
-	}
-	void EvalState::set(bool is_const, bool is_typed) {
-		set(pop<std::string>(), is_const, is_typed);
+		get(pop());
 	}
 
-	void EvalState::markConst(const std::string& name) {
-		auto scp = findScope(name, 0);
-		if (scp) scp->getVar(name).is_const = !scp->getVar(name).is_const;
-			//bool& ic = scp->getVar(name).is_const;
-			//ic = !ic;
+	void EvalState::get(const impl::Value& var) {
+		if (is<Nil>()) return;										// TODO Change when implementing type methods ???
+		if (!is<Table>()) return pop(), pushNil();
+
+		getVar(pop<Table>(), var);
 	}
-	void EvalState::markTyped(const std::string& name, size_t typ) {
+
+	// stack: ..., {table}, {var}, {val}
+		// leaves: ..., {table}
+	void EvalState::set() {
+		if (!is<Table>(-3)) throw error::dust_error{ "Attempt to initialize a non-table field" };
+
+		auto tbl = pop<Table>(-3);
+		setVar(tbl->getVar(pop(-2)), false, false);
+		push(tbl);
+	}
+
+	// Doesn't follow the same "semantics" as set()
+		// However it's never called
+	void EvalState::set(const impl::Value& var) {
+		if (!is<Table>()) throw error::dust_error{ "Attempt to initialize a non-stored variable" };
+		
+		setVar(pop<Table>()->getVar(var), false, false);
+	}
+
+	void EvalState::markConst(const impl::Value& name) {
+		auto scp = findScope(name, 0);
+
+		if (scp) scp->getVar(name).is_const = !scp->getVar(name).is_const;
+	}
+	void EvalState::markTyped(const impl::Value& name, size_t typ) {
 		auto scp = findScope(name, 0);
 		if (!scp) return;		// throw error::base{ "Attempt to static type a nil value" };
+		
 		auto& var = scp->getVar(name);
 
 		// If the typing change may require type conversion (ie. typ not Nil and !(type(var) <= typ))
@@ -150,18 +175,19 @@ namespace dust {
 
 		var.val.type_id = typ;
 	}
-	bool EvalState::isConst(const std::string& name) {
-		// if (name[0] = '.') throw "isConst cannot not be called on non-local variables";
+	bool EvalState::isConst(const impl::Value& name) {
 		auto scp = findScope(name, 0);
+
 		return scp && scp->getVar(name).is_const;
 	}
-	bool EvalState::isTyped(const std::string& name) {
+	bool EvalState::isTyped(const impl::Value& name) {
 		auto scp = findScope(name, 0);
+
 		return scp && scp->getVar(name).type_id != type::Traits<Nil>::id;
 	}
 
 	void EvalState::newScope() {
-		curr_scp = curr_scp ? new impl::Table{ curr_scp } : &global;
+		curr_scp = curr_scp ? new table_type{ curr_scp } : &global;
 	}
 
 	void EvalState::endScope() {
@@ -170,11 +196,12 @@ namespace dust {
 		curr_scp = sav;
 	}
 
-	void EvalState::pushScope() {
-		endScope();
-		// store scope
-		// push scope id onto stack
-		//curr_scp = curr_scp->getPar();
+	void EvalState::pushScope(int nxt) {
+		Table sav = curr_scp;
+		curr_scp = sav->getPar();
+
+		sav->setNext(nxt);
+		push(sav);
 	}
 
 	type::TypeSystem& EvalState::getTS() {
@@ -203,6 +230,7 @@ namespace dust {
 		type::Traits<double>::id = Float;
 		type::Traits<std::string>::id = String;
 		type::Traits<bool>::id = Bool;
+		type::Traits<dust::Table>::id = Table;
 	}
 
 	void initConversions(type::TypeSystem& ts) {
@@ -220,12 +248,12 @@ namespace dust {
 		String.addOp("Int", [](EvalState& e) { e.push((int)e); return 1; });
 		String.addOp("Float", [](EvalState& e) { e.push((float)e); return 1; });
 
-		//Nil.addOp("Bool", [](EvalState& e) { e.pop<Nil>(); e.push(false); return 1; });
 	}
 
 	void initOperations(type::TypeSystem& ts) {
 		auto Nil = ts.getType("Nil");
 		auto Object = ts.getType("Object");
+		auto Number = ts.getType("Number");
 		auto Int = ts.getType("Int");
 		auto Float = ts.getType("Float");
 		auto String = ts.getType("String");
@@ -279,15 +307,16 @@ namespace dust {
 		});
 		*/
 
-		Int.addOp("_op+", [](EvalState& e) { e.push((int)e + (int)e); return 1; });
-		Int.addOp("_op/", [](EvalState& e) { e.push((double)e / (double)e); return 1; });		// Could be moved to Number
-		Int.addOp("_op-", [](EvalState& e) { e.push((int)e - (int)e); return 1; });
-		Int.addOp("_op*", [](EvalState& e) { e.push((int)e * (int)e); return 1; });
-		Int.addOp("_op^", [](EvalState& e) {
+		Number.addOp("_op^", [](EvalState& e) {
 			auto base = (double)e;
 			e.push(pow(base, (double)e));
 			return 1;
-		});											// Could be moved to Number
+		});
+		Number.addOp("_op/", [](EvalState& e) { e.push((double)e / (double)e); return 1; });
+
+		Int.addOp("_op+", [](EvalState& e) { e.push((int)e + (int)e); return 1; });
+		Int.addOp("_op-", [](EvalState& e) { e.push((int)e - (int)e); return 1; });
+		Int.addOp("_op*", [](EvalState& e) { e.push((int)e * (int)e); return 1; });
 		Int.addOp("_op%", [](EvalState& e) { e.push((int)e % (int)e); return 1; });
 		Int.addOp("_op<", [](EvalState& e) { e.push((int)e < (int)e); return 1; });		// 
 		Int.addOp("_op=", [](EvalState& e) { e.push((int)e == (int)e); return 1; });
@@ -300,21 +329,137 @@ namespace dust {
 
 
 		Float.addOp("_op+", [](EvalState& e) { e.push((double)e + (double)e); return 1; });
-		Float.addOp("_op/", [](EvalState& e) { e.push((double)e / (double)e); return 1; });
 		Float.addOp("_op-", [](EvalState& e) { e.push((double)e - (double)e); return 1; });
 		Float.addOp("_op*", [](EvalState& e) { e.push((double)e * (double)e); return 1; });
-		Float.addOp("_op^", [](EvalState& e) {
-			auto base = (double)e;
-			e.push(pow(base, (double)e));
-			return 1;
-		});
 		Float.addOp("_op<", [](EvalState& e) { e.push((double)e < (double)e); return 1; });		// 
 		Float.addOp("_op=", [](EvalState& e) { e.push((double)e == (double)e); return 1; });
 		Float.addOp("_op>", [](EvalState& e) { e.push((double)e >(double)e); return 1; });
 		Float.addOp("_ou-", [](EvalState& e) { e.push(-(double)e); return 1; });
-		Float.addOp("_ou-", [](EvalState& e) { e.push(-(double)e); return 1; });
 
 		Bool.addOp("_op=", [](EvalState& e) { e.push((bool)e == (bool)e); return 1; });
 		Bool.addOp("_ou!", [](EvalState& e) { e.push(!(bool)e);  return 1; });
+
+		// Table functions
+			// Currently these functions "erase" non-integer key values
+				// This means that they migrate the values existence into the new table
+				// However the value is assigned based on the current open integer key
+
+		// Append element(s) to table
+			// CHANGED
+		Table.addOp("_op+", [](EvalState& e) {
+			dust::Table lt = e.pop<dust::Table>(), rt = e.pop<dust::Table>();
+			e.newScope();
+			int nxt = 1;
+
+			// Rework once set has a nice behavior
+			for (auto l_elem : *lt) {
+				e.push(nxt++);
+				e.push(l_elem.second.val);
+				//e.push(nxt++);
+				e.setScoped();
+			}
+
+			for (auto r_elem : *rt) {
+				e.push(nxt++);
+				e.push(r_elem.second.val);
+				//e.push(nxt++);
+				e.setScoped();
+			}
+
+			e.pushScope(nxt);
+			return 1;
+		});
+		// Remove element(s) from table
+		Table.addOp("_op-", [](EvalState& e) {
+			dust::Table lt = e.pop<dust::Table>(), rt = e.pop<dust::Table>();
+
+			e.newScope();
+			int nxt = 1;
+
+			for (auto l_elem : *lt)
+				if (!rt->contains(l_elem.second.val)) {
+					e.push(nxt++);
+					e.push(l_elem.second.val);
+					//e.push(nxt++);
+					e.setScoped();
+				}
+
+			e.pushScope(nxt);
+			return 1;
+		});
+		// Union (Append and remove duplicates)
+		Table.addOp("_op*", [](EvalState& e) {
+			dust::Table lt = e.pop<dust::Table>(), rt = e.pop<dust::Table>();
+
+			std::unordered_set<impl::Value> nt{};
+
+			for (auto l_elem : *lt)
+				nt.insert(l_elem.second.val);
+
+			for (auto r_elem : *rt)
+				nt.insert(r_elem.second.val);
+
+			e.newScope();
+			int nxt = 1;
+
+			for (auto elem : nt) {
+				e.push(nxt++);
+				e.push(elem);
+				//e.push(nxt++);
+				e.setScoped();
+			}
+
+			e.pushScope(nxt);
+			return 0;
+		});
+		// Intersection (Elements in both tables)
+		Table.addOp("_op^", [](EvalState& e) {
+			dust::Table lt = e.pop<dust::Table>(), rt = e.pop<dust::Table>();
+
+			e.newScope();
+			int nxt = 1;
+
+			for (auto l_elem : *lt)
+				if (rt->contains(l_elem.second.val)) {
+					e.push(nxt++);
+					e.push(l_elem.second.val);
+					//e.push(nxt++);
+					e.setScoped();
+				}
+
+			e.pushScope(nxt);
+			return 1;
+		});
+		// Comparison
+		Table.addOp("_op=", [](EvalState& e) {
+			if (e.at().val.i == e.at(-2).val.i) {
+				e.pop();
+				e.pop();
+				e.push(true);
+
+			} else {
+				dust::Table rt = e.pop<dust::Table>(), lt = e.pop<dust::Table>();
+
+				if (lt->size() == rt->size()) {
+					auto lt_iter = lt->begin();
+
+					for (auto rt_elem : *rt) {
+						e.push(lt_iter->second.val);
+						e.push(rt_elem.second.val);
+						e.callOp("_op=");
+
+						if (!e.at().val.i) return 1;
+
+						e.pop();
+						++lt_iter;
+					}
+
+					e.push(true);
+				} else
+					e.push(false);
+			}
+
+			return 1;
+		});
 	}
 }

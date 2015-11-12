@@ -104,10 +104,10 @@ namespace dust {
 				Literal(std::string _val, size_t t);
 				static std::string node_type;
 
-				virtual EvalState& eval(EvalState& e);	// Based off of the old ast implementation
+				EvalState& eval(EvalState& e);
 
-				virtual std::string to_string();		// Possibly temporary implementation
-				virtual std::string print_string(std::string buf);
+				std::string to_string();		// Possibly temporary implementation
+				std::string print_string(std::string buf);
 		};
 
 		/*
@@ -135,15 +135,23 @@ namespace dust {
 		class VarName : public ASTNode {
 			private:
 				std::string name;
+				std::vector<std::shared_ptr<ASTNode>> sub_fields;
+				//std::vector<std::shared_ptr<VarName>> sub_fields;
+				int lvl = 0; bool sub_var = false;
 
 			public:
 				VarName(std::string var);
 				static std::string node_type;
 
 				EvalState& eval(EvalState& e);
+				void addChild(std::shared_ptr<ASTNode>& c);
 
 				std::string to_string();
 				virtual std::string print_string(std::string buf);
+
+				void addLevel(const std::string& dots);
+				void setSubStatus();
+				EvalState& set(EvalState& e, bool is_const, bool is_static);
 		};
 
 		/*
@@ -222,7 +230,7 @@ namespace dust {
 				Control();
 				Control(int typ);
 				static std::string node_type;
-				static enum Type {
+				enum Type {
 					FOR,
 					WHILE,
 					DO_WHILE
@@ -235,7 +243,6 @@ namespace dust {
 				virtual std::string print_string(std::string buf);
 
 				bool iterate(EvalState& e);
-				void reset();
 		};
 
 		/*
@@ -306,7 +313,7 @@ namespace dust {
 		 */
 		class TryCatch : public ASTNode {
 			private:
-			std::shared_ptr<Block> try_code, catch_code;
+				std::shared_ptr<Block> try_code, catch_code;
 
 			public:
 				TryCatch();
@@ -327,4 +334,10 @@ namespace dust {
 	std::shared_ptr<parse::ASTNode> makeNode(Args&... args) {
 		return std::make_shared<T>(args...);
 	}
+
+	template <class ostream>
+	void printAST(ostream& s, std::shared_ptr<parse::ASTNode>& ast) {
+		(s << ast->print_string("|")).flush();
+	}
 }
+

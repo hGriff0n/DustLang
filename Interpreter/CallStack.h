@@ -3,16 +3,22 @@
 #include "TypeTraits.h"
 #include "Value.h"
 #include "Stack.h"
-#include "GC.h"
+#include "DualGC.h"
 
 #include "Exceptions\runtime.h"
 
-// Can I move this specialization to EvalState.h ??? NO
-template<> dust::impl::Value dust::type::Traits<std::string>::make(std::string s, dust::impl::GC& gc) {
-	return{ gc.loadRef(s), dust::type::Traits<std::string>::id };
-}
-
 namespace dust {
+	// Can I move this specialization to EvalState.h ??? NO
+	template<> impl::Value type::Traits<std::string>::make(std::string s, impl::GC& gc) {
+		return{ gc.getStrings().loadRef(s), type::Traits<std::string>::id };
+	}
+
+	//*/
+	template<> impl::Value type::Traits<Table>::make(Table t, impl::GC& gc) {
+		return{ gc.getTables().loadRef(t), type::Traits<Table>::id };
+	}
+	//*/
+
 	namespace impl {
 
 		/*

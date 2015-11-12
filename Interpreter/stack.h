@@ -18,6 +18,7 @@ namespace dust {
 			int normalize(int& idx) {
 				return idx = idx < 0 ? idx + s.size() : idx;
 			}
+
 			bool invalidIndex(int idx) {
 				return idx < 0 || idx >(int)s.size();
 			}

@@ -118,4 +118,9 @@ namespace dust {
 				size_t getId(std::string t);
 		};
 	}
+
+	void initTypeSystem(dust::type::TypeSystem&);
+	void initConversions(dust::type::TypeSystem&);
+	void initOperations(dust::type::TypeSystem&);
+
 }
