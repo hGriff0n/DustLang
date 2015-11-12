@@ -42,32 +42,15 @@ Timeline
 			Currently "[3] = 3" evaluates to true
 		Fix "3: 3" throwing errors (inside of table definitions)
 			"3" is considered to be a VarName (which is expected by Assign::var_type)
-				Assign actually needs the set method (although this could *possibly* be redone if it's too bad) 
+				Assign actually needs the set method (although this could *possibly* be redone if it's too bad)  ???
 		Comment code to document behavior
-		Improve testing suit with table specific functions
+		Improve testing suit with table specific functions (?)
+		Change tables to copy-on-write semantics
+			Currently tables are references (ie. pointers)
+				This is passable but not what I want from the language
 		See VagueToDo.txt
 
-	1 Table Semantics (need to rework the breakdown chart)
-		Generalize Array into Table
-			Determine whether tables are references or copy-on-write
-				Current semantics is references
-				copy-on-write can be done easily by just setting parent
-			
-		Generalize '.' syntax even further
-			Allow for non-table values/variables to index type members with '.'
-				3.abs => Attempt to add child to node
-			Allow for type names to be indexable with '.'
-				currently parse error (type_id's fault though)
-
-		Improve the Table API
-			Change the behavior pattern of set/get
-				I'm not sure of the current expected behavior
-					Want: ..., table, key, value => ..., table
-			This is particularly important with regards to "appending" to the table (uses the next open int)
-			Possibly start to add in evaluation hooks
-			Add in more API functions
-		 
-	2 Keyword Recognition
+	1 Keyword Recognition
 		Update pegtl library
 			Possibly include the GSL as a submodule
 			Look for more libraries
@@ -79,7 +62,7 @@ Timeline
 		Possibly clean up EvalState and Grammar
 		Update the ReadME to account for the recent additions
 
-	3 Parser Update
+	2 Parser Update
 		Exceptions
 			Update exceptions and errors to better fit the new features
 			Add exception catching and error functions
@@ -101,21 +84,30 @@ Timeline
 			ee_tc can't realistically be performed more than once in a row (outside of testing for Bool)
 				I could also have the result of evaluation be the left hand side (this doesn't make much sense)
 
-	4 Parser Rewrite v. II
+	3 Parser Rewrite v. II
 		Rewrite the parser so that everything works well together
 
-	5 Control Statements (For/While/Do-While/If/Else/...)
-			
+	4 Control Statements (For/While/Do-While/If/Else/...)
+		Be able to write control statements with correct execution
+			Have variable scoping work correctly
 
-	6 Function Calling		ie. print("Hello, World!")
+	5 Function Calling		ie. print("Hello, World!")
+		Implement the evaluation hooks/etc. to be able to call functions	# Get functions callable
+			Hard coded translations at this time
+			Have the basic syntax and semantics working (Argument passing, etc.)
 		Be able to store functions as values
+			Get assignment to work as expected with functions
 		Convert Types completely to impl::Table for storage concerns
-			Make Types indexable much like tables
-		Basic syntax and semantics (Argument passing, etc.)			## Get functions callable
-		Can assign functions and then call the assigned function	## a = print and a(3)
-			Would this necessitate having _op() syntax work be done???
-		_op() syntax (Metamethods ???)
+			Allow Type methods to be called using '.'/'[]' syntax
+				Current grammar disallows type_ids to be used outside of new_type and type_checking
+			Allow Type methods to be called using '.'/'[]' syntax on non-table values and variables
+				Current AST construction assumes a VarName node exists (not guaranteed for non-variables)
+		Move function calling work into the _op() metamethod
 		Optional: No parens syntax
+
+	6 Dust Function Definition
+		Abstract the previous framework to allow for Dust functions to be conceivably executed
+		Add in the correct syntax and action calls to create dust functions
 
 	7 Grammar Framework Update
 		Potentially change the grammar to follow the basic framework in "lua53_parse.h"

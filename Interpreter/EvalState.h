@@ -123,6 +123,7 @@ namespace dust {
 			Table findScope(const impl::Value&, int, bool = false);
 
 			void setVar(impl::Variable&, bool, bool);
+			void getVar(Table tbl, const impl::Value&);
 
 		public:
 			EvalState();

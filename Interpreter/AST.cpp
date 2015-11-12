@@ -132,6 +132,7 @@ namespace dust {
 		EvalState& VarName::set(EvalState& e, bool is_const, bool is_static) {
 			if (sub_fields.empty()) {
 				e.push(name);
+				e.swap();
 				e.setScoped(lvl, is_const, is_static);
 
 			} else {
@@ -141,7 +142,9 @@ namespace dust {
 				for (int i = 0; i != sub_fields.size() - 1; ++i)
 					sub_fields[i]->eval(e).get();
 
-				sub_fields.back()->eval(e).set();
+				e.swap();
+				sub_fields.back()->eval(e).swap();
+				e.set();
 			}
 
 			return e;
@@ -256,7 +259,6 @@ namespace dust {
 				if (op.size()) (*r_var)->eval(e).callOp(op);
 				
 				(*r_var++)->set(e, setConst, setStatic);
-				//e.setGlobal((*r_var++)->to_string(), setConst, setStatic);
 			}
 
 			//return last_var->eval(e);
@@ -390,6 +392,7 @@ namespace dust {
 
 					if (table && !std::dynamic_pointer_cast<Assign>(i)) {
 						e.push<int>(next++);
+						e.swap();
 						e.setScoped();					// WARNING! Might give "wrong" answers
 					}
 				}

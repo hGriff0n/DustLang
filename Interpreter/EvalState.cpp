@@ -12,8 +12,10 @@ namespace dust {
 		if (type == type::Traits<Table>::id) {		// Special handling for tables
 			newScope();
 			push(1);
+			swap();
 			setScoped();
 			pushScope(2);
+
 		} else {
 			callMethod(ts.getName(type));			// Otherwise call the converter (if execution reaches here, the converter exists)
 		}
@@ -76,6 +78,7 @@ namespace dust {
 	// Handles variable assignment interaction with constant and typing
 	void EvalState::setVar(impl::Variable& var, bool is_const, bool is_typed) {
 		if (var.is_const) throw error::illegal_operation{ "Attempt to reassign a constant variable" };
+		// add check for table ???
 
 		// if the variable held a value (static typing is only possible here)
 		if (var.val.type_id != type::Traits<Nil>::id) {
@@ -94,44 +97,55 @@ namespace dust {
 		var.is_const = is_const;
 		if (is_typed) var.type_id = var.val.type_id;
 	}
+
+	void EvalState::getVar(Table tbl, const impl::Value& var) {
+		tbl->has(var) ? push(tbl->getVal(var)) : pushNil();
+	}
 	
 	// Assign the top value on the stack to the given variable with the given flags
 	void EvalState::setScoped(const impl::Value& name, int _lvl, bool is_const, bool is_typed) {
-		push(findScope(name, _lvl, true));
-		set(name);
+		setVar(findScope(name, _lvl, true)->getVar(name), is_const, is_typed);
 	}
 
 	// Push the variable onto the stack (nil if it doesn't exist)
 	void EvalState::getScoped(const impl::Value& name, int _lvl) {
-		push(findScope(name, _lvl + 1, true));
-		get(name);
+		getVar(findScope(name, _lvl + 1, true), name);
 	}
 
 	void EvalState::getScoped(int lvl) {
 		getScoped(pop(), lvl);
 	}
 
+	// setScoped: ..., {var}, {val}
 	void EvalState::setScoped(int lvl, bool is_const, bool is_typed) {
-		setScoped(pop(), lvl, is_const, is_typed);
+		setScoped(pop(-2), lvl, is_const, is_typed);
 	}
 
 	// Workspace
+	// stack: ..., {table}, {var}
 	void EvalState::get() {
 		get(pop());
 	}
 
 	void EvalState::get(const impl::Value& var) {
-		if (is<Nil>()) return;
+		if (is<Nil>()) return;										// TODO Change when implementing type methods ???
 		if (!is<Table>()) return pop(), pushNil();
 
-		Table t = pop<Table>();
-		t->has(var) ? push(t->getVal(var)) : pushNil();
+		getVar(pop<Table>(), var);
 	}
 
+	// stack: ..., {table}, {var}, {val}
+		// leaves: ..., {table}
 	void EvalState::set() {
-		set(pop());
+		if (!is<Table>(-3)) throw error::dust_error{ "Attempt to initialize a non-table field" };
+
+		auto tbl = pop<Table>(-3);
+		setVar(tbl->getVar(pop(-2)), false, false);
+		push(tbl);
 	}
 
+	// Doesn't follow the same "semantics" as set()
+		// However it's never called
 	void EvalState::set(const impl::Value& var) {
 		if (!is<Table>()) throw error::dust_error{ "Attempt to initialize a non-stored variable" };
 		
@@ -142,8 +156,6 @@ namespace dust {
 		auto scp = findScope(name, 0);
 
 		if (scp) scp->getVar(name).is_const = !scp->getVar(name).is_const;
-		//bool& ic = scp->getVar(name).is_const;
-		//ic = !ic;
 	}
 	void EvalState::markTyped(const impl::Value& name, size_t typ) {
 		auto scp = findScope(name, 0);
@@ -333,6 +345,7 @@ namespace dust {
 				// However the value is assigned based on the current open integer key
 
 		// Append element(s) to table
+			// CHANGED
 		Table.addOp("_op+", [](EvalState& e) {
 			dust::Table lt = e.pop<dust::Table>(), rt = e.pop<dust::Table>();
 			e.newScope();
@@ -340,14 +353,16 @@ namespace dust {
 
 			// Rework once set has a nice behavior
 			for (auto l_elem : *lt) {
-				e.push(l_elem.second.val);
 				e.push(nxt++);
+				e.push(l_elem.second.val);
+				//e.push(nxt++);
 				e.setScoped();
 			}
 
 			for (auto r_elem : *rt) {
-				e.push(r_elem.second.val);
 				e.push(nxt++);
+				e.push(r_elem.second.val);
+				//e.push(nxt++);
 				e.setScoped();
 			}
 
@@ -363,8 +378,9 @@ namespace dust {
 
 			for (auto l_elem : *lt)
 				if (!rt->contains(l_elem.second.val)) {
-					e.push(l_elem.second.val);
 					e.push(nxt++);
+					e.push(l_elem.second.val);
+					//e.push(nxt++);
 					e.setScoped();
 				}
 
@@ -387,8 +403,9 @@ namespace dust {
 			int nxt = 1;
 
 			for (auto elem : nt) {
-				e.push(elem);
 				e.push(nxt++);
+				e.push(elem);
+				//e.push(nxt++);
 				e.setScoped();
 			}
 
@@ -404,8 +421,9 @@ namespace dust {
 
 			for (auto l_elem : *lt)
 				if (rt->contains(l_elem.second.val)) {
-					e.push(l_elem.second.val);
 					e.push(nxt++);
+					e.push(l_elem.second.val);
+					//e.push(nxt++);
 					e.setScoped();
 				}
 

@@ -15,6 +15,7 @@ namespace dust {
 		// Workspace
 		template <> struct action<dot_index> {
 			static void apply(const input& in, AST& ast, const int _) {
+				// This needs a VarName node
 				std::shared_ptr<VarName> t = std::dynamic_pointer_cast<VarName>(ast.at());
 				if (t) t->setSubStatus();
 
