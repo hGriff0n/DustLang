@@ -23,7 +23,7 @@ namespace dust {
 		// Forward declarations
 		struct expr;	struct expr_0;			struct expr_x;
 		struct block;	struct inline_block;	struct expr_7;
-		struct comma;	struct sep;
+		struct comma;	struct sep;				struct keywords;
 
 
 		// "Readability" Tokens
@@ -50,7 +50,7 @@ namespace dust {
 		// Identifier Tokens
 		struct id_end : identifier_other {};
 		struct type_id : seq<range<'A', 'Z'>, star<id_end>> {};							// [A-Z]{id_end}*
-		struct var_id : seq<range<'a', 'z'>, star<id_end>> {};							// [a-z]{id_end}*
+		struct var_id : seq<not_at<keywords>, range<'a', 'z'>, star<id_end>> {};		// [a-z]{id_end}*
 		struct var_lookup : seq<star<one<'.'>>, at<var_id>> {};
 		struct var_name : seq<var_lookup, var_id> {};									// \.*{var_id}
 
