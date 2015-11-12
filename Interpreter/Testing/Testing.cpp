@@ -79,7 +79,6 @@ namespace dust {
 				t.require_eval("a: b or 5", 3);								// 6
 				t.require_true("a = 3");									// 7
 
-				// 0 => true. Should I keep this?
 				t.require_eval("b: c and 4 or (c: 5)", 5);					// 8
 				t.require_true("b = 5 and c = b");							// 9
 
@@ -119,12 +118,12 @@ namespace dust {
 				t.init_sub_test("Scoped Assignment");
 					t.require_eval("a: 2\n\ta: 5\n\ta", 5);					// 1
 					t.require_true("a = 2");								// 2
-					t.require_eval("a", 2);
-					t.require_eval("a: 3\n\ta + 2", 5);						// 3
+					t.require_eval("a", 2);									// 3
+					t.require_eval("a: 3\n\ta + 2", 5);						// 4
 					t.require_eval("a: 4\n"
 								   "\ta: 3\n"
-								   "\tb: a + .a", 7);						// 4
-					t.require_eval(".a", 4);								// 5
+								   "\tb: a + .a", 7);						// 5
+					t.require_eval(".a", 4);								// 6
 				t.close_sub_test();
 
 				t.init_sub_test("Scopes and Comments");
@@ -138,6 +137,32 @@ namespace dust {
 				t.close_sub_test();
 			t.close_sub_test();
 
+			t.init_sub_test("Table Testing");
+				t.eval("a: [ 1 ]\nb: 1");
+				t.require_eval("a.1", 1);
+				t.require_true("a[1] = a[b]");
+
+				t.eval("a.a: [ a: 3 ]");
+				t.require_eval("a", "[ 1, a: [ a: 3 ] ]");
+				t.require_eval("a.a", "[ a: 3 ]");
+				t.require_eval("a.a.b: 2", 2);
+				t.require_eval("a.a", "[ a: 3, b: 2 ]");
+
+				t.init_sub_test("Table Operators");
+					t.eval("a: [ 1 2 3 2 5 5 4 ]");
+					t.eval("b: [ 1 3 ]");
+					t.eval("c: 5");
+					t.require_true("(a ^ b) = b");
+					t.require_eval("a ^ c", "[ 5, 5 ]");
+					t.require_eval("b + c", "[ 1, 3, 5 ]");
+					t.require_eval("a - b", "[ 2, 2, 5, 5, 4 ]");
+					t.require_eval("b * c", "[ 1, 3, 5 ]");
+				t.close_sub_test();
+
+				t.require_eval("a[b[2]]", 3);
+				t.require_eval("a[b[2] * 2]", 5);
+
+			t.close_sub_test();
 			//t.init_sub_test("API Testing");
 			//t.close_sub_test();
 

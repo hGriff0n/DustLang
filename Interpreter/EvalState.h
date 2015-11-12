@@ -2,13 +2,12 @@
 
 #include "CallStack.h"
 #include "TypeSystem.h"
+
 #include "Table.h"
+typedef dust::impl::Table table_type;
+
 
 namespace dust {
-	void initTypeSystem(dust::type::TypeSystem&);
-	void initConversions(dust::type::TypeSystem&);
-	void initOperations(dust::type::TypeSystem&);
-
 	namespace type {
 		// Traits conversion specializations (Could I move these into TypeTraits.h ???)
 		template<> int Traits<int>::get(const impl::Value& v, impl::GC& gc) {
@@ -20,7 +19,7 @@ namespace dust {
 					return v.val.i;
 
 				else if (v.type_id == Traits<std::string>::id)
-					return std::stoi(gc.deref(v.val.i));
+					return std::stoi(gc.getStrings().deref(v.val.i));
 			} catch (...) {}
 
 			throw error::conversion_error{ "Not convertible to Int" };
@@ -35,7 +34,7 @@ namespace dust {
 					return v.val.i;
 
 				else if (v.type_id == Traits<std::string>::id) {
-					return std::stod(gc.deref(v.val.i));
+					return std::stod(gc.getStrings().deref(v.val.i));
 				}
 			} catch (...) {}
 
@@ -44,7 +43,7 @@ namespace dust {
 
 		template<> std::string Traits<std::string>::get(const impl::Value& v, impl::GC& gc) {
 			if (v.type_id == Traits<std::string>::id)
-				return gc.deref(v.val.i);
+				return gc.getStrings().deref(v.val.i);
 
 			else if (v.type_id == Traits<bool>::id)
 				return v.val.i ? "true" : "false";
@@ -54,6 +53,20 @@ namespace dust {
 
 			else if (v.type_id == Traits<double>::id)
 				return std::to_string(v.val.d);
+
+			else if (v.type_id == Traits<Table>::id) {
+				std::string t = "[";
+				bool notFirst = false;
+
+				for (auto pair : *(gc.getTables().deref(v.val.i))) {
+					t += ((notFirst ? ", " : " ") +
+						(pair.first.type_id == Traits<int>::id ? "" : Traits<std::string>::get(pair.first, gc) + ": ") +
+						Traits<std::string>::get(pair.second.val, gc));
+					notFirst = true;
+				}
+
+				return t + " ]";
+			}
 
 			throw error::conversion_error{ "Not convertible to String" };
 		}
@@ -65,9 +78,22 @@ namespace dust {
 			else if (v.type_id == Traits<Nil>::id)
 				return false;
 
+			else if (v.type_id == Traits<Table>::id) {
+				return gc.getTables().deref(v.val.i)->size() != 0;
+			}
+
 			return true;
 		}
 
+		template<> Table Traits<Table>::get(const impl::Value& v, impl::GC& gc) {
+			if (v.type_id == Traits<Table>::id)
+				return gc.getTables().deref(v.val.i);
+
+			/*
+			else
+			*/
+			return nullptr;
+		}
 	}
 
 	namespace test {
@@ -82,8 +108,8 @@ namespace dust {
 	 */
 	class EvalState : public impl::CallStack {
 		private:
-			impl::Table* curr_scp;
-			impl::Table global;
+			Table curr_scp;
+			table_type global;
 			type::TypeSystem ts;
 
 			//impl::RuntimeStorage<str_record> strings;
@@ -94,12 +120,10 @@ namespace dust {
 		protected:
 			void forceType(int, size_t);
 
-			impl::Table* findScope(const std::string&, int, bool = false);
-			//impl::Table* findScope(const std::function<bool(impl::Table*)>&, int, bool = false);
-			//impl::Table* findScope(impl::Table*, const std::function<bool(impl::Table*)>&);
+			Table findScope(const impl::Value&, int, bool = false);
 
-			int forcedLevel(const std::string&);
 			void setVar(impl::Variable&, bool, bool);
+			void getVar(Table tbl, const impl::Value&);
 
 		public:
 			EvalState();
@@ -113,21 +137,26 @@ namespace dust {
 			//EvalState& eval(std::shared_ptr<parse::ASTNode>&);
 
 			// Set/Get Variables
-			void set(const std::string& name, bool is_const = false, bool is_typed = false);
-			void get(const std::string& var);
-			void set(bool is_const = false, bool is_typed = false);
+			void setScoped(const impl::Value& name, int lvl = 0, bool is_const = false, bool is_typed = false);
+			void setScoped(int lvl = 0, bool is_const = false, bool is_typed = false);
+			void getScoped(const impl::Value& var, int lvl = 0);
+			void getScoped(int lvl = 0);
+
 			void get();
+			void get(const impl::Value& var);
+			void set();
+			void set(const impl::Value& name);
 			
 			// Variable flags (setters & getters)
-			void markConst(const std::string& name);
-			void markTyped(const std::string& name, size_t typ);
-			bool isConst(const std::string& name);
-			bool isTyped(const std::string& name);
+			void markConst(const impl::Value& name);
+			void markTyped(const impl::Value& name, size_t typ);
+			bool isConst(const impl::Value& name);
+			bool isTyped(const impl::Value& name);
 
 			// Scope Interaction
 			void newScope();				// Start a new scope with the current scope as parent
 			void endScope();				// Delete current scope (Cleans up memory)
-			void pushScope();				// Store scope in memory and push on the stack (tables, functions, etc.)
+			void pushScope(int nxt = 1);	// Store scope in memory and push on the stack (tables, functions, etc.)
 
 			// TypeSystem Interaction
 			type::TypeSystem& getTS();

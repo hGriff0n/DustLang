@@ -1,5 +1,6 @@
 #include "TypeSystem.h"
 #include "TypeTraits.h"
+#include "Table.h"
 #include "Exceptions\logic.h"
 #include <cctype>					// std::isupper in TypeSystem::newType
 
@@ -123,8 +124,8 @@ namespace dust {
 		size_t TypeSystem::com(size_t l, size_t r, std::string op) {
 			if (l == r) return l;																// Avoid memoizing ancestor(l, l) == l
 
-			if (l == getId("Table") || r == getId("Table")) return getId("Table");				// Handle Nil and Table cases
-			if (l == Traits<Nil>::id || r == Traits<Nil>::id) return Traits<Nil>::id;
+			if (l == Traits<Table>::id || r == Traits<Table>::id) return Traits<Table>::id;		// com(Table, x, x) = Table
+			if (l == Traits<Nil>::id || r == Traits<Nil>::id) return Traits<Nil>::id;			// com(Nil, x, x) = Nil (?)
 			
 			// Try for direct conversion
 			auto idx = key(l, r);

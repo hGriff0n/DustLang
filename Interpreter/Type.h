@@ -4,6 +4,8 @@
 #include <string>
 #include <functional>
 
+#include "Table.h"
+
 namespace dust {
 	class EvalState;
 	typedef std::function<int(EvalState&)> Function;
@@ -16,13 +18,13 @@ namespace dust {
 		struct Type {
 			std::string name;
 			size_t id, parent;
-			//impl::Table ops;							// Replace ops when I allow functions to be in Value
+			Table _ops_;
 			std::map<std::string, Function> ops;
 				
 			// Default values and typed/const variables ???
 
 			Type(std::string t, size_t s) : Type(t, s, -1) {}
-			Type(std::string t, size_t s, size_t p) : name{ t }, id{ s }, parent{ p } {}
+			Type(std::string t, size_t s, size_t p) : name{ t }, id{ s }, parent{ p }, _ops_{ nullptr } {}
 			Type(std::string t, size_t s, Type p) : Type(t, s, p.id) {}
 		};
 

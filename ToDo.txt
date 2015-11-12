@@ -33,73 +33,89 @@ Timeline
 		Clean up code
 			Block::eval
 			Try to reduce the number of ASTNodes
+		The numRefs in the String/Table Storage classes are messed up
+			Ensure that this is correct
+		Improve the implementation of GC
+			Possibly convert RuntimeStorage to be templated
+		Determine whether 0 should be equal to true or false
+		Think of changing how operator resolution is handled (especially for equals)
+			Currently "[3] = 3" evaluates to true
+		Fix "3: 3" throwing errors (inside of table definitions)
+			"3" is considered to be a VarName (which is expected by Assign::var_type)
+				Assign actually needs the set method (although this could *possibly* be redone if it's too bad)  ???
+		Comment code to document behavior
+		Improve testing suit with table specific functions (?)
+		Change tables to copy-on-write semantics
+			Currently tables are references (ie. pointers)
+				This is passable but not what I want from the language
 		See VagueToDo.txt
 
-	1 Table Semantics (need to rework the breakdown chart)
-		Scope as a value
-			Create a RuntimeStorage solution for impl::Table
-			Push/pop scopes on the stack
-		First-class Scopes
-			Be able to assign scopes to variables
-			Have the syntax and semantics for scope access (using [] and .)
-				Be able to assign variables in "tables"
-			Implement basic operator overloads
-		Generalize Scope into Table
-			Add in the ability to use int keys to impl::Table
-				Also have the ability to restrict key types
-			Add in the Bool conversions ([] = false, otherwise true)
-			Implement _nindex and _index metamethods
-		Complete Table type
-			Have the ability to index a Table using values of any type
-			Convert Types to have an impl::Table storage member (can't completely convert yet)
-			Add in some API functions
-			Complete operator overloads
-		Generalize RuntimeStorage and GC
-			Merge the Table RuntimeStorage and the String RuntimeStorage into one class (possibly templated)
-			Modify the GC to be able to handle both classes
-
-	2 Keyword Recognition
+	1 Keyword Recognition
 		Update pegtl library
 			Possibly include the GSL as a submodule
+			Look for more libraries
 		Get the grammar to recognize all keywords (in correct precedence)
-		Prevent keywords from being interpreted as variable names when not part of an expression that uses it
-			This occurs for all keywords except for true, false, and nil (literals are matched first)
+			Prevent keywords from being recognized as variables in certain situations
+				This doesn't occur for true and false (literals are matched first)
 		Work on the framework for adding keywords to the AST
 			BinaryKeyword is a temporary node to test and/or
 		Possibly clean up EvalState and Grammar
+		Update the ReadME to account for the recent additions
 
-	3 Exception and Error update
-		Update exceptions and errors to better fit the new features
-		Add exception catching and error functions
-		Improve Exception Error Messages
-			Mainly work on Exception constructors
-
-	4 Strict Parser Update
+	2 Parser Update
+		Exceptions
+			Update exceptions and errors to better fit the new features
+			Add exception catching and error functions
+			Improve Exception Error Messages
+				Mainly work on Exception constructors
+		Table Improvements
+			Figure out where to add in hooks to allow for restricting key/value types in tables
+				Force "3: 3" to throw a dust_error (when performed in the global scope)
+					Throw for a different reason than current execution
+				Would need to add the type system (as an argument or something)
 		Update the parser so that wrong programs will ouput an error (as opposed to interpreting a subset)
 			I may have already done this (although I could make the errors more informative)
-		Possibly start implementing custom Control specializations
+		Possibly start implementing custom Control specializations (standardize error types)
 		Standardize code standards
-			Particularly method name case
-			Change TypeSystem::getId to TypeSystem::getID (or get_id)
-		Improve expr_4 grammar to be more accurate
+			classes: PascalCase (?)
+			methods: camelCase (?)
+			variables: snake_case (?)
+		Improve expr_4 grammar to be more accurate (?)
 			ee_tc can't realistically be performed more than once in a row (outside of testing for Bool)
-				I could also have the result of evaluation be the left hand side
+				I could also have the result of evaluation be the left hand side (this doesn't make much sense)
+
+	3 Parser Rewrite v. II
+		Rewrite the parser so that everything works well together
+
+	4 Control Statements (For/While/Do-While/If/Else/...)
+		Be able to write control statements with correct execution
+			Have variable scoping work correctly
 
 	5 Function Calling		ie. print("Hello, World!")
+		Implement the evaluation hooks/etc. to be able to call functions	# Get functions callable
+			Hard coded translations at this time
+			Have the basic syntax and semantics working (Argument passing, etc.)
 		Be able to store functions as values
+			Get assignment to work as expected with functions
 		Convert Types completely to impl::Table for storage concerns
-			Make Types indexable much like tables
-		Basic syntax and semantics (Argument passing, etc.)			## Get functions callable
-		Can assign functions and then call the assigned function	## a = print and a(3)
-			Would this necessitate having _op() syntax work be done???
-		_op() syntax (Metamethods ???)
+			Allow Type methods to be called using '.'/'[]' syntax
+				Current grammar disallows type_ids to be used outside of new_type and type_checking
+			Allow Type methods to be called using '.'/'[]' syntax on non-table values and variables
+				Current AST construction assumes a VarName node exists (not guaranteed for non-variables)
+		Move function calling work into the _op() metamethod
 		Optional: No parens syntax
 
-	6 Grammar Framework Update
+	6 Dust Function Definition
+		Abstract the previous framework to allow for Dust functions to be conceivably executed
+		Add in the correct syntax and action calls to create dust functions
+
+	7 Grammar Framework Update
 		Potentially change the grammar to follow the basic framework in "lua53_parse.h"
 		Update all documents to ensure that they reflect the current language spec
 		Update the readme to show of recent aditions
 		Determine the next set of features that need to be implemented
+
+	8 Type/Table metamethods
 
 
 
