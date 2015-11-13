@@ -53,10 +53,10 @@ Timeline
 			Currently tables are references (ie. pointers)
 				This is passable but not what I want from the language
 		Consider getting a static analyzer
+		Organize the Actions file
 		See VagueToDo.txt
 
 	1 Keyword Recognition
-		Add in type casting syntax
 		Add in try-catch syntax
 			Cause "a.a.a.a.a.a.a.a.a" to throw a dust_error
 			See if the try-catch statements work

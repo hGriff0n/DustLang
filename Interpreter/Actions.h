@@ -13,6 +13,20 @@ namespace dust {
 		struct action : nothing<Rule> {};
 
 		// Workspace
+		template <> struct action<type_cast> {
+			static void apply(const input& in, AST& ast, const int _) {
+				// stack: ..., {type}, {ASTNode}
+
+				auto t = makeNode<TypeCast>();
+				t->addChild(ast.pop());
+				t->addChild(ast.pop());
+
+				ast.push(t);
+
+				// stack: ..., {type_cast}
+			}
+		};
+		
 		template <> struct action<dot_index> {
 			static void apply(const input& in, AST& ast, const int _) {
 				// This needs a VarName node

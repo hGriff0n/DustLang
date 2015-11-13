@@ -161,6 +161,30 @@ namespace dust {
 			return buf + "+- " + node_type + " " + name + "\n";
 		}
 
+		// TypeCast methods
+		TypeCast::TypeCast() {}
+		EvalState& TypeCast::eval(EvalState& e) {
+			expr->eval(e);
+
+			e.callMethod(convert->to_string());
+
+			return e;
+		}
+		void TypeCast::addChild(std::shared_ptr<ASTNode>& c) {
+			if (!convert && std::dynamic_pointer_cast<TypeName>(c))
+				convert.swap(std::dynamic_pointer_cast<TypeName>(c));
+
+			else if (!expr)
+				expr.swap(c);
+
+			else
+				throw error::invalid_ast_construction{ "Attempt to construct TypeCast Node with multiple expressions" };
+		}
+		std::string TypeCast::to_string() { return convert->to_string(); }
+		std::string TypeCast::print_string(std::string buf) {
+			return buf + "+- " + node_type + " " + convert->to_string() + "\n" + expr->print_string(buf + " ");
+		}
+
 		// NewType methods
 		NewType::NewType() : name{}, inherit { "Object" } {}
 		EvalState& NewType::eval(EvalState& e) {
@@ -465,6 +489,7 @@ namespace dust {
 		std::string Operator::node_type = "Operator";
 		std::string VarName::node_type = "Variable";
 		std::string TypeName::node_type = "Type";
+		std::string TypeCast::node_type = "TypeCast";
 		std::string NewType::node_type = "NewType";
 		std::string TypeCheck::node_type = "TypeCheck";
 		std::string Assign::node_type = "Assignment";

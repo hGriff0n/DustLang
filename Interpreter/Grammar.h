@@ -97,7 +97,8 @@ namespace dust {
 		// Atomic Tokens
 		struct unary : seq<op_0, expr_0> {};
 		struct parens : if_must<o_paren, seps, expr, seps, c_paren> {};
-		struct lvalue : sor<literals, var_name, unary, parens> {};						// {number}|{var_name}|{unary}|{parens}
+		struct cast : seq<one<'('>, type_id, one<')'>> {};										// Cast is an Atomic to avoid errors with matching parens (rework ?)
+		struct lvalue : sor<literals, var_name, unary, cast, parens> {};						// {number}|{var_name}|{unary}|{parens}
 
 
 		// Expression Tokens
@@ -107,9 +108,13 @@ namespace dust {
 		struct brac_index : seq<one<'['>, seps, expr_7, seps, one<']'>> {};				// will need to update if I add a layer above expr_7
 		struct expr_0 : seq<lvalue, star<sor<dot_index, brac_index>>> {};
 
+		// Type Casting
+		struct type_cast : seq<cast, expr_0> {};
+		struct expr_tcast : sor<type_cast, expr_0> {};									// ({type_id}){expr_0}
+
 		// Operator '^'
-		struct ee_1 : if_must<op_1, seps, expr_0> {};									// ee_#'s structure the parsing to allow ast to be constructed left->right
-		struct expr_1 : seq<expr_0, star<seps, ee_1>, seps> {};							// {expr_0}( *{op_1} *{expr_0})* *
+		struct ee_1 : if_must<op_1, seps, expr_tcast> {};								// ee_#'s structure the parsing to allow ast to be constructed left->right
+		struct expr_1 : seq<expr_tcast, star<seps, ee_1>, seps> {};						// {expr_0}( *{op_1} *{expr_0})* *
 
 		// Operator '*', '/'
 		struct ee_2 : if_must<op_2, seps, expr_1> {};									// change name to left_assoc_# (or something similar)

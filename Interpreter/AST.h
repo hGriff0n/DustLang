@@ -171,6 +171,22 @@ namespace dust {
 				virtual std::string print_string(std::string buf);
 		};
 
+		class TypeCast : public ASTNode {
+			private:
+				std::shared_ptr<TypeName> convert;
+				std::shared_ptr<ASTNode> expr;
+
+			public:
+				TypeCast();
+				static std::string node_type;
+
+				EvalState& eval(EvalState& e);
+				void addChild(std::shared_ptr<ASTNode>& c);
+
+				std::string to_string();
+				virtual std::string print_string(std::string buf);
+		};
+
 		/*
 		 * Represents an assignment operation
 		 */
