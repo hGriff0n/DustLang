@@ -89,7 +89,7 @@ namespace dust {
 		// Keyword Actions
 		template <> struct action<k_and> {
 			static void apply(const input& in, AST& ast, const int _) {
-				ast.push(makeNode<BinaryKeyword>(in.string()));					// and/or are not becoming methods of Bool
+				ast.push(makeNode<BooleanOperator>(in.string()));					// and/or are not becoming methods of Bool
 			}
 		};
 
@@ -168,8 +168,8 @@ namespace dust {
 		template <> struct action<ee_2> : ee_actions<Operator> {};
 		template <> struct action<ee_3> : ee_actions<Operator> {};
 		template <> struct action<ee_4> : ee_actions<Operator> {};
-		template <> struct action<ee_5> : ee_actions<BinaryKeyword> {};
-		template <> struct action<ee_6> : ee_actions<BinaryKeyword> {};
+		template <> struct action<ee_5> : ee_actions<BooleanOperator> {};
+		template <> struct action<ee_6> : ee_actions<BooleanOperator> {};
 		template <> struct action<ee_7> : ee_actions<Assign> {};				// ee_x is Assignmnet, which needs and uses Assignment nodes. ee_acctions requires Operator nodes
 
 		// List Actions

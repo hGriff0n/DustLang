@@ -283,8 +283,8 @@ namespace dust {
 		}
 
 		// BinaryKeyword methods
-		BinaryKeyword::BinaryKeyword(std::string key) : l{ nullptr }, r{ nullptr }, isAnd{ key == "and" } {}
-		EvalState& BinaryKeyword::eval(EvalState& e) {
+		BooleanOperator::BooleanOperator(std::string key) : l{ nullptr }, r{ nullptr }, isAnd{ key == "and" } {}
+		EvalState& BooleanOperator::eval(EvalState& e) {
 			if (!l || !r) throw error::bad_node_eval{ "Attempt to use BinaryKeyword node with less than two operands" };
 
 			l->eval(e).copy();						// Copy does perform reference incrementing
@@ -301,11 +301,11 @@ namespace dust {
 			e.pop();
 			return r->eval(e);
 		}
-		std::string BinaryKeyword::to_string() { return isAnd ? "and" : "or"; }
-		std::string BinaryKeyword::print_string(std::string buf) {
+		std::string BooleanOperator::to_string() { return isAnd ? "and" : "or"; }
+		std::string BooleanOperator::print_string(std::string buf) {
 			return buf + "+- " + node_type + " " + to_string() + "\n" + l->print_string(buf + " ") + (r ? r->print_string(buf + " ") : "");
 		}
-		void BinaryKeyword::addChild(std::shared_ptr<ASTNode>& c) {
+		void BooleanOperator::addChild(std::shared_ptr<ASTNode>& c) {
 			if (!l) l.swap(c);
 			else if (!r) r.swap(c);
 			else throw error::operands_error{ "Attempt to add more than three operands to BinaryKeyword node" };
@@ -468,7 +468,7 @@ namespace dust {
 		std::string NewType::node_type = "NewType";
 		std::string TypeCheck::node_type = "TypeCheck";
 		std::string Assign::node_type = "Assignment";
-		std::string BinaryKeyword::node_type = "Boolean";
+		std::string BooleanOperator::node_type = "Boolean";
 		std::string Control::node_type = "Control";
 		std::string Block::node_type = "Block";
 		std::string TryCatch::node_type = "Try-Catch";

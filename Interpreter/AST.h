@@ -196,18 +196,18 @@ namespace dust {
 				virtual std::string print_string(std::string buf);
 		};
 
-		// class Keyword : public ASTNode {};
+		//class Keyword : public ASTNode { };
 
 		/*
 		 * Temporary representation of the and/or keywords
 		 */
-		class BinaryKeyword : public ASTNode {
+		class BooleanOperator : public ASTNode {
 			private:
 				std::shared_ptr<ASTNode> l, r;
 				bool isAnd;
 
 			public:
-				BinaryKeyword(std::string key);
+				BooleanOperator(std::string key);
 				static std::string node_type;
 
 				EvalState& eval(EvalState& e);
