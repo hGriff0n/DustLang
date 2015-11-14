@@ -1,5 +1,5 @@
 #include "Testing.h"
-
+#include <sstream>
 
 namespace dust {
 	namespace test {
@@ -166,12 +166,20 @@ namespace dust {
 			//t.init_sub_test("API Testing");
 			//t.close_sub_test();
 
-			// Is there a way to review all tests here ???
 			//t.end_tests();
 
-			std::cout << "Passed: " << t.num_pass << " | Failed: " << (t.num_tests - t.num_pass) << " | " << t.num_pass << " / " << t.num_tests << " Tests (" << std::setprecision(4) << ((float)t.num_pass / t.num_tests * 100) << "%)\n\n";
+			t.print_review(std::cout);
+		}
 
+		std::string makeReview(const std::string& buf, const std::string& test, int np, int nt) {
+			std::stringstream ss;
 
+			ss << buf << ":: " << test << " | Passed: " << np
+									   << " | Failed: " << (nt - np)
+									   << " | " << np << " / " << nt
+									   << " Tests (" << std::setprecision(4) << ((float)np / nt * 100) << "%)\n";
+
+			return ss.str();
 		}
 
 	}

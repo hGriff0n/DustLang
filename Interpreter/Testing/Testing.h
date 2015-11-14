@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <vector>
 
 // TODO Improvements
 	// Improve API
@@ -92,10 +93,9 @@ namespace dust {
 				std::string buffer;
 				EvalState& e;
 				Stream& s;
-
-			public:
 				int num_tests = 0, num_pass = 0;
 
+			public:
 				Tester(EvalState& _e, Stream& _s, const std::string& buf) : e{ _e }, s{ _s }, buffer{ buf }, reset { DEFAULT_RESET } {
 					s << std::setiosflags(std::ios::left);
 				}
@@ -275,13 +275,17 @@ namespace dust {
 
 		template <class Stream>
 		class TestOrganizer : public Tester<Stream> {
+			static std::vector<std::string> default_reviews;
+
 			private:
 				TestOrganizer<Stream>* sub_test = nullptr;
 				std::string curr_test;
+				std::vector<std::string>& reviews;				// stack of sub-test reviews
 
 			public:			// These constructors will cause recursion ???
-				TestOrganizer(EvalState& _e, Stream& _s) : TestOrganizer(_e, _s, "") {}
-				TestOrganizer(EvalState& _e, Stream& _s, const std::string& buf) : Tester{ _e, _s, buf } {}
+				TestOrganizer(EvalState& _e, Stream& _s) : TestOrganizer{ _e, _s, "", default_reviews } {}
+				TestOrganizer(EvalState& _e, Stream& _s, const std::string& buf) : TestOrganizer{ _e, _s, buf, default_reviews } {}
+				TestOrganizer(EvalState& _e, Stream& _s, const std::string& buf, std::vector<std::string>& _rws) : reviews{ _rws }, Tester{ _e, _s, buf } {}
 
 				// Start a new sub_test
 				void init_sub_test(const std::string& msg) {
@@ -301,8 +305,11 @@ namespace dust {
 					num_tests += nt = sub_test->num_tests;
 					num_pass += np = sub_test->num_pass;
 
-					s << buffer << " " << curr_test << " | Passed: " << np << " | Failed: " << (nt - np) << " | " 
-								<< np << " / " << nt << " Tests (" << std::setprecision(4) << ((float)np / nt * 100) << "%)\n\n";
+					reviews.push_back(makeReview(buffer + " ", curr_test, np, nt));
+					s << reviews.back() << "\n";
+
+					//s << buffer << " " << curr_test << " | Passed: " << np << " | Failed: " << (nt - np) << " | " 
+					//			<< np << " / " << nt << " Tests (" << std::setprecision(4) << ((float)np / nt * 100) << "%)\n\n";
 
 					delete sub_test;
 					sub_test = nullptr;
@@ -343,10 +350,24 @@ namespace dust {
 				void require_excep(const std::string& code) {
 					return sub_test ? sub_test->require_excep<Exception>(code) : Tester<Stream>::require_excep<Exception>(code);
 				}
+
+				template <class Stream>
+				void print_review(Stream& s) {
+					std::string global = makeReview("", "Global Review", num_pass, num_tests);
+					s << global;
+
+					// Print all sub-tests (with requisite buffering)
+					for (auto review : reviews)
+						s << review;
+
+					s << global;
+				}
 		};
 
 		void run_tests(EvalState&);
+		std::string makeReview(const std::string&, const std::string&, int, int);
 
+		template <class Stream> std::vector<std::string> TestOrganizer<Stream>::default_reviews = std::vector<std::string>{};
 		template <class Stream> const std::function<void(EvalState&)> Tester<Stream>::DEFAULT_RESET = [](EvalState& e) { e.clear(); };
 
 	}
