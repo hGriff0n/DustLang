@@ -68,8 +68,10 @@ namespace dust {
 		struct k_do : key_string("do");
 		struct k_if : key_string("if");
 		struct k_type : key_string("type");
+		struct k_try : key_string("try");
+		struct k_catch : key_string("catch");
 		struct k_inherit : pstring("<-") {};											// Can't start an indentifier
-		struct keywords : sor<k_and, k_true, k_false, k_or, k_nil, k_do, k_if, k_type> {};
+		struct keywords : sor<k_and, k_true, k_false, k_or, k_nil, k_do, k_if, k_type, k_try, k_catch> {};
 
 
 		// Literal Tokens
@@ -109,8 +111,9 @@ namespace dust {
 		struct expr_0 : seq<lvalue, star<sor<dot_index, brac_index>>> {};
 
 		// Type Casting
-		struct type_cast : seq<cast, expr_0> {};
-		struct expr_tcast : sor<type_cast, expr_0> {};									// ({type_id}){expr_0}
+		struct type_cast : seq<type_id, parens> {};										// {type_id}{parens}
+		//struct type_cast : seq<cast, expr_0> {};										// ({type_id}){expr_0}
+		struct expr_tcast : sor<type_cast, expr_0> {};
 
 		// Operator '^'
 		struct ee_1 : if_must<op_1, seps, expr_tcast> {};								// ee_#'s structure the parsing to allow ast to be constructed left->right
@@ -147,9 +150,20 @@ namespace dust {
 		struct ee_type : seq<k_type, seps, type_id, seps, table, opt<ee_inherit>> {};
 		struct expr_type : sor<ee_type, expr_7> {};										// type *{type_id} *{table}( *<- *{type_id})?
 
+		// Try-Catch
+		struct ee_try : seq<seps, expr> {};
+		struct ee_catch : seq<one<'('>, var_id, one<')'>, seps, expr> {};
+		struct ee_trycatch : if_must<k_try, ee_try, seps, k_catch, ee_catch> {};					// can't type try\n\t3\ncatch (problem with tables as well)
+		struct expr_trycatch : sor<ee_trycatch, expr_type> {};
+
+		// try
+		//	{block}
+		// catch(e)
+		//	{block}
+
 		// Organization Tokens
-		//struct expr_x : expr_7 {};
-		struct expr_x : expr_type {};
+		struct expr_x : expr_trycatch {};
+		//struct expr_x : expr_type {};
 		struct expr : sor<seq<expr_x, seps, opt<comment>>, seq<seps, comment>> {};
 
 		// Defines Scoping rules

@@ -329,7 +329,8 @@ namespace dust {
 		 */
 		class TryCatch : public ASTNode {
 			private:
-				std::shared_ptr<Block> try_code, catch_code;
+				//std::shared_ptr<Block> try_code, catch_code;
+				std::shared_ptr<ASTNode> try_code, catch_code;
 
 			public:
 				TryCatch();

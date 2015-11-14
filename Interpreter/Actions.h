@@ -13,60 +13,33 @@ namespace dust {
 		struct action : nothing<Rule> {};
 
 		// Workspace
-		template <> struct action<type_cast> {
+		template <> struct action<ee_try> {
 			static void apply(const input& in, AST& ast, const int _) {
-				// stack: ..., {type}, {ASTNode}
 
-				auto t = makeNode<TypeCast>();
-				t->addChild(ast.pop());
-				t->addChild(ast.pop());
-
-				ast.push(t);
-
-				// stack: ..., {type_cast}
 			}
 		};
-		
-		template <> struct action<dot_index> {
+
+		template <> struct action<ee_catch> {
 			static void apply(const input& in, AST& ast, const int _) {
-				// This needs a VarName node
-				std::shared_ptr<VarName> t = std::dynamic_pointer_cast<VarName>(ast.at());
-				if (t) t->setSubStatus();
 
-				ast.at(-2)->addChild(ast.pop());
 			}
 		};
 
-		template <> struct action<brac_index> {
+		template <> struct action<ee_trycatch> {
 			static void apply(const input& in, AST& ast, const int _) {
-				ast.at(-2)->addChild(ast.pop());
+				// stack: ..., {try_block}, {excep_name}, {catch_block}
+
+				auto tc = makeNode<TryCatch>();
+				tc->addChild(ast.pop());
+				ast.pop();
+				tc->addChild(ast.pop());
+
+				ast.push(tc);
+
+				// stack: ..., {try_catch_block}
 			}
 		};
-
-		template <> struct action<lvalue> {
-			static void apply(input& in, AST& ast, const int _) {
-
-			}
-		};
-
-		template <> struct action<var_id> {
-			static void apply(input& in, AST& ast, const int _) {
-				ast.push(makeNode<VarName>(in.string()));
-			}
-		};
-
-		template <> struct action<var_lookup> {
-			static void apply(input& in, AST& ast, const int _) {
-				ast.push(makeNode<Debug>(in.string()));
-			}
-		};
-
-		template <> struct action<var_name> {
-			static void apply(input& in, AST& ast, const int _) {
-				std::dynamic_pointer_cast<VarName>(ast.at())->addLevel(ast.pop(-2)->to_string());
-			}
-		};
-
+	
 
 		// Literal Actions
 		template <> struct action<decimal> {
@@ -128,8 +101,7 @@ namespace dust {
 		template <> struct action<op_3> : OpAction {};
 		template <> struct action<op_4> : OpAction {};
 
-
-		// Assignment Operators don't follow the same structure as Operators
+		// Assignment Operators
 		template <> struct action<op_x> {
 			static void apply(const input& in, AST& ast, const int _) {
 				ast.push(makeNode<Assign>(in.string().substr(1)));
@@ -137,7 +109,7 @@ namespace dust {
 		};
 
 
-		// Atomic Actions
+		// Atomic/Variable Actions
 		template <> struct action<unary> {
 			static void apply(input& in, AST& ast, const int _) {
 				if (ast.size() >= 2) {
@@ -153,6 +125,47 @@ namespace dust {
 					throw error::missing_nodes{ "Attempt to construct Operator node with less than 2 nodes on the stack" };
 			}
 		};
+
+		template <> struct action<dot_index> {
+			static void apply(const input& in, AST& ast, const int _) {
+				// This needs a VarName node
+				std::shared_ptr<VarName> t = std::dynamic_pointer_cast<VarName>(ast.at());
+				if (t) t->setSubStatus();
+
+				ast.at(-2)->addChild(ast.pop());
+			}
+		};
+
+		template <> struct action<brac_index> {
+			static void apply(const input& in, AST& ast, const int _) {
+				ast.at(-2)->addChild(ast.pop());
+			}
+		};
+
+		template <> struct action<lvalue> {
+			static void apply(input& in, AST& ast, const int _) {
+
+			}
+		};
+
+		template <> struct action<var_id> {
+			static void apply(input& in, AST& ast, const int _) {
+				ast.push(makeNode<VarName>(in.string()));
+			}
+		};
+
+		template <> struct action<var_lookup> {
+			static void apply(input& in, AST& ast, const int _) {
+				ast.push(makeNode<Debug>(in.string()));
+			}
+		};
+
+		template <> struct action<var_name> {
+			static void apply(input& in, AST& ast, const int _) {
+				std::dynamic_pointer_cast<VarName>(ast.at())->addLevel(ast.pop(-2)->to_string());
+			}
+		};
+
 
 		// Expression Actions
 		template <typename Node>
@@ -184,7 +197,7 @@ namespace dust {
 		template <> struct action<ee_4> : ee_actions<Operator> {};
 		template <> struct action<ee_5> : ee_actions<BooleanOperator> {};
 		template <> struct action<ee_6> : ee_actions<BooleanOperator> {};
-		template <> struct action<ee_7> : ee_actions<Assign> {};				// ee_x is Assignmnet, which needs and uses Assignment nodes. ee_acctions requires Operator nodes
+		template <> struct action<ee_7> : ee_actions<Assign> {};				// ee_x is Assignmnet, which needs and uses Assignment nodes. ee_acctions requires Operator nodes (???)
 
 		// List Actions
 		template <class type>
@@ -289,7 +302,21 @@ namespace dust {
 			}
 		};
 
-		// Other Actions (I forget what they're called)
+		template <> struct action<type_cast> {
+			static void apply(const input& in, AST& ast, const int _) {
+				// stack: ..., {type}, {ASTNode}
+
+				auto t = makeNode<TypeCast>();
+				t->addChild(ast.pop());
+				t->addChild(ast.pop());
+
+				ast.push(t);
+
+				// stack: ..., {type_cast}
+			}
+		};
+
+		// Debug Actions
 		template <> struct action<o_paren> {
 			static void apply(input& in, AST& ast, const int _) {
 				ast.push(makeNode<Debug>("("));

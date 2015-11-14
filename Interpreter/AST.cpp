@@ -139,8 +139,10 @@ namespace dust {
 				e.push(name);
 				e.getScoped(lvl);
 
-				for (int i = 0; i != sub_fields.size() - 1; ++i)
+				for (int i = 0; i != sub_fields.size() - 1; ++i) {
 					sub_fields[i]->eval(e).get();
+					//if (e.is<Nil>()) throw error::dust_error{ "Attempt to assign to a Nil value" };
+				}
 
 				e.swap();
 				sub_fields.back()->eval(e).swap();
@@ -306,7 +308,7 @@ namespace dust {
 			if (vars && vals) throw error::operands_error{ "Assignment is a binary operation" };
 		}
 
-		// BinaryKeyword methods
+		// BooleanOperator methods
 		BooleanOperator::BooleanOperator(std::string key) : l{ nullptr }, r{ nullptr }, isAnd{ key == "and" } {}
 		EvalState& BooleanOperator::eval(EvalState& e) {
 			if (!l || !r) throw error::bad_node_eval{ "Attempt to use BinaryKeyword node with less than two operands" };
@@ -478,7 +480,7 @@ namespace dust {
 			auto& code_block = catch_code ? try_code : catch_code;
 			if (code_block) throw error::operands_error{ "Attempt to add more than two blocks to TryCatch node" };
 
-			code_block.swap(std::dynamic_pointer_cast<Block>(c));
+			code_block.swap(c);
 			if (!code_block) throw error::invalid_ast_construction{ "Attempt to construct TryCatch node with a non-Block node" };
 		}
 
