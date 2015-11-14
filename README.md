@@ -7,7 +7,7 @@ programming languages are designed and implemented by growing and nurturing the 
 #### [Implementation](https://github.com/hGriff0n/DustLang/tree/master/Interpreter)
 Dust is built using the [PEGTL](https://github.com/ColinH/PEGTL) library to implement its parsing algorithm. Many thanks to ColinH for both creating an intuitive and efficient parsing library, and for providing excellent documentation.
 
-Dust is built and designed using Visual Studio 2015 and remains untested on other compilers. However, provided the compiler supports C++14, compilation should not be an issue.
+Dust is built and designed using Visual Studio 2015 and remains untested on other compilers. However, provided the compiler supports C++14, compilation should not be an issue. Currently, the Dust interpreter and runtime, along with a testing framework and basic repl loop, consists of just over 3000 SLOC, split accross header and source files.
 
 
 # Dust
@@ -71,10 +71,10 @@ To access table elements, dust offers two syntaxes, dot('.') and bracket('[]'). 
 
 Naturally, the Table type also defines a set of operators (+ (addition), - (subtraction), ^ (intersection), * (union), = (equality)). The Table type occupies a unique position for dust types as Tables are chosen (for operator resolution) over any other type, regardless of converters and operator definitions, though this may be changed in later versions (Note this means that "[3] = 3"). It should also be noted, that these operators treat their tables more as sets and arrays than tables and are implemented using linear search and traversal (ie. not efficient).
 
-    a - b                                                                      ## [ 1 2 4 ]
-    a ^ c and "C is in A" or "C is not in A"                                   ## C is not in A
-    b * 4                                                                      ## [ 1 3 4 5 ]
-    a + c                                                                      ## [ 1 2 3 4 1 3 5 ]
+    a - b                                                   ## [ 1 2 4 ]
+    a ^ c and "C is in A" or "C is not in A"                ## C is not in A
+    b * 4                                                   ## [ 1 3 5 4 ]
+    a + c                                                   ## [ 1 2 3 4 1 3 5 ]
 
 #### Metamethods
 
@@ -82,8 +82,8 @@ Metamethods are a collection of methods and fields that can be defined for table
 
 One application of metamethods is to enable operator overloading. A unique aspect of the dust type system is that operators can only work on, and be defined for, objects of the same type. For values of types with common ancestors, this is not a difficult problem. However it still [usable] for the programmer to write "5 + 3 = " + (5 + 3) in order to build a string. The way dust resolves this syntactical quirk is through a process internally called "common type resolution". Common type resolution works by attempting to find a converter from one class to another, taking the first declared (current implementation: defined) in which the operation is defined if converters exist between both types. The other value is then implicitly cast to the common type before the operator is invoked.
 
-	"3" + 3                                                                   ## "33"
-	"3" - 3                                                                    ## 0
+	"3" + 3                                              ## "33"
+	"3" - 3                                              ## 0
 
 	Unary Operators: _ou!, _ou-
 	Binary Operators: _op*, _op-, _op/, _op+, _op^, _op%
