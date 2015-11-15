@@ -30,16 +30,13 @@ namespace dust {
 			throw error::operands_error{ "Attempt to add child to ASTNode" };
 		}
 		std::string ASTNode::print_string(std::string buf) {
-			return buf + "+- " + node_type + "\n";
+			return buf + "+- " + node_type + " " + to_string() + "\n";
 		}
 
 		// Debug methods
 		Debug::Debug(std::string _msg) : msg{ _msg } {}
 		EvalState& Debug::eval(EvalState& e) { return e; }
 		std::string Debug::to_string() { return msg; }
-		std::string Debug::print_string(std::string buf) {
-			return buf + "+- " + node_type + " " + msg + "\n";
-		}
 
 		// Literal methods
 		Literal::Literal(std::string _val, size_t t) : val{ _val }, id{ t } {}
@@ -82,7 +79,7 @@ namespace dust {
 
 			if (r) {
 				r->eval(e);
-				e.swap();				// Current Binary operator evalutation expects stack: ..., rhs, lh
+				e.swap();						// Operators expect stack = ..., {rhs}, {lhs}
 			}
 
 			return e.callOp(op);
@@ -94,7 +91,7 @@ namespace dust {
 		void Operator::addChild(std::shared_ptr<ASTNode>& c) {
 			if (!l) l.swap(c);
 			else if (!r) r.swap(c);
-			else throw error::unimplemented_operation{ "Dust does not currently support ternary operators" };
+			else throw error::unimplemented_operation{ "Dust does not currently support ternary operators using the Operator node" };
 		}
 
 		// VarName methods
@@ -160,17 +157,13 @@ namespace dust {
 		}
 		std::string TypeName::to_string() { return name; }
 		std::string TypeName::print_string(std::string buf) {
-			return buf + "+- " + node_type + " " + name + "\n";
+			return buf + "+- " + node_type + " " + to_string() + "\n";
 		}
 
 		// TypeCast methods
 		TypeCast::TypeCast() {}
 		EvalState& TypeCast::eval(EvalState& e) {
-			expr->eval(e);
-
-			e.callMethod(convert->to_string());
-
-			return e;
+			return expr->eval(e).callMethod(convert->to_string());
 		}
 		void TypeCast::addChild(std::shared_ptr<ASTNode>& c) {
 			if (!convert && std::dynamic_pointer_cast<TypeName>(c))
@@ -184,7 +177,7 @@ namespace dust {
 		}
 		std::string TypeCast::to_string() { return convert->to_string(); }
 		std::string TypeCast::print_string(std::string buf) {
-			return buf + "+- " + node_type + " " + convert->to_string() + "\n" + expr->print_string(buf + " ");
+			return buf + "+- " + node_type + " " + to_string() + "\n" + expr->print_string(buf + " ");
 		}
 
 		// NewType methods
@@ -221,11 +214,11 @@ namespace dust {
 		TypeCheck::TypeCheck() {}
 		EvalState& TypeCheck::eval(EvalState& e) {
 			auto x = e.size();
-			auto res = l->eval(e).pop();						// Possible issue with multiple returns
+			auto res = l->eval(e).pop();						// Possible issue with multiple returns (might pick up the last return, hopefully picks up the first)
 			
 			e.settop(x);
 
-			if (res.type_id == type::Traits<Nil>::id)
+			if (res.type_id == type::Traits<Nil>::id)			// Nil isn't part of the current type hierarchr
 				e.push(type == "Nil");
 
 			else {
@@ -243,11 +236,11 @@ namespace dust {
 			if (std::dynamic_pointer_cast<TypeName>(c))
 				type = c->to_string();
 
-			else if (l)
-				throw error::invalid_ast_construction{ "Attempt to construct TypeCheck node with more than one expression" };
+			else if (!l)
+				l.swap(c);
 
 			else
-				l.swap(c);
+				throw error::invalid_ast_construction{ "Attempt to construct TypeCheck node with more than one expression" };
 		}
 
 		// Assign methods
@@ -263,6 +256,7 @@ namespace dust {
 			auto var_s = vars->size(), val_s = vals->size();
 
 			// This code is currently not suited to multiple returns and the splat operator
+				// For multiple returns, combining the next two loops should work
 
 			// More values than variables. Readjust val
 			while (val_s > var_s) {
@@ -274,9 +268,9 @@ namespace dust {
 				(*l_val++)->eval(e);
 
 			// More variables than values. Push nils
-			// Might change to copy() depending on compound assignment semantics
+				// Might change to copy() depending on compound assignment semantics (extend the last value to match)
 			while (var_s > val_s) {
-				e.push(0); --var_s;
+				e.pushNil(); --var_s;
 			}
 
 			// Perform assignments. Compound if necessary
@@ -287,12 +281,11 @@ namespace dust {
 				(*r_var++)->set(e, setConst, setStatic);
 			}
 
-			//return last_var->eval(e);
-			return (*vars->rbegin())->eval(e);
+			return (*vars->rbegin())->eval(e);				//return last_var->eval(e);
 		}
 		std::string Assign::to_string() { return op; }
 		std::string Assign::print_string(std::string buf) {
-			return buf + "+- " + node_type + " " + op + "\n" + vars->print_string(buf + " ") + vals->print_string(buf + " ");
+			return buf + "+- " + node_type + " " + to_string() + "\n" + vars->print_string(buf + " ") + vals->print_string(buf + " ");
 		}
 		void Assign::addChild(std::shared_ptr<ASTNode>& c) {
 			if (!vars) {
@@ -373,7 +366,6 @@ namespace dust {
 					next = !next;
 					return !next;
 			}
-			// Needs a "reset" function
 
 			// Settop is handled by Block::eval
 		}
@@ -412,7 +404,7 @@ namespace dust {
 						i->eval(e);							// Dust Exceptions are handled by a surrounding TryCatch node (Block just needs to reset scoping)
 
 					} catch (...) {
-						e.endScope();
+						e.endScope();						// Ensure scoping gets destroyed
 						throw;
 					}
 
@@ -427,6 +419,7 @@ namespace dust {
 			if (save_scope) {
 				e.settop(x);
 				e.pushScope(next);
+
 			} else
 				e.endScope();
 
@@ -448,6 +441,7 @@ namespace dust {
 			if (std::dynamic_pointer_cast<Control>(c)) {
 				if (control) throw error::invalid_ast_construction{ "Attempt to construct Block with multiple Control nodes" };
 				control.swap(std::dynamic_pointer_cast<Control>(c));
+
 			} else
 				expr.push_back(c);
 		}
@@ -457,9 +451,8 @@ namespace dust {
 		EvalState& TryCatch::eval(EvalState& e) {
 			if (!try_code || !catch_code) throw error::bad_node_eval{ "Attempt to evaluate an incomplete TryCatch node" };
 
-			// Should I mirror block evaluation
-				// Or add a flag to block to prevent it from creating/destroying scope
-			// This code follows the second option (although the flag(s) are currently unimplemented)
+			// Should I mirror block or table evaluation
+				// The question is, should variables in the try block be local
 
 			try {
 				try_code->eval(e);
