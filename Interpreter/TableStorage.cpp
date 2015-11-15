@@ -29,6 +29,11 @@ namespace dust {
 			return ref;
 		}
 
+		// Implement similar to StringStorage::setRef
+		size_t TableStorage::setRef(size_t ref, dust::Table t) {
+			return size_t();
+		}
+
 		dust::Table TableStorage::deref(size_t idx) {
 			if (!validIndex(idx)) throw error::storage_access_error{ "Invalid Record Access" };
 			return records[idx].first;
@@ -48,7 +53,7 @@ namespace dust {
 			return records.size();
 		}
 
-		int TableStorage::num_refs(size_t loc) {
+		int TableStorage::numRefs(size_t loc) {
 			if (!validIndex(loc)) return 0;
 			return records[loc].second;
 		}

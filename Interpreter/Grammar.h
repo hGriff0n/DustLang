@@ -76,31 +76,29 @@ namespace dust {
 
 		// Literal Tokens
 		struct integer : plus<digit> {};												// [0-9]+
-		// Change grammer to make 3.abs to not trigger decimal
-		struct decimal : seq<plus<digit>, one<'.'>, not_at<var_id>, star<digit>> {};
-		//struct decimal : seq<plus<digit>, one<'.'>, star<digit>> {};					// [0-9]+\.[0-9]*
+		struct decimal : seq<plus<digit>, one<'.'>, not_at<var_id>, star<digit>> {};	// [0-9]+\.[0-9]*
 		struct boolean : sor<k_true, k_false> {};
 		struct body : star<sor<seq<esc, quote>, unless<quote>>> {};						// ((\\\")|[^"])*
 		struct str : seq<quote, body, quote> {};										// \"{body}\"
-		struct table_inner : until<c_brack, expr> {};
+		struct table_inner : until<c_brack, expr> {};									// NOTE: THIS GRAMMAR DOESN'T ALLOW FOR TABLES TO BE DECLARED ON MULTIPLE LINES (with indentation)
 		struct table : seq<o_brack, seps, table_inner> {};								// \[ *{expr}*]
 		struct literals : sor<decimal, integer, boolean, table, str, k_nil> {};
 
 
 		// Operator Tokens
-		struct op_0 : one<'!', '-'> {};													// unary operators
+		struct op_0 : one<'!', '-'> {};																	// unary operators
 		struct op_1 : one<'^'> {};
 		struct op_2 : one<'*', '/'> {};
 		struct op_3 : one<'+', '-', '%'> {};
-		struct op_4 : sor<pstring("<="), pstring(">="), pstring("!="), one<'<', '=', '>'>> {};							// A tad "crude"
-		struct op_x : seq<one<':'>, opt<one<'^', '*', '/', '+', '-', '%', '<', '=', '>'>>> {};							// Assignment operators (should :>=, :<=, and :!= be valid???)
+		struct op_4 : sor<pstring("<="), pstring(">="), pstring("!="), one<'<', '=', '>'>> {};			// A tad "crude"
+		struct op_x : seq<one<':'>, opt<one<'^', '*', '/', '+', '-', '%', '<', '=', '>'>>> {};			// Assignment operators (should :>=, :<=, and :!= be valid???)
 
 
 		// Atomic Tokens
 		struct unary : seq<op_0, expr_0> {};
-		struct parens : if_must<o_paren, seps, expr, seps, c_paren> {};
-		struct cast : seq<one<'('>, type_id, one<')'>> {};										// Cast is an Atomic to avoid errors with matching parens (rework ?)
-		struct lvalue : sor<literals, var_name, unary, cast, parens> {};						// {number}|{var_name}|{unary}|{parens}
+		struct parens : if_must<o_paren, seps, expr, seps, c_paren> {};					// \( *{expr} *\)
+		struct cast : seq<one<'('>, type_id, one<')'>> {};								// Cast is an Atomic to avoid errors with matching parens (rework ?)
+		struct lvalue : sor<literals, var_name, unary, cast, parens> {};				// {number}|{var_name}|{unary}|{parens}
 
 
 		// Expression Tokens
@@ -108,11 +106,11 @@ namespace dust {
 		// Possible "indexable" grammar
 		struct dot_index : seq<one<'.'>, sor<var_id, integer>> {};
 		struct brac_index : seq<one<'['>, seps, expr_7, seps, one<']'>> {};				// will need to update if I add a layer above expr_7
-		struct expr_0 : seq<lvalue, star<sor<dot_index, brac_index>>> {};
+		struct expr_0 : seq<lvalue, star<sor<dot_index, brac_index>>> {};				// {lvalue}(\.({var_id}|{integer})|\[{expr_7}\])*
 
 		// Type Casting
-		struct type_cast : seq<type_id, parens> {};										// {type_id}{parens}
-		//struct type_cast : seq<cast, expr_0> {};										// ({type_id}){expr_0}
+		//struct type_cast : seq<type_id, parens> {};										// {type_id}{parens}		Int("4")
+		struct type_cast : seq<cast, expr_0> {};										// ({type_id}){expr_0}			(Int)"4"
 		struct expr_tcast : sor<type_cast, expr_0> {};
 
 		// Operator '^'
@@ -151,22 +149,19 @@ namespace dust {
 		struct expr_type : sor<ee_type, expr_7> {};										// type *{type_id} *{table}( *<- *{type_id})?
 
 		// Try-Catch
+			// NOTE: THIS GRAMMAR DOESN'T WORK FOR DESCRIBING TRY-CATCH STATEMENTS
 		struct ee_try : seq<seps, expr> {};
 		struct ee_catch : seq<one<'('>, var_id, one<')'>, seps, expr> {};
 		struct ee_trycatch : if_must<k_try, ee_try, seps, k_catch, ee_catch> {};					// can't type try\n\t3\ncatch (problem with tables as well)
 		struct expr_trycatch : sor<ee_trycatch, expr_type> {};
 
-		// try
-		//	{block}
-		// catch(e)
-		//	{block}
-
 		// Organization Tokens
 		struct expr_x : expr_trycatch {};
 		//struct expr_x : expr_type {};
-		struct expr : sor<seq<expr_x, seps, opt<comment>>, seq<seps, comment>> {};
+		struct expr : sor<seq<expr_x, seps, opt<comment>>, seq<seps, comment>> {};		// ({expr_x} *{comment}?| *{comment})
 
 		// Defines Scoping rules
+			// PROBABLY NEEDS REWORK
 		struct block {
 			using analyze_t = analysis::counted<analysis::rule_type::PLUS, 1, expr, block>;
 
@@ -204,6 +199,7 @@ namespace dust {
 		};
 
 		// Allows the first line of a block to be in-lined (not used yet)
+			// I DON'T THINK THIS WORKS CORRECTLY
 		struct inline_block {
 			using analyze_t = block::analyze_t;
 

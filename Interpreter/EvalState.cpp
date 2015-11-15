@@ -7,50 +7,61 @@ namespace dust {
 
 	void EvalState::forceType(int idx, size_t type) {
 		if (at(idx).type_id == type) return;
-		swap(idx, -1);								// Ensure the value is at the top of the stack
+		swap(idx, -1);								// Move the value to the stack top
 
-		if (type == type::Traits<Table>::id) {		// Special handling for tables
+		// Special conversion for Tables (needs to be simplified)
+		if (type == type::Traits<Table>::id) {
 			newScope();
 			push(1);
 			swap();
 			setScoped();
 			pushScope(2);
 
-		} else {
-			callMethod(ts.getName(type));			// Otherwise call the converter (if execution reaches here, the converter exists)
-		}
+		} else
+			callMethod(ts.getName(type));			// Call the converter (if execution reaches here, the converter exists)
 
 		swap(idx, -1);								// Restore the stack positions
 	}
 
+	/*	THIS NEEDS A BETTER EXPLANATION
+	 * Returns a parent scope where var is defined, var being a variable name, starting with the current evaluation scope
+	 * If lvl > 1, repeat this process starting with the intermediate scope, the result of findScope(var, 1, not_null)
+	 * If not_null, return the global scope if the search "overruns" the available scopes (var is defined in 'n' scopes, n < lvl)
+	 */
 	Table EvalState::findScope(const impl::Value& var, int lvl, bool not_null) {
 		Table scp = curr_scp;
 
 		while (scp && lvl-- && (scp = scp->findDef(var)))
 			if (lvl) scp = scp->getPar();
 
+		// Return the global table if scp is nullptr and the not_null field is set
 		return (!scp && not_null) ? &global : scp;
 	}
 
 	// Constructor
 	EvalState::EvalState() : ts{}, gc{}, CallStack{ gc }, global{}, curr_scp{ nullptr } {}
 
+	// Preliminary implementations of function calling that is divided based on function type
+
 	// Free functions
 	EvalState& EvalState::call(const std::string& fn) {
 		if (fn == "type")
 			push((int)(pop().type_id));
+
 		else if (fn == "typename")
 			push(ts.getName(pop().type_id));
 
 		return *this;
 	}
+	
 	// Operators
+		// Expects stack = ..., {rhs}, {lhs}
 	EvalState& EvalState::callOp(const std::string& fn) {
 		if (fn.at(0) == '_' && fn.at(2) == 'u') return callMethod(fn);
 		if (fn.at(0) != '_' || fn.at(2) != 'p') throw error::bad_api_call{ "Attempt to callOp on a non-operator" };
 
 		auto r = at(-2).type_id, l = at().type_id;
-		auto com_t = ts.com(l, r, fn);						// find common type
+		auto com_t = ts.com(l, r, fn);						// find common type for the two arguments
 		auto dis_t = ts.findDef(com_t, fn);					// find dispatch type (where fn is defined)
 
 		if (dis_t == ts.NO_DEF) throw error::dispatch_error{ "Method " + fn + " is not defined for operands of type " + ts.getName(l) + " and " + ts.getName(r) };
@@ -61,11 +72,13 @@ namespace dust {
 			forceType(-2, com_t);
 		}
 
+		// rets might be used in some future stack manipulation operations, but it's uncertain what they would be
 		auto rets = ts.get(dis_t).ops[fn](*this);
 
 		return *this;
 	}
-	// Methods
+	
+	// Methods (Currently used for calling constructors)
 	EvalState& EvalState::callMethod(const std::string& fn) {
 		auto dis_t = ts.findDef(at().type_id, fn);
 		if (dis_t == ts.NO_DEF) throw error::dispatch_error{ "Method " + fn + " is not defined for objects of type " + ts.getName(at().type_id) };
@@ -75,14 +88,13 @@ namespace dust {
 		return *this;
 	}
 
-	// Handles variable assignment interaction with constant and typing
+	// Expects stack = ..., {val}
 	void EvalState::setVar(impl::Variable& var, bool is_const, bool is_typed) {
 		if (var.is_const) throw error::illegal_operation{ "Attempt to reassign a constant variable" };
 		// add check for table ???
 
-		// if the variable held a value (static typing is only possible here)
+		// if the variable held a value (static typing is only a concern in this case)
 		if (var.val.type_id != type::Traits<Nil>::id) {
-
 			// if the var is statically typed and the new value is not a child type
 			if (var.type_id != type::Traits<Nil>::id && !ts.isChildType(at().type_id, var.type_id)) {
 				if (!ts.convertible(var.type_id, at().type_id))	throw error::converter_not_found{ "No converter from from the assigned value to the variable's static type" };
@@ -99,43 +111,20 @@ namespace dust {
 	}
 
 	void EvalState::getVar(Table tbl, const impl::Value& var) {
-		tbl->has(var) ? push(tbl->getVal(var)) : pushNil();
+		tbl->hasKey(var) ? push(tbl->getVal(var)) : pushNil();
 	}
 	
-	// Assign the top value on the stack to the given variable with the given flags
 	void EvalState::setScoped(const impl::Value& name, int _lvl, bool is_const, bool is_typed) {
 		setVar(findScope(name, _lvl, true)->getVar(name), is_const, is_typed);
 	}
 
-	// Push the variable onto the stack (nil if it doesn't exist)
-	void EvalState::getScoped(const impl::Value& name, int _lvl) {
-		getVar(findScope(name, _lvl + 1, true), name);
-	}
-
-	void EvalState::getScoped(int lvl) {
-		getScoped(pop(), lvl);
-	}
-
-	// setScoped: ..., {var}, {val}
+	// Expects stack = ..., {var}, {val}
 	void EvalState::setScoped(int lvl, bool is_const, bool is_typed) {
 		setScoped(pop(-2), lvl, is_const, is_typed);
 	}
 
-	// Workspace
-	// stack: ..., {table}, {var}
-	void EvalState::get() {
-		get(pop());
-	}
-
-	void EvalState::get(const impl::Value& var) {
-		if (is<Nil>()) return;										// TODO Change when implementing type methods ???
-		if (!is<Table>()) return pop(), pushNil();
-
-		getVar(pop<Table>(), var);
-	}
-
-	// stack: ..., {table}, {var}, {val}
-		// leaves: ..., {table}
+	// Expects stack = ..., {table}, {var}, {val}
+	// Leaves stack = ..., {table}
 	void EvalState::set() {
 		if (!is<Table>(-3)) throw error::dust_error{ "Attempt to initialize a non-table field" };
 
@@ -144,19 +133,45 @@ namespace dust {
 		push(tbl);
 	}
 
-	// Doesn't follow the same "semantics" as set()
-		// However it's never called
+	// Deprecated as it doesn't follow the same "semantics" as set()
 	void EvalState::set(const impl::Value& var) {
+		throw error::bad_api_call{ "EvalState::set(const impl::Value&) is currently deprecated" };
+
 		if (!is<Table>()) throw error::dust_error{ "Attempt to initialize a non-stored variable" };
-		
+
 		setVar(pop<Table>()->getVar(var), false, false);
 	}
 
+	void EvalState::getScoped(const impl::Value& name, int _lvl) {
+		getVar(findScope(name, _lvl + 1, true), name);
+	}
+
+	// Expects stack = ..., {var}
+	void EvalState::getScoped(int lvl) {
+		getScoped(pop(), lvl);
+	}
+
+	// Expects stack = ..., {table}, {var}
+	void EvalState::get() {
+		get(pop());
+	}
+
+	// Expects stack = ..., {table}
+	void EvalState::get(const impl::Value& var) {
+		if (is<Nil>()) return;										// TODO Change when implementing type methods ???
+		if (!is<Table>()) return pop(), pushNil();
+
+		getVar(pop<Table>(), var);
+	}
+
+	// Not currently used in any capacity
 	void EvalState::markConst(const impl::Value& name) {
 		auto scp = findScope(name, 0);
 
 		if (scp) scp->getVar(name).is_const = !scp->getVar(name).is_const;
 	}
+
+	// Not currently used in any capacity
 	void EvalState::markTyped(const impl::Value& name, size_t typ) {
 		auto scp = findScope(name, 0);
 		if (!scp) return;		// throw error::base{ "Attempt to static type a nil value" };
@@ -175,11 +190,15 @@ namespace dust {
 
 		var.val.type_id = typ;
 	}
+
+	// Not currently used in any capacity
 	bool EvalState::isConst(const impl::Value& name) {
 		auto scp = findScope(name, 0);
 
 		return scp && scp->getVar(name).is_const;
 	}
+
+	// Not currently used in any capacity
 	bool EvalState::isTyped(const impl::Value& name) {
 		auto scp = findScope(name, 0);
 
@@ -198,7 +217,7 @@ namespace dust {
 
 	void EvalState::pushScope(int nxt) {
 		Table sav = curr_scp;
-		curr_scp = sav->getPar();
+		curr_scp = curr_scp->getPar();
 
 		sav->setNext(nxt);
 		push(sav);
@@ -238,7 +257,7 @@ namespace dust {
 		auto Float = ts.getType("Float");
 		auto String = ts.getType("String");
 
-		// Initialize Conversions	
+		// Initialize Conversions
 		Int.addOp("String", [](EvalState& e) { e.push((std::string)e); return 1; });
 		Int.addOp("Float", [](EvalState& e) { e.push((double)e); return 1; });
 
@@ -247,6 +266,8 @@ namespace dust {
 
 		String.addOp("Int", [](EvalState& e) { e.push((int)e); return 1; });
 		String.addOp("Float", [](EvalState& e) { e.push((float)e); return 1; });
+
+		Int.addOp("String", [](EvalState& e) { e.push((std::string)e); return 1; });
 
 	}
 
@@ -263,13 +284,15 @@ namespace dust {
 		//! -
 		//^ * / + - % < = > <= != >=
 
+		// Define _op<= in relation to _op< and _op= for all types
 		Object.addOp("_op<=", [](EvalState& e) {
+			e.copy(-2);				// Make copies of the arguments
 			e.copy(-2);
-			e.copy(-2);
-			e.callOp("_op<");
+			e.callOp("_op<");		// Call the _op< for the types
 
-			if (!(bool)e)
-				e.callOp("_op=");
+			if (!(bool)e)			// Short-circuit evaluation. (pops from the stack)
+				e.callOp("_op=");	// Call the _op= for the types. QUERY What if A._op< and B._op= are defined but A._op= is not defined ?
+
 			else {
 				e.pop();
 				e.pop();
@@ -278,13 +301,16 @@ namespace dust {
 
 			return 1;
 		});
+		
+		// Define _op>= in relation to _op< and _op= for all types
 		Object.addOp("_op>=", [](EvalState& e) {
+			e.copy(-2);				// Make copies of the arguments
 			e.copy(-2);
-			e.copy(-2);
-			e.callOp("_op>");
+			e.callOp("_op>");		// Call the _op> for the types
 
-			if (!(bool)e)
-				e.callOp("_op=");
+			if (!(bool)e)			// Short-circuit evaluation. (pops from the stack)
+				e.callOp("_op=");	// Call the _op= for the types. QUERY See defintion for Object._op<=
+
 			else {
 				e.pop();
 				e.pop();
@@ -293,27 +319,24 @@ namespace dust {
 
 			return 1;
 		});
+		
+		// Define _op!= in relation to _op= and Bool._ou! for all types
 		Object.addOp("_op!=", [](EvalState& e) {
-			e.callOp("_op=");
-			e.callOp("_ou!");
+			e.callOp("_op=");			// Throws if _op= is not defined by the type
+			e.callOp("_ou!");			// Throws if _op= doesn't return a boolean
 			return 1;
 		});
-		/*
-		Object.addOp("_op=", [](EvalState& e) {
-			e.push((bool)e == (bool)e); return 1;
-		});
-		Object.addOp("_ou!", [](EvalState& e) {
-			e.push(!(bool)e); return 1;
-		});
-		*/
 
+		// Define _op^ (exponentation) for Ints and Floats
 		Number.addOp("_op^", [](EvalState& e) {
 			auto base = (double)e;
 			e.push(pow(base, (double)e));
 			return 1;
 		});
+		// Define _op/ (division) for Ints and Floats
 		Number.addOp("_op/", [](EvalState& e) { e.push((double)e / (double)e); return 1; });
 
+		// Define math operators for Ints
 		Int.addOp("_op+", [](EvalState& e) { e.push((int)e + (int)e); return 1; });
 		Int.addOp("_op-", [](EvalState& e) { e.push((int)e - (int)e); return 1; });
 		Int.addOp("_op*", [](EvalState& e) { e.push((int)e * (int)e); return 1; });
@@ -323,11 +346,7 @@ namespace dust {
 		Int.addOp("_op>", [](EvalState& e) { e.push((int)e >(int)e); return 1; });
 		Int.addOp("_ou-", [](EvalState& e) { e.push(-(int)e); return 1; });
 
-
-		String.addOp("_op+", [](EvalState& e) { e.push((std::string)e + e.pop<std::string>(-2)); return 1; });			// Why is Int._op- correct then???
-		String.addOp("_op=", [](EvalState& e) { e.push(e.pop().val.i == e.pop().val.i); return 1; });
-
-
+		// Define math operators for Floats
 		Float.addOp("_op+", [](EvalState& e) { e.push((double)e + (double)e); return 1; });
 		Float.addOp("_op-", [](EvalState& e) { e.push((double)e - (double)e); return 1; });
 		Float.addOp("_op*", [](EvalState& e) { e.push((double)e * (double)e); return 1; });
@@ -336,6 +355,11 @@ namespace dust {
 		Float.addOp("_op>", [](EvalState& e) { e.push((double)e >(double)e); return 1; });
 		Float.addOp("_ou-", [](EvalState& e) { e.push(-(double)e); return 1; });
 
+		// Define concatentation (+) and equality (=) operators for Strings
+		String.addOp("_op+", [](EvalState& e) { e.push((std::string)e + e.pop<std::string>(-2)); return 1; });			// Why is Int._op- correct then???
+		String.addOp("_op=", [](EvalState& e) { e.push(e.pop().val.i == e.pop().val.i); return 1; });
+
+		// Define _op= and _ou! for Bools
 		Bool.addOp("_op=", [](EvalState& e) { e.push((bool)e == (bool)e); return 1; });
 		Bool.addOp("_ou!", [](EvalState& e) { e.push(!(bool)e);  return 1; });
 
@@ -344,119 +368,123 @@ namespace dust {
 				// This means that they migrate the values existence into the new table
 				// However the value is assigned based on the current open integer key
 
-		// Append element(s) to table
-			// CHANGED
+		// Append element(s) to table (+)
 		Table.addOp("_op+", [](EvalState& e) {
 			dust::Table lt = e.pop<dust::Table>(), rt = e.pop<dust::Table>();
-			e.newScope();
+
+			e.newScope();			// Create a new table
 			int nxt = 1;
 
-			// Rework once set has a nice behavior
+			// Push all elements from the left table into the new table
 			for (auto l_elem : *lt) {
 				e.push(nxt++);
 				e.push(l_elem.second.val);
-				//e.push(nxt++);
 				e.setScoped();
 			}
 
+			// Same for the right table
 			for (auto r_elem : *rt) {
 				e.push(nxt++);
 				e.push(r_elem.second.val);
-				//e.push(nxt++);
 				e.setScoped();
 			}
 
 			e.pushScope(nxt);
 			return 1;
 		});
-		// Remove element(s) from table
+		// Remove element(s) from table (-)
 		Table.addOp("_op-", [](EvalState& e) {
 			dust::Table lt = e.pop<dust::Table>(), rt = e.pop<dust::Table>();
 
-			e.newScope();
+			e.newScope();			// Create a new table
 			int nxt = 1;
 
+			// Push all elements from the left table into the new table
+				// Provided they aren't found in the right table
 			for (auto l_elem : *lt)
 				if (!rt->contains(l_elem.second.val)) {
 					e.push(nxt++);
 					e.push(l_elem.second.val);
-					//e.push(nxt++);
 					e.setScoped();
 				}
 
 			e.pushScope(nxt);
 			return 1;
 		});
-		// Union (Append and remove duplicates)
+		// Union (Append and remove duplicates) (*)
 		Table.addOp("_op*", [](EvalState& e) {
 			dust::Table lt = e.pop<dust::Table>(), rt = e.pop<dust::Table>();
 
-			std::unordered_set<impl::Value> nt{};
-
+			// Push all elemnts from both tables into a set
+			std::unordered_set<impl::Value> nt{};// { lt->begin(), lt->end() };
 			for (auto l_elem : *lt)
 				nt.insert(l_elem.second.val);
-
 			for (auto r_elem : *rt)
 				nt.insert(r_elem.second.val);
 
-			e.newScope();
+			e.newScope();		// Create a table
 			int nxt = 1;
 
+			// Push all elements from the set into the new table
 			for (auto elem : nt) {
 				e.push(nxt++);
 				e.push(elem);
-				//e.push(nxt++);
 				e.setScoped();
 			}
 
 			e.pushScope(nxt);
 			return 0;
 		});
-		// Intersection (Elements in both tables)
+		// Intersection (Elements in both tables) (^)
 		Table.addOp("_op^", [](EvalState& e) {
 			dust::Table lt = e.pop<dust::Table>(), rt = e.pop<dust::Table>();
 
-			e.newScope();
+			e.newScope();		// Create a table
 			int nxt = 1;
 
+			// Push all elements from the left table into the new table
+				// Provided they aren found in the right table
 			for (auto l_elem : *lt)
 				if (rt->contains(l_elem.second.val)) {
 					e.push(nxt++);
 					e.push(l_elem.second.val);
-					//e.push(nxt++);
 					e.setScoped();
 				}
 
 			e.pushScope(nxt);
 			return 1;
 		});
-		// Comparison
+		// Member-wise comparison (=)
 		Table.addOp("_op=", [](EvalState& e) {
-			if (e.at().val.i == e.at(-2).val.i) {
+			if (e.at().val.i == e.at(-2).val.i) {		// Short-cut if the two tables are the same reference
 				e.pop();
 				e.pop();
 				e.push(true);
 
-			} else {
-				dust::Table rt = e.pop<dust::Table>(), lt = e.pop<dust::Table>();
+				return 1;
+			}
+			
+			dust::Table rt = e.pop<dust::Table>(), lt = e.pop<dust::Table>();
 
-				if (lt->size() == rt->size()) {
-					auto lt_iter = lt->begin();
+			if (lt->size() != rt->size()) {			// Short-cut if the two tables have different sizes
+				e.push(false);
+				return 1;
+			}
 
-					for (auto rt_elem : *rt) {
-						e.push(lt_iter->second.val);
-						e.push(rt_elem.second.val);
-						e.callOp("_op=");
+			auto lt_iter = lt->begin(), lt_end = lt->end();
 
-						if (!e.at().val.i) return 1;
+			// For each element in {l, r}, check if they are equal
+			for (auto rt_elem : *rt) {
+				e.push(lt_iter->second.val);
+				e.push(rt_elem.second.val);
+				e.callOp("_op=");
 
-						e.pop();
-						++lt_iter;
-					}
+				if (!e.at().val.i)
+					return 1;		// Short-circuit if an element is not found in r
 
-					e.push(true);
-				} else
-					e.push(false);
+				++lt_iter;
+				if (lt_iter != lt_end)
+					e.pop();
 			}
 
 			return 1;

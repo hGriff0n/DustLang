@@ -92,11 +92,11 @@ namespace dust {
 			return store[idx]->s;
 		}
 
-		int StringStorage::num_refs(std::string s) {
-			return num_refs(registry.count(s) > 0 ? registry[s] : -1);
+		int StringStorage::numRefs(std::string s) {
+			return numRefs(registry.count(s) > 0 ? registry[s] : -1);
 		}
 
-		int StringStorage::num_refs(size_t s) {
+		int StringStorage::numRefs(size_t s) {
 			return validIndex(s) ? store[s]->numRefs : 0;
 		}
 

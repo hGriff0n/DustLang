@@ -7,38 +7,37 @@ namespace dust {
 	namespace impl {
 
 		/*
-		template <typename s, typename k = s>
-		class RuntimeStorage {
-			private:
-			protected:
-				std::vector<s> store;
-				std::unordered_map<k, size_t> registry;
-				std::vector<size_t> open;
-			...
-		}
-		*/
-
+		 * Base class for specifying a container of collectable resources
+		 * Provides the interface for the gc algorithms
+		 */
 		class RuntimeStorage {
 			protected:
+				// Stack for specifying open slots in memory
 				std::vector<size_t> open;
 
+				// Pop an element from the stack
 				size_t pop();
 
+				// Used in implementing tryMarkFree
 				virtual void markFree(size_t) =0;
 				virtual bool validIndex(size_t) =0;
 				virtual bool isCollectableResource(size_t) =0;
 
 			public:
 				RuntimeStorage();
-
+				
+				// Size of data members
 				int numRecords();
 				int collected();
+				virtual size_t size() = 0;
+
+				// Attempt to free the given reference
 				void tryMarkFree(size_t ref);
 
+				// Adjust the number of references to the given references
 				virtual void incRef(size_t ref) =0;
 				virtual void decRef(size_t ref) =0;
-				virtual size_t size() =0;
-				virtual int num_refs(size_t ref) =0;
+				virtual int numRefs(size_t ref) =0;
 		};
 
 	}

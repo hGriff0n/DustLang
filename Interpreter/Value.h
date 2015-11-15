@@ -5,7 +5,9 @@ namespace dust {
 	namespace impl {
 
 		/*
-		 * Raw data
+		 * Raw data structure for implementing dynamic typing
+		 *		Convert to variant ???
+		 * Holds an int, double, or void*
 		 */
 		union Atom {
 			int i;				// 4
@@ -27,13 +29,14 @@ namespace dust {
 		INT		|	i
 		BOOL	|	i
 		STRING	|	i
+		TABLE	|	i
 		FLOAT	|	d
 		...
 		*/
 
 
 		/*
-		 * A dust value
+		 * Structure for holding a singular dust value and type information
 		 */
 		struct Value {
 			Atom val;
@@ -58,7 +61,8 @@ namespace dust {
 		};
 
 		/*
-		 * A dust variable
+		 * Structure for holding a singular dust variable and type information
+		 *	A variable consists of a value that may be of a more specific type than the variable
 		 */
 		struct Variable {
 			Value val;

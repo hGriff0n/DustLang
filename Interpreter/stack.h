@@ -6,8 +6,8 @@
 namespace dust {
 
 	/*
-	 * Random access stack wrapper of std::vector templated on Value
-	*/
+	 * Wrapper of std::vector that provides a random-access stack interface
+	 */
 	template <typename Value>
 	class Stack {
 		private:
@@ -26,12 +26,9 @@ namespace dust {
 			virtual void before(Value& v, int bef) {
 				s.insert(s.begin() + normalize(bef), v);
 			}
+
 			virtual void after(Value& v, int bef) {
 				s.insert(s.begin() + normalize(bef) + 1, v);
-			}
-
-			std::vector<Value>& stack() {
-				return s;
 			}
 
 		public:
@@ -71,17 +68,29 @@ namespace dust {
 				std::swap(s[idx1], s[idx2]);
 			}
 
+			// stl interface methods
 			bool empty() {
 				return s.empty();
 			}
+
 			void clear() {
 				s.clear();
 			}
+
 			size_t size() {
 				return s.size();
 			}
+
 			void reserve(size_t space) {
 				s.reserve(space);
+			}
+
+			auto begin() {
+				return s.rbegin();
+			}
+
+			auto end() {
+				return s.rend();
 			}
 	};
 

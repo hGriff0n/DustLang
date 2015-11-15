@@ -43,17 +43,14 @@ namespace dust {
 				List() {}
 				static std::string node_type;
 
-
 				EvalState& eval(EvalState& e) {
 					throw error::bad_node_eval{ "Attempt to evaluate a List node" };
 				}
-
 				void addChild(std::shared_ptr<ASTNode>& c) {
 					add(std::dynamic_pointer_cast<Node>(c));
 				}
 
 				std::string to_string() { return ""; }
-
 				virtual std::string print_string(std::string buf) {
 					std::string ret = buf + "+- " + node_type + "\n";
 					buf += " ";
@@ -63,7 +60,6 @@ namespace dust {
 
 					return ret;
 				}
-
 
 				// Assuming sub-nodes are stored left->right
 					// List(a, b, c) => List.elems = { a, b, c }
@@ -89,7 +85,6 @@ namespace dust {
 				EvalState& eval(EvalState& e);
 
 				std::string to_string();
-				virtual std::string print_string(std::string buf);
 		};
 
 		/*
@@ -171,6 +166,10 @@ namespace dust {
 				virtual std::string print_string(std::string buf);
 		};
 
+		/*
+		 * Represents a type cast operation
+		 * May be combined with other nodes in the future (current grammar is a type constructor)
+		 */
 		class TypeCast : public ASTNode {
 			private:
 				std::shared_ptr<TypeName> convert;

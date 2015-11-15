@@ -6,6 +6,10 @@
 namespace dust {
 	namespace impl {
 
+		/*
+		 * C++ Implementation of dust table's
+		 *  This class is also used internally to implement scopes 
+		 */
 		class Table {
 			public:
 				typedef impl::Value key_type;
@@ -21,25 +25,31 @@ namespace dust {
 				Table();
 				Table(Table* p);
 
-				Variable& getVar(const key_type& key);
-				bool has(const key_type& key);
+				// Table Access functions
 				Value getVal(const key_type& key);
+				Variable& getVar(const key_type& key);
+				Table* findDef(const key_type& key);
+				bool hasKey(const key_type& key);
+				bool contains(const impl::Value& val);
 
-				//Variable& getNext();
-				size_t size();
 
+				// Iterators
 				storage::iterator begin();
+				// End of array iteration
+				storage::iterator iend();				// Needs testing
 				storage::iterator end();
 
+
+				// Internal Detail Operations
+				size_t size();
 				Table* getPar();
-				Table* findDef(const key_type& key);
 
-				void setNext(int n);
+
+				// Array Interaction
 				int getNext();
-
-				bool contains(const impl::Value& val);
+				void setNext(int n);
+				//Variable& getNext();
 		};
-
 	}
 
 	typedef impl::Table* Table;

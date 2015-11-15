@@ -9,11 +9,7 @@
 // TODO/Considerations
 	// Can I get inheritable (implicit) converters to work in the case of com operations (Way of establishing precedence)
 		// They can work easily in the case of function arguments and typed assignments
-	// How can I define a general converter (specifically for Tables)
-		// I could just have every type define a converter to Table (wraps the value in a table) and have this definition automatically be added to new types
-		// Though if you think about it, this isn't all that different from hard-coding the selection in the evaluation (There's trade-offs of course)
-		// Moreover the converter can also be overwritten/rewritten to have lower precedence
-	// Consider moving converter precedence resolution to "first declaration" (currently "first definition")
+	// Move converter precedence resolution to "first declaration" (currently "first definition")
 	// Define entry, throw, and catch points for exceptions and error handling (The next chunk of dust is to add exceptions so I won't handle this now)
 		// Add in checks for assigning nil in the future (for some Type methods/members)
 
@@ -53,9 +49,6 @@ namespace dust {
 				// Generate a convPair key so that key(a, b) == key(b, a)
 				convPair key(size_t, size_t);
 
-				// Really only useful if I'm storing the conversion function in conv (I'm not though)
-				//size_t convert(size_t, size_t);
-
 				// Add a conversion to the registry while maintaining precedence levels (Only callable from the TypeVisitor interface)
 				void addConv(size_t, size_t);
 
@@ -80,7 +73,6 @@ namespace dust {
 
 				// Find op definition in type without considering inheritance relationships
 				size_t isDefd(size_t t, std::string fn);
-				//size_t findLoc(size_t, std::string);
 
 
 				// Common Type Resolution (Find a type that defines op and that both l and r can be cast to)
@@ -119,6 +111,7 @@ namespace dust {
 		};
 	}
 
+	// Helper methods for setting up dust's typesystem
 	void initTypeSystem(dust::type::TypeSystem&);
 	void initConversions(dust::type::TypeSystem&);
 	void initOperations(dust::type::TypeSystem&);

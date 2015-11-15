@@ -18,8 +18,10 @@ namespace dust {
 		struct Type {
 			std::string name;
 			size_t id, parent;
-			Table _ops_;
-			std::map<std::string, Function> ops;
+
+			// Internal storage of type methods
+			std::map<std::string, Function> ops;				// Temporary fix
+			Table _ops_;										// Future implementation
 				
 			// Default values and typed/const variables ???
 

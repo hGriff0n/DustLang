@@ -9,24 +9,31 @@ namespace dust {
 		Table::Table() : parent{ nullptr } {}
 		Table::Table(Table* p) : parent{ p } {}
 
-		bool Table::has(const key_type& key) {
-			return vars.count(key) > 0;
+		Value Table::getVal(const key_type& key) {
+			return getVar(key).val;
 		}
 
 		Variable& Table::getVar(const key_type& key) {
 			return vars[key];
 		}
 
-		Value Table::getVal(const key_type& key) {
-			return getVar(key).val;
+		Table* Table::findDef(const key_type& key) {
+			Table* search = this;
+
+			while (search && !search->hasKey(key))
+				search = search->parent;
+
+			return search;
 		}
 
-		//Variable& Table::getNext() {
-		//	return vars[impl::Value{ next++, type::Traits<int>::id }];
-		//}
+		bool Table::hasKey(const key_type& key) {
+			return vars.count(key) > 0;
+		}
 
-		size_t Table::size() {
-			return vars.size();
+		bool Table::contains(const impl::Value& val) {
+			return std::find_if(begin(), end(), [&](auto pair) {
+				return pair.second.val == val;
+			}) != end();
 		}
 
 		Table::storage::iterator Table::begin() {
@@ -37,17 +44,18 @@ namespace dust {
 			return vars.end();
 		}
 
-		Table* Table::getPar() {
-			return parent;
+		Table::storage::iterator Table::iend() {
+			return std::find_if_not(begin(), end(), [](auto e) {
+				return e.first.type_id == type::Traits<int>::id;
+			});
 		}
 
-		Table* Table::findDef(const key_type& key) {
-			Table* search = this;
-
-			while (search && !search->has(key))
-				search = search->parent;
-
-			return search;
+		size_t Table::size() {
+			return vars.size();
+		}
+		
+		Table* Table::getPar() {
+			return parent;
 		}
 
 		void Table::setNext(int n) {
@@ -58,11 +66,8 @@ namespace dust {
 			return next++;
 		}
 
-		bool Table::contains(const impl::Value& val) {
-			return std::find_if(vars.begin(), vars.end(), [&](auto pair) {
-				return pair.second.val == val;
-			}) != vars.end();
-		}
-
+		//Variable& Table::getNext() {
+		//	return vars[impl::Value{ next++, type::Traits<int>::id }];
+		//}
 	}
 }

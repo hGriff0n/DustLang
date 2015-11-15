@@ -89,10 +89,7 @@ namespace dust {
 			if (v.type_id == Traits<Table>::id)
 				return gc.getTables().deref(v.val.i);
 
-			/*
-			else
-			*/
-			return nullptr;
+			return nullptr;				// return nil;
 		}
 	}
 
@@ -112,40 +109,51 @@ namespace dust {
 			table_type global;
 			type::TypeSystem ts;
 
-			//impl::RuntimeStorage<str_record> strings;
+			//impl::RuntimeStorage<std::string> strings;
 			//impl::RuntimeStorage<impl::Table> tables;
-			//impl::RuntimeStorage<void> user_data;
+			//impl::RuntimeStorage<void*> user_data;
 			impl::GC gc;
 
 		protected:
+			// Convert the object at the given index to the given type
 			void forceType(int, size_t);
 
+			// Scope lookup for the given variable
 			Table findScope(const impl::Value&, int, bool = false);
 
-			void setVar(impl::Variable&, bool, bool);
-			void getVar(Table tbl, const impl::Value&);
+			// Set var.val = stack top
+			void setVar(impl::Variable& var, bool is_const, bool is_typed);
+			// Push tbl[var] on the stack (or nil)
+			void getVar(Table tbl, const impl::Value& var);
 
 		public:
 			EvalState();
 
-			// Call functions
+			// Call functions	(Temporary methods until I determine how functions and tables will be implemented)
 			EvalState& call(const std::string& fn);
-			EvalState& callOp(const std::string& fn);				// Temporary methods until I determine how functions and tables will be implemented
+			EvalState& callOp(const std::string& fn);
 			EvalState& callMethod(const std::string& fn);
 
 			// EvalState doesn't know about shared_ptr or ASTNode
 			//EvalState& eval(std::shared_ptr<parse::ASTNode>&);
 
 			// Set/Get Variables
-			void setScoped(const impl::Value& name, int lvl = 0, bool is_const = false, bool is_typed = false);
+				// Need to clean up this interface a bit more (when I consolidate get/set)
+			// Assign to the evaluation scope
 			void setScoped(int lvl = 0, bool is_const = false, bool is_typed = false);
-			void getScoped(const impl::Value& var, int lvl = 0);
-			void getScoped(int lvl = 0);
+			void setScoped(const impl::Value& name, int lvl = 0, bool is_const = false, bool is_typed = false);
 
-			void get();
-			void get(const impl::Value& var);
+			// Assign to a table on the call stack
 			void set();
 			void set(const impl::Value& name);
+
+			// Index the evaluation scope
+			void getScoped(int lvl = 0);
+			void getScoped(const impl::Value& var, int lvl = 0);
+
+			// Index a table on the call stack
+			void get();
+			void get(const impl::Value& var);
 			
 			// Variable flags (setters & getters)
 			void markConst(const impl::Value& name);
@@ -154,14 +162,19 @@ namespace dust {
 			bool isTyped(const impl::Value& name);
 
 			// Scope Interaction
-			void newScope();				// Start a new scope with the current scope as parent
-			void endScope();				// Delete current scope (Cleans up memory)
-			void pushScope(int nxt = 1);	// Store scope in memory and push on the stack (tables, functions, etc.)
 
-			// TypeSystem Interaction
+			// Start a new scope with the current scope as parent
+			void newScope();
+			// Delete current scope (Cleans up memory. Doesn't handle reference decrementing)
+			void endScope();
+			// Push scope on the stack (used in building tables)
+			void pushScope(int nxt = 1);
+
+			// Get the current type system
 			type::TypeSystem& getTS();
 
-			// Output
+			// Pass the top element on the stack to the stream
+				// Handles non-printable values and string-special printing
 			template <class Stream>
 			Stream& stream(Stream& s) {
 				if (is<std::string>())
