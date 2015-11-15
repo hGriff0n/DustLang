@@ -6,15 +6,16 @@
 #include "..\Exceptions\runtime.h"
 #include "..\Exceptions\parsing.h"
 
-#include <iostream>
 #include <iomanip>
 #include <vector>
 
 // TODO Improvements
 	// Improve API
-	// Surround require_eval output in quotes if the expected type is a string
+	// Change order of review printing (Currently prints sub-tests before parent tests, confusing to read)
 
 namespace dust {
+
+	// Error name strings for use in Testing error printing
 	namespace error {
 		template <class Exception>
 		struct name { static const std::string is; };
@@ -54,6 +55,9 @@ namespace dust {
 
 	namespace test {
 
+		/*
+		 * Class that actually performs testing evaluation, etc.
+		 */
 		template <class Stream>
 		class Tester {
 			private:
@@ -73,16 +77,19 @@ namespace dust {
 						return s << std::setw(TESTING_WEIGHT) << ("input=\"" + code + "\"") << " Testing ";
 				}
 
+				// Construct and evaluate the AST for the given code segment
 				void evaluate(const std::string& code) {
 					pegtl::parse<grammar, action>(parse::trim(code), code, tree, 0);
 					tree.pop()->eval(e);
 				}
 
+				// Print the pass/fail message and update num_pass
 				Stream& printMsg(bool pass) {
 					num_pass += pass;
 					return s << buffer << "[" << (pass ? "O" : "X") << "] ";
 				}
 
+				// Clean up internal state
 				void exitTest() {
 					s << std::endl;
 					tree.clear();
@@ -273,6 +280,10 @@ namespace dust {
 
 		};
 
+		/*
+		 * Class for organizing a multi-tiered testing system, with sub-tests
+		 * Create this class in order to run tests (or call makeTester)
+		 */
 		template <class Stream>
 		class TestOrganizer : public Tester<Stream> {
 			static std::vector<std::string> default_reviews;
@@ -280,7 +291,7 @@ namespace dust {
 			private:
 				TestOrganizer<Stream>* sub_test = nullptr;
 				std::string curr_test;
-				std::vector<std::string>& reviews;				// stack of sub-test reviews
+				std::vector<std::string>& reviews;
 
 			public:			// These constructors will cause recursion ???
 				TestOrganizer(EvalState& _e, Stream& _s) : TestOrganizer{ _e, _s, "", default_reviews } {}
@@ -298,18 +309,19 @@ namespace dust {
 				// Close the sub test
 				void close_sub_test() {
 					if (!sub_test) return;
+
+					// If there is a currently running sub_test, close that test
 					if (sub_test->sub_test) return sub_test->close_sub_test();
 
 					int np, nt;
 
-					num_tests += nt = sub_test->num_tests;
-					num_pass += np = sub_test->num_pass;
+					// Update parent num_test/num_pass data
+					num_tests += (nt = sub_test->num_tests);
+					num_pass += (np = sub_test->num_pass);
 
+					// Create the review message for the sub test and add to the stack
 					reviews.push_back(makeReview(buffer + " ", curr_test, np, nt));
 					s << reviews.back() << "\n";
-
-					//s << buffer << " " << curr_test << " | Passed: " << np << " | Failed: " << (nt - np) << " | " 
-					//			<< np << " / " << nt << " Tests (" << std::setprecision(4) << ((float)np / nt * 100) << "%)\n\n";
 
 					delete sub_test;
 					sub_test = nullptr;
@@ -351,8 +363,9 @@ namespace dust {
 					return sub_test ? sub_test->require_excep<Exception>(code) : Tester<Stream>::require_excep<Exception>(code);
 				}
 
-				template <class Stream>
-				void print_review(Stream& s) {
+				// Print the review off all previously run sub-tests
+				template <class OStream>
+				void print_review(OStream& s) {
 					std::string global = makeReview("", "Global Review", num_pass, num_tests);
 					s << global;
 
@@ -362,10 +375,25 @@ namespace dust {
 
 					s << global;
 				}
+
+				void print_review() {
+					print_review(s);
+				}
 		};
 
-		void run_tests(EvalState&);
+		// Helper method for creating a Testing Environment
+		template <class Stream>
+		auto makeTester(EvalState& e, Stream& s) {
+			return TestOrganizer<Stream>{ e, s };
+		}
+
+		// Helper method for creating a review message
 		std::string makeReview(const std::string&, const std::string&, int, int);
+
+		// Run dust development tests
+		void run_tests(EvalState&);
+		//void run_regression_tests(EvalState& e);
+		//void run_development_tests(EvalState& e);
 
 		template <class Stream> std::vector<std::string> TestOrganizer<Stream>::default_reviews = std::vector<std::string>{};
 		template <class Stream> const std::function<void(EvalState&)> Tester<Stream>::DEFAULT_RESET = [](EvalState& e) { e.clear(); };

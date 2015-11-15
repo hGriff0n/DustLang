@@ -1,10 +1,11 @@
 #include "Testing.h"
 #include <sstream>
+#include <iostream>
 
 namespace dust {
 	namespace test {
 		void run_tests(EvalState& e) {
-			TestOrganizer<decltype(std::cout)> t{ e, std::cout };
+			auto t = makeTester(e, std::cout);
 
 			// Basics and Type System tests
 			t.init_sub_test("Basics and Type System");
@@ -51,15 +52,19 @@ namespace dust {
 				t.require_eval("a, b: 1, 2, 3", 2);							// 7
 				t.require_true("a = 1 and b = 2");							// 8
 
-				t.require_eval("a, b: 3", 0);								// 9
-				t.require_true("a = 3 and b = 0");							// 10
+				//t.require_eval("a, b: 3", Nil{});							// 9
+				t.require_true("(a, b: 3) = nil");
+				t.require_true("a = 3 and !b");								// 10
+				t.eval("b: 0");
 
 				// Compound Operations
 				t.init_sub_test("Compound Assignment");
 					t.require_eval("a, b:+ 2, 2", 2);						// 1
 					t.require_true("a = 5 and b = 2");						// 2
 
-					t.require_eval("a, b:* 2", 0);							// 3
+					t.require_excep<error::dispatch_error>("a, b:* 2");
+					t.require_true("a != 10");
+					t.require_eval("a, b:* 2, 0", 0);						// 3
 					t.require_true("a = 10 and b = 0");						// 4
 
 					t.require_eval("a:= (b: 3) * 2 + 2 ^ 2", true);			// 5
