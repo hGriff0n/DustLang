@@ -23,20 +23,18 @@ Opinions on adapting code to use the C++ Common Code Standards and the GSL
 
 Timeline
 	0 Bugfixes / Improvements
+		Nil method resolution still needs work (esp. in callMethod)
+			The current process might catch some functions that shouldn't work on Nil types
 		The numRefs in the String/Table Storage classes are messed up
 			d: "Hello" => gc.numRefs("Hello") = -1		## Should be 1
 				References are being decremented too readily
 			d: [ 5 6 7 ] d: 3 => gc.numRefs([ 5 6 7 ]) = 1		## Should be 0
 				References aren't decremented at all
+				See CallStack ???
 			Ensure that this is correct
-		Better comment code to document behavior
-		Change converter precedence to first declaration (not first definition)
-			Avoid the issues with redefining converters, etc.
-		Nil method resolution still needs work (esp. in callMethod)
-			The current process might catch some functions that shouldn't work on Nil types
-		Clean up code (Block, ASTNodes, EvalState, Grammar)
 		** Need to adapt Testing to handle non-printable values
 			Could just use "require_type" for these (or the type checking syntax)
+		Need to ensure scope exiting handles reference decrementing properly
 		Start testing TRuntimeStorage and improving implementation
 		Improve testing suit with table specific functions (?)
 		Consider removing the test for operator isDefd in com

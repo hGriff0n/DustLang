@@ -35,25 +35,13 @@ namespace dust {
 		}
 
 		size_t TypeSystem::ancestor(size_t l, size_t r) {
-			while (l != 0) {
+			while (l > 0) {
 				if (isParentOf(l, r)) return l;
 				l = types[l].parent;
 			}
 
 			return 1;				// Object is always an ancestor
 		}
-
-		/*/    See comment in TypeSystem.h
-		size_t TypeSystem::convert(size_t from, size_t to) {
-			auto idx = key(from, to);
-
-			if (conv.count(idx) == 0) return type::Traits<Nil>::id;
-			int id = conv[idx][conv[idx][0] == to ? 0 : 1];
-			if (id == 0) return type::Traits<Nil>::id;
-
-			return id;
-		}
-		//*/
 
 		void TypeSystem::addConv(size_t from, size_t to) {
 			auto idx = key(from, to);
@@ -64,8 +52,7 @@ namespace dust {
 
 			// Test for cases where the converter will have low precedence
 			if (conv[idx][1] == from) {
-				conv[idx][0] = conv[idx][1];
-				sidx = 1;
+				return;
 
 			} else if (conv[idx][0] == from)
 				sidx = 1;
@@ -91,7 +78,7 @@ namespace dust {
 
 		TypeSystem::TypeSystem() {
 			types.emplace_back("Nil", 0);
-			types.emplace_back("Object", 1, 0);		// Should parent(Object) == Nil
+			types.emplace_back("Object", 1, 0);		// parent(Object) == Nil	Keep ???
 			type_id["Nil"] = 0;
 			type_id["Object"] = 1;
 		}
@@ -124,6 +111,7 @@ namespace dust {
 		size_t TypeSystem::com(size_t l, size_t r, std::string op) {
 			if (l == r) return l;																// Avoid memoizing ancestor(l, l) == l
 
+			// Shortcut for table and Nil
 			if (l == Traits<Table>::id || r == Traits<Table>::id) return Traits<Table>::id;		// com(Table, x, x) = Table
 			if (l == Traits<Nil>::id || r == Traits<Nil>::id) return Traits<Nil>::id;			// com(Nil, x, x) = Nil (?)
 			
