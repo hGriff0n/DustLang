@@ -23,16 +23,9 @@ Opinions on adapting code to use the C++ Common Code Standards and the GSL
 
 Timeline
 	0 Bugfixes / Improvements
-		Nil method resolution still needs work (esp. in callMethod)
-			The current process might catch some functions that shouldn't work on Nil types
-		The numRefs in the String/Table Storage classes are messed up
-			d: "Hello" => gc.numRefs("Hello") = -1		## Should be 1
-				References are being decremented too readily
-			d: [ 5 6 7 ] d: 3 => gc.numRefs([ 5 6 7 ]) = 1		## Should be 0
-				References aren't decremented at all
-				See CallStack ???
-			Ensure that this is correct
 		** Need to adapt Testing to handle non-printable values
+			Problem when testing for result of Nil/Table
+				Currently have to require_true of a comparison
 			Could just use "require_type" for these (or the type checking syntax)
 		Need to ensure scope exiting handles reference decrementing properly
 		Start testing TRuntimeStorage and improving implementation
@@ -40,7 +33,10 @@ Timeline
 		Consider removing the test for operator isDefd in com
 			Would remove ambiguity in code execution
 			"3" - 3 => String._op- not defined
+				This would likely mean I can improve com lookup implementation
 		Improve the implementation of GC
+		Ensure that reference counts are being updated correctly
+			See numRefs("a", "b", ...) for questions
 		Determine whether 0 should be equal to true or false
 		Think of changing how operator resolution is handled (especially for equals)
 			Currently "[3] = 3" evaluates to true
@@ -57,8 +53,10 @@ Timeline
 
 	1 Keyword Recognition
 		Halve the Bugfixes/Improvements list
+		Update program version to 0.5.6
 
 	2 Parser Update
+		Update program version to 0.6.1
 		Exceptions
 			Update exceptions and errors to better fit the new features
 			Add exception catching and error functions
@@ -84,9 +82,13 @@ Timeline
 		Redo how scoping is handled by the parser
 			Rewrite table/block/try-catch to allow for declaring across multiple lines
 			Should also simplify the grammar in general (work to this as well)
+		Rework Assignment to be performed left->right
+			Changes "a, b:* 3" to multiply a by 3
+				Stops "a, b:* nil, 3" from multiplying b by 3
 		Rewrite the parser so that everything works well together
 
 	4 Control Statements (For/While/Do-While/If/Else/...)
+		Update project version to 0.7.1
 		Be able to write control statements with correct execution
 			Have variable scoping work correctly
 
@@ -105,6 +107,7 @@ Timeline
 		Optional: No parens syntax
 
 	6 Dust Function Definition
+		Update project version to 0.8.1
 		Abstract the previous framework to allow for Dust functions to be conceivably executed
 		Add in the correct syntax and action calls to create dust functions
 
@@ -123,3 +126,4 @@ Notes (In case I forget some of my decisions)
 	(e: 3) + 3 * e = 12									// The assignment is evaluated before the multiplication (left->right evaluation). This has some problems with current organization
 	a, b:+ 2											// I'm going to go with the current semantics for now for simplicity. However, it still possible for it to be changed in the future
 	a, b: b, c: 9										// Again, I'm going to use the current semantics for simplicity. There also would be difficulty in correctly parsing it otherwise due to the overlap and the fact that an assignment is an expression
+	Nil is defined as Bool for the sake of operator resolution (something to watch out for?)

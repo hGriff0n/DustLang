@@ -47,9 +47,7 @@ namespace dust {
 		StringStorage::StringStorage() {}
 
 		size_t StringStorage::loadRef(std::string s) {
-			size_t ref = (registry.count(s) > 0) ? registry[s] : (registry[s] = nxt_record(s));
-			incRef(ref);
-			return ref;
+			return (registry.count(s) > 0) ? registry[s] : (registry[s] = nxt_record(s));
 		}
 
 		size_t StringStorage::setRef(size_t idx, size_t s) {

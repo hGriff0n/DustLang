@@ -24,9 +24,7 @@ namespace dust {
 
 		size_t TableStorage::loadRef(dust::Table t) {
 			if (!t) throw error::null_exception{ "Attempt to load a reference to a nullptr" };
-			size_t ref = (registry.count(t) > 0) ? registry[t] : (registry[t] = nxt_record(t));
-			incRef(ref);
-			return ref;
+			return (registry.count(t) > 0) ? registry[t] : (registry[t] = nxt_record(t));
 		}
 
 		// Implement similar to StringStorage::setRef

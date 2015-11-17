@@ -106,6 +106,7 @@ namespace dust {
 
 		// Set the variable data
 		var.val = pop();															// `pop` (no templates) doesn't decrement references
+		try_incRef(var.val);
 		var.is_const = is_const;
 		if (is_typed) var.type_id = var.val.type_id;
 	}
@@ -115,6 +116,7 @@ namespace dust {
 	}
 	
 	void EvalState::setScoped(const impl::Value& name, int _lvl, bool is_const, bool is_typed) {
+		try_incRef(name);
 		setVar(findScope(name, _lvl, true)->getVar(name), is_const, is_typed);
 	}
 
@@ -129,6 +131,7 @@ namespace dust {
 		if (!is<Table>(-3)) throw error::dust_error{ "Attempt to initialize a non-table field" };
 
 		auto tbl = pop<Table>(-3);
+		try_incRef(at(-2));
 		setVar(tbl->getVar(pop(-2)), false, false);
 		push(tbl);
 	}

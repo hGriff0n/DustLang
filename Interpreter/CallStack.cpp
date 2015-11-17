@@ -7,20 +7,19 @@ namespace dust {
 		CallStack::CallStack(impl::GC& g) : gc{ g } {}
 
 		// Handle reference incrementing/decrementing if the type requires it
-		void CallStack::try_incRef(impl::Value& val) {
+		void CallStack::try_incRef(const impl::Value& val) {
 			if (val.type_id == type::Traits<std::string>::id)
 				gc.getStrings().incRef(val.val.i);
 
-			if (val.type_id == type::Traits<Table>::id)
+			if (val.type_id == type::Traits<dust::Table>::id)
 				gc.getTables().incRef(val.val.i);
 		}
 
-		void CallStack::try_decRef(impl::Value& val) {
+		void CallStack::try_decRef(const impl::Value& val) {
 			if (val.type_id == type::Traits<std::string>::id)
 				gc.getStrings().decRef(val.val.i);
 
-			// This didn't affect the numRefs for tables ???
-			if (val.type_id == type::Traits<Table>::id)
+			if (val.type_id == type::Traits<dust::Table>::id)
 				gc.getTables().decRef(val.val.i);
 		}
 

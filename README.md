@@ -7,7 +7,8 @@ programming languages are designed and implemented by growing and nurturing the 
 #### [Implementation](https://github.com/hGriff0n/DustLang/tree/master/Interpreter)
 Dust is built using the [PEGTL](https://github.com/ColinH/PEGTL) library to implement its parsing algorithm. Many thanks to ColinH for both creating an intuitive and efficient parsing library, and for providing excellent documentation.
 
-Dust is built and designed using Visual Studio 2015 and remains untested on other compilers. However, provided the compiler supports C++14, compilation should not be an issue. Currently, the Dust interpreter and runtime, along with a testing framework and basic repl loop, consists of just over 3000 SLOC, split accross header and source files.
+Dust is built and designed using Visual Studio 2015 and remains untested on other compilers. However, provided the compiler supports C++14, compilation should not be an issue.
+Currently the Dust interpreter and runtime, along with the included testing framework and repl loop, consist of just over 3000 SLOC, split across header and source files
 
 
 # Dust

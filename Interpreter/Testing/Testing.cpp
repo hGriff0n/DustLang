@@ -52,7 +52,7 @@ namespace dust {
 				t.require_eval("a, b: 1, 2, 3", 2);							// 7
 				t.require_true("a = 1 and b = 2");							// 8
 
-				//t.require_eval("a, b: 3", Nil{});							// 9
+				//t.require_eval("a, b: 3", Nil{});							// 9		## Can't print Nil
 				t.require_true("(a, b: 3) = nil");
 				t.require_true("a = 3 and !b");								// 10
 				t.eval("b: 0");
@@ -62,8 +62,8 @@ namespace dust {
 					t.require_eval("a, b:+ 2, 2", 2);						// 1
 					t.require_true("a = 5 and b = 2");						// 2
 
-					t.require_excep<error::dispatch_error>("a, b:* 2");
-					t.require_true("a != 10");
+					t.require_excep<error::dispatch_error>("a, b:* 2");					// Invalid after Parser Rewrite v. II
+					t.require_true("a != 10");											// Invalid after Parser Rewrite v. II
 					t.require_eval("a, b:* 2, 0", 0);						// 3
 					t.require_true("a = 10 and b = 0");						// 4
 

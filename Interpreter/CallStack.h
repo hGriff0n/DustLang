@@ -29,8 +29,8 @@ namespace dust {
 
 			protected:
 				// Handle reference incrementing/decrementing based on type
-				void try_incRef(impl::Value&);
-				void try_decRef(impl::Value&);
+				void try_incRef(const impl::Value&);
+				void try_decRef(const impl::Value&);
 
 			public:
 				CallStack(impl::GC&);
@@ -38,7 +38,7 @@ namespace dust {
 				// Push values onto the stack
 				template <typename T>
 				void push(T val) {
-					Stack::push(type::Traits<T>::make(val, gc));
+					push(type::Traits<T>::make(val, gc));
 				}
 
 				// Special Overloads
@@ -57,8 +57,6 @@ namespace dust {
 				template <typename T>
 				T pop(int idx = -1) {
 					auto v = pop(idx);
-
-					try_decRef(v);
 
 					return type::Traits<T>::get(v, gc);
 				}
