@@ -214,7 +214,16 @@ namespace dust {
 
 	void EvalState::endScope() {
 		auto* sav = curr_scp->getPar();
-		if (sav) delete curr_scp;					// If the current scope wasn't the global scope
+
+		if (sav) {
+			for (auto pair : *curr_scp) {
+				try_decRef(pair.first);
+				try_decRef(pair.second.val);
+			}
+
+			delete curr_scp;					// If the current scope wasn't the global scope
+		}
+
 		curr_scp = sav;
 	}
 

@@ -23,11 +23,10 @@ Opinions on adapting code to use the C++ Common Code Standards and the GSL
 
 Timeline
 	0 Bugfixes / Improvements
-		** Need to adapt Testing to handle non-printable values
+		Need to adapt Testing to handle non-printable values
 			Problem when testing for result of Nil/Table
 				Currently have to require_true of a comparison
 			Could just use "require_type" for these (or the type checking syntax)
-		Need to ensure scope exiting handles reference decrementing properly
 		Start testing TRuntimeStorage and improving implementation
 		Improve testing suit with table specific functions (?)
 		Consider removing the test for operator isDefd in com
@@ -51,12 +50,7 @@ Timeline
 		Redo how get/set are handled (in relation to exception throwing)
 		See VagueToDo.txt
 
-	1 Keyword Recognition
-		Halve the Bugfixes/Improvements list
-		Update program version to 0.5.6
-
-	2 Parser Update
-		Update program version to 0.6.1
+	1 Interpreter Update
 		Exceptions
 			Update exceptions and errors to better fit the new features
 			Add exception catching and error functions
@@ -77,8 +71,9 @@ Timeline
 		Improve expr_4 grammar to be more accurate (?)
 			ee_tc can't realistically be performed more than once in a row (outside of testing for Bool)
 				I could also have the result of evaluation be the left hand side (this doesn't make much sense)
+		Update program version to 0.6.1
 
-	3 Parser Rewrite v. II
+	2 Parser Rewrite v. II
 		Redo how scoping is handled by the parser
 			Rewrite table/block/try-catch to allow for declaring across multiple lines
 			Should also simplify the grammar in general (work to this as well)
@@ -87,12 +82,12 @@ Timeline
 				Stops "a, b:* nil, 3" from multiplying b by 3
 		Rewrite the parser so that everything works well together
 
-	4 Control Statements (For/While/Do-While/If/Else/...)
+	3 Control Statements (For/While/Do-While/If/Else/...)
 		Update project version to 0.7.1
 		Be able to write control statements with correct execution
 			Have variable scoping work correctly
 
-	5 Function Calling		ie. print("Hello, World!")
+	4 Function Calling		ie. print("Hello, World!")
 		Implement the evaluation hooks/etc. to be able to call functions	# Get functions callable
 			Hard coded translations at this time
 			Have the basic syntax and semantics working (Argument passing, etc.)
@@ -106,18 +101,18 @@ Timeline
 		Move function calling work into the _op() metamethod
 		Optional: No parens syntax
 
-	6 Dust Function Definition
+	5 Dust Function Definition
 		Update project version to 0.8.1
 		Abstract the previous framework to allow for Dust functions to be conceivably executed
 		Add in the correct syntax and action calls to create dust functions
 
-	7 Grammar Framework Update
+	6 Grammar Framework Update
 		Potentially change the grammar to follow the basic framework in "lua53_parse.h"
 		Update all documents to ensure that they reflect the current language spec
 		Update the readme to show of recent aditions
 		Determine the next set of features that need to be implemented
 
-	8 Type/Table metamethods
+	7 Type/Table metamethods
 
 
 
