@@ -52,7 +52,7 @@ int main(int argc, const char* argv[]) {
 	EvalState e;
 
 	initState(e);
-	test::run_tests(e);
+	test::runTests(e);
 
 	std::cout << "> ";
 

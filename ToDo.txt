@@ -61,13 +61,9 @@ Timeline
 				Force "3: 3" to throw a dust_error (when performed in the global scope)
 					Throw for a different reason than current execution
 				Would need to add the type system (as an argument or something)
-		Update the parser so that wrong programs will ouput an error (as opposed to interpreting a subset)
-			I may have already done this (although I could make the errors more informative)
+		Continue work on TRuntimeStorage
 		Possibly start implementing custom Control specializations (standardize error types)
-		Standardize code standards
-			classes: PascalCase (?)
-			methods: camelCase (?)
-			variables: snake_case (?)
+			In order to make parser errors more informative
 		Improve expr_4 grammar to be more accurate (?)
 			ee_tc can't realistically be performed more than once in a row (outside of testing for Bool)
 				I could also have the result of evaluation be the left hand side (this doesn't make much sense)

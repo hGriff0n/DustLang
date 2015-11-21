@@ -162,7 +162,7 @@ namespace dust {
 
 		template <> struct action<var_name> {
 			static void apply(input& in, AST& ast, const int _) {
-				std::dynamic_pointer_cast<VarName>(ast.at())->addLevel(ast.pop(-2)->to_string());
+				std::dynamic_pointer_cast<VarName>(ast.at())->addLevel(ast.pop(-2)->toString());
 			}
 		};
 
@@ -205,10 +205,10 @@ namespace dust {
 			static void apply(input& in, AST& ast, const int _) {
 				auto list = makeNode<List<type>>();
 
-				if (ast.at()->to_string() != ",")
+				if (ast.at()->toString() != ",")
 					ast.push(makeNode<Debug>(","));
 
-				while (!ast.empty() && ast.at()->to_string() == ",") {
+				while (!ast.empty() && ast.at()->toString() == ",") {
 					ast.pop();
 					if (std::dynamic_pointer_cast<type>(ast.at()))
 						list->addChild(ast.pop());

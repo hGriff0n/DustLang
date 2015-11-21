@@ -16,7 +16,7 @@ namespace dust {
 			return vec.size() - 1;
 		}
 
-		size_t TableStorage::nxt_record(dust::Table t) {
+		size_t TableStorage::nxtRecord(dust::Table t) {
 			size_t alloc = open.empty() ? expand(records) : pop();
 			records[alloc] = std::make_pair(t, 0);
 			return alloc;
@@ -24,7 +24,7 @@ namespace dust {
 
 		size_t TableStorage::loadRef(dust::Table t) {
 			if (!t) throw error::null_exception{ "Attempt to load a reference to a nullptr" };
-			return (registry.count(t) > 0) ? registry[t] : (registry[t] = nxt_record(t));
+			return (registry.count(t) > 0) ? registry[t] : (registry[t] = nxtRecord(t));
 		}
 
 		// Implement similar to StringStorage::setRef

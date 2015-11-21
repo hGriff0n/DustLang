@@ -18,7 +18,7 @@ namespace dust {
 				// Pop an element from the stack
 				size_t pop();
 
-				// Used in implementing tryMarkFree
+				// Used in implementing try_markFree
 				virtual void markFree(size_t) =0;
 				virtual bool validIndex(size_t) =0;
 				virtual bool isCollectableResource(size_t) =0;
@@ -32,7 +32,7 @@ namespace dust {
 				virtual size_t size() = 0;
 
 				// Attempt to free the given reference
-				void tryMarkFree(size_t ref);
+				void try_markFree(size_t ref);
 
 				// Adjust the number of references to the given references
 				virtual void incRef(size_t ref) =0;

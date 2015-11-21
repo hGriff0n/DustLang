@@ -22,8 +22,8 @@ namespace dust {
 				virtual EvalState& eval(EvalState&) = 0;
 				virtual void addChild(std::shared_ptr<ASTNode>& c);
 
-				virtual std::string to_string() = 0;
-				virtual std::string print_string(std::string buf);
+				virtual std::string toString() = 0;
+				virtual std::string printString(std::string buf);
 		};
 
 		/*
@@ -50,13 +50,13 @@ namespace dust {
 					add(std::dynamic_pointer_cast<Node>(c));
 				}
 
-				std::string to_string() { return ""; }
-				virtual std::string print_string(std::string buf) {
+				std::string toString() { return ""; }
+				virtual std::string printString(std::string buf) {
 					std::string ret = buf + "+- " + node_type + "\n";
 					buf += " ";
 
 					for (auto i = begin(); i != end(); ++i)		// for (auto i : *this)
-						ret += (*i)->print_string(buf);
+						ret += (*i)->printString(buf);
 
 					return ret;
 				}
@@ -84,7 +84,7 @@ namespace dust {
 
 				EvalState& eval(EvalState& e);
 
-				std::string to_string();
+				std::string toString();
 		};
 
 		/*
@@ -101,8 +101,8 @@ namespace dust {
 
 				EvalState& eval(EvalState& e);
 
-				std::string to_string();		// Possibly temporary implementation
-				std::string print_string(std::string buf);
+				std::string toString();		// Possibly temporary implementation
+				std::string printString(std::string buf);
 		};
 
 		/*
@@ -120,8 +120,8 @@ namespace dust {
 				EvalState& eval(EvalState& e);
 				void addChild(std::shared_ptr<ASTNode>& c);
 
-				std::string to_string();
-				virtual std::string print_string(std::string buf);
+				std::string toString();
+				virtual std::string printString(std::string buf);
 		};
 
 		/*
@@ -131,7 +131,6 @@ namespace dust {
 			private:
 				std::string name;
 				std::vector<std::shared_ptr<ASTNode>> sub_fields;
-				//std::vector<std::shared_ptr<VarName>> sub_fields;
 				int lvl = 0; bool sub_var = false;
 
 			public:
@@ -141,8 +140,8 @@ namespace dust {
 				EvalState& eval(EvalState& e);
 				void addChild(std::shared_ptr<ASTNode>& c);
 
-				std::string to_string();
-				virtual std::string print_string(std::string buf);
+				std::string toString();
+				virtual std::string printString(std::string buf);
 
 				void addLevel(const std::string& dots);
 				void setSubStatus();
@@ -162,8 +161,8 @@ namespace dust {
 
 				EvalState& eval(EvalState& e);
 
-				std::string to_string();
-				virtual std::string print_string(std::string buf);
+				std::string toString();
+				virtual std::string printString(std::string buf);
 		};
 
 		/*
@@ -182,8 +181,8 @@ namespace dust {
 				EvalState& eval(EvalState& e);
 				void addChild(std::shared_ptr<ASTNode>& c);
 
-				std::string to_string();
-				virtual std::string print_string(std::string buf);
+				std::string toString();
+				virtual std::string printString(std::string buf);
 		};
 
 		/*
@@ -207,8 +206,8 @@ namespace dust {
 				EvalState& eval(EvalState& e);
 				void addChild(std::shared_ptr<ASTNode>& c);
 
-				std::string to_string();
-				virtual std::string print_string(std::string buf);
+				std::string toString();
+				virtual std::string printString(std::string buf);
 		};
 
 		//class Keyword : public ASTNode { };
@@ -228,8 +227,8 @@ namespace dust {
 				EvalState& eval(EvalState& e);
 				void addChild(std::shared_ptr<ASTNode>& c);
 
-				std::string to_string();
-				virtual std::string print_string(std::string buf);
+				std::string toString();
+				virtual std::string printString(std::string buf);
 		};
 
 		/*
@@ -254,8 +253,8 @@ namespace dust {
 				virtual EvalState& eval(EvalState& e);
 				virtual void addChild(std::shared_ptr<ASTNode>& c);
 
-				virtual std::string to_string();
-				virtual std::string print_string(std::string buf);
+				virtual std::string toString();
+				virtual std::string printString(std::string buf);
 
 				bool iterate(EvalState& e);
 		};
@@ -281,8 +280,8 @@ namespace dust {
 				virtual EvalState& eval(EvalState& e);
 				virtual void addChild(std::shared_ptr<ASTNode>& c);
 
-				virtual std::string to_string();
-				virtual std::string print_string(std::string buf);
+				virtual std::string toString();
+				virtual std::string printString(std::string buf);
 		};
 
 		/*
@@ -300,8 +299,8 @@ namespace dust {
 				EvalState& eval(EvalState& e);
 				void addChild(std::shared_ptr<ASTNode>& c);
 
-				std::string to_string();
-				virtual std::string print_string(std::string buf);
+				std::string toString();
+				virtual std::string printString(std::string buf);
 		};
 
 		/*
@@ -319,8 +318,8 @@ namespace dust {
 				EvalState& eval(EvalState& e);
 				void addChild(std::shared_ptr<ASTNode>& c);
 
-				std::string to_string();
-				virtual std::string print_string(std::string buf);
+				std::string toString();
+				virtual std::string printString(std::string buf);
 		};
 
 		/*
@@ -337,8 +336,8 @@ namespace dust {
 
 				EvalState& eval(EvalState& e);
 
-				std::string to_string();
-				virtual std::string print_string(std::string buf);
+				std::string toString();
+				virtual std::string printString(std::string buf);
 
 				virtual void addChild(std::shared_ptr<ASTNode>& c);
 		};
@@ -353,7 +352,7 @@ namespace dust {
 
 	template <class ostream>
 	void printAST(ostream& s, std::shared_ptr<parse::ASTNode>& ast) {
-		(s << ast->print_string("|")).flush();
+		(s << ast->printString("|")).flush();
 	}
 }
 

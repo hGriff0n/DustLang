@@ -17,7 +17,7 @@ namespace dust {
 				std::unordered_map<std::string, size_t> registry;		// Map of string to reference id
 
 				// Gets the next "open" spot in the store
-				size_t nxt_record(std::string);
+				size_t nxtRecord(std::string);
 
 				void markFree(size_t);
 				bool validIndex(size_t);

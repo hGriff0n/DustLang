@@ -24,8 +24,8 @@ namespace dust {
 		}
 
 
-		convPair TypeSystem::key(size_t t1, size_t t2) {
-			return convPair{ std::min(t1, t2), std::max(t1, t2) };
+		ConvPair TypeSystem::key(size_t t1, size_t t2) {
+			return ConvPair{ std::min(t1, t2), std::max(t1, t2) };
 		}
 
 		bool TypeSystem::isParentOf(size_t p, size_t t) {

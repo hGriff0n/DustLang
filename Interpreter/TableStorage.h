@@ -16,7 +16,7 @@ namespace dust {
 				std::unordered_map<dust::Table, size_t> registry;			// Map of Table to reference
 
 				// Gets the next "open" spot in the store
-				size_t nxt_record(dust::Table);
+				size_t nxtRecord(dust::Table);
 
 				void markFree(size_t);
 				bool validIndex(size_t);

@@ -30,7 +30,7 @@ namespace dust {
 				// if (start >= NO_RUN) return 0;
 
 				while (idx != end)
-					curr->tryMarkFree(idx++);
+					curr->try_markFree(idx++);
 
 				return curr->collected() -start;
 			}
@@ -42,7 +42,7 @@ namespace dust {
 				int start = curr->collected();
 
 				while (c_idx != c_end)
-					curr->tryMarkFree(c_idx++);
+					curr->try_markFree(c_idx++);
 
 				if (c_end == curr->size()) c_idx = 0;
 				return curr->collected() - start;

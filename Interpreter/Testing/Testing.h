@@ -113,7 +113,7 @@ namespace dust {
 				}
 
 				// After executing the given code, the stack has the given number of elements
-				virtual void require_size(const std::string& code, size_t siz) {
+				virtual void requireSize(const std::string& code, size_t siz) {
 					displayTestHeader(code) << "for stack size of " << siz << "\n";
 
 					try {
@@ -142,7 +142,7 @@ namespace dust {
 				}
 
 				// After executing the given code, the top item on the stack has the given type
-				virtual void require_type(const std::string& code, const std::string& typ) {
+				virtual void requireType(const std::string& code, const std::string& typ) {
 					displayTestHeader(code) << "for result of type " << typ << "\n";
 
 					try {
@@ -171,7 +171,7 @@ namespace dust {
 				}
 
 				// While executing the given code, an exception is thrown
-				virtual void require_error(const std::string& code) {
+				virtual void requireError(const std::string& code) {
 					displayTestHeader(code) << "for exception during evaluation\n";
 
 					try {
@@ -186,7 +186,7 @@ namespace dust {
 					exitTest();
 				}
 
-				virtual void require_noerror(const std::string& code) {
+				virtual void requireNoError(const std::string& code) {
 					displayTestHeader(code) << "for no exceptions during evaluation\n";
 
 					try {
@@ -203,7 +203,7 @@ namespace dust {
 
 				// While executing the given code, an exception, of type 'Exception', is thrown
 				template <typename Exception>
-				void require_excep(const std::string& code) {
+				void requireException(const std::string& code) {
 					displayTestHeader(code) << "for exception of type " << error::name<Exception>::is << "\n";
 
 					try {
@@ -221,38 +221,9 @@ namespace dust {
 					exitTest();
 				}
 
-				// Executing the given code leaves a true value on top of the stack
-				virtual void require_true(const std::string& code) {
-					displayTestHeader(code) << "for result of true\n";
-
-					try {
-						evaluate(code);
-
-					} catch (pegtl::parse_error& e) {
-						printMsg(false) << "Exception: \"" << e.what() << "\"\n";
-
-						return exitTest();
-					} catch (error::base& e) {
-						printMsg(false) << "Exception: \"" << e.what() << "\"\n";
-
-						return exitTest();
-					} catch (std::exception& e) {
-						printMsg(false) << "Exception: \"" << e.what() << "\"\n";
-						
-						return exitTest();
-					}
-
-					if (e.pop<bool>())
-						printMsg(true) << " Passed Test " << std::setw(5) << num_tests << "\"" << code << "\" evaluated to true\n";
-					else
-						printMsg(false) << " Failed Test " << std::setw(5) << num_tests << "\"" << code << "\" evaluated to false\n";
-
-					exitTest();
-				}
-
 				// After executing the given code, the top value on the stack is the given value
 				template <typename T>
-				void require_eval(const std::string& code, const T& val) {
+				void requireEval(const std::string& code, const T& val) {
 					displayTestHeader(code) << "for result of " << val << "\n";
 
 					try {
@@ -274,8 +245,8 @@ namespace dust {
 
 					exitTest();
 				}
-				void require_eval(const std::string& code, const char* result) {
-					return require_eval<std::string>(code, result);
+				void requireEval(const std::string& code, const char* result) {
+					return requireEval<std::string>(code, result);
 				}
 
 		};
@@ -299,19 +270,19 @@ namespace dust {
 				TestOrganizer(EvalState& _e, Stream& _s, const std::string& buf, std::vector<std::string>& _rws) : reviews{ _rws }, Tester{ _e, _s, buf } {}
 
 				// Start a new sub_test
-				void init_sub_test(const std::string& msg) {
-					if (sub_test) return sub_test->init_sub_test(msg);
+				void initSubTest(const std::string& msg) {
+					if (sub_test) return sub_test->initSubTest(msg);
 
 					s << buffer << "<:: " << (curr_test = msg) << " Testing ::>\n";
 					sub_test = new TestOrganizer<Stream>{ e, s, buffer + " " };
 				}
 
 				// Close the sub test
-				void close_sub_test() {
+				void closeSubTest() {
 					if (!sub_test) return;
 
 					// If there is a currently running sub_test, close that test
-					if (sub_test->sub_test) return sub_test->close_sub_test();
+					if (sub_test->sub_test) return sub_test->closeSubTest();
 
 					int np, nt;
 
@@ -327,45 +298,45 @@ namespace dust {
 					sub_test = nullptr;
 				}
 
-				virtual void require_size(const std::string& code, size_t siz) {
-					return sub_test ? sub_test->require_size(code, siz) : Tester<Stream>::require_size(code, siz);
+				virtual void requireSize(const std::string& code, size_t siz) {
+					return sub_test ? sub_test->requireSize(code, siz) : Tester<Stream>::requireSize(code, siz);
 				}
 
 				// After executing the given code, the top item on the stack has the given type
-				virtual void require_type(const std::string& code, const std::string& typ) {
-					return sub_test ? sub_test->require_type(code, typ) : Tester<Stream>::require_type(code, typ);
+				virtual void requireType(const std::string& code, const std::string& typ) {
+					return sub_test ? sub_test->requireType(code, typ) : Tester<Stream>::requireType(code, typ);
 				}
 
 				// While executing the given code, an exception is thrown
-				virtual void require_error(const std::string& code) {
-					return sub_test ? sub_test->require_error(code) : Tester<Stream>::require_error(code);
+				virtual void requireError(const std::string& code) {
+					return sub_test ? sub_test->requireError(code) : Tester<Stream>::requireError(code);
 				}
 
 				// While executing the given code, no exceptions are thrown
-				virtual void require_noerror(const std::string& code) {
-					return sub_test ? sub_test->require_noerror(code) : Tester<Stream>::require_noerror(code);
+				virtual void requireNoError(const std::string& code) {
+					return sub_test ? sub_test->requireNoError(code) : Tester<Stream>::requireNoError(code);
 				}
 
 				// Executing the given code leaves a true value on top of the stack
-				virtual void require_true(const std::string& code) {
-					return sub_test ? sub_test->require_true(code) : Tester<Stream>::require_true(code);
+				virtual void requireTrue(const std::string& code) {
+					requireEval(code, true);
 				}
 
 				// After executing the given code, the top value on the stack is the given value
 				template <typename T>
-				void require_eval(const std::string& code, const T& val) {
-					return sub_test ? sub_test->require_eval(code, val) : Tester<Stream>::require_eval(code, val);
+				void requireEval(const std::string& code, const T& val) {
+					return sub_test ? sub_test->requireEval(code, val) : Tester<Stream>::requireEval(code, val);
 				}
 
 				// While executing the given code, an exception, of type 'Exception', is thrown
 				template <typename Exception>
-				void require_excep(const std::string& code) {
-					return sub_test ? sub_test->require_excep<Exception>(code) : Tester<Stream>::require_excep<Exception>(code);
+				void requireException(const std::string& code) {
+					return sub_test ? sub_test->requireException<Exception>(code) : Tester<Stream>::requireException<Exception>(code);
 				}
 
 				// Print the review off all previously run sub-tests
 				template <class OStream>
-				void print_review(OStream& s) {
+				void printReview(OStream& s) {
 					std::string global = makeReview("", "Global Review", num_pass, num_tests);
 					s << global;
 
@@ -376,8 +347,8 @@ namespace dust {
 					s << global;
 				}
 
-				void print_review() {
-					print_review(s);
+				void printReview() {
+					printReview(s);
 				}
 		};
 
@@ -391,7 +362,7 @@ namespace dust {
 		std::string makeReview(const std::string&, const std::string&, int, int);
 
 		// Run dust development tests
-		void run_tests(EvalState&);
+		void runTests(EvalState&);
 		//void run_regression_tests(EvalState& e);
 		//void run_development_tests(EvalState& e);
 

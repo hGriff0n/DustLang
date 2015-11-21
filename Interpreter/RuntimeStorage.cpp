@@ -12,7 +12,7 @@ namespace dust {
 			return ret;
 		}
 
-		void RuntimeStorage::tryMarkFree(size_t idx) {
+		void RuntimeStorage::try_markFree(size_t idx) {
 			if (isCollectableResource(idx)) markFree(idx);
 		}
 
