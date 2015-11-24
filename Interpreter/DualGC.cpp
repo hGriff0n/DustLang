@@ -1,6 +1,7 @@
 #include "DualGC.h"
 
 #include <algorithm>
+#include "Exceptions\runtime.h"
 
 namespace dust {
 	namespace impl {
@@ -21,7 +22,7 @@ namespace dust {
 			}
 
 			int GC::stopWorld() {
-				if (!curr) throw;
+				if (!curr) throw error::null_exception{ "Attempt to call GC without setting a target" };
 
 				size_t idx = 0, end = curr->size();
 				int start = curr->collected();
@@ -36,7 +37,7 @@ namespace dust {
 			}
 
 			int GC::incrParse() {
-				if (!curr) throw;
+				if (!curr) throw error::null_exception{ "Attempt to call GC without setting a target" };
 
 				c_end = getIncr();
 				int start = curr->collected();

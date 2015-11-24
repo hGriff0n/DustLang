@@ -57,7 +57,7 @@ namespace dust {
 				e.pushNil();
 
 			else
-				throw error::dust_error{ "No literal can be constructed of the given type" };
+				throw error::dust_error{ "No literal can be constructed from " + val };
 
 			return e;
 		}
@@ -206,7 +206,7 @@ namespace dust {
 				definition.swap(std::dynamic_pointer_cast<Block>(c));
 
 				if (!definition)
-					throw error::invalid_ast_construction{ "Attempt to construct NewType node with a non Block node" };
+					throw error::invalid_ast_construction{ "Attempt to construct NewType node without a definition (Block) node" };
 			}
 		}
 
@@ -248,8 +248,8 @@ namespace dust {
 			op = _op.size() ? "_op" + _op : _op;
 		}
 		EvalState& Assign::eval(EvalState& e) {
-			if (!vars) throw error::incomplete_node{ "Attempt to use Assign node without a linked var_list" };
-			if (!vals) throw error::incomplete_node{ "Attempt to use Assign node without a linked expr_list" };
+			if (!vars) throw error::bad_node_eval{ "Attempt to use Assign node without a linked var_list" };
+			if (!vals) throw error::bad_node_eval{ "Attempt to use Assign node without a linked expr_list" };
 
 			auto r_var = vars->rbegin(), l_var = vars->rend();
 			auto l_val = vals->begin(), r_val = vals->end();
@@ -347,7 +347,7 @@ namespace dust {
 			return e;
 		}
 		void Control::addChild(std::shared_ptr<ASTNode>& c) {
-			if (expr) throw error::invalid_ast_construction{ "Attempt to construct control node from more than two expresions" };
+			if (expr) throw error::operands_error{ "Attempt to construct control node with more than two expresions" };
 			expr = c;
 		}
 		std::string Control::toString() { return ""; }
@@ -439,7 +439,7 @@ namespace dust {
 		}
 		void Block::addChild(std::shared_ptr<ASTNode>& c) {
 			if (std::dynamic_pointer_cast<Control>(c)) {
-				if (control) throw error::invalid_ast_construction{ "Attempt to construct Block with multiple Control nodes" };
+				if (control) throw error::operands_error{ "Attempt to construct Block with multiple Control nodes" };
 				control.swap(std::dynamic_pointer_cast<Control>(c));
 
 			} else

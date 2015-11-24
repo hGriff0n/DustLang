@@ -118,11 +118,11 @@ namespace dust {
 
 						ast.at(-2)->addChild(ast.pop());
 
-						// stack: ..., {op}
+					// stack: ..., {op}
 					else
-						throw error::missing_node_x{ "Attempt to construct Operator node without an operator" };
+						throw error::missing_node_x{ "Operator" };
 				} else
-					throw error::missing_nodes{ "Attempt to construct Operator node with less than 2 nodes on the stack" };
+					throw error::missing_nodes{ "Operator", 2 };
 			}
 		};
 
@@ -185,9 +185,9 @@ namespace dust {
 
 						// stack: ..., {op}
 					} else
-						throw error::missing_node_x{ "Attempt to construct " + Node::node_type + " node without a empty " + Node::node_type + " node" };
+						throw error::missing_node_x{ Node::node_type };
 				} else
-					throw error::missing_nodes{ "Attempt to construct " + Node::node_type + " node with less than 3 nodes on the stack" };
+					throw error::missing_nodes{ Node::node_type, 3 };
 			}
 		};
 

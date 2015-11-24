@@ -48,14 +48,13 @@ Timeline
 				This is passable but not what I want from the language
 		Consider getting a static analyzer
 		Redo how get/set are handled (in relation to exception throwing)
+		Check EvalState::setVar static typing conversion handling (I don't think it'll work, wrong direction)
+			Also consider changing ts.convertible(t1, t2) to ts.convertible(f, t)
 		See VagueToDo.txt
 
 	1 Interpreter Update
 		Exceptions
-			Update exceptions and errors to better fit the new features
 			Add exception catching and error functions
-			Improve Exception Error Messages
-				Mainly work on Exception constructors
 		Table Improvements
 			Figure out where to add in hooks to allow for restricting key/value types in tables
 				Force "3: 3" to throw a dust_error (when performed in the global scope)

@@ -32,19 +32,19 @@ namespace dust {
 			return size_t();
 		}
 
-		dust::Table TableStorage::deref(size_t idx) {
-			if (!validIndex(idx)) throw error::storage_access_error{ "Invalid Record Access" };
-			return records[idx].first;
+		dust::Table TableStorage::deref(size_t r) {
+			if (!validIndex(r)) throw error::storage_access_error{ "TableStorage::deref", r };
+			return records[r].first;
 		}
 
-		void TableStorage::incRef(size_t idx) {
-			if (!validIndex(idx)) throw error::storage_access_error{ "Invalid Record Access" };
-			++records[idx].second;
+		void TableStorage::incRef(size_t r) {
+			if (!validIndex(r)) throw error::storage_access_error{ "TableStorage::incRef", r };
+			++records[r].second;
 		}
 
-		void TableStorage::decRef(size_t idx) {
-			if (!validIndex(idx)) throw error::storage_access_error{ "Invalid Record Access" };
-			--records[idx].second;
+		void TableStorage::decRef(size_t r) {
+			if (!validIndex(r)) throw error::storage_access_error{ "TableStorage::decRef", r };
+			--records[r].second;
 		}
 
 		size_t TableStorage::size() {

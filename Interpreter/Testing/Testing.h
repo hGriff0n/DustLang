@@ -43,7 +43,6 @@ namespace dust {
 		template<> const std::string name<runtime_error>::is = "runtime_error";
 		template<> const std::string name<bad_api_call>::is = "bad_api_call";
 		template<> const std::string name<bad_node_eval>::is = "bad_node_eval";
-		template<> const std::string name<incomplete_node>::is = "incomplete_node";
 		template<> const std::string name<stack_state_error>::is = "stack_state_error";
 		template<> const std::string name<stack_type_error>::is = "stack_type_error";
 		template<> const std::string name<storage_access_error>::is = "storage_access_error";

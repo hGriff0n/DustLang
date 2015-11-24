@@ -50,9 +50,9 @@ namespace dust {
 			return (registry.count(s) > 0) ? registry[s] : (registry[s] = nxtRecord(s));
 		}
 
-		size_t StringStorage::setRef(size_t idx, size_t s) {
-			if (!validIndex(s)) throw error::storage_access_error{ "Invalid Record Access" };		// idx will be checked in setRef(size_t, std::string)
-			return setRef(idx, store[s]->s);
+		size_t StringStorage::setRef(size_t idx, size_t r) {
+			if (!validIndex(r)) throw error::storage_access_error{ "StringStorage::setRef", r };		// idx will be checked in setRef(size_t, std::string)
+			return setRef(idx, store[r]->s);
 		}
 
 		size_t StringStorage::setRef(size_t idx, std::string s) {
@@ -76,18 +76,18 @@ namespace dust {
 		}
 
 		void StringStorage::incRef(size_t r) {
-			if (!validIndex(r)) throw error::storage_access_error{ "Invalid Record Access" };
+			if (!validIndex(r)) throw error::storage_access_error{ "StringStorage::incRef", r };
 			store[r]->num_refs++;
 		}
 
 		void StringStorage::decRef(size_t r) {
-			if (!validIndex(r)) throw error::storage_access_error{ "Invalid Record Access" };
+			if (!validIndex(r)) throw error::storage_access_error{ "StringStorage::decRef", r };
 			store[r]->num_refs--;
 		}
 
-		std::string StringStorage::deref(size_t idx) {
-			if (!validIndex(idx)) throw error::storage_access_error{ "Invalid Record Access" };
-			return store[idx]->s;
+		std::string StringStorage::deref(size_t r) {
+			if (!validIndex(r)) throw error::storage_access_error{ "StringStorage::deref", r };
+			return store[r]->s;
 		}
 
 		int StringStorage::numRefs(std::string s) {
