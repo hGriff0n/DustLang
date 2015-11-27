@@ -1,4 +1,4 @@
-#include "Interpreter\Actions.h"
+#include "Interpreter\Control.h"
 #include "Interpreter\Testing\Testing.h"
 
 #include <iostream>
@@ -61,7 +61,8 @@ int main(int argc, const char* argv[]) {
 
 		} else {
 			try {
-				pegtl::parse<grammar, action>(parse::trim(input), input, parse_tree, 0);
+				//pegtl::parse<grammar, action>(parse::trim(input), input, parse_tree, 0);
+				pegtl::parse<grammar, action, parse::control>(parse::trim(input), input, parse_tree, 0);
 
 				printAST(std::cout, parse_tree.at());
 

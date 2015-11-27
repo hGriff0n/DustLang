@@ -125,9 +125,10 @@ namespace dust {
 		struct ee_3 : if_must<op_3, seps, expr_2> {};
 		struct expr_3 : seq<expr_2, star<seps, ee_3>, seps> {};							// {expr_2}( *{op_3} *{expr_2})* *
 
-		// Type Check Operator
+		// Type Check and Boolean operators
 		struct ee_4 : if_must<op_4, seps, expr_3> {};
 		struct ee_tc : if_must<k_inherit, seps, type_id> {};
+		//struct expr_4 : seq<expr_3, opt<seps, sor<ee_tc, ee_4>>, seps> {};			// {expr_3}( *({<- *{type_id})|({op_4} *{expr_3})? *
 		struct expr_4 : seq<expr_3, star<seps, sor<ee_tc, ee_4>>, seps> {};				// {expr_3}( *({<- *{type_id})|({op_4} *{expr_3})* *
 
 		// Boolean and
@@ -140,13 +141,13 @@ namespace dust {
 
 		// Multiple Assignment
 		struct assign : seq<var_list, seps, op_x> {};									// assignments are right associative
-		struct ee_7 : seq<assign, seps, expr_list> {};									// ensure that expr_6 doesn't trigger the expression reduction
-		struct expr_7 : if_then_else<at<assign>, ee_7, expr_6> {};						// {var_list} *{op_5} * {expr_list}
+		struct ee_7 : seq<assign, seps, expr_list, seps> {};							// ensure that expr_6 doesn't trigger the expression reduction
+		struct expr_7 : if_then_else<at<assign>, ee_7, expr_6> {};						// {var_list} *{op_5} * {expr_list} *
 
 		// Type Creation
 		struct ee_inherit : seq<seps, k_inherit, seps, type_id> {};
-		struct ee_type : seq<k_type, seps, type_id, seps, table, opt<ee_inherit>> {};
-		struct expr_type : sor<ee_type, expr_7> {};										// type *{type_id} *{table}( *<- *{type_id})?
+		struct ee_type : seq<k_type, seps, type_id, seps, table, opt<ee_inherit>, seps> {};
+		struct expr_type : sor<ee_type, expr_7> {};										// type *{type_id} *{table}( *<- *{type_id})? *
 
 		// Try-Catch
 			// NOTE: THIS GRAMMAR DOESN'T WORK FOR DESCRIBING TRY-CATCH STATEMENTS
