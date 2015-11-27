@@ -53,27 +53,27 @@ Timeline
 		See VagueToDo.txt
 
 	1 Interpreter Update
-		Exceptions
-			Add exception catching and error functions
+		Mark out areas where code will need to be changed when switching to Collector
+			Look out for size and numRecords (renamed to capacity and size respectively)
 		Table Improvements
 			Figure out where to add in hooks to allow for restricting key/value types in tables
 				Force "3: 3" to throw a dust_error (when performed in the global scope)
 					Throw for a different reason than current execution
 				Would need to add the type system (as an argument or something)
-		Continue work on TRuntimeStorage
-		Possibly start implementing custom Control specializations (standardize error types)
-			In order to make parser errors more informative
-		Improve expr_4 grammar to be more accurate (?)
-			ee_tc can't realistically be performed more than once in a row (outside of testing for Bool)
-				I could also have the result of evaluation be the left hand side (this doesn't make much sense)
-		Update program version to 0.6.1
-
+		Redo PEGTL submodule (Mishandled the crossover)
+				
 	2 Parser Rewrite v. II
 		Redo how scoping is handled by the parser
-			Rewrite table/block/try-catch to allow for declaring across multiple lines
-			Should also simplify the grammar in general (work to this as well)
+			Add a "scoping" rule at the beginning of expr
+				This scoping rule will work similar to Python (need a "scope" stack?)
+				Block gets deleted from the grammar
+					Means I can't completely describe everything in the grammar as a single expression
+						Should still parse that way though
+				The grammar rule just matches any number of "scope" characters
+					The action will handle the control push/popping (allows custom control structures for loops/branches/etc.)
+			Try to simplify the grammar if possible
 		Rework Assignment to be performed left->right
-			Changes "a, b:* 3" to multiply a by 3
+			Changes "a, b:* 3" to multiply a by 3 (before excepting on the 3)
 				Stops "a, b:* nil, 3" from multiplying b by 3
 		Rewrite the parser so that everything works well together
 

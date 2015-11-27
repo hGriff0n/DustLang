@@ -1,0 +1,15 @@
+Logic Error
+	out_of_bounds								|	Indexing out of bounds
+	illegal_template							|	Attempt to call an illegal template
+	syntax_error								|	Invalid dust syntax used in a C++ API call
+
+Stack.h	
+	Invalid index to _																			|	out_of_bounds
+TypeTraits.h
+	Attempt to use Traits::get for undefined C++ type											|	illegal_template
+TypeSystem.cpp
+	_ is not a type identifier																	|	syntax_error
+
+
+
+pegtl::parse_error
