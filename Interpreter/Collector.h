@@ -1,10 +1,10 @@
 #pragma once
 
-#include <vector>
-#include <unordered_map>
 #include <string>
+#include <unordered_map>
 
 #include "Table.h"
+#include "StorageBase.h"
 #include "Exceptions\runtime.h"
 
 namespace dust {
@@ -12,7 +12,7 @@ namespace dust {
 		namespace experimental {
 
 			template <typename Value>
-			class Collector {
+			class Collector : public StorageBase {
 				struct StorageType {
 					Value val;
 					int num_refs;
@@ -21,40 +21,33 @@ namespace dust {
 				};
 
 				private:
-					std::vector<size_t> open;
 					std::vector<StorageType*> store;
 					std::unordered_map<Value, size_t> registry;
 
 					// Mark the given index as "free"
 					void markFree(size_t idx) {
 						registry.erase(store[idx]->s);
-						open.push_back(idx);
 
 						delete store[idx];
 						store[idx] = nullptr;
+
+						open.push_back(idx);
 					}
 
 					// Bounds checking
 					bool validIndex(size_t idx) {
-						return idx > 0 && idx < store.size();
+						return idx > 0 && idx < store.size() && store[idx];
 					}
 
 					// Check if the given index can be collected
 					bool isCollectibleResource(size_t idx) {
-						return validIndex(idx) && store[idx].num_refs < 1;
+						return validIndex(idx) && store[idx]->num_refs < 1;
 					}
 
 					// Possibly replace "if !validIndex throw" pattern ???
 					void throwIfInvalid(size_t idx) {
 						if (!validIndex(idx)) throw error::storage_access_error{ "TRuntimeStorage<T>::throwIfInvalid", idx };
 						if (!store[idx]) throw error::storage_access_error{ "Attempt to access null" };
-					}
-
-					// Pop a value from the open stack
-					size_t pop() {
-						size_t back = open.back();
-						open.pop_back();
-						return back;
 					}
 
 					// Create a new record
@@ -107,10 +100,6 @@ namespace dust {
 
 
 					// Garbage Collection interface
-					void try_markFree(size_t r) {
-						if (isCollectibleResource(r)) markFree(r);
-					}
-
 					void incRef(size_t r) {
 						if (!validIndex(r)) throw error::storage_access_error{ "TRuntimeStorage<T>::incRef", r };
 						store[r]->num_refs++;
@@ -122,21 +111,13 @@ namespace dust {
 					}
 
 
-					// Size members
+					// Size queries
 					size_t capacity() {
 						return store.size();
 					}
 
-					size_t size() {
-						return capacity() - numCollected();
-					}
-
-					size_t numCollected() {
-						return open.size();
-					}
-
 					int numRefs(size_t r) {
-						return validIndex(r) && store[r] ? store[r]->num_refs : 0;
+						return validIndex(r) ? store[r]->num_refs : 0;
 					}
 			};
 
