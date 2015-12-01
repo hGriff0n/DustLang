@@ -95,24 +95,13 @@ namespace dust {
 		}
 
 		// VarName methods
-		VarName::VarName(std::string var) : name{ var } {}
-		EvalState& VarName::eval(EvalState& e) {
-			if (sub_var) return e.push(name), e;
-
-			e.push(name);
-			e.getScoped(lvl);
-
-			for (auto k : sub_fields)
-				k->eval(e).get();
-
-			return e;
-		}
+		VarName::VarName(std::string var) : name{ makeNode<Literal>(var, type::Traits<std::string>::id) } {}
 		void VarName::addChild(std::shared_ptr<ASTNode>& c) {
 			sub_fields.emplace_back(c);
 		}
-		std::string VarName::toString() { return name; }
+		std::string VarName::toString() { return name->toString(); }
 		std::string VarName::printString(std::string buf) {
-			std::string ret = buf + "+- " + node_type + " " + name + "\n";
+			std::string ret = buf + "+- " + node_type + " " + toString() + "\n";
 			buf += " ";
 
 			for (auto i : sub_fields)
@@ -126,14 +115,28 @@ namespace dust {
 		void VarName::addLevel(const std::string& dots) {
 			lvl = dots.size();
 		}
+		
+		EvalState& VarName::eval(EvalState& e) {
+			name->eval(e);
+
+			if (!sub_var) {
+				e.getScoped(lvl);
+
+				for (auto k : sub_fields)
+					k->eval(e).get();
+			}
+
+			return e;
+		}
+
 		EvalState& VarName::set(EvalState& e, bool is_const, bool is_static) {
+			name->eval(e);
+
 			if (sub_fields.empty()) {
-				e.push(name);
 				e.swap();
 				e.setScoped(lvl, is_const, is_static);
 
 			} else {
-				e.push(name);
 				e.getScoped(lvl);
 
 				for (int i = 0; i != sub_fields.size() - 1; ++i) {
@@ -147,6 +150,15 @@ namespace dust {
 			}
 
 			return e;
+		}
+
+		// Temporary helper to allow for moving Assign's var list type from VarName to ASTNode
+			// this doesn't handle tables yet
+		void set(std::shared_ptr<ASTNode> n, EvalState& e, bool set_const, bool set_static) {
+			std::shared_ptr<VarName> var = std::dynamic_pointer_cast<VarName>(n);
+
+			var ? var->set(e, set_const, set_static)
+				: throw error::bad_api_call{ "Attempt to assign to a non-variable" };
 		}
 
 		// TypeName methods
@@ -244,7 +256,7 @@ namespace dust {
 		}
 
 		// Assign methods
-		Assign::Assign(std::string _op, bool _const, bool _static) : setConst{ _const }, setStatic{ _static }, vars{ nullptr }, vals{ nullptr } {
+		Assign::Assign(std::string _op, bool _const, bool _static) : set_const{ _const }, set_static{ _static }, vars{ nullptr }, vals{ nullptr } {
 			op = _op.size() ? "_op" + _op : _op;
 		}
 		EvalState& Assign::eval(EvalState& e) {
@@ -278,7 +290,7 @@ namespace dust {
 			while (r_var != l_var) {
 				if (op.size()) (*r_var)->eval(e).callOp(op);
 				
-				(*r_var++)->set(e, setConst, setStatic);
+				set(*r_var++, e, set_const, set_static);
 			}
 
 			return (*vars->rbegin())->eval(e);				//return last_var->eval(e);

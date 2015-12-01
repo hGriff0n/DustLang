@@ -129,7 +129,7 @@ namespace dust {
 		 */
 		class VarName : public ASTNode {
 			private:
-				std::string name;
+				std::shared_ptr<ASTNode> name;
 				std::vector<std::shared_ptr<ASTNode>> sub_fields;
 				int lvl = 0; bool sub_var = false;
 
@@ -143,8 +143,8 @@ namespace dust {
 				std::string toString();
 				virtual std::string printString(std::string buf);
 
-				void addLevel(const std::string& dots);
 				void setSubStatus();
+				void addLevel(const std::string& dots);
 				EvalState& set(EvalState& e, bool is_const, bool is_static);
 		};
 
@@ -189,15 +189,16 @@ namespace dust {
 		 * Represents an assignment operation
 		 */
 		class Assign : public ASTNode {
-			typedef List<VarName> var_type;
-			typedef List<ASTNode> val_type;
-			typedef std::shared_ptr<ASTNode> arg_type;
+			using var_type = List<VarName>;
+			//using var_type = List<ASTNode>;
+			using val_type = List<ASTNode>;
+			using arg_type = std::shared_ptr<ASTNode>;
 
 			private:
 				std::shared_ptr<var_type> vars;
 				std::shared_ptr<val_type> vals;
 				std::string op;
-				bool setConst, setStatic;
+				bool set_const, set_static;
 
 			public:
 				Assign(std::string _op, bool _const = false, bool _static = false);
