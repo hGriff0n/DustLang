@@ -162,7 +162,7 @@ namespace dust {
 		struct expr : sor<seq<expr_x, seps, opt<comment>>, seq<seps, comment>> {};		// ({expr_x} *{comment}?| *{comment})
 
 		// Defines Scoping rules
-			// PROBABLY NEEDS REWORK
+			// REWORK
 		struct block {
 			using analyze_t = analysis::counted<analysis::rule_type::PLUS, 1, expr, block>;
 
