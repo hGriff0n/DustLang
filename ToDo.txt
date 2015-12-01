@@ -49,8 +49,6 @@ Timeline
 		See VagueToDo.txt
 
 	1 Interpreter Update
-		Combine VarName::name and VarName::sub_fields into VarName::fields
-			Will simplify logic construction
 		Table Improvements
 			Figure out where to add in hooks to allow for restricting key/value types in tables
 				First get "3: 3" to not throw a runtime exception when executing
