@@ -95,57 +95,57 @@ namespace dust {
 		}
 
 		// VarName methods
-		VarName::VarName(std::string var) : name{ makeNode<Literal>(var, type::Traits<std::string>::id) } {}
-		void VarName::addChild(std::shared_ptr<ASTNode>& c) {
-			sub_fields.emplace_back(c);
+		VarName::VarName(std::string s) : fields{} {
+			fields.emplace_back(makeNode<Literal>(s, type::Traits<std::string>::id));
 		}
-		std::string VarName::toString() { return name->toString(); }
+		void VarName::addChild(std::shared_ptr<ASTNode>& c) {
+			fields.emplace_back(c);
+		}
+		std::string VarName::toString() { return fields.front()->toString(); }
 		std::string VarName::printString(std::string buf) {
-			std::string ret = buf + "+- " + node_type + " " + toString() + "\n";
+			std::string ret = buf + "+- " + node_type + "\n";
 			buf += " ";
 
-			for (auto i : sub_fields)
+			for (auto i : fields)
 				ret += i->printString(buf);
 
 			return ret;
 		}
-		void VarName::setSubStatus() {
-			sub_var = !sub_var;
-		}
+		void VarName::setSubStatus() { sub_var = !sub_var; }
 		void VarName::addLevel(const std::string& dots) {
 			lvl = dots.size();
 		}
-		
 		EvalState& VarName::eval(EvalState& e) {
-			name->eval(e);
+			auto field = std::begin(fields);
+			(*field)->eval(e);
 
 			if (!sub_var) {
 				e.getScoped(lvl);
 
-				for (auto k : sub_fields)
-					k->eval(e).get();
+				while (++field != std::end(fields))
+					(*field)->eval(e).get();
 			}
 
 			return e;
 		}
-
 		EvalState& VarName::set(EvalState& e, bool is_const, bool is_static) {
-			name->eval(e);
+			auto field = std::begin(fields);
+			(*field)->eval(e);
 
-			if (sub_fields.empty()) {
+			if (fields.size() == 1) {
 				e.swap();
 				e.setScoped(lvl, is_const, is_static);
 
 			} else {
 				e.getScoped(lvl);
 
-				for (int i = 0; i != sub_fields.size() - 1; ++i) {
-					sub_fields[i]->eval(e).get();
+				auto end = std::end(fields) - 1;
+				while (++field != end)
+					(*field)->eval(e).get();
 					//if (e.is<Nil>()) throw error::dust_error{ "Attempt to assign to a Nil value" };
-				}
 
 				e.swap();
-				sub_fields.back()->eval(e).swap();
+				(*field)->eval(e).swap();
 				e.set();
 			}
 
