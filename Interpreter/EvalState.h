@@ -123,6 +123,8 @@ namespace dust {
 
 			// Set var.val = stack top
 			void setVar(impl::Variable& var, bool is_const, bool is_typed);
+			void setVar(dust::Table t, const impl::Value& key, bool is_const, bool is_typed);
+
 			// Push tbl[var] on the stack (or nil)
 			void getVar(Table tbl, const impl::Value& var);
 

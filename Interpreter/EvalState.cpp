@@ -88,6 +88,17 @@ namespace dust {
 		return *this;
 	}
 
+	// Adds key and value checking
+	void EvalState::setVar(Table t, const impl::Value& key, bool is_const, bool is_typed) {
+		if (!t->okayKey(key))
+			throw error::illegal_operation{ "Attempt to index a table with an invalid key" };
+
+		if (!t->okayValue(at()))
+			throw error::illegal_operation{ "Attempt to store a value inside a table that doesn't accept it" };
+
+		setVar(t->getVar(key), is_const, is_typed);
+	}
+
 	// Expects stack = ..., {val}
 	void EvalState::setVar(impl::Variable& var, bool is_const, bool is_typed) {
 		if (var.is_const) throw error::illegal_operation{ "Attempt to reassign a constant variable" };
@@ -114,12 +125,15 @@ namespace dust {
 	}
 
 	void EvalState::getVar(Table tbl, const impl::Value& var) {
+		if (!tbl->okayKey(var))
+			throw error::illegal_operation{ "Attempt to index a table with an invalid key" };
+
 		tbl->hasKey(var) ? push(tbl->getVal(var)) : pushNil();
 	}
 	
 	void EvalState::setScoped(const impl::Value& name, int _lvl, bool is_const, bool is_typed) {
 		try_incRef(name);
-		setVar(findScope(name, _lvl, true)->getVar(name), is_const, is_typed);
+		setVar(findScope(name, _lvl, true), name, is_const, is_typed);
 	}
 
 	// Expects stack = ..., {var}, {val}
@@ -134,7 +148,8 @@ namespace dust {
 
 		auto tbl = pop<Table>(-3);
 		try_incRef(at(-2));
-		setVar(tbl->getVar(pop(-2)), false, false);
+
+		setVar(tbl, pop(-2), false, false);
 		push(tbl);
 	}
 
