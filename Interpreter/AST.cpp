@@ -130,36 +130,26 @@ namespace dust {
 			return e;
 		}
 		EvalState& VarName::set(EvalState& e, bool is_const, bool is_static) {
-			auto field = std::begin(fields);
+			auto field = std::begin(fields), end = std::end(fields) - 1;
 			(*field)->eval(e);
 
-			if (fields.size() == 1) {
+			if (field == end) {
 				e.swap();
 				e.setScoped(lvl, is_const, is_static);
 
 			} else {
 				e.getScoped(lvl);
 
-				auto end = std::end(fields) - 1;
 				while (++field != end)
 					(*field)->eval(e).get();
 					//if (e.is<Nil>()) throw error::dust_error{ "Attempt to assign to a Nil value" };
 
 				e.swap();
-				(*field)->eval(e).swap();
+				(*end)->eval(e).swap();
 				e.set();
 			}
 
 			return e;
-		}
-
-		// Temporary helper to allow for moving Assign's var list type from VarName to ASTNode
-			// this doesn't handle tables yet
-		void set(std::shared_ptr<ASTNode> n, EvalState& e, bool set_const, bool set_static) {
-			std::shared_ptr<VarName> var = std::dynamic_pointer_cast<VarName>(n);
-
-			var ? var->set(e, set_const, set_static)
-				: throw error::bad_api_call{ "Attempt to assign to a non-variable" };
 		}
 
 		// TypeName methods
@@ -291,8 +281,7 @@ namespace dust {
 			while (r_var != l_var) {
 				if (op.size()) (*r_var)->eval(e).callOp(op);
 				
-				//(*r_var++)->set(e, set_const, set_static);
-				set(*r_var++, e, set_const, set_static);
+				(*r_var++)->set(e, set_const, set_static);
 			}
 
 			return (*vars->rbegin())->eval(e);				//return last_var->eval(e);

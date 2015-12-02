@@ -42,6 +42,7 @@ istream& getmultiline(istream& in, std::string& s) {
 	return in;
 }
 
+
 int main(int argc, const char* argv[]) {
 	std::cout << "Analyzing `dust::grammar`.....\n";
 	pegtl::analyze<grammar>();
@@ -54,7 +55,7 @@ int main(int argc, const char* argv[]) {
 	initState(e);
 	test::runTests(e);
 
-	std::cout << "> ";
+	std::cout << "> "; 
 
 	while (getmultiline(std::cin, input) && input != "exit") {
 		if (input == "gc") {

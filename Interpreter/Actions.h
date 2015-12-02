@@ -221,7 +221,7 @@ namespace dust {
 			}
 		};
 
-		// Specialization of list_actions to allow for conversions (for VarName, could just specialize on VarName ???)
+		// Specialization of list_actions to force conversions to type (for VarName, could just specialize on VarName ???)
 		template <class type>
 		struct list_actions<type, true> {
 			static void apply(input& in, AST& ast, const int _) {
@@ -244,8 +244,6 @@ namespace dust {
 		};
 
 		template <> struct action<var_list> : list_actions<VarName, true> {};
-		//template <> struct action<var_list> : list_actions<VarName> {};
-		//template <> struct action<var_list> : list_actions<ASTNode> {};
 		template <> struct action<expr_list> : list_actions<ASTNode> {};
 
 		// Block/Table/Scoping Actions
