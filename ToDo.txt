@@ -51,10 +51,7 @@ Timeline
 	1 Interpreter Update
 		Table Improvements
 			Figure out where to add in hooks to allow for restricting key/value types in tables
-				First get "3: 3" to not throw a runtime exception when executing
-					Add in a std::shared_ptr constructor to VarName
-					Convert list construction to convert to the given type (at least for var_list)
-				Then determing where to add in the hooks to force "3: 3" to throw an error (in the global scope)
+				Add in hooks to force "3: 3" to throw an error in global scope (but not in table declarations)
 					Don't focus too much on making this completely general (just needs to be general in concept)
 		Redo PEGTL submodule (Mishandled the crossover)
 		Convert over to using Collector<T> in place of xStorage

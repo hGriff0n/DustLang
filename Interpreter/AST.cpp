@@ -95,8 +95,9 @@ namespace dust {
 		}
 
 		// VarName methods
-		VarName::VarName(std::string s) : fields{} {
-			fields.emplace_back(makeNode<Literal>(s, type::Traits<std::string>::id));
+		VarName::VarName(std::string var) : VarName{ makeNode<Literal>(var, type::Traits<std::string>::id) } {}
+		VarName::VarName(std::shared_ptr<ASTNode>&& var) : fields{} {
+			fields.emplace_back(var);
 		}
 		void VarName::addChild(std::shared_ptr<ASTNode>& c) {
 			fields.emplace_back(c);
@@ -290,6 +291,7 @@ namespace dust {
 			while (r_var != l_var) {
 				if (op.size()) (*r_var)->eval(e).callOp(op);
 				
+				//(*r_var++)->set(e, set_const, set_static);
 				set(*r_var++, e, set_const, set_static);
 			}
 

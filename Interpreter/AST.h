@@ -134,6 +134,7 @@ namespace dust {
 
 			public:
 				VarName(std::string var);
+				VarName(std::shared_ptr<ASTNode>&& var);
 				static std::string node_type;
 
 				EvalState& eval(EvalState& e);
@@ -189,7 +190,6 @@ namespace dust {
 		 */
 		class Assign : public ASTNode {
 			using var_type = List<VarName>;
-			//using var_type = List<ASTNode>;
 			using val_type = List<ASTNode>;
 			using arg_type = std::shared_ptr<ASTNode>;
 
@@ -348,6 +348,11 @@ namespace dust {
 	template <class T, typename... Args>
 	std::shared_ptr<parse::ASTNode> makeNode(Args&... args) {
 		return std::make_shared<T>(args...);
+	}
+
+	template <class R, class T>
+	std::shared_ptr<parse::ASTNode> makeNode(std::shared_ptr<T>&& ptr) {
+		return std::make_shared<R>(std::forward<std::shared_ptr<T>>(ptr));
 	}
 
 	template <class ostream>
