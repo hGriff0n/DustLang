@@ -1,8 +1,6 @@
 #pragma once
 
-#include "StringStorage.h"
-#include "TableStorage.h"
-//#include "Collector.h"
+#include "Collector.h"
 
 namespace dust {
 	namespace impl {
@@ -11,9 +9,7 @@ namespace dust {
 			private:
 				StringStorage strings;
 				TableStorage tables;
-				RuntimeStorage& curr;					// Storage used by the collection algorithms. Can rotate between strings and tables based on value of collect_strings
-
-				//StorageBase& curr;
+				StorageBase& curr;					// Storage used by the collection algorithms. Can rotate between strings and tables based on value of collect_strings
 
 				bool collect_strings = true;			// Switch to determine which storage to collect (no way to change it in the current interface)
 				size_t c_idx = 0, c_end = 0;

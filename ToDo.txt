@@ -49,12 +49,11 @@ Timeline
 		Implement Table::okayKey and Table::okayValue and provide a way to change behavior
 			These methods are how "3: 3" will be prevented in the global scope and allowed in tables
 			Also allow for restricting key and values based on given functions
+		Check that Collector<T>::StorageType destructor works for pointer and non-pointer types
+			Currently branches on std::is_pointer<T>::value
 		See VagueToDo.txt
 
 	1 Interpreter Update
-		Redo PEGTL submodule (Mishandled the crossover)
-		Convert over to using Collector<T> in place of xxStorage
-			Test that Collector<T> performs as expected
 		Add in the capability to restrict Tester to only output failed tests
 			Color some stuff on failed tests red ???
 				Maybe create a custom manipulator
