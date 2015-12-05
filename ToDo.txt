@@ -55,17 +55,8 @@ Timeline
 
 	1 Interpreter Update
 		Add in the capability to restrict Tester to only output failed tests
-			Color some stuff on failed tests red ???
-				Maybe create a custom manipulator
-					See: http://stackoverflow.com/questions/799599/c-custom-stream-manipulator-that-changes-next-item-on-stream
-					See: http://en.cppreference.com/w/cpp/io/ios_base/iword
-					See: http://stackoverflow.com/questions/27400292/colored-text-in-windows-command-prompt-in-one-line
-				How to do it for windows
-					#include <Windows.h>
-					HANDLE hcon = GetStdHandle(STD_OUTPUT_HANDLE);
-					SetConsoleTextAttribute(hcon, FOREGROUND_RED);
-					constexpr auto normal_console = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
 		Fix some bugs
+		Start reading up on the gsl
 				
 	2 Parser Rewrite v. II
 		Redo how scoping is handled by the parser
@@ -81,6 +72,7 @@ Timeline
 			Or should I (it would certainly be extremely difficult to debug)
 				Assignment => value which can be used in another assignment
 		Improve Exception Support
+		Try converting some code to make use of the gsl
 		Rework Assignment to be performed left->right
 			Changes "a, b:* 3" to multiply a by 3 (before excepting on the 3)
 				Stops "a, b:* nil, 3" from multiplying b by 3

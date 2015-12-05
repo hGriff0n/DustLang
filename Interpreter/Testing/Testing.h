@@ -8,6 +8,7 @@
 
 #include <iomanip>
 #include <vector>
+#include "Console.h"
 
 // TODO Improvements
 	// Improve API
@@ -85,7 +86,8 @@ namespace dust {
 				// Print the pass/fail message and update num_pass
 				Stream& printMsg(bool pass) {
 					num_pass += pass;
-					return s << buffer << "[" << (pass ? "O" : "X") << "] ";
+					s << (pass ? console::green : console::red) << buffer << "[" << (pass ? "O" : "X") << "] ";
+					return s;
 				}
 
 				// Clean up internal state
@@ -256,17 +258,17 @@ namespace dust {
 		 */
 		template <class Stream>
 		class TestOrganizer : public Tester<Stream> {
-			static std::vector<std::string> default_reviews;
+			static std::vector<std::pair<std::string, bool>> default_reviews;
 
 			private:
 				TestOrganizer<Stream>* sub_test = nullptr;
 				std::string curr_test;
-				std::vector<std::string>& reviews;
+				std::vector<std::pair<std::string, bool>>& reviews;
 
 			public:			// These constructors will cause recursion ???
 				TestOrganizer(EvalState& _e, Stream& _s) : TestOrganizer{ _e, _s, "", default_reviews } {}
 				TestOrganizer(EvalState& _e, Stream& _s, const std::string& buf) : TestOrganizer{ _e, _s, buf, default_reviews } {}
-				TestOrganizer(EvalState& _e, Stream& _s, const std::string& buf, std::vector<std::string>& _rws) : reviews{ _rws }, Tester{ _e, _s, buf } {}
+				TestOrganizer(EvalState& _e, Stream& _s, const std::string& buf, std::vector<std::pair<std::string, bool>>& _rws) : reviews{ _rws }, Tester{ _e, _s, buf } {}
 
 				// Start a new sub_test
 				void initSubTest(const std::string& msg) {
@@ -291,7 +293,7 @@ namespace dust {
 
 					// Create the review message for the sub test and add to the stack
 					reviews.push_back(makeReview(buffer + " ", curr_test, np, nt));
-					s << reviews.back() << "\n";
+					s << reviews.back().first << "\n";
 
 					delete sub_test;
 					sub_test = nullptr;
@@ -336,14 +338,14 @@ namespace dust {
 				// Print the review off all previously run sub-tests
 				template <class OStream>
 				void printReview(OStream& s) {
-					std::string global = makeReview("", "Global Review", num_pass, num_tests);
-					s << global;
+					std::pair<std::string, bool> global = makeReview("", "Global Review", num_pass, num_tests);
+					s << global.first;
 
 					// Print all sub-tests (with requisite buffering)
 					for (auto review : reviews)
-						s << review;
+						s << (review.second ? console::color{ 2 } : console::red) << review.first;
 
-					s << global;
+					s << global.first;
 				}
 
 				void printReview() {
@@ -358,14 +360,14 @@ namespace dust {
 		}
 
 		// Helper method for creating a review message
-		std::string makeReview(const std::string&, const std::string&, int, int);
+		std::pair<std::string, bool> makeReview(const std::string&, const std::string&, int, int);
 
 		// Run dust development tests
 		void runTests(EvalState&);
 		//void run_regression_tests(EvalState& e);
 		//void run_development_tests(EvalState& e);
 
-		template <class Stream> std::vector<std::string> TestOrganizer<Stream>::default_reviews = std::vector<std::string>{};
+		template <class Stream> std::vector<std::pair<std::string, bool>> TestOrganizer<Stream>::default_reviews = std::vector<std::pair<std::string, bool>>{};
 		template <class Stream> const std::function<void(EvalState&)> Tester<Stream>::DEFAULT_RESET = [](EvalState& e) { e.clear(); };
 
 	}

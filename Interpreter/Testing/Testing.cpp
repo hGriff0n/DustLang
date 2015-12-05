@@ -176,7 +176,7 @@ namespace dust {
 			t.printReview(std::cout);
 		}
 
-		std::string makeReview(const std::string& buf, const std::string& test, int np, int nt) {
+		std::pair<std::string, bool> makeReview(const std::string& buf, const std::string& test, int np, int nt) {
 			std::stringstream ss;
 
 			ss << buf << ":: " << test << " | Passed: " << np
@@ -184,7 +184,7 @@ namespace dust {
 									   << " | " << np << " / " << nt
 									   << " Tests (" << std::setprecision(4) << ((float)np / nt * 100) << "%)\n";
 
-			return ss.str();
+			return std::make_pair(ss.str(), !(nt - np));
 		}
 
 	}
