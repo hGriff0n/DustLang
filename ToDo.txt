@@ -49,12 +49,13 @@ Timeline
 		Implement Table::okayKey and Table::okayValue and provide a way to change behavior
 			These methods are how "3: 3" will be prevented in the global scope and allowed in tables
 			Also allow for restricting key and values based on given functions
-		Check that Collector<T>::StorageType destructor works for pointer and non-pointer types
-			Currently branches on std::is_pointer<T>::value
+		Implement Console manipulators for mac and windows
+			Apparently both use ansi color codes
 		See VagueToDo.txt
 
 	1 Interpreter Update
 		Add in the capability to restrict Tester to only output failed tests
+			This means I also have to wait to output the test "headers" until I've run the test
 		Fix some bugs
 		Start reading up on the gsl
 				

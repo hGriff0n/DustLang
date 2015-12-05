@@ -12,16 +12,22 @@ namespace dust {
 
 		template <typename Value>
 		class Collector : public StorageBase {
-
-			// Could I use enable_if here ???
 			struct StorageType {
 				Value val;
 				int num_refs = 0;
 
+				// Expression SFINAE to ensure that pointers get deleted if Value is a pointer type (StorageType owns its pointers)
+				template <typename V>
+				void deleteValue(std::enable_if_t<std::is_pointer<V>::value>* = nullptr) {
+					delete val;
+				}
+				
+				template <typename V>
+				void deleteValue(std::enable_if_t<!std::is_pointer<V>::value>* = nullptr) {}
+
 				StorageType(const Value& v) : val{ v } {}
 				~StorageType() {
-					if (std::is_pointer<Value>::value)				// delete the pointer if Value is a pointer type
-						delete val;
+					deleteValue<Value>();
 				}
 			};
 
