@@ -4,8 +4,8 @@
 
 namespace dust {
 	namespace test {
-		void runTests(EvalState& e) {
-			auto t = makeTester(e, std::cout);
+		void runTests(EvalState& e, bool print_all) {
+			auto t = makeTester(e, std::cout, print_all);
 
 			// Basics and Type System tests
 			t.initSubTest("Basics and Type System");

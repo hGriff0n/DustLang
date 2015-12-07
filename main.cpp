@@ -42,6 +42,7 @@ istream& getmultiline(istream& in, std::string& s) {
 	return in;
 }
 
+constexpr bool show_all_tests = 4 % 2;
 
 int main(int argc, const char* argv[]) {
 	std::cout << "Analyzing `dust::grammar`.....\n";
@@ -53,7 +54,7 @@ int main(int argc, const char* argv[]) {
 	EvalState e;
 
 	initState(e);
-	test::runTests(e);
+	test::runTests(e, show_all_tests);
 
 	std::cout << "> ";
 
