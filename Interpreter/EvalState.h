@@ -22,7 +22,7 @@ namespace dust {
 					return std::stoi(gc.getStrings().deref(v.val.i));
 			} catch (...) {}
 
-			throw error::conversion_error{ "Not convertible to Int" };
+			throw error::conversion_error{ "Traits<int>::get", "Int" };
 		}
 
 		template<> double Traits<double>::get(const impl::Value& v, impl::GC& gc) {
@@ -38,7 +38,7 @@ namespace dust {
 				}
 			} catch (...) {}
 
-			throw error::conversion_error{ "Not convertible to Float" };
+			throw error::conversion_error{ "Traits<double>::get", "Float" };
 		}
 
 		template<> std::string Traits<std::string>::get(const impl::Value& v, impl::GC& gc) {
@@ -68,7 +68,7 @@ namespace dust {
 				return t + " ]";
 			}
 
-			throw error::conversion_error{ "Not convertible to String" };
+			throw error::conversion_error{ "Traits<string>::get", "String" };
 		}
 
 		template<> bool Traits<bool>::get(const impl::Value& v, impl::GC& gc) {
@@ -123,6 +123,8 @@ namespace dust {
 
 			// Set var.val = stack top
 			void setVar(impl::Variable& var, bool is_const, bool is_typed);
+			void setVar(dust::Table t, const impl::Value& key, bool is_const, bool is_typed);
+
 			// Push tbl[var] on the stack (or nil)
 			void getVar(Table tbl, const impl::Value& var);
 

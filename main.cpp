@@ -1,4 +1,4 @@
-#include "Interpreter\Actions.h"
+#include "Interpreter\Control.h"
 #include "Interpreter\Testing\Testing.h"
 
 #include <iostream>
@@ -42,6 +42,8 @@ istream& getmultiline(istream& in, std::string& s) {
 	return in;
 }
 
+constexpr bool show_all_tests = 4 % 2;
+
 int main(int argc, const char* argv[]) {
 	std::cout << "Analyzing `dust::grammar`.....\n";
 	pegtl::analyze<grammar>();
@@ -52,7 +54,7 @@ int main(int argc, const char* argv[]) {
 	EvalState e;
 
 	initState(e);
-	test::run_tests(e);
+	test::runTests(e, show_all_tests);
 
 	std::cout << "> ";
 
@@ -61,7 +63,8 @@ int main(int argc, const char* argv[]) {
 
 		} else {
 			try {
-				pegtl::parse<grammar, action>(parse::trim(input), input, parse_tree, 0);
+				//pegtl::parse<grammar, action>(parse::trim(input), input, parse_tree, 0);
+				pegtl::parse<grammar, action, parse::control>(parse::trim(input), input, parse_tree, 0);
 
 				printAST(std::cout, parse_tree.at());
 

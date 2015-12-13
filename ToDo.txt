@@ -23,62 +23,59 @@ Opinions on adapting code to use the C++ Common Code Standards and the GSL
 
 Timeline
 	0 Bugfixes / Improvements
-		Need to adapt Testing to handle non-printable values
-			Problem when testing for result of Nil/Table
+		Improvements to the Testing suite
+			Handling of non-printable values, specifically tables and nil
 				Currently have to require_true of a comparison
-			Could just use "require_type" for these (or the type checking syntax)
-		Start testing TRuntimeStorage and improving implementation
-		Improve testing suit with table specific functions (?)
+				Could just use "require_type" for these (or the type checking syntax)
+			Add table specific functions (?)
+			"Global Review" is duplicated at the end, consider removing it
+			Consider splitting test sections (see comments in Testing.h)
 		Consider removing the test for operator isDefd in com
 			Would remove ambiguity in code execution
 			"3" - 3 => String._op- not defined
 				This would likely mean I can improve com lookup implementation
 		Improve the implementation of GC
-		Ensure that reference counts are being updated correctly
-			See numRefs("a", "b", ...) for questions
-		Determine whether 0 should be equal to true or false
 		Think of changing how operator resolution is handled (especially for equals)
 			Currently "[3] = 3" evaluates to true
 			Consider adding "metadata" (such as com_t when calling other operators ???)
-		Fix "3: 3" throwing errors (inside of table definitions)
-			"3" is considered to be a VarName (which is expected by Assign::var_type)
-				Assign actually needs the set method (although this could *possibly* be redone if it's too bad)  ???
 		Change tables to copy-on-write semantics
 			Currently tables are references (ie. pointers)
 				This is passable but not what I want from the language
-		Consider getting a static analyzer
 		Redo how get/set are handled (in relation to exception throwing)
+		Check on changing ts.convertible(t1, t2) to ts.convertible(f, t)
+			Basically stopping convertible(a, b) = convertible(b, a) from always being true
+			Where did I want to change this from
+		Implement Table::okayKey and Table::okayValue and provide a way to change behavior
+			These methods are how "3: 3" will be prevented in the global scope and allowed in tables
+			Also allow for restricting key and values based on given functions
+		Implement Console manipulators for mac and windows
+			Apparently both use ansi color codes
+		Clean up the code for the testing framework
 		See VagueToDo.txt
 
 	1 Interpreter Update
-		Exceptions
-			Update exceptions and errors to better fit the new features
-			Add exception catching and error functions
-			Improve Exception Error Messages
-				Mainly work on Exception constructors
-		Table Improvements
-			Figure out where to add in hooks to allow for restricting key/value types in tables
-				Force "3: 3" to throw a dust_error (when performed in the global scope)
-					Throw for a different reason than current execution
-				Would need to add the type system (as an argument or something)
-		Update the parser so that wrong programs will ouput an error (as opposed to interpreting a subset)
-			I may have already done this (although I could make the errors more informative)
-		Possibly start implementing custom Control specializations (standardize error types)
-		Standardize code standards
-			classes: PascalCase (?)
-			methods: camelCase (?)
-			variables: snake_case (?)
-		Improve expr_4 grammar to be more accurate (?)
-			ee_tc can't realistically be performed more than once in a row (outside of testing for Bool)
-				I could also have the result of evaluation be the left hand side (this doesn't make much sense)
-		Update program version to 0.6.1
-
+		Fix some bugs/improvements
+			Change 0 => false (Find out what documents/files to change)
+			Check EvalState::setVar static typing conversion handling (I don't think it'll work, wrong direction)
+		Start reading up on the gsl
+				
 	2 Parser Rewrite v. II
 		Redo how scoping is handled by the parser
-			Rewrite table/block/try-catch to allow for declaring across multiple lines
-			Should also simplify the grammar in general (work to this as well)
+			Add a "scoping" rule at the beginning of expr
+				This scoping rule will work similar to Python (need a "scope" stack?)
+				Block gets deleted from the grammar
+					Means I can't completely describe everything in the grammar as a single expression
+						Should still parse that way though
+				The grammar rule just matches any number of "scope" characters
+					The action will handle the control push/popping (allows custom control structures for loops/branches/etc.)
+			Try to simplify the grammar if possible
+		Fix Grammar so that Testing.99 throws an error at parse time (not at runtime) ???
+			Or should I (it would certainly be extremely difficult to debug)
+				Assignment => value which can be used in another assignment
+		Improve Exception Support
+		Try converting some code to make use of the gsl
 		Rework Assignment to be performed left->right
-			Changes "a, b:* 3" to multiply a by 3
+			Changes "a, b:* 3" to multiply a by 3 (before excepting on the 3)
 				Stops "a, b:* nil, 3" from multiplying b by 3
 		Rewrite the parser so that everything works well together
 

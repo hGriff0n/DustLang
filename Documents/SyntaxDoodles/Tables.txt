@@ -269,7 +269,8 @@ Table/Set operations
 
 	Reduce (ie. Remove Duplicates)
 		[2, 2].single() = Set([2, 2]) = [2]
-			Other names: noDup, 
+			Other names: noDup,
+		[2, 2, 3, 3] / 2 = [2, 3, 3]			## Possibility?
 
 Splat Operator (*)									## ala Ruby
 	The splat operator serves to convert between tables and expr_lists (splits tables and combines expr_lists)

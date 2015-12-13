@@ -20,3 +20,13 @@ Require loads the file given by the string into a table
 How will modules work
 	Modules is just a way of specifying which "functions" and "variables" are visible to a user of the table
 	Could possibly be implemented using metamethods (Add at file end)
+
+	
+Block evaluation
+	Evaluating a Block always requires the loading of a new scope, regardless of execution location (possibly subject to change)
+		The "main file" Block loads the global scope into curr_scp
+		All other Blocks must create their scope
+
+	Ending a Block evaluation requires one of two actions
+		Delete the scope if the save_scope field is not set
+		Push the scope on the stack if save_scope is set

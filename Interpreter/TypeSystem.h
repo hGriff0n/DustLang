@@ -42,12 +42,12 @@ namespace dust {
 				
 			private:
 				std::vector<Type> types;								// Maintains type records, Indices are type_id (Could I maintain this as a tree, reduces O-cost of ancestor and isParentOf?)
-				std::map<convPair, std::array<size_t, 2>> conv;			// Tracks conversion precedence
-				std::map<convPair, size_t> siblings;					// Memoize the ancestor of two types
+				std::map<ConvPair, std::array<size_t, 2>> conv;			// Tracks conversion precedence
+				std::map<ConvPair, size_t> siblings;					// Memoize the ancestor of two types
 				std::map<std::string, size_t> type_id;					// Associates name to type id
 
 				// Generate a convPair key so that key(a, b) == key(b, a)
-				convPair key(size_t, size_t);
+				ConvPair key(size_t, size_t);
 
 				// Add a conversion to the registry while maintaining precedence levels (Only callable from the TypeVisitor interface)
 				void addConv(size_t, size_t);

@@ -36,6 +36,14 @@ namespace dust {
 			}) != end();
 		}
 
+		bool Table::okayKey(const Value& t) {
+			return true;
+		}
+
+		bool Table::okayValue(const Value& t) {
+			return true;
+		}
+
 		Table::storage::iterator Table::begin() {
 			return vars.begin();
 		}

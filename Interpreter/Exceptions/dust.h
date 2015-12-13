@@ -20,13 +20,18 @@ namespace dust {
 		class dispatch_error : public dust_error {
 			public:
 				dispatch_error(const std::string& _m) : dust_error{ _m } {}
+				dispatch_error(const std::string& _f, const std::string& _t)
+					: dust_error{ "Definition for method " + _t + "::" + _f + " was not found" } {}
+				dispatch_error(const std::string& _o, const std::string& _l, const std::string& _r)
+					: dust_error{ "Operator " + _o + " not defined for values of types " + _l + " and " + _r } {}
 				~dispatch_error() throw() {}
 		};
 
 		// Special case for converter methods
 		class converter_not_found : public dispatch_error {
 			public:
-				converter_not_found(const std::string& _m) : dispatch_error{ _m } {}
+				converter_not_found(const std::string& _f, const std::string& _t)
+					: dispatch_error{ "No converter found from type " + _f + " to type " + _t } {}
 				~converter_not_found() throw() {}
 		};
 

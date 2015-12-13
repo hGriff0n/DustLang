@@ -29,13 +29,6 @@ namespace dust {
 				~bad_node_eval() throw() {}
 		};
 
-		// Attempt to evaluate a node with the node in an incomplete state
-		class incomplete_node : public bad_api_call {
-			public:
-				incomplete_node(const std::string& _m) : bad_api_call{ _m } {}
-				~incomplete_node() throw() {}
-		};
-
 		// For errors regarding the state of the stack
 		class stack_state_error : public runtime_error {
 			public:
@@ -49,25 +42,27 @@ namespace dust {
 				stack_type_error(const std::string& _m) : stack_state_error{ _m } {}
 				~stack_type_error() throw() {}
 		};
-
+		
 		// For errors regarding getting and setting garbage collected data
 		class storage_access_error : public runtime_error {
 			public:
-				storage_access_error(const std::string& _m) : runtime_error{ _m } {}
+				storage_access_error(const std::string& _fn, size_t ref) :
+					runtime_error{ "Attempt to access invalid record " + std::to_string(ref) + " in " + _fn } {}
 				~storage_access_error() throw() {}
 		};
 
 		// Attempt to use a nullptr str_record*
-		class null_exception : public storage_access_error {
+		class null_exception : public runtime_error {
 			public:
-				null_exception(const std::string& _m) : storage_access_error{ _m } {}
+				null_exception(const std::string& _m) : runtime_error{ _m } {}
 				~null_exception() throw() {}
 		};
 
 		// For errors regarding value conversions
 		class conversion_error : public runtime_error {
 			public:
-				conversion_error(const std::string& _m) : runtime_error{ _m } {}
+				conversion_error(const std::string& _fn, const std::string& _t) :
+					runtime_error{ "Couldn't convert to " + _t + " in " + _fn } {}
 				~conversion_error() throw() {}
 		};
 

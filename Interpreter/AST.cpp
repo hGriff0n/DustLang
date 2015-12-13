@@ -29,14 +29,14 @@ namespace dust {
 		void ASTNode::addChild(std::shared_ptr<ASTNode>& c) {
 			throw error::operands_error{ "Attempt to add child to ASTNode" };
 		}
-		std::string ASTNode::print_string(std::string buf) {
-			return buf + "+- " + node_type + " " + to_string() + "\n";
+		std::string ASTNode::printString(std::string buf) {
+			return buf + "+- " + node_type + " " + toString() + "\n";
 		}
 
 		// Debug methods
 		Debug::Debug(std::string _msg) : msg{ _msg } {}
 		EvalState& Debug::eval(EvalState& e) { return e; }
-		std::string Debug::to_string() { return msg; }
+		std::string Debug::toString() { return msg; }
 
 		// Literal methods
 		Literal::Literal(std::string _val, size_t t) : val{ _val }, id{ t } {}
@@ -57,19 +57,19 @@ namespace dust {
 				e.pushNil();
 
 			else
-				throw error::dust_error{ "No literal can be constructed of the given type" };
+				throw error::dust_error{ "No literal can be constructed from " + val };
 
 			return e;
 		}
-		std::string Literal::to_string() {
+		std::string Literal::toString() {
 			return (id == type::Traits<int>::id ? " Int " :
 					id == type::Traits<double>::id ? " Float " :
 					id == type::Traits<bool>::id ? " Bool " :
 					id == type::Traits<std::string>::id ? " String \"" : " Nil ")
 				+ val + (id == type::Traits<std::string>::id ? "\"" : "");
 		}
-		std::string Literal::print_string(std::string buf) {
-			return buf + "+- " + node_type + to_string() + "\n";
+		std::string Literal::printString(std::string buf) {
+			return buf + "+- " + node_type + toString() + "\n";
 		}
 
 		// Operator methods
@@ -84,9 +84,9 @@ namespace dust {
 
 			return e.callOp(op);
 		}
-		std::string Operator::to_string() { return op; }
-		std::string Operator::print_string(std::string buf) {
-			return buf + "+- " + node_type + " " + op + "\n" + l->print_string(buf + " ") + (r ? r->print_string(buf + " ") : "");
+		std::string Operator::toString() { return op; }
+		std::string Operator::printString(std::string buf) {
+			return buf + "+- " + node_type + " " + op + "\n" + l->printString(buf + " ") + (r ? r->printString(buf + " ") : "");
 		}
 		void Operator::addChild(std::shared_ptr<ASTNode>& c) {
 			if (!l) l.swap(c);
@@ -95,54 +95,57 @@ namespace dust {
 		}
 
 		// VarName methods
-		VarName::VarName(std::string var) : name{ var } {}
-		EvalState& VarName::eval(EvalState& e) {
-			if (sub_var) return e.push(name), e;
-
-			e.push(name);
-			e.getScoped(lvl);
-
-			for (auto k : sub_fields)
-				k->eval(e).get();
-
-			return e;
+		VarName::VarName(std::string var) : VarName{ makeNode<Literal>(var, type::Traits<std::string>::id) } {}
+		VarName::VarName(std::shared_ptr<ASTNode>&& var) : fields{} {
+			fields.emplace_back(var);
 		}
 		void VarName::addChild(std::shared_ptr<ASTNode>& c) {
-			sub_fields.emplace_back(c);
+			fields.emplace_back(c);
 		}
-		std::string VarName::to_string() { return name; }
-		std::string VarName::print_string(std::string buf) {
-			std::string ret = buf + "+- " + node_type + " " + name + "\n";
+		std::string VarName::toString() { return fields.front()->toString(); }
+		std::string VarName::printString(std::string buf) {
+			std::string ret = buf + "+- " + node_type + "\n";
 			buf += " ";
 
-			for (auto i : sub_fields)
-				ret += i->print_string(buf);
+			for (auto i : fields)
+				ret += i->printString(buf);
 
 			return ret;
 		}
-		void VarName::setSubStatus() {
-			sub_var = !sub_var;
-		}
+		void VarName::setSubStatus() { sub_var = !sub_var; }
 		void VarName::addLevel(const std::string& dots) {
 			lvl = dots.size();
 		}
+		EvalState& VarName::eval(EvalState& e) {
+			auto field = std::begin(fields);
+			(*field)->eval(e);
+
+			if (!sub_var) {
+				e.getScoped(lvl);
+
+				while (++field != std::end(fields))
+					(*field)->eval(e).get();
+			}
+
+			return e;
+		}
 		EvalState& VarName::set(EvalState& e, bool is_const, bool is_static) {
-			if (sub_fields.empty()) {
-				e.push(name);
+			auto field = std::begin(fields), end = std::end(fields) - 1;
+			(*field)->eval(e);
+
+			if (field == end) {
 				e.swap();
 				e.setScoped(lvl, is_const, is_static);
 
 			} else {
-				e.push(name);
 				e.getScoped(lvl);
 
-				for (int i = 0; i != sub_fields.size() - 1; ++i) {
-					sub_fields[i]->eval(e).get();
+				while (++field != end)
+					(*field)->eval(e).get();
 					//if (e.is<Nil>()) throw error::dust_error{ "Attempt to assign to a Nil value" };
-				}
 
 				e.swap();
-				sub_fields.back()->eval(e).swap();
+				(*end)->eval(e).swap();
 				e.set();
 			}
 
@@ -155,15 +158,15 @@ namespace dust {
 			//e.getTS().getType(name);
 			return e;
 		}
-		std::string TypeName::to_string() { return name; }
-		std::string TypeName::print_string(std::string buf) {
-			return buf + "+- " + node_type + " " + to_string() + "\n";
+		std::string TypeName::toString() { return name; }
+		std::string TypeName::printString(std::string buf) {
+			return buf + "+- " + node_type + " " + toString() + "\n";
 		}
 
 		// TypeCast methods
 		TypeCast::TypeCast() {}
 		EvalState& TypeCast::eval(EvalState& e) {
-			return expr->eval(e).callMethod(convert->to_string());
+			return expr->eval(e).callMethod(convert->toString());
 		}
 		void TypeCast::addChild(std::shared_ptr<ASTNode>& c) {
 			if (!convert && std::dynamic_pointer_cast<TypeName>(c))
@@ -175,9 +178,9 @@ namespace dust {
 			else
 				throw error::invalid_ast_construction{ "Attempt to construct TypeCast Node with multiple expressions" };
 		}
-		std::string TypeCast::to_string() { return convert->to_string(); }
-		std::string TypeCast::print_string(std::string buf) {
-			return buf + "+- " + node_type + " " + to_string() + "\n" + expr->print_string(buf + " ");
+		std::string TypeCast::toString() { return convert->toString(); }
+		std::string TypeCast::printString(std::string buf) {
+			return buf + "+- " + node_type + " " + toString() + "\n" + expr->printString(buf + " ");
 		}
 
 		// NewType methods
@@ -194,19 +197,19 @@ namespace dust {
 
 			return e;
 		}
-		std::string NewType::to_string() { return name + " extends " + inherit; }
-		std::string NewType::print_string(std::string buf) {
-			return buf + "+- " + node_type + " " + to_string() + "\n";
+		std::string NewType::toString() { return name + " extends " + inherit; }
+		std::string NewType::printString(std::string buf) {
+			return buf + "+- " + node_type + " " + toString() + "\n";
 		}
 		void NewType::addChild(std::shared_ptr<ASTNode>& c) {
 			if (std::dynamic_pointer_cast<TypeName>(c))
-				(name == "" ? name : inherit) = c->to_string();
+				(name == "" ? name : inherit) = c->toString();
 
 			else {
 				definition.swap(std::dynamic_pointer_cast<Block>(c));
 
 				if (!definition)
-					throw error::invalid_ast_construction{ "Attempt to construct NewType node with a non Block node" };
+					throw error::invalid_ast_construction{ "Attempt to construct NewType node without a definition (Block) node" };
 			}
 		}
 
@@ -228,13 +231,13 @@ namespace dust {
 
 			return e;
 		}
-		std::string TypeCheck::to_string() { return type; }
-		std::string TypeCheck::print_string(std::string buf) {
-			return buf + "+- " + node_type + " " + to_string() + "\n" + l->print_string(buf + " ");
+		std::string TypeCheck::toString() { return type; }
+		std::string TypeCheck::printString(std::string buf) {
+			return buf + "+- " + node_type + " " + toString() + "\n" + l->printString(buf + " ");
 		}
 		void TypeCheck::addChild(std::shared_ptr<ASTNode>& c) {
 			if (std::dynamic_pointer_cast<TypeName>(c))
-				type = c->to_string();
+				type = c->toString();
 
 			else if (!l)
 				l.swap(c);
@@ -244,12 +247,12 @@ namespace dust {
 		}
 
 		// Assign methods
-		Assign::Assign(std::string _op, bool _const, bool _static) : setConst{ _const }, setStatic{ _static }, vars{ nullptr }, vals{ nullptr } {
+		Assign::Assign(std::string _op, bool _const, bool _static) : set_const{ _const }, set_static{ _static }, vars{ nullptr }, vals{ nullptr } {
 			op = _op.size() ? "_op" + _op : _op;
 		}
 		EvalState& Assign::eval(EvalState& e) {
-			if (!vars) throw error::incomplete_node{ "Attempt to use Assign node without a linked var_list" };
-			if (!vals) throw error::incomplete_node{ "Attempt to use Assign node without a linked expr_list" };
+			if (!vars) throw error::bad_node_eval{ "Attempt to use Assign node without a linked var_list" };
+			if (!vals) throw error::bad_node_eval{ "Attempt to use Assign node without a linked expr_list" };
 
 			auto r_var = vars->rbegin(), l_var = vars->rend();
 			auto l_val = vals->begin(), r_val = vals->end();
@@ -278,14 +281,14 @@ namespace dust {
 			while (r_var != l_var) {
 				if (op.size()) (*r_var)->eval(e).callOp(op);
 				
-				(*r_var++)->set(e, setConst, setStatic);
+				(*r_var++)->set(e, set_const, set_static);
 			}
 
 			return (*vars->rbegin())->eval(e);				//return last_var->eval(e);
 		}
-		std::string Assign::to_string() { return op; }
-		std::string Assign::print_string(std::string buf) {
-			return buf + "+- " + node_type + " " + to_string() + "\n" + vars->print_string(buf + " ") + vals->print_string(buf + " ");
+		std::string Assign::toString() { return op; }
+		std::string Assign::printString(std::string buf) {
+			return buf + "+- " + node_type + " " + toString() + "\n" + vars->printString(buf + " ") + vals->printString(buf + " ");
 		}
 		void Assign::addChild(std::shared_ptr<ASTNode>& c) {
 			if (!vars) {
@@ -320,9 +323,9 @@ namespace dust {
 			e.pop();
 			return r->eval(e);
 		}
-		std::string BooleanOperator::to_string() { return isAnd ? "and" : "or"; }
-		std::string BooleanOperator::print_string(std::string buf) {
-			return buf + "+- " + node_type + " " + to_string() + "\n" + l->print_string(buf + " ") + (r ? r->print_string(buf + " ") : "");
+		std::string BooleanOperator::toString() { return isAnd ? "and" : "or"; }
+		std::string BooleanOperator::printString(std::string buf) {
+			return buf + "+- " + node_type + " " + toString() + "\n" + l->printString(buf + " ") + (r ? r->printString(buf + " ") : "");
 		}
 		void BooleanOperator::addChild(std::shared_ptr<ASTNode>& c) {
 			if (!l) l.swap(c);
@@ -347,11 +350,11 @@ namespace dust {
 			return e;
 		}
 		void Control::addChild(std::shared_ptr<ASTNode>& c) {
-			if (expr) throw error::invalid_ast_construction{ "Attempt to construct control node from more than two expresions" };
+			if (expr) throw error::operands_error{ "Attempt to construct control node with more than two expresions" };
 			expr = c;
 		}
-		std::string Control::to_string() { return ""; }
-		std::string Control::print_string(std::string buf) {
+		std::string Control::toString() { return ""; }
+		std::string Control::printString(std::string buf) {
 			return "";
 		}
 		bool Control::iterate(EvalState& e) {
@@ -425,21 +428,21 @@ namespace dust {
 
 			return e;
 		}
-		std::string Block::to_string() {
+		std::string Block::toString() {
 			return table ? " []" : "";
 		}
-		std::string Block::print_string(std::string buf) {
-			std::string ret = buf + "+- " + node_type + to_string() + "\n";
+		std::string Block::printString(std::string buf) {
+			std::string ret = buf + "+- " + node_type + toString() + "\n";
 			buf += " ";
 
 			for (auto i : *this)
-				ret += i->print_string(buf);
+				ret += i->printString(buf);
 
 			return ret;
 		}
 		void Block::addChild(std::shared_ptr<ASTNode>& c) {
 			if (std::dynamic_pointer_cast<Control>(c)) {
-				if (control) throw error::invalid_ast_construction{ "Attempt to construct Block with multiple Control nodes" };
+				if (control) throw error::operands_error{ "Attempt to construct Block with multiple Control nodes" };
 				control.swap(std::dynamic_pointer_cast<Control>(c));
 
 			} else
@@ -464,10 +467,10 @@ namespace dust {
 
 			return e;
 		}
-		std::string TryCatch::to_string() { return ""; }
-		std::string TryCatch::print_string(std::string buf) {
-			return buf + "+- " + node_type + "::try\n" + try_code->print_string(buf + " ") +
-				   buf + "+- " + node_type + "::catch\n" + catch_code->print_string(buf + " ");
+		std::string TryCatch::toString() { return ""; }
+		std::string TryCatch::printString(std::string buf) {
+			return buf + "+- " + node_type + "::try\n" + try_code->printString(buf + " ") +
+				   buf + "+- " + node_type + "::catch\n" + catch_code->printString(buf + " ");
 		}
 		void TryCatch::addChild(std::shared_ptr<ASTNode>& c) {
 			auto& code_block = catch_code ? try_code : catch_code;

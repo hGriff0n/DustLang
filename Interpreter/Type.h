@@ -34,11 +34,11 @@ namespace dust {
 		 * Special class used to store two types as keys in a map
 		 * overrides operator< for use by std::less<T>
 		 */
-		struct convPair : std::pair<size_t, size_t> {
-			convPair(size_t t1, size_t t2) : pair{ t1, t2 } {}
-			convPair(Type& t1, Type& t2) : pair{ t1.id, t2.id } {}
+		struct ConvPair : std::pair<size_t, size_t> {
+			ConvPair(size_t t1, size_t t2) : pair{ t1, t2 } {}
+			ConvPair(Type& t1, Type& t2) : pair{ t1.id, t2.id } {}
 
-			bool operator<(convPair& rhs) {
+			bool operator<(ConvPair& rhs) {
 				return first < rhs.first && second < rhs.second;
 			}
 		};

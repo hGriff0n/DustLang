@@ -1,0 +1,30 @@
+How to define Scoping
+	Determine the difference between a tab and x spaces															# Scoping whitespace rules
+		How does Python resolve this problem
+			Requiring a ':' to begin a new scope (ie. do keyword)?
+				But what about lambdas
+			Line joining
+				Python uses the '\' character to join physical lines into logical lines
+			Space and tab are different characters
+				Scoping is only introduced with tabs
+			Copy-paste
+				Translate all tabs to spaces (or vice versa) before parsing
+
+block is currently a "non-recoverable" rule (you can't recover from failures during parsing)
+	Is there a way to change this ???
+
+nil is represented by an impl::Value with type_id = type::Traits<Nil>::id
+	Modifying the Nil class should be heavily restricted (???)
+	Nil method resolution is equivalent to Bool method resolution
+
+The definition for table (and type) would imply being able to create subtypes
+	Could I possibly modify the language to accept this
+	Or should I change type to be "outside" of the expression grammar
+		This would probably entail a rewrite of block
+
+Determine how basic types will work with regards to inheritance (especially String, etc.)
+
+Improve the Table API
+	This is particularly important with regards to "appending" to the table (uses the next open int)
+	Possibly start to add in evaluation hooks
+	Add in more API functions

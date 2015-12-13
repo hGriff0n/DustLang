@@ -48,16 +48,16 @@ namespace dust {
 		}
 
 		void CallStack::settop(int idx) {
-			idx = (size_t)std::max(normalize(idx), 0);
+			size_t loc = std::max(normalize(idx), 0);
 
 			// PushNil if stack is smaller than idx
-			if (idx > size())
-				while (size() < idx)
+			if (loc > size())
+				while (size() < loc)
 					pushNil();
 
 			// Pop if stack is bigger than idx
 			else
-				for (int i = size(); i > idx; --i)
+				for (auto i = size(); i > loc; --i)
 					pop();
 		}
 

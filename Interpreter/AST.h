@@ -22,8 +22,8 @@ namespace dust {
 				virtual EvalState& eval(EvalState&) = 0;
 				virtual void addChild(std::shared_ptr<ASTNode>& c);
 
-				virtual std::string to_string() = 0;
-				virtual std::string print_string(std::string buf);
+				virtual std::string toString() = 0;
+				virtual std::string printString(std::string buf);
 		};
 
 		/*
@@ -50,13 +50,13 @@ namespace dust {
 					add(std::dynamic_pointer_cast<Node>(c));
 				}
 
-				std::string to_string() { return ""; }
-				virtual std::string print_string(std::string buf) {
+				std::string toString() { return ""; }
+				virtual std::string printString(std::string buf) {
 					std::string ret = buf + "+- " + node_type + "\n";
 					buf += " ";
 
 					for (auto i = begin(); i != end(); ++i)		// for (auto i : *this)
-						ret += (*i)->print_string(buf);
+						ret += (*i)->printString(buf);
 
 					return ret;
 				}
@@ -84,7 +84,7 @@ namespace dust {
 
 				EvalState& eval(EvalState& e);
 
-				std::string to_string();
+				std::string toString();
 		};
 
 		/*
@@ -101,8 +101,8 @@ namespace dust {
 
 				EvalState& eval(EvalState& e);
 
-				std::string to_string();		// Possibly temporary implementation
-				std::string print_string(std::string buf);
+				std::string toString();		// Possibly temporary implementation
+				std::string printString(std::string buf);
 		};
 
 		/*
@@ -120,8 +120,8 @@ namespace dust {
 				EvalState& eval(EvalState& e);
 				void addChild(std::shared_ptr<ASTNode>& c);
 
-				std::string to_string();
-				virtual std::string print_string(std::string buf);
+				std::string toString();
+				virtual std::string printString(std::string buf);
 		};
 
 		/*
@@ -129,23 +129,22 @@ namespace dust {
 		 */
 		class VarName : public ASTNode {
 			private:
-				std::string name;
-				std::vector<std::shared_ptr<ASTNode>> sub_fields;
-				//std::vector<std::shared_ptr<VarName>> sub_fields;
+				std::vector<std::shared_ptr<ASTNode>> fields;
 				int lvl = 0; bool sub_var = false;
 
 			public:
 				VarName(std::string var);
+				VarName(std::shared_ptr<ASTNode>&& var);
 				static std::string node_type;
 
 				EvalState& eval(EvalState& e);
 				void addChild(std::shared_ptr<ASTNode>& c);
 
-				std::string to_string();
-				virtual std::string print_string(std::string buf);
+				std::string toString();
+				virtual std::string printString(std::string buf);
 
-				void addLevel(const std::string& dots);
 				void setSubStatus();
+				void addLevel(const std::string& dots);
 				EvalState& set(EvalState& e, bool is_const, bool is_static);
 		};
 
@@ -162,8 +161,8 @@ namespace dust {
 
 				EvalState& eval(EvalState& e);
 
-				std::string to_string();
-				virtual std::string print_string(std::string buf);
+				std::string toString();
+				virtual std::string printString(std::string buf);
 		};
 
 		/*
@@ -182,23 +181,23 @@ namespace dust {
 				EvalState& eval(EvalState& e);
 				void addChild(std::shared_ptr<ASTNode>& c);
 
-				std::string to_string();
-				virtual std::string print_string(std::string buf);
+				std::string toString();
+				virtual std::string printString(std::string buf);
 		};
 
 		/*
 		 * Represents an assignment operation
 		 */
 		class Assign : public ASTNode {
-			typedef List<VarName> var_type;
-			typedef List<ASTNode> val_type;
-			typedef std::shared_ptr<ASTNode> arg_type;
+			using var_type = List<VarName>;
+			using val_type = List<ASTNode>;
+			using arg_type = std::shared_ptr<ASTNode>;
 
 			private:
 				std::shared_ptr<var_type> vars;
 				std::shared_ptr<val_type> vals;
 				std::string op;
-				bool setConst, setStatic;
+				bool set_const, set_static;
 
 			public:
 				Assign(std::string _op, bool _const = false, bool _static = false);
@@ -207,8 +206,8 @@ namespace dust {
 				EvalState& eval(EvalState& e);
 				void addChild(std::shared_ptr<ASTNode>& c);
 
-				std::string to_string();
-				virtual std::string print_string(std::string buf);
+				std::string toString();
+				virtual std::string printString(std::string buf);
 		};
 
 		//class Keyword : public ASTNode { };
@@ -228,8 +227,8 @@ namespace dust {
 				EvalState& eval(EvalState& e);
 				void addChild(std::shared_ptr<ASTNode>& c);
 
-				std::string to_string();
-				virtual std::string print_string(std::string buf);
+				std::string toString();
+				virtual std::string printString(std::string buf);
 		};
 
 		/*
@@ -254,8 +253,8 @@ namespace dust {
 				virtual EvalState& eval(EvalState& e);
 				virtual void addChild(std::shared_ptr<ASTNode>& c);
 
-				virtual std::string to_string();
-				virtual std::string print_string(std::string buf);
+				virtual std::string toString();
+				virtual std::string printString(std::string buf);
 
 				bool iterate(EvalState& e);
 		};
@@ -281,8 +280,8 @@ namespace dust {
 				virtual EvalState& eval(EvalState& e);
 				virtual void addChild(std::shared_ptr<ASTNode>& c);
 
-				virtual std::string to_string();
-				virtual std::string print_string(std::string buf);
+				virtual std::string toString();
+				virtual std::string printString(std::string buf);
 		};
 
 		/*
@@ -300,8 +299,8 @@ namespace dust {
 				EvalState& eval(EvalState& e);
 				void addChild(std::shared_ptr<ASTNode>& c);
 
-				std::string to_string();
-				virtual std::string print_string(std::string buf);
+				std::string toString();
+				virtual std::string printString(std::string buf);
 		};
 
 		/*
@@ -319,8 +318,8 @@ namespace dust {
 				EvalState& eval(EvalState& e);
 				void addChild(std::shared_ptr<ASTNode>& c);
 
-				std::string to_string();
-				virtual std::string print_string(std::string buf);
+				std::string toString();
+				virtual std::string printString(std::string buf);
 		};
 
 		/*
@@ -337,8 +336,8 @@ namespace dust {
 
 				EvalState& eval(EvalState& e);
 
-				std::string to_string();
-				virtual std::string print_string(std::string buf);
+				std::string toString();
+				virtual std::string printString(std::string buf);
 
 				virtual void addChild(std::shared_ptr<ASTNode>& c);
 		};
@@ -351,9 +350,14 @@ namespace dust {
 		return std::make_shared<T>(args...);
 	}
 
+	template <class R, class T>
+	std::shared_ptr<parse::ASTNode> makeNode(std::shared_ptr<T>&& ptr) {
+		return std::make_shared<R>(std::forward<std::shared_ptr<T>>(ptr));
+	}
+
 	template <class ostream>
 	void printAST(ostream& s, std::shared_ptr<parse::ASTNode>& ast) {
-		(s << ast->print_string("|")).flush();
+		(s << ast->printString("|")).flush();
 	}
 }
 

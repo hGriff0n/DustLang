@@ -19,14 +19,16 @@ namespace dust {
 		// For indexing arrays/vector/stacks out of bounds
 		class out_of_bounds : public logic_error {
 			public:
-				out_of_bounds(const std::string& _m) : logic_error{ _m } {}
+				out_of_bounds(const std::string& _fn, int idx, size_t siz) : out_of_bounds{ _fn, (size_t)idx, siz } {}
+				out_of_bounds(const std::string& _fn, size_t idx, size_t siz)
+					: logic_error{ "Attempt to index container of size " + std::to_string(siz) + " with index " + std::to_string(idx) + " in " + _fn } {}
 				~out_of_bounds() throw() {}
 		};
 
 		// Attempt to use an illegal template definition
 		class illegal_template : public logic_error {
 			public:
-				illegal_template(const std::string& _m) : logic_error{ _m } {}
+				illegal_template(const std::string& _m, const std::type_info& _t) : logic_error{ _m + _t.name() } {}
 				~illegal_template() throw() {}
 		};
 

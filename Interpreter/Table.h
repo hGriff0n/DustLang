@@ -7,13 +7,13 @@ namespace dust {
 	namespace impl {
 
 		/*
-		 * C++ Implementation of dust table's
+		 * C++ implementation of dust table's
 		 *  This class is also used internally to implement scopes 
 		 */
 		class Table {
 			public:
-				typedef impl::Value key_type;
-				typedef impl::Variable val_type;
+				typedef Value key_type;
+				typedef Variable val_type;
 				typedef std::map<key_type, val_type> storage;
 
 			private:
@@ -30,14 +30,15 @@ namespace dust {
 				Variable& getVar(const key_type& key);
 				Table* findDef(const key_type& key);
 				bool hasKey(const key_type& key);
-				bool contains(const impl::Value& val);
+				bool contains(const Value& val);
+				bool okayKey(const Value& key);
+				bool okayValue(const Value& val);
 
 
 				// Iterators
-				storage::iterator begin();
-				// End of array iteration
-				storage::iterator iend();				// Needs testing
-				storage::iterator end();
+				storage::iterator begin();				// Begin
+				storage::iterator iend();				// Array end (needs testing)
+				storage::iterator end();				// End
 
 
 				// Internal Detail Operations

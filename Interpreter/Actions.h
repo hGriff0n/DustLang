@@ -118,11 +118,11 @@ namespace dust {
 
 						ast.at(-2)->addChild(ast.pop());
 
-						// stack: ..., {op}
+					// stack: ..., {op}
 					else
-						throw error::missing_node_x{ "Attempt to construct Operator node without an operator" };
+						throw error::missing_node_x{ "Operator" };
 				} else
-					throw error::missing_nodes{ "Attempt to construct Operator node with less than 2 nodes on the stack" };
+					throw error::missing_nodes{ "Operator", 2 };
 			}
 		};
 
@@ -162,7 +162,7 @@ namespace dust {
 
 		template <> struct action<var_name> {
 			static void apply(input& in, AST& ast, const int _) {
-				std::dynamic_pointer_cast<VarName>(ast.at())->addLevel(ast.pop(-2)->to_string());
+				std::dynamic_pointer_cast<VarName>(ast.at())->addLevel(ast.pop(-2)->toString());
 			}
 		};
 
@@ -185,9 +185,9 @@ namespace dust {
 
 						// stack: ..., {op}
 					} else
-						throw error::missing_node_x{ "Attempt to construct " + Node::node_type + " node without a empty " + Node::node_type + " node" };
+						throw error::missing_node_x{ Node::node_type };
 				} else
-					throw error::missing_nodes{ "Attempt to construct " + Node::node_type + " node with less than 3 nodes on the stack" };
+					throw error::missing_nodes{ Node::node_type, 3 };
 			}
 		};
 
@@ -199,31 +199,51 @@ namespace dust {
 		template <> struct action<ee_6> : ee_actions<BooleanOperator> {};
 		template <> struct action<ee_7> : ee_actions<Assign> {};				// ee_x is Assignmnet, which needs and uses Assignment nodes. ee_acctions requires Operator nodes (???)
 
-		// List Actions
-		template <class type>
+		// List Actions (there has to be a way to simplify this code
+		template <class type, bool force_type = false>
 		struct list_actions {
 			static void apply(input& in, AST& ast, const int _) {
 				auto list = makeNode<List<type>>();
 
-				if (ast.at()->to_string() != ",")
+				if (ast.at()->toString() != ",")
 					ast.push(makeNode<Debug>(","));
 
-				while (!ast.empty() && ast.at()->to_string() == ",") {
+				while (!ast.empty() && ast.at()->toString() == ",") {
 					ast.pop();
+
 					if (std::dynamic_pointer_cast<type>(ast.at()))
 						list->addChild(ast.pop());
 					else
 						break;
-						//throw std::string{ "Parsing error: Attempt to construct heterogenous list" };		// or should i just quit execution here ???
 				}
-
-				// if (typed) ast.push(makeNode<Debug>(","));
 
 				ast.push(list);
 			}
 		};
 
-		template <> struct action<var_list> : list_actions<VarName> {};
+		// Specialization of list_actions to force conversions to type (for VarName, could just specialize on VarName ???)
+		template <class type>
+		struct list_actions<type, true> {
+			static void apply(input& in, AST& ast, const int _) {
+				auto list = makeNode<List<type>>();
+
+				if (ast.at()->toString() != ", ")
+					ast.push(makeNode<Debug>(","));
+
+				while (!ast.empty() && ast.at()->toString() == ",") {
+					ast.pop();
+
+					if (std::dynamic_pointer_cast<type>(ast.at()))
+						list->addChild(ast.pop());
+					else
+						list->addChild(makeNode<type>(ast.pop()));
+				}
+
+				ast.push(list);
+			}
+		};
+
+		template <> struct action<var_list> : list_actions<VarName, true> {};
 		template <> struct action<expr_list> : list_actions<ASTNode> {};
 
 		// Block/Table/Scoping Actions

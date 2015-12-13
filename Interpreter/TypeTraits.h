@@ -32,7 +32,7 @@ namespace dust {
 			}
 
 			static T get(const impl::Value& v, impl::GC& gc) {
-				throw error::illegal_template{ "Attempt to use Traits<T>::get on undefined type T" };
+				throw error::illegal_template("Traits<T>::get is not implemented for type ", typeid(T));
 			}
 		};
 

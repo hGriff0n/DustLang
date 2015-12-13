@@ -58,16 +58,16 @@ namespace dust {
 		// Expects stack = ..., {rhs}, {lhs}
 	EvalState& EvalState::callOp(const std::string& fn) {
 		if (fn.at(0) == '_' && fn.at(2) == 'u') return callMethod(fn);
-		if (fn.at(0) != '_' || fn.at(2) != 'p') throw error::bad_api_call{ "Attempt to callOp on a non-operator" };
+		if (fn.at(0) != '_' || fn.at(2) != 'p') throw error::bad_api_call{ "Attempt to call EvalState::callOp on a non-operator" };
 
 		auto r = at(-2).type_id, l = at().type_id;
 		auto com_t = ts.com(l, r, fn);						// find common type for the two arguments
 		auto dis_t = ts.findDef(com_t, fn);					// find dispatch type (where fn is defined)
 
-		if (dis_t == ts.NO_DEF) throw error::dispatch_error{ "Method " + fn + " is not defined for operands of type " + ts.getName(l) + " and " + ts.getName(r) };
+		if (dis_t == ts.NO_DEF) throw error::dispatch_error{ fn, ts.getName(l), ts.getName(r) };
 		
 		// Determine whether com selected a converter and perform conversions
-		if ((com_t == l ^ com_t == r) && (com_t == type::Traits<Table>::id || ts.convertible(l, r))) {
+		if (((com_t == l) ^ (com_t == r)) && (com_t == type::Traits<Table>::id || ts.convertible(l, r))) {
 			forceType(-1, com_t);					// Forces the value at the given index to have the given type by calling a converter if necessary
 			forceType(-2, com_t);
 		}
@@ -81,11 +81,22 @@ namespace dust {
 	// Methods (Currently used for calling constructors)
 	EvalState& EvalState::callMethod(const std::string& fn) {
 		auto dis_t = ts.findDef(at().type_id, fn);
-		if (dis_t == ts.NO_DEF) throw error::dispatch_error{ "Method " + fn + " is not defined for objects of type " + ts.getName(at().type_id) };
+		if (dis_t == ts.NO_DEF) throw error::dispatch_error{ fn, ts.getName(at().type_id) };
 		
 		auto rets = ts.get(dis_t).ops[fn](*this);
 
 		return *this;
+	}
+
+	// Adds key and value checking
+	void EvalState::setVar(Table t, const impl::Value& key, bool is_const, bool is_typed) {
+		if (!t->okayKey(key))
+			throw error::illegal_operation{ "Attempt to index a table with an invalid key" };
+
+		if (!t->okayValue(at()))
+			throw error::illegal_operation{ "Attempt to store a value inside a table that doesn't accept it" };
+
+		setVar(t->getVar(key), is_const, is_typed);
 	}
 
 	// Expects stack = ..., {val}
@@ -97,7 +108,9 @@ namespace dust {
 		if (var.val.type_id != type::Traits<Nil>::id) {
 			// if the var is statically typed and the new value is not a child type
 			if (var.type_id != type::Traits<Nil>::id && !ts.isChildType(at().type_id, var.type_id)) {
-				if (!ts.convertible(var.type_id, at().type_id))	throw error::converter_not_found{ "No converter from from the assigned value to the variable's static type" };
+
+				// Not sure about the logic here
+				if (!ts.convertible(var.type_id, at().type_id))	throw error::dispatch_error{ "No converter from from the assigned value to the variable's static type" };
 				callMethod(ts.getName(var.type_id));
 			}
 
@@ -112,12 +125,15 @@ namespace dust {
 	}
 
 	void EvalState::getVar(Table tbl, const impl::Value& var) {
+		if (!tbl->okayKey(var))
+			throw error::illegal_operation{ "Attempt to index a table with an invalid key" };
+
 		tbl->hasKey(var) ? push(tbl->getVal(var)) : pushNil();
 	}
 	
 	void EvalState::setScoped(const impl::Value& name, int _lvl, bool is_const, bool is_typed) {
 		try_incRef(name);
-		setVar(findScope(name, _lvl, true)->getVar(name), is_const, is_typed);
+		setVar(findScope(name, _lvl, true), name, is_const, is_typed);
 	}
 
 	// Expects stack = ..., {var}, {val}
@@ -128,11 +144,12 @@ namespace dust {
 	// Expects stack = ..., {table}, {var}, {val}
 	// Leaves stack = ..., {table}
 	void EvalState::set() {
-		if (!is<Table>(-3)) throw error::dust_error{ "Attempt to initialize a non-table field" };
+		if (!is<Table>(-3)) throw error::illegal_operation{ "Attempt to initialize a non-table field" };
 
 		auto tbl = pop<Table>(-3);
 		try_incRef(at(-2));
-		setVar(tbl->getVar(pop(-2)), false, false);
+
+		setVar(tbl, pop(-2), false, false);
 		push(tbl);
 	}
 
@@ -140,7 +157,7 @@ namespace dust {
 	void EvalState::set(const impl::Value& var) {
 		throw error::bad_api_call{ "EvalState::set(const impl::Value&) is currently deprecated" };
 
-		if (!is<Table>()) throw error::dust_error{ "Attempt to initialize a non-stored variable" };
+		if (!is<Table>()) throw error::illegal_operation{ "Attempt to initialize a non-stored variable" };
 
 		setVar(pop<Table>()->getVar(var), false, false);
 	}
@@ -183,7 +200,7 @@ namespace dust {
 
 		// If the typing change may require type conversion (ie. typ not Nil and !(type(var) <= typ))
 		if (typ != type::Traits<Nil>::id && !ts.isChildType(var.type_id, typ)) {
-			if (!ts.convertible(var.type_id, typ)) throw error::converter_not_found{ "No converter from the current value to the given type" };
+			if (!ts.convertible(var.type_id, typ)) throw error::converter_not_found{ ts.getName(var.type_id), ts.getName(typ) };
 
 			push(var.val);
 			callMethod(ts.getName(typ));
