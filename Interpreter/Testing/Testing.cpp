@@ -139,6 +139,12 @@ namespace dust {
 								   "\tb: 3 + .a\n"
 								   "## Assign b to 3 + a\n"
 								   "\tb + a", 7);								// 2
+					t.requireEval("af: 3\n"
+								  "\t\t5\n"
+						          "\taf", 3);									// 3
+					t.requireEval("3\n"
+								  "## Comment\n"
+								  "4", 4);										// 4
 				t.closeSubTest();
 			t.closeSubTest();
 

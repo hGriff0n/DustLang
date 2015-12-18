@@ -48,7 +48,7 @@ namespace dust {
 				e.push(std::stod(val));
 
 			else if (id == type::Traits<bool>::id)
-				e.push<bool>(std::stoi(val));
+				e.push(val == "true");
 
 			else if (id == type::Traits<std::string>::id)
 				e.push(val);

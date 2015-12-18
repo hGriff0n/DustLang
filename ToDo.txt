@@ -42,42 +42,48 @@ Timeline
 			Currently tables are references (ie. pointers)
 				This is passable but not what I want from the language
 		Redo how get/set are handled (in relation to exception throwing)
+			Ensure that EvalState::setVar static typing works correctly (I think it's currently bidirectional, should be unidirectional)
 		Check on changing ts.convertible(t1, t2) to ts.convertible(f, t)
 			Basically stopping convertible(a, b) = convertible(b, a) from always being true
-			Where did I want to change this from
+			Where did I want to change this from (EvalState::setVar)
 		Implement Table::okayKey and Table::okayValue and provide a way to change behavior
 			These methods are how "3: 3" will be prevented in the global scope and allowed in tables
 			Also allow for restricting key and values based on given functions
-		Implement Console manipulators for mac and windows
+		Implement Console manipulators for mac and linux
 			Apparently both use ansi color codes
 		Clean up the code for the testing framework
-		See VagueToDo.txt
-
-	1 Interpreter Update
-		Fix some bugs/improvements
-			Change 0 => false (Find out what documents/files to change)
-			Check EvalState::setVar static typing conversion handling (I don't think it'll work, wrong direction)
+		Unsure about behavior of action<c_paren> for empty parentheses
 		Start reading up on the gsl
+			Try converting some code once I understand it
+		Various Changes
+			Change 0 => false ???
+		See VagueToDo.txt
 				
 	2 Parser Rewrite v. II
-		Redo how scoping is handled by the parser
-			Add a "scoping" rule at the beginning of expr
-				This scoping rule will work similar to Python (need a "scope" stack?)
-				Block gets deleted from the grammar
-					Means I can't completely describe everything in the grammar as a single expression
-						Should still parse that way though
-				The grammar rule just matches any number of "scope" characters
-					The action will handle the control push/popping (allows custom control structures for loops/branches/etc.)
+		Parser Rewrite
+			Still need to rework line to have correct parsing of comments and empty lines
+			Fix errors with new approach (Failing some new tests)
+				Basics.4		## Attempt to index container of size 0
+				Basics.5		## Attempt to index container of size 0
+				Basics.8		## ".3" did not throw an exception
+				Mutliline.2		## parse error matching struct eolf
+				Multiline.3		## Result of 6 did not match expected value of 8
+				Multiline.4		## Couldn't convert to Int in Traits<int>::get
+				Comments.0		## parse error matching struct eolf
+				Comments.1		## Attempt to index container of size 0
+				Comments.3		## Result of 3 did not match expected value of 4
 			Try to simplify the grammar if possible
-		Fix Grammar so that Testing.99 throws an error at parse time (not at runtime) ???
+				Determine where whitespace should be required/restricted
+			Ensure that everything works well together
+		Implement true try-catch statements
+		Fix Grammar so that Testing:line 99 throws an error at parse time (not at runtime) ???
 			Or should I (it would certainly be extremely difficult to debug)
 				Assignment => value which can be used in another assignment
+		Add in location information to ASTNodes
 		Improve Exception Support
-		Try converting some code to make use of the gsl
 		Rework Assignment to be performed left->right
 			Changes "a, b:* 3" to multiply a by 3 (before excepting on the 3)
 				Stops "a, b:* nil, 3" from multiplying b by 3
-		Rewrite the parser so that everything works well together
 
 	3 Control Statements (For/While/Do-While/If/Else/...)
 		Update project version to 0.7.1

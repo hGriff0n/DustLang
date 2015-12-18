@@ -355,6 +355,11 @@ namespace dust {
 		return std::make_shared<R>(std::forward<std::shared_ptr<T>>(ptr));
 	}
 
+	template <class T>
+	bool isNode(std::shared_ptr<parse::ASTNode>& p) {
+		return std::dynamic_pointer_cast<T>(p) != nullptr;
+	}
+
 	template <class ostream>
 	void printAST(ostream& s, std::shared_ptr<parse::ASTNode>& ast) {
 		(s << ast->printString("|")).flush();
