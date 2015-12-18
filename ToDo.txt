@@ -63,9 +63,7 @@ Timeline
 		Parser Rewrite
 			Still need to rework line to have correct parsing of comments and empty lines
 			Fix errors with new approach (Failing some new tests)
-				Basics.4		## Attempt to index container of size 0
-				Basics.5		## Attempt to index container of size 0
-				Basics.8		## ".3" did not throw an exception
+				Basics.8		## Fixed (Fix not implemented)x
 				Mutliline.2		## parse error matching struct eolf
 				Multiline.3		## Result of 6 did not match expected value of 8
 				Multiline.4		## Couldn't convert to Int in Traits<int>::get
@@ -74,6 +72,8 @@ Timeline
 				Comments.3		## Result of 3 did not match expected value of 4
 			Try to simplify the grammar if possible
 				Determine where whitespace should be required/restricted
+			Add in Control declarations
+				bad_decimal to throw an error on successful match
 			Ensure that everything works well together
 		Implement true try-catch statements
 		Fix Grammar so that Testing:line 99 throws an error at parse time (not at runtime) ???

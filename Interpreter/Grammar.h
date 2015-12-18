@@ -84,6 +84,7 @@ namespace dust {
 		// Literal Tokens
 		struct integer : plus<digit> {};												// [0-9]+
 		struct decimal : seq<plus<digit>, one<'.'>, not_at<var_id>, star<digit>> {};	// [0-9]+\.[0-9]*
+		struct bad_decimal : seq<one<'.'>, not_at<var_id>, star<digit>> {};				// \.[0-9]*				Rule to catch invalid decimals at "parse-time"
 		struct boolean : sor<k_true, k_false> {};
 		struct body : star<sor<seq<esc, quote>, unless<quote>>> {};						// ((\\\")|[^"])*
 		struct str : seq<quote, body, quote> {};										// \"{body}\"
@@ -91,7 +92,8 @@ namespace dust {
 		struct table_inner : until<c_brack, sor<white, expr>> {};
 		struct table : seq<o_brack, seps, table_inner> {};								// \[ *{expr}* *\]
 
-		struct literals : sor<decimal, integer, boolean, table, str, k_nil> {};
+		struct literals : sor<decimal, bad_decimal, integer, boolean, table, str, k_nil> {};
+		//struct literals : sor<decimal, integer, boolean, table, str, k_nil> {};
 
 
 		// Operators
@@ -126,34 +128,34 @@ namespace dust {
 		struct ee_1 : if_must<op_1, seps, expr_tcast> {};								// ee_#'s structure the parsing to allow ast to be constructed left->right
 		struct expr_1 : seq<expr_tcast, star<seps, ee_1>> {};							// {expr_0}( *{op_1} *{expr_0})*
 
-																						// Operator '*', '/'
+		// Operator '*', '/'
 		struct ee_2 : if_must<op_2, seps, expr_1> {};									// change name to left_assoc_# (or something similar) ???
 		struct expr_2 : seq<expr_1, star<seps, ee_2>> {};								// {expr_1}( *{op_2} *{expr_1})*
 
-																						// Operator '+', '-'
+		// Operator '+', '-'
 		struct ee_3 : if_must<op_3, seps, expr_2> {};
 		struct expr_3 : seq<expr_2, star<seps, ee_3>> {};								// {expr_2}( *{op_3} *{expr_2})*
 
-																						// Type Check and Boolean operators
+		// Type Check and Boolean operators
 		struct ee_4 : if_must<op_4, seps, expr_3> {};
 		struct ee_tc : if_must<op_inherit, seps, type_id> {};
 		//struct expr_4 : seq<expr_3, opt<seps, sor<ee_tc, ee_4>>> {};					// {expr_3}( *({<- *{type_id})|({op_4} *{expr_3})?
 		struct expr_4 : seq<expr_3, star<seps, sor<ee_tc, ee_4>>> {};					// {expr_3}( *({<- *{type_id})|({op_4} *{expr_3})*
 
-																						// Boolean and
+		// Boolean and
 		struct ee_5 : if_must<k_and, seps, expr_4> {};
 		struct expr_5 : seq<expr_4, star<seps, ee_5>> {};								// {expr_4}( *and *{expr_4})?
 
-																						// Boolean or
+		// Boolean or
 		struct ee_6 : if_must<k_or, seps, expr_5> {};
 		struct expr_6 : seq<expr_5, star<seps, ee_6>> {};								// {expr_5}( *or *{expr_5})?
 
-																						// Assignment (Right-associative)
+		// Assignment (Right-associative)
 		struct assign : seq<var_list, seps, op_7> {};									// assignments are right associative
 		struct ee_7 : seq<assign, seps, expr_list> {};									// ensure that expr_6 doesn't trigger the expression reduction
 		struct expr_7 : if_then_else<at<assign>, ee_7, expr_6> {};						// {var_list} *{op_5} * {expr_list}
 
-																						// Type Creation
+		// Type Creation
 		struct ee_inherit : seq<seps, op_inherit, seps, type_id> {};
 		struct ee_type : seq<k_type, spaces, type_id, white, table, opt<ee_inherit>> {};
 		struct expr_type : sor<ee_type, expr_7> {};										// type[ ]*{type_id} *{table}( *<- *{type_id})?
@@ -178,8 +180,8 @@ namespace dust {
 		//struct line : sor<seq<scope, pad<expr, tail>, opt<comment>, must<eolf>>, seq<star<tail>, opt<comment>, must<eolf>>> {};
 		//struct line : seq<scope, pad<opt<expr>, tail>, opt<comment>, must<eolf>> {};
 
-		struct file : star<line> {};								// Progress, but doesn't work
-																	//struct file : star<sor<line, until<eolf>>> {};			    // No progress, but works
+		struct file : star<line> {};			// Progress, but doesn't work
+		//struct file : star<sor<line, until<eolf>>> {};			    // No progress, but works
 	}
 
 	struct grammar : pegtl::must<parse::file> {};

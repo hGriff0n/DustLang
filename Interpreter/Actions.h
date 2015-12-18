@@ -53,18 +53,31 @@ namespace dust {
 
 		template <> struct action<file> {
 			static void apply(input& in, AST& ast, ScopeTracker& lvl) {
-				// Finish assembly of AST (Possibly wrong when requiring files)
-				action<scope>::reduce(ast, lvl.at() + 1);
-				lvl.clear();			// I could always use a unique ScopeTracker for each file
+				// stack: ... | ..., {Control}, ....
 
-										// stack: ..., {Block}
+				// Finish assembly of AST
+				if (ast.empty()) {
+					auto b = makeNode<Block>();
+					b->addChild(makeNode<Control>());
+					ast.push(b);
+
+				} else {
+					// Possibly wrong when requiring files (clears the scopetracker)
+					action<scope>::reduce(ast, lvl.at() + 1);
+					lvl.clear();			// I could always use a unique ScopeTracker for each file
+
+				}
+
+				setFields(ast);
+			}
+
+			static void setFields(AST& ast) {
+				// stack: ..., {Block}
 
 				auto b = std::dynamic_pointer_cast<Block>(ast.at());
 
 				b->excep_if_empty = false;
 				// require code
-
-				// stack: ..., {Block}
 			}
 		};
 
