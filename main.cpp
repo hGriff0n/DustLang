@@ -51,7 +51,6 @@ int main(int argc, const char* argv[]) {
 	std::string input;
 
 	EvalState e;
-	parse::ScopeTracker scp{};
 
 	initState(e);
 	test::runTests(e, show_all_tests);
@@ -63,6 +62,8 @@ int main(int argc, const char* argv[]) {
 
 		} else {
 			try {
+				parse::ScopeTracker scp{};
+
 				pegtl::parse<grammar, action, parse::control>(input, input, parse_tree, scp);
 				//pegtl::parse<grammar, action, parse::control>(parse::trim(input), input, parse_tree, scp);
 

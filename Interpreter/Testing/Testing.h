@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Actions.h"
+#include "Control.h"
 
 #include "..\Exceptions\dust.h"
 #include "..\Exceptions\logic.h"
@@ -90,7 +90,7 @@ namespace dust {
 				// Construct and evaluate the AST for the given code segment
 				void evaluate(const std::string& code) {
 					parse::ScopeTracker scp{};
-					pegtl::parse<grammar, action>(parse::trim(code), code, tree, scp);
+					pegtl::parse<grammar, action, parse::control>(code, code, tree, scp);
 					tree.pop()->eval(e);
 				}
 

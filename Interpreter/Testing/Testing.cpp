@@ -116,7 +116,7 @@ namespace dust {
 			t.initSubTest("Multiline Parsing");				// Need to escape output
 				t.requireEval("a\n+ b", 7);										// 1
 				t.requireException<pegtl::parse_error>("3 + a: 3\n - 4");		// 2
-				t.requireEval("3 + a 3\n - 4", -1);								// 3
+				t.requireEval("3 - \n 3", 0);									// 3
 				t.requireEval("3 + 3\n  \n4 + 4", 8);							// 4
 				t.requireEval("## Hello\n3", 3);								// 5
 
@@ -139,6 +139,10 @@ namespace dust {
 								   "\tb: 3 + .a\n"
 								   "## Assign b to 3 + a\n"
 								   "\tb + a", 7);								// 2
+					t.requireEval("3\n"
+								  "\t\ta: 5\n"
+								  "\t## Comment\n"
+								  "\t\ta + 1", 6);
 					t.requireEval("af: 3\n"
 								  "\t\t5\n"
 						          "\taf", 3);									// 3

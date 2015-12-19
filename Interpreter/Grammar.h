@@ -93,7 +93,6 @@ namespace dust {
 		struct table : seq<o_brack, seps, table_inner> {};								// \[ *{expr}* *\]
 
 		struct literals : sor<decimal, bad_decimal, integer, boolean, table, str, k_nil> {};
-		//struct literals : sor<decimal, integer, boolean, table, str, k_nil> {};
 
 
 		// Operators
@@ -175,13 +174,13 @@ namespace dust {
 		// Organization Tokens
 		// line = \t*[ ]*{expr}? *{comment}?\n
 
-		struct line : seq<scope, pad<expr, tail>, opt<comment>, must<eolf>> {};		// fails on empty lines
-		//struct line : must<scope, sor<pad<expr, tail>, star<tail>>, opt<comment>, eolf> {};
-		//struct line : sor<seq<scope, pad<expr, tail>, opt<comment>, must<eolf>>, seq<star<tail>, opt<comment>, must<eolf>>> {};
-		//struct line : seq<scope, pad<opt<expr>, tail>, opt<comment>, must<eolf>> {};
+		// This is slow (Has to parse over eval_line twice on match)
+		struct eval_line : seq<scope, pad<expr, tail>, sor<comment, must<eolf>>> {};				// Analysis says...
+		struct line : if_then_else<at<eval_line>, eval_line, until<eolf>> {};						// No progress (but it works)
+		//struct line : seq<scope, pad<expr, tail>, sor<comment, must<eolf>>> {};					// Progress	   (but doesn't work)
 
-		struct file : star<line> {};			// Progress, but doesn't work
-		//struct file : star<sor<line, until<eolf>>> {};			    // No progress, but works
+		struct file : star<line> {};
+		//struct file : star<if_then_else<at<line>, line, until<eolf>>> {};
 	}
 
 	struct grammar : pegtl::must<parse::file> {};
