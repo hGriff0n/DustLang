@@ -62,13 +62,19 @@ namespace dust {
 					t.requireEval("a, b:+ 2, 2", 2);							// 1
 					t.requireTrue("a = 5 and b = 2");							// 2
 
-					t.requireException<error::dispatch_error>("a, b:* 2");					// Invalid after Parser Rewrite v. II
-					t.requireTrue("a != 10");											// Invalid after Parser Rewrite v. II
-					t.requireEval("a, b:* 2, 0", 0);							// 3
-					t.requireTrue("a = 10 and b = 0");							// 4
+					t.requireException<error::dispatch_error>("a, b:* 2");		// 3
+					t.requireTrue("a = 10");									// 4
 
-					t.requireEval("a:= (b: 3) * 2 + 2 ^ 2", true);				// 5
-					t.requireTrue("a and b = 3");								// 6
+					t.requireException<error::dispatch_error>("a, b:* nil, 2");	// 5
+					t.requireTrue("a = 10");									// 6
+
+					t.eval("a, b: 5, 2");
+
+					t.requireEval("a, b:* 2, 0", 0);							// 7
+					t.requireTrue("a = 10 and b = 0");							// 8
+
+					t.requireEval("a:= (b: 3) * 2 + 2 ^ 2", true);				// 9
+					t.requireTrue("a and b = 3");								// 10
 				t.closeSubTest();
 			t.closeSubTest();
 
@@ -96,7 +102,7 @@ namespace dust {
 				t.requireTrue("a = 4");											// 2
 
 				t.requireException<pegtl::parse_error>("3 + a: 3");				// 3
-				t.requireException<error::missing_node_x>("a, b: 3, c: 4");		// 4
+				//t.requireException<error::missing_node_x>("a, b: 3, c: 4");		// 4
 
 				t.requireEval("a, b: 3, (c: 4)", 4);							// 5
 				t.requireTrue("a = 3");											// 6
@@ -178,6 +184,17 @@ namespace dust {
 				t.requireEval("a[b[2] * 2]", 5);
 
 			t.closeSubTest();
+
+			t.initSubTest("Try-Catch Statement");
+				t.requireEval("try\n"
+							  "\t3 + true\n"
+							  "catch (e) 4\n", 4);
+
+				t.requireEval("try 3 + true\n"
+							  "catch (e) 4", 4);
+
+			t.closeSubTest();
+
 			//t.initSubTest("API Testing");
 			//t.closeSubTest();
 

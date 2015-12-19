@@ -254,7 +254,7 @@ namespace dust {
 			if (!vars) throw error::bad_node_eval{ "Attempt to use Assign node without a linked var_list" };
 			if (!vals) throw error::bad_node_eval{ "Attempt to use Assign node without a linked expr_list" };
 
-			auto r_var = vars->rbegin(), l_var = vars->rend();
+			auto l_var = vars->begin(), r_var = vars->end();
 			auto l_val = vals->begin(), r_val = vals->end();
 			auto var_s = vars->size(), val_s = vals->size();
 
@@ -273,15 +273,18 @@ namespace dust {
 			// More variables than values. Push nils
 				// Might change to copy() depending on compound assignment semantics (extend the last value to match)
 			while (var_s > val_s) {
-				e.pushNil(); --var_s;
+				e.pushNil(); ++val_s;
 			}
 
+			// Reverse the stack to enable left->right evaluation
+			for (int top = -1, bottom = -(int)val_s; top > bottom; --top, ++bottom)
+				e.swap(top, bottom);
+
 			// Perform assignments. Compound if necessary
-			//auto last_var = r_var;
 			while (r_var != l_var) {
-				if (op.size()) (*r_var)->eval(e).callOp(op);
-				
-				(*r_var++)->set(e, set_const, set_static);
+				if (op.size()) (*l_var)->eval(e).callOp(op);
+
+				(*l_var++)->set(e, set_const, set_static);
 			}
 
 			return (*vars->rbegin())->eval(e);				//return last_var->eval(e);
