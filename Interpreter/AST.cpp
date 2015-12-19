@@ -476,13 +476,15 @@ namespace dust {
 				   buf + "+- " + node_type + "::catch\n" + catch_code->printString(buf + " ");
 		}
 		void TryCatch::addChild(std::shared_ptr<ASTNode>& c) {
-			auto& code_block = catch_code ? try_code : catch_code;
+			auto& code_block = try_code ? catch_code : try_code;
 			if (code_block) throw error::operands_error{ "Attempt to add more than two blocks to TryCatch node" };
 
 			code_block.swap(c);
 			if (!code_block) throw error::invalid_ast_construction{ "Attempt to construct TryCatch node with a non-Block node" };
 		}
-
+		bool TryCatch::isFull() {
+			return try_code && catch_code;
+		}
 
 		std::string ASTNode::node_type = "ASTNode";
 		std::string Debug::node_type = "Debug";

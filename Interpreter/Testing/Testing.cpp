@@ -193,6 +193,25 @@ namespace dust {
 				t.requireEval("try 3 + true\n"
 							  "catch (e) 4", 4);
 
+				t.requireEval("try 3 + 3\n"
+							  "catch (e) 4", 6);
+
+				t.requireEval("a: 3\n"
+							  "try\n"
+							  "\t3 + true\n"
+							  "\t.a: 2\n"
+							  "catch (e)\n"
+							  "a", 3);
+
+				t.requireEval("a: 3\n"
+							  "try\n"
+							  "\t3 + 3\n"
+							  "\t.a: 2\n"
+							  "catch (e)\n"
+							  "a", 2);
+
+				t.requireException<error::missing_node_x>("catch (e) 4");
+
 			t.closeSubTest();
 
 			//t.initSubTest("API Testing");

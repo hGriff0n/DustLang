@@ -160,13 +160,15 @@ namespace dust {
 		struct expr_type : sor<ee_type, expr_7> {};										// type[ ]*{type_id} *{table}( *<- *{type_id})?
 
 		// Try-Catch
-		// struct ee_try : seq<seps, expr> {};
-		// struct ee_catch : seq<one<'('>, var_id, one<')'>, seps, expr> {};
-		// struct ee_trycatch : if_must<k_try, ee_try, seps, k_catch, ee_catch> {};
-		// struct expr_trycatch : sor<ee_trycatch, expr_type> {};
-		struct expr_trycatch : expr_type {};				// unimplemented
+		struct inline_expr : seq<plus<tail>, expr> {};
 
+		struct ee_try : if_must<k_try, opt<inline_expr>> {};
+		struct ee_catch : if_must<k_catch, seps, one<'('>, var_id, one<')'>, opt<inline_expr>> {};
+		// ee_catch isn't being matched
 
+		struct expr_trycatch : sor<ee_try, ee_catch, expr_type> {};
+
+		// Collector Tags
 		struct expr_x : expr_trycatch {};
 		struct expr : expr_x {};
 

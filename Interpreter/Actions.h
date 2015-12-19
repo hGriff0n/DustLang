@@ -18,20 +18,23 @@ namespace dust {
 					lvl.push(0);
 				}
 
+				auto depth = in.size();
+
 				// Push control nodes on the stack
-				if (lvl.at() < in.size()) {
-					push(ast, in.size() - lvl.at());
-					lvl.push(in.size());
+				if (lvl.at() < depth) {
+					push(ast, depth - lvl.at());
+					lvl.push(depth);
 
-					// Create blocks
-				} else if (lvl.at() > in.size()) {
-					reduce(ast, lvl.at() - in.size());
+				// Create blocks
+				} else if (lvl.at() > depth) {
+					reduce(ast, lvl.at() - depth);
 
-					while (lvl.at() >= in.size())
+					while (!lvl.empty() && lvl.at() >= depth)
 						lvl.pop();
 
-					lvl.push(in.size());
+					lvl.push(depth);
 				}
+
 			}
 
 			static void push(AST& ast, int n) {
@@ -39,6 +42,7 @@ namespace dust {
 					ast.push(makeNode<Control>());
 			}
 
+			// Also handles try-catch reduction
 			static void reduce(AST& ast, int n) {
 				while (n-- > 0) {
 					auto block = makeNode<Block>();
@@ -46,7 +50,12 @@ namespace dust {
 					do block->addChild(ast.at());
 					while (!isNode<Control>(ast.pop()));
 
-					ast.push(block);
+					// Try-Catch reduction
+						// Will need to generalize for If-Then-Else and Functions
+					if (!ast.empty() && isNode<TryCatch>(ast.at()) && !std::dynamic_pointer_cast<TryCatch>(ast.at())->isFull())
+						ast.at()->addChild(block);
+					else
+						ast.push(block);
 				}
 			}
 		};
@@ -98,6 +107,34 @@ namespace dust {
 				b->save_scope = true;
 
 				// stack: ..., {Block}
+			}
+		};
+
+
+		// Try-Catch Actions
+		template <> struct action<k_try> {
+			static void apply(input& in, AST& ast, ScopeTracker& lvl) {
+				// stack: ...
+
+				ast.push(makeNode<TryCatch>());
+				action<scope>::push(ast, 1);
+				lvl.push(lvl.at() + 1);
+
+				// stack: ..., {TryCatch}, {Control}
+			}
+		};
+
+		template <> struct action<k_catch> {
+			static void apply(input& in, AST& ast, ScopeTracker& lvl) {
+				// stack : ..., {TryCatch}
+
+				if (!isNode<TryCatch>(ast.at()))
+					throw error::missing_node_x{ "TryCatch" };			// Need to improve error messages
+
+				action<scope>::push(ast, 1);
+				lvl.push(lvl.at() + 1);
+
+				// stack: ..., {TryCatch}, {Control}
 			}
 		};
 

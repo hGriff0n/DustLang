@@ -340,6 +340,8 @@ namespace dust {
 				virtual std::string printString(std::string buf);
 
 				virtual void addChild(std::shared_ptr<ASTNode>& c);
+
+				bool isFull();
 		};
 
 		template<class T> std::string List<T>::node_type = "List<" + T::node_type + ">";

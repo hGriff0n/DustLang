@@ -65,21 +65,26 @@ Timeline
 			Change 0 => false ???
 		See VagueToDo.txt
 				
-	2 Parser Rewrite v. II
-		Implement true try-catch statement (testing scoping composability)
-			Combining the try/catch blocks into the TryCatch statement is performed in action<scope>
-				Need to add "isFull" member to TryCatch to prevent some unwanted reduces
+	1 Parser Rewrite v. II
 		Add location information to ASTNodes at node construction
 			Need to rework makeNode and ASTNode constructors
 		Improve Exception Support
 			Improve error messages for try-catch construction
 
-	3 Control Statements (For/While/Do-While/If/Else/...)
+	2 Control Statements
 		Update project version to 0.7.1
-		Be able to write control statements with correct execution
-			Have variable scoping work correctly
+		Allow control strutures to "assign" variables
+			Test on Try-Catch statements (using the error message)
+		Implement loops (While/Do-While)
+			Have the grammar recognize them
+			Have the interpreter work on them
+		Implement Branching (If-Then-Else)
+			Have the grammar recognize them
+				Generalize Try-Catch combination in action<scope>::reduce
+			Have the interpreter work on them
+		Implement For statement
 
-	4 Function Calling		ie. print("Hello, World!")
+	3 Function Calling		ie. print("Hello, World!")
 		Implement the evaluation hooks/etc. to be able to call functions	# Get functions callable
 			Hard coded translations at this time
 			Have the basic syntax and semantics working (Argument passing, etc.)
@@ -93,18 +98,18 @@ Timeline
 		Move function calling work into the _op() metamethod
 		Optional: No parens syntax
 
-	5 Dust Function Definition
+	4 Dust Function Definition
 		Update project version to 0.8.1
 		Abstract the previous framework to allow for Dust functions to be conceivably executed
 		Add in the correct syntax and action calls to create dust functions
 
-	6 Grammar Framework Update
+	5 Grammar Framework Update
 		Potentially change the grammar to follow the basic framework in "lua53_parse.h"
 		Update all documents to ensure that they reflect the current language spec
 		Update the readme to show of recent aditions
 		Determine the next set of features that need to be implemented
 
-	7 Type/Table metamethods
+	6 Type/Table metamethods
 
 
 
