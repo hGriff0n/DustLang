@@ -50,7 +50,7 @@ namespace dust {
 					do block->addChild(ast.at());
 					while (!isNode<Control>(ast.pop()));
 
-					// Try-Catch reduction (need to generalize for If-Then-Else and functions)
+					// Try-Catch reduction (need to generalize for If-Elseif-Else and functions)
 					if (!ast.empty() && isNode<TryCatch>(ast.at()) && !std::dynamic_pointer_cast<TryCatch>(ast.at())->isFull())
 						ast.at()->addChild(block);
 					else
@@ -128,7 +128,7 @@ namespace dust {
 				// stack : ..., {TryCatch}
 
 				if (!isNode<TryCatch>(ast.at()))
-					throw error::missing_node_x{ "TryCatch" };			// Need to improve error messages
+					throw error::missing_node_x{ "Catch", "TryCatch" };
 
 				action<scope>::push(ast, 1, in);
 				lvl.push(lvl.at() + 1);

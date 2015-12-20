@@ -28,7 +28,9 @@ namespace dust {
 		class missing_node_x : public parse_error {
 			public:
 				missing_node_x(const std::string& _n)
-					: parse_error{ "Attempt to construct " + _n + " node without a empty " + _n + " node" } {}
+					: missing_node_x{ _n, _n } {}
+				missing_node_x(const std::string& _n, const std::string& _nd)
+					: parse_error{ "Attempt to construct " + _n + " node without a " + _nd + " node" } {}
 				~missing_node_x() throw() {}
 		};
 

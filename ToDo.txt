@@ -66,49 +66,52 @@ Timeline
 			Change 0 => false ???
 		See VagueToDo.txt
 				
-	1 Parser Rewrite v. II
-		Improve Exception Support
-			Improve error messages for try-catch construction
-
-	2 Control Statements
+	1 Control Statements
 		Update project version to 0.7.1
 		Allow control strutures to "assign" variables
 			Test on Try-Catch statements (using the error message)
 		Implement loops (While/Do-While)
 			Have the grammar recognize them
 			Have the interpreter work on them
-		Implement Branching (If-Then-Else)
+		Implement Branching (If-Elseif-Else)
+			I could always move to "else if" instead of "elseif"
 			Have the grammar recognize them
 				Generalize Try-Catch combination in action<scope>::reduce
 			Have the interpreter work on them
 		Implement For statement
 
-	3 Function Calling		ie. print("Hello, World!")
+	2 Function Calling		ie. print("Hello, World!")
+		Be able to store functions as values
+			Create the necessary Collector structure (needs to handle C++ functions/lambdas and dust AST's)
+			Get assignment to work as expected with functions
 		Implement the evaluation hooks/etc. to be able to call functions	# Get functions callable
 			Hard coded translations at this time
 			Have the basic syntax and semantics working (Argument passing, etc.)
-		Be able to store functions as values
-			Get assignment to work as expected with functions
 		Convert Types completely to impl::Table for storage concerns
-			Allow Type methods to be called using '.'/'[]' syntax
-				Current grammar disallows type_ids to be used outside of new_type and type_checking
 			Allow Type methods to be called using '.'/'[]' syntax on non-table values and variables
 				Current AST construction assumes a VarName node exists (not guaranteed for non-variables)
+			Allow Type methods to be called using '.'/'[]' syntax
+				Current grammar disallows type_ids to be used outside of new_type and type_checking
 		Move function calling work into the _op() metamethod
+			_op() expects a l->r stack (function on top, first argument at -2, etc.)
+			Push arguments from r->l on the stack
+			Get function value on the stack
+			Call _op() on the function
 		Optional: No parens syntax
 
-	4 Dust Function Definition
+	3 Dust Function Definition
 		Update project version to 0.8.1
 		Abstract the previous framework to allow for Dust functions to be conceivably executed
 		Add in the correct syntax and action calls to create dust functions
 
-	5 Grammar Framework Update
+	4 Grammar Framework Update
 		Potentially change the grammar to follow the basic framework in "lua53_parse.h"
 		Update all documents to ensure that they reflect the current language spec
 		Update the readme to show of recent aditions
 		Determine the next set of features that need to be implemented
+		Bugfixes
 
-	6 Type/Table metamethods
+	5 Type/Table metamethods
 
 
 
