@@ -42,74 +42,76 @@ Timeline
 			Currently tables are references (ie. pointers)
 				This is passable but not what I want from the language
 		Redo how get/set are handled (in relation to exception throwing)
+			Ensure that EvalState::setVar static typing works correctly (I think it's currently bidirectional, should be unidirectional)
 		Check on changing ts.convertible(t1, t2) to ts.convertible(f, t)
 			Basically stopping convertible(a, b) = convertible(b, a) from always being true
-			Where did I want to change this from
+			Where did I want to change this from (EvalState::setVar)
 		Implement Table::okayKey and Table::okayValue and provide a way to change behavior
 			These methods are how "3: 3" will be prevented in the global scope and allowed in tables
+				Change the expected exception on Testing:line 99 once implemented
 			Also allow for restricting key and values based on given functions
-		Implement Console manipulators for mac and windows
+		Implement Console manipulators for mac and linux
 			Apparently both use ansi color codes
 		Clean up the code for the testing framework
-		See VagueToDo.txt
-
-	1 Interpreter Update
-		Fix some bugs/improvements
-			Change 0 => false (Find out what documents/files to change)
-			Check EvalState::setVar static typing conversion handling (I don't think it'll work, wrong direction)
+		Parser Issues
+			Unsure about behavior of action<c_paren> for empty parentheses
+			Speed up the performance of parsing line
+				Currently has to read eval_line twice to ensure correctness
+			Minimize the cost of specializing Control (too many declarations)
+				Check the documentation first, I might be missing something there
+			Consider rearranging/repurposing actions to provide better parser data
 		Start reading up on the gsl
+			Try converting some code once I understand it
+		Various Changes
+			Change 0 => false ???
+		See VagueToDo.txt
 				
-	2 Parser Rewrite v. II
-		Redo how scoping is handled by the parser
-			Add a "scoping" rule at the beginning of expr
-				This scoping rule will work similar to Python (need a "scope" stack?)
-				Block gets deleted from the grammar
-					Means I can't completely describe everything in the grammar as a single expression
-						Should still parse that way though
-				The grammar rule just matches any number of "scope" characters
-					The action will handle the control push/popping (allows custom control structures for loops/branches/etc.)
-			Try to simplify the grammar if possible
-		Fix Grammar so that Testing.99 throws an error at parse time (not at runtime) ???
-			Or should I (it would certainly be extremely difficult to debug)
-				Assignment => value which can be used in another assignment
-		Improve Exception Support
-		Try converting some code to make use of the gsl
-		Rework Assignment to be performed left->right
-			Changes "a, b:* 3" to multiply a by 3 (before excepting on the 3)
-				Stops "a, b:* nil, 3" from multiplying b by 3
-		Rewrite the parser so that everything works well together
-
-	3 Control Statements (For/While/Do-While/If/Else/...)
+	1 Control Statements
 		Update project version to 0.7.1
-		Be able to write control statements with correct execution
-			Have variable scoping work correctly
+		Allow control strutures to "assign" variables
+			Test on Try-Catch statements (using the error message)
+		Implement loops (While/Do-While)
+			Have the grammar recognize them
+			Have the interpreter work on them
+		Implement Branching (If-Elseif-Else)
+			I could always move to "else if" instead of "elseif"
+			Have the grammar recognize them
+				Generalize Try-Catch combination in action<scope>::reduce
+			Have the interpreter work on them
+		Implement For statement
 
-	4 Function Calling		ie. print("Hello, World!")
+	2 Function Calling		ie. print("Hello, World!")
+		Be able to store functions as values
+			Create the necessary Collector structure (needs to handle C++ functions/lambdas and dust AST's)
+			Get assignment to work as expected with functions
 		Implement the evaluation hooks/etc. to be able to call functions	# Get functions callable
 			Hard coded translations at this time
 			Have the basic syntax and semantics working (Argument passing, etc.)
-		Be able to store functions as values
-			Get assignment to work as expected with functions
 		Convert Types completely to impl::Table for storage concerns
-			Allow Type methods to be called using '.'/'[]' syntax
-				Current grammar disallows type_ids to be used outside of new_type and type_checking
 			Allow Type methods to be called using '.'/'[]' syntax on non-table values and variables
 				Current AST construction assumes a VarName node exists (not guaranteed for non-variables)
+			Allow Type methods to be called using '.'/'[]' syntax
+				Current grammar disallows type_ids to be used outside of new_type and type_checking
 		Move function calling work into the _op() metamethod
+			_op() expects a l->r stack (function on top, first argument at -2, etc.)
+			Push arguments from r->l on the stack
+			Get function value on the stack
+			Call _op() on the function
 		Optional: No parens syntax
 
-	5 Dust Function Definition
+	3 Dust Function Definition
 		Update project version to 0.8.1
 		Abstract the previous framework to allow for Dust functions to be conceivably executed
 		Add in the correct syntax and action calls to create dust functions
 
-	6 Grammar Framework Update
+	4 Grammar Framework Update
 		Potentially change the grammar to follow the basic framework in "lua53_parse.h"
 		Update all documents to ensure that they reflect the current language spec
 		Update the readme to show of recent aditions
 		Determine the next set of features that need to be implemented
+		Bugfixes
 
-	7 Type/Table metamethods
+	5 Type/Table metamethods
 
 
 

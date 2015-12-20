@@ -62,13 +62,19 @@ namespace dust {
 					t.requireEval("a, b:+ 2, 2", 2);							// 1
 					t.requireTrue("a = 5 and b = 2");							// 2
 
-					t.requireException<error::dispatch_error>("a, b:* 2");					// Invalid after Parser Rewrite v. II
-					t.requireTrue("a != 10");											// Invalid after Parser Rewrite v. II
-					t.requireEval("a, b:* 2, 0", 0);							// 3
-					t.requireTrue("a = 10 and b = 0");							// 4
+					t.requireException<error::dispatch_error>("a, b:* 2");		// 3
+					t.requireTrue("a = 10");									// 4
 
-					t.requireEval("a:= (b: 3) * 2 + 2 ^ 2", true);				// 5
-					t.requireTrue("a and b = 3");								// 6
+					t.requireException<error::dispatch_error>("a, b:* nil, 2");	// 5
+					t.requireTrue("a = 10");									// 6
+
+					t.eval("a, b: 5, 2");
+
+					t.requireEval("a, b:* 2, 0", 0);							// 7
+					t.requireTrue("a = 10 and b = 0");							// 8
+
+					t.requireEval("a:= (b: 3) * 2 + 2 ^ 2", true);				// 9
+					t.requireTrue("a and b = 3");								// 10
 				t.closeSubTest();
 			t.closeSubTest();
 
@@ -96,7 +102,7 @@ namespace dust {
 				t.requireTrue("a = 4");											// 2
 
 				t.requireException<pegtl::parse_error>("3 + a: 3");				// 3
-				t.requireException<error::missing_node_x>("a, b: 3, c: 4");		// 4
+				//t.requireException<error::missing_node_x>("a, b: 3, c: 4");		// 4
 
 				t.requireEval("a, b: 3, (c: 4)", 4);							// 5
 				t.requireTrue("a = 3");											// 6
@@ -116,7 +122,7 @@ namespace dust {
 			t.initSubTest("Multiline Parsing");				// Need to escape output
 				t.requireEval("a\n+ b", 7);										// 1
 				t.requireException<pegtl::parse_error>("3 + a: 3\n - 4");		// 2
-				t.requireEval("3 + a 3\n - 4", -1);								// 3
+				t.requireEval("3 - \n 3", 0);									// 3
 				t.requireEval("3 + 3\n  \n4 + 4", 8);							// 4
 				t.requireEval("## Hello\n3", 3);								// 5
 
@@ -139,6 +145,16 @@ namespace dust {
 								   "\tb: 3 + .a\n"
 								   "## Assign b to 3 + a\n"
 								   "\tb + a", 7);								// 2
+					t.requireEval("3\n"
+								  "\t\ta: 5\n"
+								  "\t## Comment\n"
+								  "\t\ta + 1", 6);
+					t.requireEval("af: 3\n"
+								  "\t\t5\n"
+						          "\taf", 3);									// 3
+					t.requireEval("3\n"
+								  "## Comment\n"
+								  "4", 4);										// 4
 				t.closeSubTest();
 			t.closeSubTest();
 
@@ -168,6 +184,41 @@ namespace dust {
 				t.requireEval("a[b[2] * 2]", 5);
 
 			t.closeSubTest();
+
+			t.initSubTest("Try-Catch Statement");
+				t.requireEval("try\n"
+							  "\t3 + true\n"
+							  "catch (e) 4\n", 4);
+
+				t.requireEval("try 3 + true\n"
+							  "catch (e) 4", 4);
+
+				t.requireEval("try 3 + 3\n"
+							  "catch (e) 4", 6);
+
+				t.requireEval("a: 3\n"
+							  "try\n"
+							  "\t3 + true\n"
+							  "\t.a: 2\n"
+							  "catch (e)\n"
+							  "a", 3);
+
+				t.requireEval("a: 3\n"
+							  "try\n"
+							  "\t3 + 3\n"
+							  "\t.a: 2\n"
+							  "catch (e)\n"
+							  "a", 2);
+
+				t.requireEval("try\n"
+							  "\t\t.a: 3 + 3\n"
+							  "\t3 + a\n"
+							  "catch(e)\n", 9);
+
+				t.requireException<error::missing_node_x>("catch (e) 4");
+
+			t.closeSubTest();
+
 			//t.initSubTest("API Testing");
 			//t.closeSubTest();
 

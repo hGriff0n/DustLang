@@ -23,17 +23,21 @@ namespace dust {
 				return idx < 0 || idx >(int)s.size();
 			}
 
-			virtual void before(Value& v, int bef) {
+			virtual void before(const Value& v, int bef) {
 				s.insert(s.begin() + normalize(bef), v);
 			}
 
-			virtual void after(Value& v, int bef) {
+			virtual void after(const Value& v, int bef) {
 				s.insert(s.begin() + normalize(bef) + 1, v);
 			}
 
 		public:
 			Stack() {
 				reserve(MIN_STACK_SIZE);
+			}
+
+			virtual void push(const Value& v) {
+				s.push_back(v);
 			}
 
 			virtual void push(Value& v) {

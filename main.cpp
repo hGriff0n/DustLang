@@ -9,8 +9,6 @@
 #define pl(x) p(x) << "\n"
 #define nl() pl("")
 
-// TODO:		
-// Update the PEGTL library if possible
 
 // Things to work on
 	// Improving and consolidating the API
@@ -51,25 +49,30 @@ int main(int argc, const char* argv[]) {
 
 	parse::AST parse_tree;
 	std::string input;
+
 	EvalState e;
 
 	initState(e);
 	test::runTests(e, show_all_tests);
 
-	std::cout << "> ";
+	std::cout << "\n> ";
 
 	while (getmultiline(std::cin, input) && input != "exit") {
 		if (input == "gc") {
 
 		} else {
 			try {
-				//pegtl::parse<grammar, action>(parse::trim(input), input, parse_tree, 0);
-				pegtl::parse<grammar, action, parse::control>(parse::trim(input), input, parse_tree, 0);
+				parse::ScopeTracker scp{};
 
-				printAST(std::cout, parse_tree.at());
+				pegtl::parse<grammar, action, parse::control>(input, input, parse_tree, scp);
+				//pegtl::parse<grammar, action, parse::control>(parse::trim(input), input, parse_tree, scp);
 
+				// This allows "3 # Hello" to run (should throw an error)
+				if (!parse_tree.empty()) {
+					printAST(std::cout, parse_tree.at());
 
-				parse_tree.pop()->eval(e).stream(std::cout << ":: ") << "\n";
+					parse_tree.pop()->eval(e).stream(std::cout << ":: ") << "\n";
+				}
 				//e.eval(parse_tree.pop()).stream(std::cout << ":: ") << "\n";
 
 				// Need to make a generic 'pop' here
