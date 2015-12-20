@@ -14,7 +14,7 @@ namespace dust {
 		template <> struct action<scope> {
 			static void apply(input& in, AST& ast, ScopeTracker& lvl) {
 				if (lvl.empty()) {
-					push(ast, 1);
+					push(ast, 1, in);
 					lvl.push(0);
 				}
 
@@ -22,12 +22,12 @@ namespace dust {
 
 				// Push control nodes on the stack
 				if (lvl.at() < depth) {
-					push(ast, depth - lvl.at());
+					push(ast, depth - lvl.at(), in);
 					lvl.push(depth);
 
 				// Create blocks
 				} else if (lvl.at() > depth) {
-					reduce(ast, lvl.at() - depth);
+					reduce(ast, lvl.at() - depth, in);
 
 					while (!lvl.empty() && lvl.at() >= depth)
 						lvl.pop();
@@ -37,21 +37,20 @@ namespace dust {
 
 			}
 
-			static void push(AST& ast, int n) {
+			static void push(AST& ast, int n, input& in) {
 				while (n--> 0)
-					ast.push(makeNode<Control>());
+					ast.push(makeNode<Control>(in));
 			}
 
 			// Also handles try-catch reduction
-			static void reduce(AST& ast, int n) {
-				while (n-- > 0) {
-					auto block = makeNode<Block>();
+			static void reduce(AST& ast, int n, input& in) {
+				while (n--> 0) {
+					auto block = makeNode<Block>(in);
 
 					do block->addChild(ast.at());
 					while (!isNode<Control>(ast.pop()));
 
-					// Try-Catch reduction
-						// Will need to generalize for If-Then-Else and Functions
+					// Try-Catch reduction (need to generalize for If-Then-Else and functions)
 					if (!ast.empty() && isNode<TryCatch>(ast.at()) && !std::dynamic_pointer_cast<TryCatch>(ast.at())->isFull())
 						ast.at()->addChild(block);
 					else
@@ -66,13 +65,13 @@ namespace dust {
 
 				// Finish assembly of AST
 				if (ast.empty()) {
-					auto b = makeNode<Block>();
-					b->addChild(makeNode<Control>());
+					auto b = makeNode<Block>(in);
+					b->addChild(makeNode<Control>(in));
 					ast.push(b);
 
 				} else {
 					// Possibly wrong when requiring files (clears the scopetracker)
-					action<scope>::reduce(ast, lvl.at() + 1);
+					action<scope>::reduce(ast, lvl.at() + 1, in);
 					lvl.clear();			// I could always use a unique ScopeTracker for each file
 
 				}
@@ -92,13 +91,13 @@ namespace dust {
 
 		template <> struct action<o_brack> {
 			static void apply(input& in, AST& ast, ScopeTracker& _) {
-				action<scope>::push(ast, 1);
+				action<scope>::push(ast, 1, in);
 			}
 		};
 
 		template <> struct action<table> {
 			static void apply(input& in, AST& ast, ScopeTracker& _) {
-				action<scope>::reduce(ast, 1);
+				action<scope>::reduce(ast, 1, in);
 
 				// stack: ..., {Block}
 
@@ -116,8 +115,8 @@ namespace dust {
 			static void apply(input& in, AST& ast, ScopeTracker& lvl) {
 				// stack: ...
 
-				ast.push(makeNode<TryCatch>());
-				action<scope>::push(ast, 1);
+				ast.push(makeNode<TryCatch>(in));
+				action<scope>::push(ast, 1, in);
 				lvl.push(lvl.at() + 1);
 
 				// stack: ..., {TryCatch}, {Control}
@@ -131,7 +130,7 @@ namespace dust {
 				if (!isNode<TryCatch>(ast.at()))
 					throw error::missing_node_x{ "TryCatch" };			// Need to improve error messages
 
-				action<scope>::push(ast, 1);
+				action<scope>::push(ast, 1, in);
 				lvl.push(lvl.at() + 1);
 
 				// stack: ..., {TryCatch}, {Control}
@@ -148,7 +147,7 @@ namespace dust {
 
 						ast.at(-2)->addChild(ast.pop());
 
-					// stack: ..., {op}
+						// stack: ..., {op}
 					else
 						throw error::missing_node_x{ "Operator" };
 				} else
@@ -191,10 +190,10 @@ namespace dust {
 		template <class type, bool force_type = false>
 		struct list_actions {
 			static void apply(input& in, AST& ast, ScopeTracker& _) {
-				auto list = makeNode<List<type>>();
+				auto list = makeNode<List<type>>(in);
 
 				if (ast.at()->toString() != ",")
-					ast.push(makeNode<Debug>(","));
+					ast.push(makeNode<Debug>(in, ","));
 
 				while (!ast.empty() && ast.at()->toString() == ",") {
 					ast.pop();
@@ -212,10 +211,10 @@ namespace dust {
 		template <class type>
 		struct list_actions<type, true> {					// Specialization of list_actions to force conversions to type (for VarName, could just specialize on VarName ???)
 			static void apply(input& in, AST& ast, ScopeTracker& _) {
-				auto list = makeNode<List<type>>();
+				auto list = makeNode<List<type>>(in);
 
 				if (ast.at()->toString() != ", ")
-					ast.push(makeNode<Debug>(","));
+					ast.push(makeNode<Debug>(in, ","));
 
 				while (!ast.empty() && ast.at()->toString() == ",") {
 					ast.pop();
@@ -237,13 +236,13 @@ namespace dust {
 		// Operator Actions
 		struct OpAction {
 			static void apply(const input& in, AST& ast, ScopeTracker& _) {
-				ast.push(makeNode<Operator>("_op" + in.string()));
+				ast.push(makeNode<Operator>(in, "_op" + in.string()));
 			}
 		};
 
 		template <> struct action<op_0> {
 			static void apply(const input& in, AST& ast, ScopeTracker& _) {
-				ast.push(makeNode<Operator>("_ou" + in.string()));
+				ast.push(makeNode<Operator>(in, "_ou" + in.string()));
 			}
 		};
 
@@ -256,7 +255,7 @@ namespace dust {
 		// Assignment
 		template <> struct action<op_7> {
 			static void apply(const input& in, AST& ast, ScopeTracker& _) {
-				ast.push(makeNode<Assign>(in.string().substr(1)));
+				ast.push(makeNode<Assign>(in, in.string().substr(1)));
 			}
 		};
 
@@ -285,13 +284,13 @@ namespace dust {
 
 		template <> struct action<var_id> {
 			static void apply(input& in, AST& ast, ScopeTracker& _) {
-				ast.push(makeNode<VarName>(in.string()));
+				ast.push(makeNode<VarName>(in, in.string()));
 			}
 		};
 
 		template <> struct action<var_lookup> {
 			static void apply(input& in, AST& ast, ScopeTracker& _) {
-				ast.push(makeNode<Debug>(in.string()));
+				ast.push(makeNode<Debug>(in, in.string()));
 			}
 		};
 
@@ -307,7 +306,7 @@ namespace dust {
 			static void apply(input& in, AST& ast, ScopeTracker& _) {
 				// stack: ...
 
-				ast.push(makeNode<TypeName>(in.string()));
+				ast.push(makeNode<TypeName>(in, in.string()));
 
 				// stack: ..., {TypeName}
 			}
@@ -334,7 +333,7 @@ namespace dust {
 			static void apply(input& in, AST& ast, ScopeTracker& _) {
 				// stack: ..., {type}, {ASTNode}
 
-				auto tc = makeNode<TypeCheck>();
+				auto tc = makeNode<TypeCheck>(in);
 				tc->addChild(ast.pop());
 				tc->addChild(ast.pop());
 
@@ -348,7 +347,7 @@ namespace dust {
 			static void apply(const input& in, AST& ast, ScopeTracker& _) {
 				// stack: ..., {type}, {ASTNode}
 
-				auto t = makeNode<TypeCast>();
+				auto t = makeNode<TypeCast>(in);
 				t->addChild(ast.pop());
 				t->addChild(ast.pop());
 
@@ -362,7 +361,7 @@ namespace dust {
 		// Keyword Actions
 		template <> struct action<k_and> {
 			static void apply(const input& in, AST& ast, ScopeTracker& _) {
-				ast.push(makeNode<BooleanOperator>(in.string()));					// and/or are not becoming methods of Bool
+				ast.push(makeNode<BooleanOperator>(in, in.string()));
 			}
 		};
 
@@ -372,7 +371,7 @@ namespace dust {
 			static void apply(input& in, AST& ast, const ScopeTracker& _) {
 				//stack: ...
 
-				ast.push(makeNode<NewType>());
+				ast.push(makeNode<NewType>(in));
 
 				// stack: ..., {NewType}
 			}
@@ -382,31 +381,31 @@ namespace dust {
 		// Literal Actions
 		template <> struct action<decimal> {
 			static void apply(const input& in, AST& ast, ScopeTracker& _) {
-				ast.push(makeNode<Literal>(in.string(), type::Traits<double>::id));
+				ast.push(makeNode<Literal>(in, in.string(), type::Traits<double>::id));
 			}
 		};
 
 		template <> struct action<boolean> {
 			static void apply(const input& in, AST& ast, ScopeTracker& _) {
-				ast.push(makeNode<Literal>(in.string(), type::Traits<bool>::id));
+				ast.push(makeNode<Literal>(in, in.string(), type::Traits<bool>::id));
 			}
 		};
 
 		template <> struct action<integer> {
 			static void apply(const input& in, AST& ast, ScopeTracker& _) {
-				ast.push(makeNode<Literal>(in.string(), type::Traits<int>::id));
+				ast.push(makeNode<Literal>(in, in.string(), type::Traits<int>::id));
 			}
 		};
 
 		template <> struct action<body> {
 			static void apply(const input& in, AST& ast, ScopeTracker& _) {
-				ast.push(makeNode<Literal>(unescape(in.string()), type::Traits<std::string>::id));
+				ast.push(makeNode<Literal>(in, unescape(in.string()), type::Traits<std::string>::id));
 			}
 		};
 
 		template <> struct action<k_nil> {
 			static void apply(const input& in, AST& ast, ScopeTracker& _) {
-				ast.push(makeNode<Literal>("", type::Traits<Nil>::id));
+				ast.push(makeNode<Literal>(in, "", type::Traits<Nil>::id));
 			}
 		};
 
@@ -414,7 +413,7 @@ namespace dust {
 		// Debug Actions
 		template <> struct action<o_paren> {
 			static void apply(input& in, AST& ast, ScopeTracker& _) {
-				ast.push(makeNode<Debug>("("));
+				ast.push(makeNode<Debug>(in, "("));
 			}
 		};
 
@@ -426,7 +425,7 @@ namespace dust {
 
 		template <> struct action<comma> {
 			static void apply(input& in, AST& ast, ScopeTracker& _) {
-				ast.push(makeNode<Debug>(in.string()));
+				ast.push(makeNode<Debug>(in, in.string()));
 			}
 		};
 	}

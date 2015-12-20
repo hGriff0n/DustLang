@@ -2,6 +2,7 @@
 
 #include "EvalState.h"
 
+#include <pegtl.hh>
 #include <memory>
 
 namespace dust {
@@ -9,7 +10,17 @@ namespace dust {
 		// Possibly create grammars and actions for escaping/unescaping strings
 		std::string escape(std::string);
 		std::string unescape(std::string);
-		std::string trim(std::string);					// Needed to prevent errors when evaluating " "
+		std::string trim(std::string);
+
+		/*
+		 * Creation statistics for a node
+		 */
+		// Move to AST.cpp
+		struct ParseData {
+			size_t col, line;
+
+			ParseData(const pegtl::input& in);
+		};
 
 		/*
 		 * Base class for the AST structure
@@ -17,6 +28,9 @@ namespace dust {
 		class ASTNode {
 			private:
 			public:
+				ParseData p;
+
+				ASTNode(const ParseData& in);
 				static std::string node_type;
 
 				virtual EvalState& eval(EvalState&) = 0;
@@ -40,7 +54,7 @@ namespace dust {
 				}
 
 			public:
-				List() {}
+				List(const ParseData& in) : ASTNode{ in } {}
 				static std::string node_type;
 
 				EvalState& eval(EvalState& e) {
@@ -79,7 +93,7 @@ namespace dust {
 				std::string msg;
 
 			public:
-				Debug(std::string _msg);
+				Debug(const ParseData& in, std::string _msg);
 				static std::string node_type;
 
 				EvalState& eval(EvalState& e);
@@ -96,7 +110,7 @@ namespace dust {
 				size_t id;
 
 			public:
-				Literal(std::string _val, size_t t);
+				Literal(const ParseData& in, std::string _val, size_t t);
 				static std::string node_type;
 
 				EvalState& eval(EvalState& e);
@@ -114,7 +128,7 @@ namespace dust {
 				std::string op;
 
 			public:
-				Operator(std::string o);
+				Operator(const ParseData& in, std::string o);
 				static std::string node_type;
 
 				EvalState& eval(EvalState& e);
@@ -133,7 +147,7 @@ namespace dust {
 				int lvl = 0; bool sub_var = false;
 
 			public:
-				VarName(std::string var);
+				VarName(const ParseData& p, std::string var);
 				VarName(std::shared_ptr<ASTNode>&& var);
 				static std::string node_type;
 
@@ -156,7 +170,7 @@ namespace dust {
 				std::string name;
 
 			public:
-				TypeName(std::string n);
+				TypeName(const ParseData& in, std::string n);
 				static std::string node_type;
 
 				EvalState& eval(EvalState& e);
@@ -175,7 +189,7 @@ namespace dust {
 				std::shared_ptr<ASTNode> expr;
 
 			public:
-				TypeCast();
+				TypeCast(const ParseData& in);
 				static std::string node_type;
 
 				EvalState& eval(EvalState& e);
@@ -200,7 +214,7 @@ namespace dust {
 				bool set_const, set_static;
 
 			public:
-				Assign(std::string _op, bool _const = false, bool _static = false);
+				Assign(const ParseData& in, std::string _op, bool _const = false, bool _static = false);
 				static std::string node_type;
 
 				EvalState& eval(EvalState& e);
@@ -221,7 +235,7 @@ namespace dust {
 				bool isAnd;
 
 			public:
-				BooleanOperator(std::string key);
+				BooleanOperator(const ParseData& in, std::string key);
 				static std::string node_type;
 
 				EvalState& eval(EvalState& e);
@@ -241,8 +255,8 @@ namespace dust {
 				int type;
 
 			public:
-				Control();
-				Control(int typ);
+				Control(const ParseData& in, int typ = -1);
+
 				static std::string node_type;
 				enum Type {
 					FOR,
@@ -269,11 +283,7 @@ namespace dust {
 
 			protected:
 			public:
-				auto begin();
-				auto end();
-				size_t size();
-
-				Block();
+				Block(const ParseData& in);
 				static std::string node_type;
 				bool save_scope, table, excep_if_empty;
 
@@ -282,6 +292,10 @@ namespace dust {
 
 				virtual std::string toString();
 				virtual std::string printString(std::string buf);
+
+				auto begin();
+				auto end();
+				size_t size();
 		};
 
 		/*
@@ -293,7 +307,7 @@ namespace dust {
 				std::shared_ptr<Block> definition;
 
 			public:
-				NewType();
+				NewType(const ParseData& in);
 				static std::string node_type;
 
 				EvalState& eval(EvalState& e);
@@ -312,7 +326,7 @@ namespace dust {
 				std::string type;
 
 			public:
-				TypeCheck();
+				TypeCheck(const ParseData& in);
 				static std::string node_type;
 
 				EvalState& eval(EvalState& e);
@@ -327,11 +341,10 @@ namespace dust {
 		 */
 		class TryCatch : public ASTNode {
 			private:
-				//std::shared_ptr<Block> try_code, catch_code;
-				std::shared_ptr<ASTNode> try_code, catch_code;
+				std::shared_ptr<Block> try_code, catch_code;
 
 			public:
-				TryCatch();
+				TryCatch(const ParseData& in);
 				static std::string node_type;
 
 				EvalState& eval(EvalState& e);
@@ -348,8 +361,8 @@ namespace dust {
 	}
 
 	template <class T, typename... Args>
-	std::shared_ptr<parse::ASTNode> makeNode(Args&... args) {
-		return std::make_shared<T>(args...);
+	std::shared_ptr<parse::ASTNode> makeNode(Args&&... args) {
+		return std::make_shared<T>(std::forward<Args>(args)...);
 	}
 
 	template <class R, class T>

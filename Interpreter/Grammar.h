@@ -1,6 +1,5 @@
 #pragma once
 
-#include <pegtl.hh>
 #include "ast.h"
 
 #define pstring(x) pegtl_string_t(x)

@@ -210,6 +210,11 @@ namespace dust {
 							  "catch (e)\n"
 							  "a", 2);
 
+				t.requireEval("try\n"
+							  "\t\t.a: 3 + 3\n"
+							  "\t3 + a\n"
+							  "catch(e)\n", 9);
+
 				t.requireException<error::missing_node_x>("catch (e) 4");
 
 			t.closeSubTest();

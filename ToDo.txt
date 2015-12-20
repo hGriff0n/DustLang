@@ -59,6 +59,7 @@ Timeline
 				Currently has to read eval_line twice to ensure correctness
 			Minimize the cost of specializing Control (too many declarations)
 				Check the documentation first, I might be missing something there
+			Consider rearranging/repurposing actions to provide better parser data
 		Start reading up on the gsl
 			Try converting some code once I understand it
 		Various Changes
@@ -66,8 +67,6 @@ Timeline
 		See VagueToDo.txt
 				
 	1 Parser Rewrite v. II
-		Add location information to ASTNodes at node construction
-			Need to rework makeNode and ASTNode constructors
 		Improve Exception Support
 			Improve error messages for try-catch construction
 

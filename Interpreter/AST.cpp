@@ -25,7 +25,11 @@ namespace dust {
 			return back <= front ? "" : std::string{front, back};
 		}
 
+		// ParseData methods
+		ParseData::ParseData(const pegtl::input& in) : col{ in.column() }, line{ in.line() } {}
+
 		// ASTNode methods
+		ASTNode::ASTNode(const ParseData& in) : p{ in } {}
 		void ASTNode::addChild(std::shared_ptr<ASTNode>& c) {
 			throw error::operands_error{ "Attempt to add child to ASTNode" };
 		}
@@ -34,12 +38,12 @@ namespace dust {
 		}
 
 		// Debug methods
-		Debug::Debug(std::string _msg) : msg{ _msg } {}
+		Debug::Debug(const ParseData& in, std::string _msg) : ASTNode{ in }, msg{ _msg } {}
 		EvalState& Debug::eval(EvalState& e) { return e; }
 		std::string Debug::toString() { return msg; }
 
 		// Literal methods
-		Literal::Literal(std::string _val, size_t t) : val{ _val }, id{ t } {}
+		Literal::Literal(const ParseData& in, std::string _val, size_t t) : ASTNode{ in }, val{ _val }, id{ t } {}
 		EvalState& Literal::eval(EvalState& e) {
 			if (id == type::Traits<int>::id)
 				e.push(std::stoi(val));
@@ -73,7 +77,7 @@ namespace dust {
 		}
 
 		// Operator methods
-		Operator::Operator(std::string o) : l{ nullptr }, r{ nullptr }, op{ o } {}
+		Operator::Operator(const ParseData& in, std::string o) : ASTNode{ in }, l{ nullptr }, r{ nullptr }, op{ o } {}
 		EvalState& Operator::eval(EvalState& e) {
 			l->eval(e);
 
@@ -95,8 +99,8 @@ namespace dust {
 		}
 
 		// VarName methods
-		VarName::VarName(std::string var) : VarName{ makeNode<Literal>(var, type::Traits<std::string>::id) } {}
-		VarName::VarName(std::shared_ptr<ASTNode>&& var) : fields{} {
+		VarName::VarName(const ParseData& in, std::string var) : VarName{ makeNode<Literal>(in, var, type::Traits<std::string>::id) } {}
+		VarName::VarName(std::shared_ptr<ASTNode>&& var) : ASTNode{ var->p } {
 			fields.emplace_back(var);
 		}
 		void VarName::addChild(std::shared_ptr<ASTNode>& c) {
@@ -153,7 +157,7 @@ namespace dust {
 		}
 
 		// TypeName methods
-		TypeName::TypeName(std::string n) : name{ n } {}
+		TypeName::TypeName(const ParseData& in, std::string n) : ASTNode{ in }, name{ n } {}
 		EvalState& TypeName::eval(EvalState& e) {
 			//e.getTS().getType(name);
 			return e;
@@ -164,7 +168,7 @@ namespace dust {
 		}
 
 		// TypeCast methods
-		TypeCast::TypeCast() {}
+		TypeCast::TypeCast(const ParseData& in) : ASTNode{ in } {}
 		EvalState& TypeCast::eval(EvalState& e) {
 			return expr->eval(e).callMethod(convert->toString());
 		}
@@ -184,7 +188,7 @@ namespace dust {
 		}
 
 		// NewType methods
-		NewType::NewType() : name{}, inherit { "Object" } {}
+		NewType::NewType(const ParseData& in) : ASTNode{ in }, name{}, inherit{ "Object" } {}
 		EvalState& NewType::eval(EvalState& e) {
 			auto& ts = e.getTS();
 			auto nType = ts.newType(name, ts.get(inherit));
@@ -214,7 +218,7 @@ namespace dust {
 		}
 
 		// TypeCheck methods
-		TypeCheck::TypeCheck() {}
+		TypeCheck::TypeCheck(const ParseData& in) : ASTNode{ in } {}
 		EvalState& TypeCheck::eval(EvalState& e) {
 			auto x = e.size();
 			auto res = l->eval(e).pop();						// Possible issue with multiple returns (might pick up the last return, hopefully picks up the first)
@@ -247,7 +251,7 @@ namespace dust {
 		}
 
 		// Assign methods
-		Assign::Assign(std::string _op, bool _const, bool _static) : set_const{ _const }, set_static{ _static }, vars{ nullptr }, vals{ nullptr } {
+		Assign::Assign(const ParseData& in, std::string _op, bool _const, bool _static) : ASTNode{ in }, set_const{ _const }, set_static{ _static }, vars{ nullptr }, vals{ nullptr } {
 			op = _op.size() ? "_op" + _op : _op;
 		}
 		EvalState& Assign::eval(EvalState& e) {
@@ -308,7 +312,7 @@ namespace dust {
 		}
 
 		// BooleanOperator methods
-		BooleanOperator::BooleanOperator(std::string key) : l{ nullptr }, r{ nullptr }, isAnd{ key == "and" } {}
+		BooleanOperator::BooleanOperator(const ParseData& in, std::string key) : ASTNode{ in }, l{ nullptr }, r{ nullptr }, isAnd{ key == "and" } {}
 		EvalState& BooleanOperator::eval(EvalState& e) {
 			if (!l || !r) throw error::bad_node_eval{ "Attempt to use BinaryKeyword node with less than two operands" };
 
@@ -337,8 +341,7 @@ namespace dust {
 		}
 
 		// Control methods
-		Control::Control() : Control{ -1 } {}
-		Control::Control(int typ) : type{ typ }, next{ true } {}
+		Control::Control(const ParseData& in, int typ) : ASTNode{ in }, type{ typ }, next{ true } {}
 		EvalState& Control::eval(EvalState& e) {
 			switch (type) {
 				case Type::FOR:
@@ -377,7 +380,7 @@ namespace dust {
 		}
 
 		// Block methods
-		Block::Block() : save_scope{ false }, table{ false }, excep_if_empty{ true } {}
+		Block::Block(const ParseData& in) : ASTNode{ in }, save_scope{ false }, table{ false }, excep_if_empty{ true } {}
 		auto Block::begin() {
 			return expr.rbegin();
 		}
@@ -453,7 +456,7 @@ namespace dust {
 		}
 
 		// TryCatch methods
-		TryCatch::TryCatch() {}
+		TryCatch::TryCatch(const ParseData& in) : ASTNode{ in } {}
 		EvalState& TryCatch::eval(EvalState& e) {
 			if (!try_code || !catch_code) throw error::bad_node_eval{ "Attempt to evaluate an incomplete TryCatch node" };
 
@@ -479,7 +482,7 @@ namespace dust {
 			auto& code_block = try_code ? catch_code : try_code;
 			if (code_block) throw error::operands_error{ "Attempt to add more than two blocks to TryCatch node" };
 
-			code_block.swap(c);
+			code_block.swap(std::dynamic_pointer_cast<Block>(c));
 			if (!code_block) throw error::invalid_ast_construction{ "Attempt to construct TryCatch node with a non-Block node" };
 		}
 		bool TryCatch::isFull() {
