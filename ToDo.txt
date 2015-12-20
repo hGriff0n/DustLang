@@ -30,6 +30,7 @@ Timeline
 			Add table specific functions (?)
 			"Global Review" is duplicated at the end, consider removing it
 			Consider splitting test sections (see comments in Testing.h)
+			Add comments to each test describing what's being tested
 		Consider removing the test for operator isDefd in com
 			Would remove ambiguity in code execution
 			"3" - 3 => String._op- not defined
@@ -67,18 +68,18 @@ Timeline
 		See VagueToDo.txt
 				
 	1 Control Statements
-		Update project version to 0.7.1
-		Allow control strutures to "assign" variables
-			Test on Try-Catch statements (using the error message)
 		Implement loops (While/Do-While)
-			Have the grammar recognize them
-			Have the interpreter work on them
+			Clean up the implementation
+			Settle on a do-while syntax (do_while, do-while, until)
 		Implement Branching (If-Elseif-Else)
 			I could always move to "else if" instead of "elseif"
 			Have the grammar recognize them
 				Generalize Try-Catch combination in action<scope>::reduce
 			Have the interpreter work on them
+		Allow control strutures to "assign" variables
+			Test on Try-Catch statements (using the error message)
 		Implement For statement
+			Basic table ranges ([1..5] and [1, 3..5])
 
 	2 Function Calling		ie. print("Hello, World!")
 		Be able to store functions as values
@@ -103,6 +104,9 @@ Timeline
 		Update project version to 0.8.1
 		Abstract the previous framework to allow for Dust functions to be conceivably executed
 		Add in the correct syntax and action calls to create dust functions
+		Convert tables away from pure references
+			Particularly important for functions
+		Start to implement type methods
 
 	4 Grammar Framework Update
 		Potentially change the grammar to follow the basic framework in "lua53_parse.h"

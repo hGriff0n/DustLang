@@ -127,31 +127,31 @@ namespace dust {
 				t.requireEval("## Hello\n3", 3);								// 5
 
 				t.initSubTest("Scoped Assignment");
-					t.requireEval("a: 2\n\ta: 5\n\ta", 5);						// 1
+					t.requireEval("a: 2\n	a: 5\n	a", 5);						// 1
 					t.requireTrue("a = 2");										// 2
 					t.requireEval("a", 2);										// 3
-					t.requireEval("a: 3\n\ta + 2", 5);							// 4
+					t.requireEval("a: 3\n	a + 2", 5);							// 4
 					t.requireEval("a: 4\n"
-								   "\ta: 3\n"
-								   "\tb: a + .a", 7);							// 5
+								  "	a: 3\n"
+								  "	b: a + .a", 7);							// 5
 					t.requireEval(".a", 4);										// 6
 				t.closeSubTest();
 
 				t.initSubTest("Scopes and Comments");
 					t.requireEval("a: 2 ## Assign 2 to a\n"
-								   "\tb: .a + 3 ## Assign b to a + 3\n"
-								   "\tb + a", 7);								// 1
+								  "	b: .a + 3 ## Assign b to a + 3\n"
+								  "	b + a", 7);								// 1
 					t.requireEval("a: 2\n"
-								   "\tb: 3 + .a\n"
+								   "	b: 3 + .a\n"
 								   "## Assign b to 3 + a\n"
-								   "\tb + a", 7);								// 2
+								   "	b + a", 7);								// 2
 					t.requireEval("3\n"
-								  "\t\ta: 5\n"
-								  "\t## Comment\n"
-								  "\t\ta + 1", 6);
+								  "		a: 5\n"
+								  "	## Comment\n"
+								  "		a + 1", 6);
 					t.requireEval("af: 3\n"
-								  "\t\t5\n"
-						          "\taf", 3);									// 3
+								  "		5\n"
+						          "	af", 3);									// 3
 					t.requireEval("3\n"
 								  "## Comment\n"
 								  "4", 4);										// 4
@@ -187,7 +187,7 @@ namespace dust {
 
 			t.initSubTest("Try-Catch Statement");
 				t.requireEval("try\n"
-							  "\t3 + true\n"
+							  "	3 + true\n"
 							  "catch (e) 4\n", 4);
 
 				t.requireEval("try 3 + true\n"
@@ -198,25 +198,73 @@ namespace dust {
 
 				t.requireEval("a: 3\n"
 							  "try\n"
-							  "\t3 + true\n"
-							  "\t.a: 2\n"
+							  "	3 + true\n"
+							  "	.a: 2\n"
 							  "catch (e)\n"
 							  "a", 3);
 
 				t.requireEval("a: 3\n"
 							  "try\n"
-							  "\t3 + 3\n"
-							  "\t.a: 2\n"
+							  "	3 + 3\n"
+							  "	.a: 2\n"
 							  "catch (e)\n"
 							  "a", 2);
 
 				t.requireEval("try\n"
-							  "\t\t.a: 3 + 3\n"
-							  "\t3 + a\n"
+							  "	.a: 3 + 3\n"
+							  "	3 + a\n"
 							  "catch(e)\n", 9);
 
 				t.requireException<error::missing_node_x>("catch (e) 4");
 
+			t.closeSubTest();
+
+			t.initSubTest("Loops");
+				t.initSubTest("While Loop");
+					// Test that the while loop works
+					t.requireEval("i: 0\n"
+								  "while i < 5\n"
+								  "	.i:+ 1\n"
+								  "i", 5);
+
+					// Test inline while loop
+					t.requireEval("i: 0\n"
+								  "while i < 5 .i:+ 1\n"
+								  "i", 5);
+
+					// Test optional do statement
+					t.requireEval("i: 0\n"
+								  "while i < 5 do\n"
+								  "	.i:+ 1\n"
+								  "i", 5);
+
+					// Test order of evaluation in while loop
+					t.requireEval("i: 5\n"
+								  "while i < 5 .i:+ 1\n"
+								  "i", 5);
+
+					// Test the value of the while loop
+				t.closeSubTest();
+
+				t.initSubTest("Do-While loop");
+					// Test that the do-while loop works
+					t.requireEval("i: 0\n"
+								  "do_while i < 5\n"
+								  "	.i:+ 1\n"
+								  "i", 5);
+
+					// Test inline do-while loops
+					t.requireEval("i: 0\n"
+								  "do_while i < 5 .i:+ 1\n"
+								  "i", 5);
+
+					// Test order of evaluationi in do-while loop
+					t.requireEval("i: 5\n"
+								  "do_while i < 5 .i:+ 1\n"
+								  "i", 6);
+
+					// test the value of the do-while loop
+				t.closeSubTest();
 			t.closeSubTest();
 
 			//t.initSubTest("API Testing");

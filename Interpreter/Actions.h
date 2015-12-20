@@ -110,6 +110,38 @@ namespace dust {
 		};
 
 
+		// Control Flow
+		template <> struct action<ee_while> {
+			static void apply(input& in, AST& ast, ScopeTracker& lvl) {
+				// stack: ..., {condition}
+
+				auto c = makeNode<Control>(in, Control::WHILE);
+				c->addChild(ast.pop());
+
+				ast.push(c);
+				lvl.push(lvl.at() + 1);
+
+				// stack: ..., {Control}
+			}
+		};
+
+		template <> struct action<ee_do> {
+			static void apply(input& in, AST& ast, ScopeTracker& lvl) {
+				// stack: ..., {condition}
+				
+				auto c = makeNode<Control>(in, Control::DO_WHILE);
+				c->addChild(ast.pop());
+
+				ast.push(c);
+				lvl.push(lvl.at() + 1);
+
+				// stack: ..., {Control}
+			}
+		};
+
+		template <> struct action<ee_efirst> : action<ee_do> {};
+
+
 		// Try-Catch Actions
 		template <> struct action<k_try> {
 			static void apply(input& in, AST& ast, ScopeTracker& lvl) {

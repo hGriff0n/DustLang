@@ -348,6 +348,7 @@ namespace dust {
 					break;
 				case Type::WHILE:
 					break;
+				case Type::DO_WHILE:
 				default:
 					next = true;
 					break;										// Removing this line causes C2059: syntax error: '}'
@@ -365,10 +366,10 @@ namespace dust {
 		}
 		bool Control::iterate(EvalState& e) {
 			switch (type) {
-				case 0:				// for
-				case 1:				// while
+				case Type::FOR:				// for
+				case Type::WHILE:				// while
 					return (bool)expr->eval(e);
-				case 2:				// do-while
+				case Type::DO_WHILE:				// do-while
 					if (!next)
 						return (bool)expr->eval(e);
 				default:
