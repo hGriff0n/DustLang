@@ -260,7 +260,8 @@ namespace dust {
 				enum Type {
 					FOR,
 					WHILE,
-					DO_WHILE
+					DO_WHILE,
+					TRY_CATCH
 				};
 				
 				virtual EvalState& eval(EvalState& e);

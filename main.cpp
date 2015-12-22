@@ -10,17 +10,11 @@
 #define nl() pl("")
 
 
-// Things to work on
-	// Improving and consolidating the API
-	// Improving and updating documentation
-
 // Other Stuff and Pipe Dreams
 	// Consider changing name of _op() due to semantical differences
-	// Consider specializing the control template argument (see PEGTL for more)
-		// This would give me greater control over error messages and throwing from the parser stage
 	// Way of formatting float -> string conversion ???
 
-// Do I need to protect other TypeSystem methods from indexing with NIL
+// Do I need to protect other TypeSystem methods from indexing with NIL ???
 
 using namespace dust;
 
@@ -63,11 +57,8 @@ int main(int argc, const char* argv[]) {
 		} else {
 			try {
 				parse::ScopeTracker scp{};
-
 				pegtl::parse<grammar, action, parse::control>(input, input, parse_tree, scp);
-				//pegtl::parse<grammar, action, parse::control>(parse::trim(input), input, parse_tree, scp);
 
-				// This allows "3 # Hello" to run (should throw an error)
 				if (!parse_tree.empty()) {
 					printAST(std::cout, parse_tree.at());
 
@@ -88,6 +79,7 @@ int main(int argc, const char* argv[]) {
 
 			parse_tree.clear();
 		}
+
 		std::cout << "\n> ";
 	}
 

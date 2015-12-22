@@ -31,6 +31,7 @@ Timeline
 			"Global Review" is duplicated at the end, consider removing it
 			Consider splitting test sections (see comments in Testing.h)
 			Add comments to each test describing what's being tested
+			Consider moving excep_if_empty from Block to Control
 		Consider removing the test for operator isDefd in com
 			Would remove ambiguity in code execution
 			"3" - 3 => String._op- not defined
@@ -68,10 +69,11 @@ Timeline
 		See VagueToDo.txt
 				
 	1 Control Statements
-		Allow control strutures to "assign" variables
-			Test on Try-Catch statements (error message test)
 		Implement For statement
-			Basic table ranges ([1..5] and [1, 3..5])
+			Basic table ranges ([1..5], [5..1], and [1, 3..5])
+			
+		Do-While experimentation
+			Determine a syntax for do-while style loops
 
 	2 Function Calling		ie. print("Hello, World!")
 		Be able to store functions as values
@@ -81,16 +83,16 @@ Timeline
 			Hard coded translations at this time
 			Have the basic syntax and semantics working (Argument passing, etc.)
 		Convert Types completely to impl::Table for storage concerns
-			Allow Type methods to be called using '.'/'[]' syntax on non-table values and variables
-				Current AST construction assumes a VarName node exists (not guaranteed for non-variables)
-			Allow Type methods to be called using '.'/'[]' syntax
+			Allow Type methods to be called using '.'/'[]' syntax on non-table values and variables (ie. -3.abs())
+			Allow Type methods to be called using '.'/'[]' syntax directly from the TypeName (ie. Int.abs(-3))
 				Current grammar disallows type_ids to be used outside of new_type and type_checking
 		Move function calling work into the _op() metamethod
-			_op() expects a l->r stack (function on top, first argument at -2, etc.)
-			Push arguments from r->l on the stack
-			Get function value on the stack
+			_op() expects a r->l stack (function on top, last argument at -2, etc.)
+			Get function onto the stack
+			Push arguments from l->r on the stack
+			Move function to stack top
 			Call _op() on the function
-		Optional: No parens syntax
+		Optional: Get no parens syntax to work
 
 	3 Dust Function Definition
 		Update project version to 0.8.1
@@ -105,6 +107,8 @@ Timeline
 		Update all documents to ensure that they reflect the current language spec
 		Update the readme to show of recent aditions
 		Determine the next set of features that need to be implemented
+		Update testing suite
+			I have a better idea of what I'm doing now
 		Bugfixes
 
 	5 Type/Table metamethods

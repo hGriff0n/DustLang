@@ -168,8 +168,8 @@ namespace dust {
 		struct inline_expr : seq<plus<tail>, expr> {};
 
 		struct ee_try : if_must<k_try, opt<inline_expr>> {};
-		struct ee_catch : if_must<k_catch, seps, one<'('>, var_id, one<')'>, opt<inline_expr>> {};
-		struct expr_trycatch : sor<ee_try, ee_catch, expr_type> {};
+		struct ee_catch : if_must<k_catch, seps, one<'('>, var_id, one<')'>> {};
+		struct expr_trycatch : sor<ee_try, seq<ee_catch, opt<inline_expr>>, expr_type> {};
 
 		// Loops
 		struct ee_while : if_must<k_while, seps, expr> {};								// while *{expr}

@@ -231,8 +231,10 @@ namespace dust {
 			}
 		};
 
-		template <> struct action<k_catch> {
+		template <> struct action<ee_catch> {
+		//template <> struct action<k_catch> {
 			static void apply(input& in, AST& ast, ScopeTracker& lvl) {
+				/*
 				// stack : ..., {TryCatch}
 
 				if (!isNode<TryCatch>(ast.at()))
@@ -243,6 +245,21 @@ namespace dust {
 
 				action<scope>::push(ast, 1, in);
 				lvl.push(lvl.at() + 1);
+
+				/*/
+				// stack: ..., {TryCatch}, {VarName}
+
+				if (!isNode<TryCatch>(ast.at(-2)))
+					throw error::missing_node_x{ "Catch", "TryCatch" };
+
+				if (std::dynamic_pointer_cast<TryCatch>(ast.at(-2))->isFull())
+					throw error::invalid_ast_construction{ "Attempt to add catch node to completed TryCatch statement" };
+
+				ast.push(makeNode<Control>(in, Control::TRY_CATCH));
+				ast.at()->addChild(ast.pop(-2));
+				ast.push(makeNode<Literal>(in, "", type::Traits<Nil>::id));					// Prevent exceptions on empty catch statements
+				lvl.push(lvl.at() + 1);
+				//*/
 
 				// stack: ..., {TryCatch}, {Control}
 			}

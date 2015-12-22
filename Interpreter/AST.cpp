@@ -346,6 +346,9 @@ namespace dust {
 			switch (type) {
 				case Type::FOR:
 					break;
+				case Type::TRY_CATCH:
+					std::dynamic_pointer_cast<VarName>(expr)->set(e, true, false);
+					break;
 				case Type::WHILE:
 					break;
 				case Type::DO_WHILE:
@@ -366,8 +369,9 @@ namespace dust {
 		}
 		bool Control::iterate(EvalState& e) {
 			switch (type) {
-				case Type::FOR:				// for
-				case Type::WHILE:				// while
+				case Type::FOR:						// for
+					break;
+				case Type::WHILE:					// while
 					return (bool)expr->eval(e);
 				case Type::DO_WHILE:				// do-while
 					if (!next)
