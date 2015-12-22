@@ -180,6 +180,13 @@ namespace dust {
 					t.requireEval("b * c", "[ 1, 3, 5 ]");
 				t.closeSubTest();
 
+				t.initSubTest("Table Ranges");
+					t.requireEval("[1..5]", "[ 1, 2, 3, 4, 5 ]");
+					t.requireEval("[5..1]", "[ 5, 4, 3, 2, 1 ]");
+					t.requireEval("[1,3..5]", "[ 1, 3, 5 ]");
+					t.requireEval("[1,3..6]", "[ 1, 3, 5 ]");
+				t.closeSubTest();
+
 				t.requireEval("a[b[2]]", 3);
 				t.requireEval("a[b[2] * 2]", 5);
 
@@ -271,12 +278,14 @@ namespace dust {
 
 				t.initSubTest("If statements");
 					t.requireEval("if i 3", 3);
-					t.requireEval("if i = 3 6", false);				// Doesn't execute
+					t.requireEval("if i = 3 6", false);
 					t.requireEval("if i = 3 6\n"
 								  "else 7", 7);
+
 					t.requireEval("if i = 3 6\n"
 								  "elseif i = 4 7\n"
 								  "else 8", 8);
+
 					t.requireException<error::missing_node_x>("else \"Hello\"");
 					t.requireException<error::missing_node_x>("if i 3\n"
 																		"i: 3 + 3\n"
@@ -286,12 +295,35 @@ namespace dust {
 																		"elseif a = 3 .i: 6");
 
 				t.closeSubTest();
+
+				t.initSubTest("For loop");
+					t.requireEval("sum: 0\n"
+								  "for i in [1..5] do\n"
+								  "	.sum:+ i\n"
+								  "sum", 15);
+
+					t.requireEval("msg: \"\"\n"
+								  "for w in [ \"Hello,\" \"World!\" \"I'm\" \"Margaret\" ]\n"
+								  "	.msg:+ w + \" \"\n"
+								  "msg", "Hello, World! I'm Margaret ");
+
+					t.eval("a: [ 1 2 b: [ 3 4 5 ] ]");
+					t.requireEval("f: 1\n"
+								  "for i in a.b .f:* i\n"
+								  "f", 60);
+
+					t.eval("a: [ 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 ]");
+					t.requireTrue("sum_a, sum_b: 0, 0\n"
+								  "for i in (a ^ [ 1 2 3 5 7 11 13 17 ])\n"
+								  "	.sum_a:+ i\n"
+								  "for i in [ 1 2 3 5 7 11 13 17 ]\n"
+								  "	.sum_b: + i\n"
+								  "sum_a = sum_b");
+
+					// Test evaluation/construction exceptions
+
+				t.closeSubTest();
 			t.closeSubTest();
-
-			//t.initSubTest("API Testing");
-			//t.closeSubTest();
-
-			//t.end_tests();
 
 			t.printReview(std::cout);
 		}
