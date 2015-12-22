@@ -68,14 +68,8 @@ Timeline
 		See VagueToDo.txt
 				
 	1 Control Statements
-		Implement loops (While/Do-While)
-			Clean up the implementation
-			Settle on a do-while syntax (do_while, do-while, until)
 		Implement Branching (If-Elseif-Else)
-			I could always move to "else if" instead of "elseif"
-			Have the grammar recognize them
-				Generalize Try-Catch combination in action<scope>::reduce
-			Have the interpreter work on them
+			Implement correct exceptions for If-Else and TryCatch
 		Allow control strutures to "assign" variables
 			Test on Try-Catch statements (using the error message)
 		Implement For statement

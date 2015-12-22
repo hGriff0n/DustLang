@@ -15,7 +15,6 @@ namespace dust {
 		/*
 		 * Creation statistics for a node
 		 */
-		// Move to AST.cpp
 		struct ParseData {
 			size_t col, line;
 
@@ -353,6 +352,28 @@ namespace dust {
 				virtual std::string printString(std::string buf);
 
 				virtual void addChild(std::shared_ptr<ASTNode>& c);
+
+				bool isFull();
+		};
+
+		class If : public ASTNode {
+			using BlockType = std::shared_ptr<Block>;
+			using ExprType = std::shared_ptr<ASTNode>;
+
+			private:
+				std::vector<std::pair<ExprType, BlockType>>	statements;
+				bool accepting = true;
+
+			public:
+				If(const ParseData& in);
+				static std::string node_type;
+
+				EvalState& eval(EvalState& e);
+
+				std::string toString();
+				virtual std::string printString(std::string buf);
+
+				void addBlock(ExprType& expr, BlockType& block);
 
 				bool isFull();
 		};

@@ -215,11 +215,14 @@ namespace dust {
 							  "	3 + a\n"
 							  "catch(e)\n", 9);
 
+				t.requireType("try 3 + true\n"
+							  "catch (e) e", "String");
+
 				t.requireException<error::missing_node_x>("catch (e) 4");
 
 			t.closeSubTest();
 
-			t.initSubTest("Loops");
+			t.initSubTest("Control Flow Testing");
 				t.initSubTest("While Loop");
 					// Test that the while loop works
 					t.requireEval("i: 0\n"
@@ -249,21 +252,39 @@ namespace dust {
 				t.initSubTest("Do-While loop");
 					// Test that the do-while loop works
 					t.requireEval("i: 0\n"
-								  "do_while i < 5\n"
+								  "repeat i < 5\n"
 								  "	.i:+ 1\n"
 								  "i", 5);
 
 					// Test inline do-while loops
 					t.requireEval("i: 0\n"
-								  "do_while i < 5 .i:+ 1\n"
+								  "repeat i < 5 .i:+ 1\n"
 								  "i", 5);
 
 					// Test order of evaluationi in do-while loop
 					t.requireEval("i: 5\n"
-								  "do_while i < 5 .i:+ 1\n"
+								  "repeat i < 5 .i:+ 1\n"
 								  "i", 6);
 
 					// test the value of the do-while loop
+				t.closeSubTest();
+
+				t.initSubTest("If statements");
+					t.requireEval("if i 3", 3);
+					t.requireEval("if i = 3 6", false);				// Doesn't execute
+					t.requireEval("if i = 3 6\n"
+								  "else 7", 7);
+					t.requireEval("if i = 3 6\n"
+								  "elseif i = 4 7\n"
+								  "else 8", 8);
+					t.requireException<error::invalid_ast_construction>("else \"Hello\"");
+					t.requireException<error::invalid_ast_construction>("if i 3\n"
+																		"i: 3 + 3\n"
+																		"else 5");
+					t.requireException<error::invalid_ast_construction>("if i 3\n"
+																		"else 5\n"
+																		"elseif a = 3 .i: 6");
+
 				t.closeSubTest();
 			t.closeSubTest();
 

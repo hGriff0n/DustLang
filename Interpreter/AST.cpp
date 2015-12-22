@@ -490,6 +490,41 @@ namespace dust {
 			return try_code && catch_code;
 		}
 
+		// If methods
+		If::If(const ParseData& in) : ASTNode{ in }, statements{} {}
+		EvalState& If::eval(EvalState& e) {
+			auto b = std::begin(statements);
+			auto siz = e.size();
+
+			// Find the selected block
+			while (b != std::end(statements)) {
+				b->first->eval(e);
+
+				if (e.pop<bool>()) break;
+
+				++b;
+			}
+
+			e.settop(siz);
+
+			// Evaluate the selected block (or none if fall through
+			if (b != std::end(statements))
+				b->second->eval(e);
+			else
+				e.push(false);
+
+			return e;
+		}
+		std::string If::toString() { return ""; }
+		std::string If::printString(std::string buf) { return ""; }
+		void If::addBlock(ExprType& expr, BlockType& block) {
+
+			statements.emplace_back(std::make_pair(expr, block));
+		}
+		bool If::isFull() {
+			return accepting;
+		}
+
 		std::string ASTNode::node_type = "ASTNode";
 		std::string Debug::node_type = "Debug";
 		std::string Literal::node_type = "Literal";

@@ -42,20 +42,39 @@ namespace dust {
 					ast.push(makeNode<Control>(in));
 			}
 
-			// Also handles try-catch reduction
 			static void reduce(AST& ast, int n, input& in) {
-				while (n--> 0) {
+				while (n-- > 0) {
 					auto block = makeNode<Block>(in);
 
+					// Collect sub-expressions
 					do block->addChild(ast.at());
 					while (!isNode<Control>(ast.pop()));
 
-					// Try-Catch reduction (need to generalize for If-Elseif-Else and functions)
-					if (!ast.empty() && isNode<TryCatch>(ast.at()) && !std::dynamic_pointer_cast<TryCatch>(ast.at())->isFull())
+					// Combine expressions that expect a block (TryCatch, If-Else, Function, ...)
+						// Note: Loops are handled with their control structure (function might take the same route)
+					if (atNode<TryCatch>(ast))
 						ast.at()->addChild(block);
+
+					else if (atNode<If>(ast, -2)) {
+						auto expr = ast.pop();
+						std::dynamic_pointer_cast<If>(ast.at())->addBlock(expr, std::dynamic_pointer_cast<Block>(block));
+
+					} else if (atFunction(ast))
+						int i = 3;
+
 					else
 						ast.push(block);
 				}
+			}
+
+			static bool atFunction(AST& ast) {
+				//return !ast.empty() && isNode<Function>(ast.at());
+				return false;
+			}
+
+			template <class Node>
+			static bool atNode(AST& ast, int loc = -1) {
+				return !ast.empty() && isNode<Node>(ast.at(loc));
 			}
 		};
 
@@ -111,11 +130,21 @@ namespace dust {
 
 
 		// Control Flow
-		template <> struct action<ee_while> {
+		template <Control::Type t>
+		struct control_action {
 			static void apply(input& in, AST& ast, ScopeTracker& lvl) {
+				/*
+				if (ast.size() > 2 && ast.at(-2)->toString() = "do") {
+					ast.pop(-2);
+
+					// Change expression in block's control node
+
+					return;
+				}				
+				*/
 				// stack: ..., {condition}
 
-				auto c = makeNode<Control>(in, Control::WHILE);
+				auto c = makeNode<Control>(in, t);
 				c->addChild(ast.pop());
 
 				ast.push(c);
@@ -125,22 +154,65 @@ namespace dust {
 			}
 		};
 
+		template <> struct action<ee_while> : control_action<Control::WHILE> {};
+		template <> struct action<ee_repeat> : control_action<Control::DO_WHILE> {};
+
+		/*
 		template <> struct action<ee_do> {
 			static void apply(input& in, AST& ast, ScopeTracker& lvl) {
-				// stack: ..., {condition}
-				
-				auto c = makeNode<Control>(in, Control::DO_WHILE);
-				c->addChild(ast.pop());
-
-				ast.push(c);
+				ast.push(makeNode<Debug>(in, "do"));
+				ast.push(makeNode<Control>(in, Control::DO_WHILE));
 				lvl.push(lvl.at() + 1);
+			}
+		}
+		*/
 
-				// stack: ..., {Control}
+		template <> struct action<ee_if> {
+			static void apply(input& in, AST& ast, ScopeTracker& lvl) {
+				// stack: ..., {condition}
+
+				ast.push(makeNode<If>(in));
+				ast.push(makeNode<Control>(in));
+				lvl.push(lvl.at() + 1);
+				ast.swap(-3, -2);
+
+				// stack: ..., {If}, {condition}, {Control}
 			}
 		};
 
-		template <> struct action<ee_efirst> : action<ee_do> {};
+		template <> struct action<ee_elseif> {
+			static void apply(input& in, AST& ast, ScopeTracker& lvl) {
+				// stack: ..., {If}, {condition}
 
+				if (!isNode<If>(ast.at(-2)))
+					throw error::missing_node_x{ "If-ElseIf" };
+
+				// add check for acceptance of If
+
+				ast.push(makeNode<Control>(in));
+				lvl.push(lvl.at() + 1);
+
+				// stack: ..., {If}, {condition}, {Control}
+			}
+		};
+
+		template <> struct action<k_else> {
+			static void apply(input& in, AST& ast, ScopeTracker& lvl) {
+				// stack: ..., {If}
+
+				if (!isNode<If>(ast.at()))
+					throw error::missing_node_x{ "If-Else" };
+
+				// Add check for accepting If
+
+				ast.push(makeNode<Literal>(in, "true", type::Traits<bool>::id));
+				ast.push(makeNode<Control>(in));
+				lvl.push(lvl.at() + 1);
+
+				// stack: ..., {If}, {true}, {Control}
+			}
+		};
+		
 
 		// Try-Catch Actions
 		template <> struct action<k_try> {
@@ -161,6 +233,8 @@ namespace dust {
 
 				if (!isNode<TryCatch>(ast.at()))
 					throw error::missing_node_x{ "Catch", "TryCatch" };
+
+				// Add check for accepting Try
 
 				action<scope>::push(ast, 1, in);
 				lvl.push(lvl.at() + 1);
