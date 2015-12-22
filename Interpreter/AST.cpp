@@ -518,11 +518,13 @@ namespace dust {
 		std::string If::toString() { return ""; }
 		std::string If::printString(std::string buf) { return ""; }
 		void If::addBlock(ExprType& expr, BlockType& block) {
-
 			statements.emplace_back(std::make_pair(expr, block));
 		}
 		bool If::isFull() {
-			return accepting;
+			return !accepting;
+		}
+		void If::setFull() {
+			accepting = false;
 		}
 
 		std::string ASTNode::node_type = "ASTNode";

@@ -277,8 +277,8 @@ namespace dust {
 					t.requireEval("if i = 3 6\n"
 								  "elseif i = 4 7\n"
 								  "else 8", 8);
-					t.requireException<error::invalid_ast_construction>("else \"Hello\"");
-					t.requireException<error::invalid_ast_construction>("if i 3\n"
+					t.requireException<error::missing_node_x>("else \"Hello\"");
+					t.requireException<error::missing_node_x>("if i 3\n"
 																		"i: 3 + 3\n"
 																		"else 5");
 					t.requireException<error::invalid_ast_construction>("if i 3\n"

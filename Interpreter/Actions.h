@@ -187,7 +187,8 @@ namespace dust {
 				if (!isNode<If>(ast.at(-2)))
 					throw error::missing_node_x{ "If-ElseIf" };
 
-				// add check for acceptance of If
+				if (std::dynamic_pointer_cast<If>(ast.at(-2))->isFull())
+					throw error::invalid_ast_construction{ "Attempt to add elseif node to completed If statement" };
 
 				ast.push(makeNode<Control>(in));
 				lvl.push(lvl.at() + 1);
@@ -203,7 +204,10 @@ namespace dust {
 				if (!isNode<If>(ast.at()))
 					throw error::missing_node_x{ "If-Else" };
 
-				// Add check for accepting If
+				auto n_if = std::dynamic_pointer_cast<If>(ast.at());
+				if (n_if->isFull())
+					throw error::invalid_ast_construction{ "Attempt to add else node to completed If statement" };
+				n_if->setFull();
 
 				ast.push(makeNode<Literal>(in, "true", type::Traits<bool>::id));
 				ast.push(makeNode<Control>(in));
@@ -234,7 +238,8 @@ namespace dust {
 				if (!isNode<TryCatch>(ast.at()))
 					throw error::missing_node_x{ "Catch", "TryCatch" };
 
-				// Add check for accepting Try
+				if (std::dynamic_pointer_cast<TryCatch>(ast.at())->isFull())
+					throw error::invalid_ast_construction{ "Attempt to add catch node to completed TryCatch statement" };
 
 				action<scope>::push(ast, 1, in);
 				lvl.push(lvl.at() + 1);

@@ -375,6 +375,7 @@ namespace dust {
 
 				void addBlock(ExprType& expr, BlockType& block);
 
+				void setFull();
 				bool isFull();
 		};
 

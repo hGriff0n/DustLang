@@ -68,10 +68,8 @@ Timeline
 		See VagueToDo.txt
 				
 	1 Control Statements
-		Implement Branching (If-Elseif-Else)
-			Implement correct exceptions for If-Else and TryCatch
 		Allow control strutures to "assign" variables
-			Test on Try-Catch statements (using the error message)
+			Test on Try-Catch statements (error message test)
 		Implement For statement
 			Basic table ranges ([1..5] and [1, 3..5])
 
