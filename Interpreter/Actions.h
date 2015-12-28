@@ -133,15 +133,6 @@ namespace dust {
 		template <Control::Type t>
 		struct control_action {
 			static void apply(input& in, AST& ast, ScopeTracker& lvl) {
-				/*
-				if (ast.size() > 2 && ast.at(-2)->toString() = "do") {
-					ast.pop(-2);
-
-					// Change expression in block's control node
-
-					return;
-				}				
-				*/
 				// stack: ..., {condition}
 
 				auto c = makeNode<Control>(in, t);
@@ -156,6 +147,21 @@ namespace dust {
 
 		template <> struct action<ee_while> : control_action<Control::WHILE> {};
 		template <> struct action<ee_repeat> : control_action<Control::DO_WHILE> {};
+
+		template <> struct action<expr_for> {
+			static void apply(input& in, AST& ast, ScopeTracker& lvl) {
+				// stack: ..., {var_list}, {expr}
+
+				auto c = makeNode<Control>(in, Control::FOR);
+				c->addChild(ast.pop());
+				c->addChild(ast.pop());
+
+				ast.push(c);
+				lvl.push(lvl.at() + 1);
+
+				// stack: ..., {Control}
+			}
+		};
 
 		/*
 		template <> struct action<ee_do> {
@@ -232,26 +238,14 @@ namespace dust {
 		};
 
 		template <> struct action<ee_catch> {
-		//template <> struct action<k_catch> {
 			static void apply(input& in, AST& ast, ScopeTracker& lvl) {
-				/*
-				// stack : ..., {TryCatch}
-
-				if (!isNode<TryCatch>(ast.at()))
-					throw error::missing_node_x{ "Catch", "TryCatch" };
-
-				if (std::dynamic_pointer_cast<TryCatch>(ast.at())->isFull())
-					throw error::invalid_ast_construction{ "Attempt to add catch node to completed TryCatch statement" };
-
-				action<scope>::push(ast, 1, in);
-				lvl.push(lvl.at() + 1);
-
-				/*/
 				// stack: ..., {TryCatch}, {VarName}
 
+				// Ensure there is a preceding try statement
 				if (!isNode<TryCatch>(ast.at(-2)))
 					throw error::missing_node_x{ "Catch", "TryCatch" };
 
+				// Ensure there is an accepting try statement
 				if (std::dynamic_pointer_cast<TryCatch>(ast.at(-2))->isFull())
 					throw error::invalid_ast_construction{ "Attempt to add catch node to completed TryCatch statement" };
 
@@ -259,7 +253,6 @@ namespace dust {
 				ast.at()->addChild(ast.pop(-2));
 				ast.push(makeNode<Literal>(in, "", type::Traits<Nil>::id));					// Prevent exceptions on empty catch statements
 				lvl.push(lvl.at() + 1);
-				//*/
 
 				// stack: ..., {TryCatch}, {Control}
 			}

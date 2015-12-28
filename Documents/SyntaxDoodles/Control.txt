@@ -36,21 +36,14 @@ Looping Structures
 			It is possible to simulate the syntax using ranges
 
 		Generator/Iterator idiom
-			A function, possibly resumable, that can be repeatably called to iterate a for loop
-				There's two ways of implementing this within dust
-					Have a yield keyword (ala Python/Lua) for resumable functions (useful anyways)
-					Have re-entrant functions (returns the value for the current iteration, the value is the argument for the next iteration)
-				I don't think I'd be able to enforce anything for the generator
-					This could be useful in itself
+			Any function used to provide values to the tracking variables of a for loop
+				Passed a nil when starting iteration
+					Passing additional state ???
+				Returns a nil when iteration is finished
 
-			What would this idiom provide?
-				A degree of concurrency/laziness
-				Allows native use of <var_list> instead of just <var>
-
-			Something to consider as the langugae develops
-				I also could convert completely to this idiom
-					I could preserve the old syntax by using syntactic sugar
-					This would likely entail that any function could be used in a for loop (can't tell which are which)
+			Tables default to using self._iterator as the generator
+				Table._iterator iterates over all entries in the table
+				But this can be customized
 
 	while
 		while <expr> <block>

@@ -119,6 +119,23 @@ namespace dust {
 		};
 
 		/*
+		 * Represents a runtime-value (for possible optimization purposes)
+		 */
+		class Value : public ASTNode {
+			private:
+				impl::Value val;
+
+			public:
+				Value(const ParseData& in, impl::Value v);
+				static std::string node_type;
+
+				EvalState& eval(EvalState& e);
+
+				std::string toString();
+				std::string printString(std::string buf);
+		};
+
+		/*
 		 * Represents unary and binary operations using infix/prefix operators
 		 */
 		class Operator : public ASTNode {
@@ -250,19 +267,23 @@ namespace dust {
 		class Control : public ASTNode {
 			private:
 				std::shared_ptr<ASTNode> expr;
+				std::shared_ptr<List<VarName>> vars;
+
 				bool next;
-				int type;
 
 			public:
-				Control(const ParseData& in, int typ = -1);
-
-				static std::string node_type;
 				enum Type {
+					NONE = -1,
 					FOR,
 					WHILE,
 					DO_WHILE,
 					TRY_CATCH
 				};
+
+				Control(const ParseData& in, Type typ = NONE);
+
+				static std::string node_type;
+				Type type;
 				
 				virtual EvalState& eval(EvalState& e);
 				virtual void addChild(std::shared_ptr<ASTNode>& c);
@@ -270,7 +291,7 @@ namespace dust {
 				virtual std::string toString();
 				virtual std::string printString(std::string buf);
 
-				bool iterate(EvalState& e);
+				bool iterate(EvalState& e, size_t loc);
 		};
 
 		/*

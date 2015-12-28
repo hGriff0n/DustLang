@@ -70,10 +70,16 @@ Timeline
 				
 	1 Control Statements
 		Implement For statement
+			Fix Bug in last for loop test ("Attempt to evaluate an empty Block")
+			Work on generator abstraction (needs work on functions before implementation)
 			Basic table ranges ([1..5], [5..1], and [1, 3..5])
-			
+				Grammar to recognize syntax
+				In-table expansion
+					[1..5] = [1 2 3 4 5]
 		Do-While experimentation
 			Determine a syntax for do-while style loops
+				do-while has some commented lines in Grammar and Action
+				repeat is the current default
 
 	2 Function Calling		ie. print("Hello, World!")
 		Be able to store functions as values

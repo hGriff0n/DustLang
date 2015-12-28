@@ -76,6 +76,15 @@ namespace dust {
 			return buf + "+- " + node_type + toString() + "\n";
 		}
 
+		// Value methods
+		Value::Value(const ParseData& in, impl::Value v) : ASTNode{ in }, val { v } {}
+		EvalState& Value::eval(EvalState& e) {
+			e.push(val);
+			return e;
+		}
+		std::string Value::toString() { return ""; }
+		std::string Value::printString(std::string buf) { return ""; }
+
 		// Operator methods
 		Operator::Operator(const ParseData& in, std::string o) : ASTNode{ in }, l{ nullptr }, r{ nullptr }, op{ o } {}
 		EvalState& Operator::eval(EvalState& e) {
@@ -341,15 +350,43 @@ namespace dust {
 		}
 
 		// Control methods
-		Control::Control(const ParseData& in, int typ) : ASTNode{ in }, type{ typ }, next{ true } {}
+		Control::Control(const ParseData& in, Type typ) : ASTNode{ in }, type{ typ }, next{ true } {}
 		EvalState& Control::eval(EvalState& e) {
 			switch (type) {
 				case Type::FOR:
+					if (!expr->eval(e).is<Table>())
+						throw error::bad_node_eval{ "Attempt to iterate over a non-table" };
+
+					e.pushNil();
+
+					// Generator Abstraction (needs work)
+					/*
+
+					// Get generator function into local state (memoize)
+					if (???) {
+
+						// Special handling for default generators
+						if (e.is<Table>())
+							e.copy();
+							e.push("_iterator");
+							e.get();					// Get the table's iterator
+
+						} // else if (e.is<?>()) {}		// custom data types
+
+						generator = e.pop();
+						??? = false;
+					}
+
+					// Push initial arguments
+					e.pushNil();
+					*/
+
 					break;
 				case Type::TRY_CATCH:
 					std::dynamic_pointer_cast<VarName>(expr)->set(e, true, false);
 					break;
 				case Type::WHILE:
+					e.pushNil();
 					break;
 				case Type::DO_WHILE:
 				default:
@@ -360,22 +397,78 @@ namespace dust {
 			return e;
 		}
 		void Control::addChild(std::shared_ptr<ASTNode>& c) {
-			if (expr) throw error::operands_error{ "Attempt to construct control node with more than two expresions" };
-			expr = c;
+			if (expr) {
+				if (type == Type::FOR && isNode<List<VarName>>(c))
+					vars = std::dynamic_pointer_cast<List<VarName>>(c);
+				else
+					throw error::operands_error{ "Attempt to construct control node with more than two expresions" };
+			} else
+				expr = c;
 		}
 		std::string Control::toString() { return ""; }
 		std::string Control::printString(std::string buf) {
 			return "";
 		}
-		bool Control::iterate(EvalState& e) {
+		bool Control::iterate(EvalState& e, size_t loc) {
 			switch (type) {
 				case Type::FOR:						// for
+				{
+					Table t = e.pop<Table>(loc - 2);
+					auto kv = t->next(e.pop(loc - 2));
+
+					// continue loop
+					if (kv != t->end()) {
+						e.settop(loc - 2);											// Remove trash from stack (value of last iteration)
+
+						e.push(t);													// Keep table for next iteration
+						e.push(kv->first);											// Push key on stack
+						e.push(kv->second.val);										// Push value on stack
+
+					// exit loop
+					} else
+						return false;												// exit loop
+
+					// Assign variables (same as in eval)
+					auto var = vars->rbegin();
+
+					while (var != vars->rend())
+						(*var++)->set(e, false, false);								// Assign value then key to trackers
+
+					// Remember last key (if not assigned)
+					if (vars->size() == 2)
+						(*vars->begin())->eval(e);
+				}
+
+					// Generator abstraction (needs work)
+					/*
+					// Save arguments to generator
+
+					e.push(generator);
+					e.call();
+
+					if (???) {
+						???
+						return false;
+					}
+
+					// Assign variables
+					*/
+
+					return true;
+
 					break;
 				case Type::WHILE:					// while
-					return (bool)expr->eval(e);
+				{
+					bool val = (bool)expr->eval(e);
+					if (val) e.settop(loc);
+					return val;
+				}
 				case Type::DO_WHILE:				// do-while
-					if (!next)
-						return (bool)expr->eval(e);
+					if (!next) {
+						bool val = (bool)expr->eval(e);
+						if (val) e.settop(loc);
+						return val;
+					}
 				default:
 					next = !next;
 					return !next;
@@ -410,7 +503,10 @@ namespace dust {
 			e.newScope();
 			control->eval(e);								// Perform loop setup (if needed)
 
-			while (control->iterate(e)) {
+			// Special stack handling of for loops
+			x += ((control->type == Control::FOR) * 2);
+
+			while (control->iterate(e, x)) {
 				for (const auto& i : *this) {
 					e.settop(x);							// Pops the results of the last expression (Not executed for the last expression)
 
@@ -534,6 +630,7 @@ namespace dust {
 		std::string ASTNode::node_type = "ASTNode";
 		std::string Debug::node_type = "Debug";
 		std::string Literal::node_type = "Literal";
+		std::string Value::node_type = "Value";
 		std::string Operator::node_type = "Operator";
 		std::string VarName::node_type = "Variable";
 		std::string TypeName::node_type = "Type";
