@@ -62,6 +62,8 @@ Timeline
 			Minimize the cost of specializing Control (too many declarations)
 				Check the documentation first, I might be missing something there
 			Consider rearranging/repurposing actions to provide better parser data
+			Errors need to be better
+				"for i in [1..5] .sum: + i" throws an "Attempt to evaluate an empty block" at runtime
 		Start reading up on the gsl
 			Try converting some code once I understand it
 		Various Changes
@@ -70,7 +72,6 @@ Timeline
 				
 	1 Control Statements
 		Implement For statement
-			Fix Bug in last for loop test ("Attempt to evaluate an empty Block")
 			Work on generator abstraction (needs work on functions before implementation)
 			Basic table ranges ([1..5], [5..1], and [1, 3..5])
 				Grammar to recognize syntax

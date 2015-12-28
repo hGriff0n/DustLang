@@ -296,15 +296,16 @@ namespace dust {
 				t.closeSubTest();
 
 				t.initSubTest("For loop");
+
 					t.requireEval("sum: 0\n"
-								  "for i in [1..5] do\n"
+								  "for i in [ 1 2 3 4 5 ]\n"
 								  "	.sum:+ i\n"
 								  "sum", 15);
 
 					t.requireEval("sum: 0\n"
-						"for i in [ 1 2 3 4 5 ]\n"
-						"	.sum:+ i\n"
-						"sum", 15);
+								  "for i in [1..5] do\n"
+								  "	.sum:+ i\n"
+								  "sum", 15);
 
 					t.requireEval("msg: \"\"\n"
 								  "for w in [ \"Hello,\" \"World!\" \"I'm\" \"Margaret\" ]\n"
@@ -320,7 +321,7 @@ namespace dust {
 								  "for i in (a ^ [ 1 2 3 5 7 11 13 17 ])\n"
 								  "	.sum_a:+ i\n"
 								  "for i in [ 1 2 3 5 7 11 13 17 ]\n"
-								  "	.sum_b: + i\n"
+								  "	.sum_b:+ i\n"
 								  "sum_a = sum_b");
 
 					// Test evaluation/construction exceptions
