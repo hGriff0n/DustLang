@@ -54,6 +54,15 @@ int main(int argc, const char* argv[]) {
 	while (getmultiline(std::cin, input) && input != "exit") {
 		if (input == "gc") {
 
+		// Type checking (ala. Haskell)
+		} else if (input.substr(0, 2) == ":t") {
+			parse::ScopeTracker scp{};
+			pegtl::parse<grammar, action, parse::control>(input.substr(3), input, parse_tree, scp);
+			parse_tree.pop()->eval(e);
+
+			std::cout << e.getTS().getName(e.pop().type_id) << "\n";
+
+		// Parse checking
 		} else {
 			try {
 				parse::ScopeTracker scp{};
@@ -76,10 +85,9 @@ int main(int argc, const char* argv[]) {
 			} catch (error::base& e) {
 				std::cout << e.what() << std::endl;
 			}
-
-			parse_tree.clear();
 		}
 
+		parse_tree.clear();
 		std::cout << "\n> ";
 	}
 
