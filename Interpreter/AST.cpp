@@ -357,30 +357,28 @@ namespace dust {
 					if (!expr->eval(e).is<Table>())
 						throw error::bad_node_eval{ "Attempt to iterate over a non-table" };
 
-					e.pushNil();
-
 					// Generator Abstraction (needs work)
 					/*
 
-					// Get generator function into local state (memoize)
-					if (???) {
+					// Get generator function into local state
+					if (!has_generator) {
 
-						// Special handling for default generators
-						if (e.is<Table>())
+						// Try for an implied generator
+						if (!e.is<Function>()) {
 							e.copy();
 							e.push("_iterator");
-							e.get();					// Get the table's iterator
+							e.get();
 
-						} // else if (e.is<?>()) {}		// custom data types
+							if (e.is<Nil>())
+								throw error::bad_node_eval{ "Attempt to iterate over a non-iterable object" };
+						}
 
 						generator = e.pop();
-						??? = false;
+						has_generator = true;
 					}
-
-					// Push initial arguments
-					e.pushNil();
 					*/
 
+					e.pushNil();					// Push initial argument
 					break;
 				case Type::TRY_CATCH:
 					std::dynamic_pointer_cast<VarName>(expr)->set(e, true, false);
@@ -428,7 +426,52 @@ namespace dust {
 					} else
 						return false;												// exit loop
 
-					// Assign variables (same as in eval)
+
+					// Generator abstraction (needs work)
+					/*
+					e.copy(loc - 2);
+					e.copy(loc - 1);
+					e.push(generator);
+					e.call();
+
+					if (e.is<Nil>()) {
+						e.pop(loc - 2);
+						e.pop(loc - 2);
+						e.pop();
+
+						return false;
+					}
+					*/
+
+					// Alternate implementation (need to modify to work on non-table state)
+					/*
+					Table t = e.pop<Table>(loc - 2);
+					auto k = e.pop(loc - 2);
+
+					auto siz = e.size();
+					generator(e, t, k);
+
+					if (e.is<Nil>()) {
+						e.pop();
+						return false;
+					}
+
+					// Assign variables
+
+					// Remember last state
+					if (vars->size() == 2) {
+						e.settop(loc - 2);
+						e.push(t);
+						(*vars->begin())->eval(e);
+					} else {
+						auto key = e.pop();
+						e.settop(loc - 2);
+						e.push(t);
+						e.push(key);
+					}
+					*/
+
+					// Assign variables
 					auto var = vars->rbegin();
 
 					while (var != vars->rend())
@@ -437,25 +480,10 @@ namespace dust {
 					// Remember last key (if not assigned)
 					if (vars->size() == 2)
 						(*vars->begin())->eval(e);
-				}
 
-					// Generator abstraction (needs work)
-					/*
-					// Save arguments to generator
-
-					e.push(generator);
-					e.call();
-
-					if (???) {
-						???
-						return false;
-					}
-
-					// Assign variables
-					*/
-
+					e.settop(loc);
 					return true;
-
+				}
 					break;
 				case Type::WHILE:					// while
 				{

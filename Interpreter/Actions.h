@@ -10,7 +10,7 @@ namespace dust {
 		template <typename Rule>
 		struct action : pegtl::nothing<Rule> {};
 
-		// Organization Action
+		// Organization Actions
 		template <> struct action<scope> {
 			static void apply(input& in, AST& ast, ScopeTracker& lvl) {
 				if (lvl.empty()) {
@@ -47,8 +47,16 @@ namespace dust {
 					auto block = makeNode<Block>(in);
 
 					// Collect sub-expressions
-					do block->addChild(ast.at());
-					while (!isNode<Control>(ast.pop()));
+					//do block->addChild(ast.at());
+					//while (!isNode<Control>(ast.pop()));
+
+					while (!isNode<Control>(ast.at()))
+						block->addChild(ast.pop());
+
+					if (std::dynamic_pointer_cast<Control>(ast.at())->type != Control::NONE)
+						std::dynamic_pointer_cast<Block>(block)->excep_if_empty = false;
+
+					block->addChild(ast.pop());
 
 					// Combine expressions that expect a block (TryCatch, If-Else, Function, ...)
 						// Note: Loops are handled with their control structure (function might take the same route)
@@ -74,7 +82,7 @@ namespace dust {
 
 			template <class Node>
 			static bool atNode(AST& ast, int loc = -1) {
-				return !ast.empty() && isNode<Node>(ast.at(loc));
+				return (ast.size() > abs(loc)) && isNode<Node>(ast.at(loc));
 			}
 		};
 
@@ -129,14 +137,15 @@ namespace dust {
 		};
 
 
-		// Control Flow
-		template <Control::Type t>
-		struct control_action {
+		// Control Flow Actions
+		template <Control::Type t, unsigned int num_children = 1>
+		struct loop_statement {
 			static void apply(input& in, AST& ast, ScopeTracker& lvl) {
-				// stack: ..., {condition}
+				// stack: ..., {condition...}
 
 				auto c = makeNode<Control>(in, t);
-				c->addChild(ast.pop());
+				for (int i = 0; i != num_children; ++i)
+					c->addChild(ast.pop());
 
 				ast.push(c);
 				lvl.push(lvl.at() + 1);
@@ -145,33 +154,9 @@ namespace dust {
 			}
 		};
 
-		template <> struct action<ee_while> : control_action<Control::WHILE> {};
-		template <> struct action<ee_repeat> : control_action<Control::DO_WHILE> {};
-
-		template <> struct action<expr_for> {
-			static void apply(input& in, AST& ast, ScopeTracker& lvl) {
-				// stack: ..., {var_list}, {expr}
-
-				auto c = makeNode<Control>(in, Control::FOR);
-				c->addChild(ast.pop());
-				c->addChild(ast.pop());
-
-				ast.push(c);
-				lvl.push(lvl.at() + 1);
-
-				// stack: ..., {Control}
-			}
-		};
-
-		/*
-		template <> struct action<ee_do> {
-			static void apply(input& in, AST& ast, ScopeTracker& lvl) {
-				ast.push(makeNode<Debug>(in, "do"));
-				ast.push(makeNode<Control>(in, Control::DO_WHILE));
-				lvl.push(lvl.at() + 1);
-			}
-		}
-		*/
+		template <> struct action<ee_while> : loop_statement<Control::WHILE> {};
+		template <> struct action<ee_repeat> : loop_statement<Control::DO_WHILE> {};
+		template <> struct action<expr_for> : loop_statement<Control::FOR, 2> {};
 
 		template <> struct action<ee_if> {
 			static void apply(input& in, AST& ast, ScopeTracker& lvl) {

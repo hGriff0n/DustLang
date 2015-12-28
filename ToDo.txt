@@ -64,6 +64,9 @@ Timeline
 			Consider rearranging/repurposing actions to provide better parser data
 			Errors need to be better
 				"for i in [1..5] .sum: + i" throws an "Attempt to evaluate an empty block" at runtime
+			Why is "excep_if_empty" a thing ???
+		Generators
+			Need to generalize to allow for any number of state 
 		Start reading up on the gsl
 			Try converting some code once I understand it
 		Various Changes
@@ -72,15 +75,10 @@ Timeline
 				
 	1 Control Statements
 		Implement For statement
-			Work on generator abstraction (needs work on functions before implementation)
 			Basic table ranges ([1..5], [5..1], and [1, 3..5])
 				Grammar to recognize syntax
 				In-table expansion
 					[1..5] = [1 2 3 4 5]
-		Do-While experimentation
-			Determine a syntax for do-while style loops
-				do-while has some commented lines in Grammar and Action
-				repeat is the current default
 
 	2 Function Calling		ie. print("Hello, World!")
 		Be able to store functions as values

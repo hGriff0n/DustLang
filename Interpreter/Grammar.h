@@ -179,8 +179,6 @@ namespace dust {
 		struct expr_for : seq<var_list, seps, k_in, seps, expr_0> {};
 		struct ee_for : if_must<k_for, seps, expr_for> {};								// for *{var_list} *in *{expr_0}
 
-		//struct do_loop : seq<sor<ee_while, ee_for>, opt<seps, k_do>> {};
-		//struct ee_loop : seq<sor<do_loop, ee_do>, opt<inline_expr>> {}:
 		struct ee_loop : seq<sor<ee_while, ee_repeat, ee_for>, opt<seps, k_do>, opt<inline_expr>> {};
 		struct expr_loop : sor<ee_loop, expr_trycatch> {};
 

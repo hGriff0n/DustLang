@@ -302,6 +302,8 @@ namespace dust {
 								  "	.sum:+ i\n"
 								  "sum", 15);
 
+					t.requireType("for i in [1]", "Nil");
+
 					t.requireEval("sum: 0\n"
 								  "for i in [1..5] do\n"
 								  "	.sum:+ i\n"
