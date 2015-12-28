@@ -64,6 +64,7 @@ Timeline
 			Consider rearranging/repurposing actions to provide better parser data
 			Errors need to be better
 				"for i in [1..5] .sum: + i" throws an "Attempt to evaluate an empty block" at runtime
+					The error is in the ": +" instead of the ":+"
 			Why is "excep_if_empty" a thing ???
 		Generators
 			Need to generalize to allow for any number of state 
@@ -72,57 +73,54 @@ Timeline
 		Various Changes
 			Change 0 => false ???
 		See VagueToDo.txt
-				
-	1 Control Statements
-		Implement For statement
-			Basic table ranges ([1..5], [5..1], and [1, 3..5])
-				Grammar to recognize syntax
-				In-table expansion
-					[1..5] = [1 2 3 4 5]
 
-	2 Function Calling		ie. print("Hello, World!")
+	1 Function Calling		ie. print("Hello World!") and abs(3)
 		Be able to store functions as values
 			Create the necessary Collector structure (needs to handle C++ functions/lambdas and dust AST's)
+				Basically a std::variant<std::function<int(EvalState&)>, std::shared_ptr<Function>>
 			Get assignment to work as expected with functions
+				Relevant tests: 320, 344
 		Implement the evaluation hooks/etc. to be able to call functions	# Get functions callable
-			Hard coded translations at this time
+			Use hard coded translations, etc. at this time (don't need to handle variable args, etc.)
 			Have the basic syntax and semantics working (Argument passing, etc.)
+			Relevant tests: 323, 324, 326, 327, 329, 345
 		Convert Types completely to impl::Table for storage concerns
 			Allow Type methods to be called using '.'/'[]' syntax on non-table values and variables (ie. -3.abs())
+				Relevant tests: 333, 334, 335, 338, 348
 			Allow Type methods to be called using '.'/'[]' syntax directly from the TypeName (ie. Int.abs(-3))
 				Current grammar disallows type_ids to be used outside of new_type and type_checking
+				Relevant tests: 336
 		Move function calling work into the _op() metamethod
-			_op() expects a r->l stack (function on top, last argument at -2, etc.)
-			Get function onto the stack
-			Push arguments from l->r on the stack
-			Move function to stack top
-			Call _op() on the function
+			Argument evaluation to be done l->r
+				Question: Evaluate all arguments or not (ala Assignment)
+			Functions need to intrinsically handle having more/fewer arguments than expected
+				However, I will not know this information until the function is run
+			This should be handled through the objects "_op()" metamethod
 		Optional: Get no parens syntax to work
-
-	3 Dust Function Definition
+	
+	2 Dust Function Definition
 		Update project version to 0.8.1
-		Abstract the previous framework to allow for Dust functions to be conceivably executed
 		Add in the correct syntax and action calls to create dust functions
 		Convert tables away from pure references
 			Particularly important for functions
-		Start to implement type methods
 
-	4 Grammar Framework Update
+	3 Grammar Framework Update
 		Potentially change the grammar to follow the basic framework in "lua53_parse.h"
 		Update all documents to ensure that they reflect the current language spec
-		Update the readme to show of recent aditions
+		Update the readme to show off recent aditions
 		Determine the next set of features that need to be implemented
 		Update testing suite
+			Improve documentation and coverage of tests
 			I have a better idea of what I'm doing now
 		Bugfixes
 
-	5 Type/Table metamethods
+	4 Type/Table metamethods
+		Convert for loop to the generator idiom
 
-
+	5 Ranges
 
 Notes (In case I forget some of my decisions)
-	3 + e: 4	=> (3 + e)[: 4]		/> (3 + (e: 4))		// To difficult to modify the grammar. I can't find anywhere that I expected it
+	3 + e: 4	=> (3 + e): 4		/> (3 + (e: 4))		// To difficult to modify the grammar. I can't find anywhere that I expected it
 	(e: 3) + 3 * e = 12									// The assignment is evaluated before the multiplication (left->right evaluation). This has some problems with current organization
 	a, b:+ 2											// I'm going to go with the current semantics for now for simplicity. However, it still possible for it to be changed in the future
-	a, b: b, c: 9										// Again, I'm going to use the current semantics for simplicity. There also would be difficulty in correctly parsing it otherwise due to the overlap and the fact that an assignment is an expression
 	Nil is defined as Bool for the sake of operator resolution (something to watch out for?)

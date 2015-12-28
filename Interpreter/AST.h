@@ -358,7 +358,7 @@ namespace dust {
 		};
 
 		/*
-		 * Exception handling for sub-nodes
+		 * Node for exception handling
 		 */
 		class TryCatch : public ASTNode {
 			private:
@@ -378,6 +378,9 @@ namespace dust {
 				bool isFull();
 		};
 
+		/*
+		 * Node for branching statements
+		 */
 		class If : public ASTNode {
 			using BlockType = std::shared_ptr<Block>;
 			using ExprType = std::shared_ptr<ASTNode>;
@@ -400,6 +403,16 @@ namespace dust {
 				void setFull();
 				bool isFull();
 		};
+
+		/*
+		 * Node for a function call
+		 */
+		//class FunctionCall : public ASTNode {};
+
+		/*
+		 * Node for a function definition
+		 */
+		//class FunctionDef : public ASTNode {};
 
 		template<class T> std::string List<T>::node_type = "List<" + T::node_type + ">";
 	}

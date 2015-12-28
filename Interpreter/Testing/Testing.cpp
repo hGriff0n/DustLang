@@ -180,13 +180,6 @@ namespace dust {
 					t.requireEval("b * c", "[ 1, 3, 5 ]");
 				t.closeSubTest();
 
-				t.initSubTest("Table Ranges");
-					t.requireEval("[1..5]", "[ 1, 2, 3, 4, 5 ]");
-					t.requireEval("[5..1]", "[ 5, 4, 3, 2, 1 ]");
-					t.requireEval("[1,3..5]", "[ 1, 3, 5 ]");
-					t.requireEval("[1,3..6]", "[ 1, 3, 5 ]");
-				t.closeSubTest();
-
 				t.requireEval("a[b[2]]", 3);
 				t.requireEval("a[b[2] * 2]", 5);
 
@@ -304,11 +297,6 @@ namespace dust {
 
 					t.requireType("for i in [1]", "Nil");
 
-					t.requireEval("sum: 0\n"
-								  "for i in [1..5] do\n"
-								  "	.sum:+ i\n"
-								  "sum", 15);
-
 					t.requireEval("msg: \"\"\n"
 								  "for w in [ \"Hello,\" \"World!\" \"I'm\" \"Margaret\" ]\n"
 								  "	.msg:+ w + \" \"\n"
@@ -325,10 +313,48 @@ namespace dust {
 								  "for i in [ 1 2 3 5 7 11 13 17 ]\n"
 								  "	.sum_b:+ i\n"
 								  "sum_a = sum_b");
+				t.closeSubTest();
+			t.closeSubTest();
 
-					// Test evaluation/construction exceptions
+			t.initSubTest("Functions");
+				t.requireType("abs", "Function");
+
+				t.initSubTest("Calling Free Functions");
+					t.requireEval("abs(1)", 1);
+					t.requireEval("abs(-1)", 1);
+
+					t.requireEval("add(2, 3)", 5);
+					t.requireEval("add( 1 + 1,3)", 5);
+
+					t.requireException<error::base>("foo(3)");
+				t.closeSubTest();
+				
+				t.initSubTest("Calling Member Functions");
+					t.eval("a: 1");
+
+					t.requireEval("a.abs()", 1);
+					t.requireEval("-1.abs()", 1);
+					t.requireEval("(5 * -2).abs()", 10);
+					t.requireEval("Int.abs(a - 3)", 2);
+
+					t.requireException<error::dispatch_error>("\"Hello\".abs()");
 
 				t.closeSubTest();
+
+				t.initSubTest("Functions as Values");
+					t.eval("sba: abs");
+					t.requireType("sba", "Function");
+					t.requireTrue("sba(-3) = abs(3)");
+
+					t.eval("a: [ abs: abs ]");
+					t.requireTrue("a.abs(3) = 3.abs()");
+
+					t.eval("abs: 5");
+					t.requireType("abs", "Int");
+				t.closeSubTest();
+			t.closeSubTest();
+
+			t.initSubTest("Metamethods");
 			t.closeSubTest();
 
 			t.printReview(std::cout);
