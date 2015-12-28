@@ -62,6 +62,24 @@ int main(int argc, const char* argv[]) {
 
 			std::cout << e.getTS().getName(e.pop().type_id) << "\n";
 
+		// Run file (basic implementation)
+		} else if (input.substr(0, 2) == ":r") {
+			std::string file = input.substr(3);
+			if (file.compare(file.length() - 4, 4, ".dst")) file += ".dst";				// Append .dst if not provided
+
+			std::cout << " Running file \"" << file << "\"\n";
+
+			try {
+				parse::ScopeTracker scp{};
+				pegtl::file_parser{ file }.parse<grammar, action, parse::control>(parse_tree, scp);
+
+				if (!parse_tree.empty())
+					parse_tree.pop()->eval(e).stream(std::cout << ":: ") << "\n";
+
+			} catch (std::exception& e) {
+				std::cout << e.what() << std::endl;
+			}
+
 		// Parse checking
 		} else {
 			try {
