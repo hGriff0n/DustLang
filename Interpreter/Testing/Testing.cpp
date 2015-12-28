@@ -239,8 +239,7 @@ namespace dust {
 
 					// Test inline while loop
 					t.requireEval("i: 0\n"
-								  "while i < 5 .i:+ 1\n"
-								  "i", 5);
+								  "while i < 5 .i:+ 1\n", 5);
 
 					// Test optional do statement
 					t.requireEval("i: 0\n"
@@ -250,10 +249,13 @@ namespace dust {
 
 					// Test order of evaluation in while loop
 					t.requireEval("i: 5\n"
-								  "while i < 5 .i:+ 1\n"
-								  "i", 5);
+						"while i < 5 .i:+ 1\n"
+						"i", 5);
 
 					// Test the value of the while loop
+					t.requireType("i: 5\n"
+						"while i < 5 .i:+ 1\n", "Nil");
+
 				t.closeSubTest();
 
 				t.initSubTest("Do-While loop");
@@ -265,15 +267,12 @@ namespace dust {
 
 					// Test inline do-while loops
 					t.requireEval("i: 0\n"
-								  "repeat i < 5 .i:+ 1\n"
-								  "i", 5);
+								  "repeat i < 5 .i:+ 1", 5);
 
 					// Test order of evaluationi in do-while loop
 					t.requireEval("i: 5\n"
 								  "repeat i < 5 .i:+ 1\n"
 								  "i", 6);
-
-					// test the value of the do-while loop
 				t.closeSubTest();
 
 				t.initSubTest("If statements");
@@ -302,6 +301,11 @@ namespace dust {
 								  "	.sum:+ i\n"
 								  "sum", 15);
 
+					t.requireEval("sum: 0\n"
+						"for i in [ 1 2 3 4 5 ]\n"
+						"	.sum:+ i\n"
+						"sum", 15);
+
 					t.requireEval("msg: \"\"\n"
 								  "for w in [ \"Hello,\" \"World!\" \"I'm\" \"Margaret\" ]\n"
 								  "	.msg:+ w + \" \"\n"
@@ -309,8 +313,7 @@ namespace dust {
 
 					t.eval("a: [ 1 2 b: [ 3 4 5 ] ]");
 					t.requireEval("f: 1\n"
-								  "for i in a.b .f:* i\n"
-								  "f", 60);
+								  "for i in a.b .f:* i\n", 60);
 
 					t.eval("a: [ 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 ]");
 					t.requireTrue("sum_a, sum_b: 0, 0\n"
