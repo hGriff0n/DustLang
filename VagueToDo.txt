@@ -1,18 +1,3 @@
-How to define Scoping
-	Determine the difference between a tab and x spaces															# Scoping whitespace rules
-		How does Python resolve this problem
-			Requiring a ':' to begin a new scope (ie. do keyword)?
-				But what about lambdas
-			Line joining
-				Python uses the '\' character to join physical lines into logical lines
-			Space and tab are different characters
-				Scoping is only introduced with tabs
-			Copy-paste
-				Translate all tabs to spaces (or vice versa) before parsing
-
-block is currently a "non-recoverable" rule (you can't recover from failures during parsing)
-	Is there a way to change this ???
-
 nil is represented by an impl::Value with type_id = type::Traits<Nil>::id
 	Modifying the Nil class should be heavily restricted (???)
 	Nil method resolution is equivalent to Bool method resolution
