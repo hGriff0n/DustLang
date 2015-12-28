@@ -57,7 +57,7 @@ namespace dust {
 		// Identifier Tokens
 		struct id_end : identifier_other {};
 		struct type_id : seq<range<'A', 'Z'>, star<id_end>> {};							// [A-Z]{id_end}*
-		struct var_id : seq<not_at<keywords>, range<'a', 'z'>, star<id_end>> {};			// [a-z]{id_end}*
+		struct var_id : seq<not_at<keywords>, range<'a', 'z'>, star<id_end>> {};		// [a-z]{id_end}*
 		struct var_lookup : seq<star<one<'.'>>, at<var_id>> {};
 		struct var_name : seq<var_lookup, var_id> {};									// \.*{var_id}
 
@@ -66,18 +66,24 @@ namespace dust {
 		template <class Str>
 		struct key : seq<Str, not_at<id_end>> {};
 
-		struct k_and : key_string("and");
 		struct k_true : key_string("true");
 		struct k_false : key_string("false");
-		struct k_or : key_string("or");
 		struct k_nil : key_string("nil");
-		struct k_do : key_string("do");
-		struct k_if : key_string("if");
+		struct k_or : key_string("or");
+		struct k_and : key_string("and");
 		struct k_type : key_string("type");
 		struct k_try : key_string("try");
 		struct k_catch : key_string("catch");
+		struct k_do : key_string("do");
+		struct k_while : key_string("while");
+		struct k_repeat : key_string("repeat");
+		struct k_for : key_string("for");
+		struct k_in : key_string("in");
+		struct k_if : key_string("if");
+		struct k_else : key_string("else");
+		struct k_elseif : key_string("elseif");
 
-		struct keywords : sor<k_and, k_true, k_false, k_or, k_nil, k_do, k_if, k_type, k_try, k_catch> {};
+		struct keywords : sor<k_and, k_true, k_false, k_or, k_nil, k_do, k_in, k_if, k_else, k_elseif, k_while, k_for, k_type, k_try, k_catch, k_repeat> {};
 
 
 		// Literal Tokens
@@ -162,13 +168,28 @@ namespace dust {
 		struct inline_expr : seq<plus<tail>, expr> {};
 
 		struct ee_try : if_must<k_try, opt<inline_expr>> {};
-		struct ee_catch : if_must<k_catch, seps, one<'('>, var_id, one<')'>, opt<inline_expr>> {};
-		// ee_catch isn't being matched
+		struct ee_catch : if_must<k_catch, seps, one<'('>, var_id, one<')'>> {};
+		struct expr_trycatch : sor<ee_try, seq<ee_catch, opt<inline_expr>>, expr_type> {};
 
-		struct expr_trycatch : sor<ee_try, ee_catch, expr_type> {};
+		// Loops
+		struct ee_while : if_must<k_while, seps, expr> {};								// while *{expr}
+		struct ee_repeat : if_must<k_repeat, seps, expr> {};							// repeat *{expr}
+		struct ee_do : seq<k_do> {};
+
+		struct expr_for : seq<var_list, seps, k_in, seps, expr_0> {};
+		struct ee_for : if_must<k_for, seps, expr_for> {};								// for *{var_list} *in *{expr_0}
+
+		struct ee_loop : seq<sor<ee_while, ee_repeat, ee_for>, opt<seps, k_do>, opt<inline_expr>> {};
+		struct expr_loop : sor<ee_loop, expr_trycatch> {};
+
+		// Branching
+		struct ee_if : if_must<k_if, seps, expr> {};
+		struct ee_elseif : if_must<k_elseif, seps, expr> {};
+		struct ee_cond : seq<sor<ee_if, ee_elseif, k_else>, opt<seps, k_do>, opt<inline_expr>> {};
+		struct expr_cond : sor<ee_cond, expr_loop> {};
 
 		// Collector Tags
-		struct expr_x : expr_trycatch {};
+		struct expr_x : expr_cond {};
 		struct expr : expr_x {};
 
 

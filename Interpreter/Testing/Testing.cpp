@@ -127,31 +127,31 @@ namespace dust {
 				t.requireEval("## Hello\n3", 3);								// 5
 
 				t.initSubTest("Scoped Assignment");
-					t.requireEval("a: 2\n\ta: 5\n\ta", 5);						// 1
+					t.requireEval("a: 2\n	a: 5\n	a", 5);						// 1
 					t.requireTrue("a = 2");										// 2
 					t.requireEval("a", 2);										// 3
-					t.requireEval("a: 3\n\ta + 2", 5);							// 4
+					t.requireEval("a: 3\n	a + 2", 5);							// 4
 					t.requireEval("a: 4\n"
-								   "\ta: 3\n"
-								   "\tb: a + .a", 7);							// 5
+								  "	a: 3\n"
+								  "	b: a + .a", 7);							// 5
 					t.requireEval(".a", 4);										// 6
 				t.closeSubTest();
 
 				t.initSubTest("Scopes and Comments");
 					t.requireEval("a: 2 ## Assign 2 to a\n"
-								   "\tb: .a + 3 ## Assign b to a + 3\n"
-								   "\tb + a", 7);								// 1
+								  "	b: .a + 3 ## Assign b to a + 3\n"
+								  "	b + a", 7);								// 1
 					t.requireEval("a: 2\n"
-								   "\tb: 3 + .a\n"
+								   "	b: 3 + .a\n"
 								   "## Assign b to 3 + a\n"
-								   "\tb + a", 7);								// 2
+								   "	b + a", 7);								// 2
 					t.requireEval("3\n"
-								  "\t\ta: 5\n"
-								  "\t## Comment\n"
-								  "\t\ta + 1", 6);
+								  "		a: 5\n"
+								  "	## Comment\n"
+								  "		a + 1", 6);
 					t.requireEval("af: 3\n"
-								  "\t\t5\n"
-						          "\taf", 3);									// 3
+								  "		5\n"
+						          "	af", 3);									// 3
 					t.requireEval("3\n"
 								  "## Comment\n"
 								  "4", 4);										// 4
@@ -187,7 +187,7 @@ namespace dust {
 
 			t.initSubTest("Try-Catch Statement");
 				t.requireEval("try\n"
-							  "\t3 + true\n"
+							  "	3 + true\n"
 							  "catch (e) 4\n", 4);
 
 				t.requireEval("try 3 + true\n"
@@ -198,31 +198,164 @@ namespace dust {
 
 				t.requireEval("a: 3\n"
 							  "try\n"
-							  "\t3 + true\n"
-							  "\t.a: 2\n"
+							  "	3 + true\n"
+							  "	.a: 2\n"
 							  "catch (e)\n"
 							  "a", 3);
 
 				t.requireEval("a: 3\n"
 							  "try\n"
-							  "\t3 + 3\n"
-							  "\t.a: 2\n"
+							  "	3 + 3\n"
+							  "	.a: 2\n"
 							  "catch (e)\n"
 							  "a", 2);
 
 				t.requireEval("try\n"
-							  "\t\t.a: 3 + 3\n"
-							  "\t3 + a\n"
+							  "	.a: 3 + 3\n"
+							  "	3 + a\n"
 							  "catch(e)\n", 9);
+
+				t.requireType("try 3 + true\n"
+							  "catch (e) e", "String");
 
 				t.requireException<error::missing_node_x>("catch (e) 4");
 
 			t.closeSubTest();
 
-			//t.initSubTest("API Testing");
-			//t.closeSubTest();
+			t.initSubTest("Control Flow Testing");
+				t.initSubTest("While Loop");
+					// Test that the while loop works
+					t.requireEval("i: 0\n"
+								  "while i < 5\n"
+								  "	.i:+ 1\n"
+								  "i", 5);
 
-			//t.end_tests();
+					// Test inline while loop
+					t.requireEval("i: 0\n"
+								  "while i < 5 .i:+ 1\n", 5);
+
+					// Test optional do statement
+					t.requireEval("i: 0\n"
+								  "while i < 5 do\n"
+								  "	.i:+ 1\n"
+								  "i", 5);
+
+					// Test order of evaluation in while loop
+					t.requireEval("i: 5\n"
+						"while i < 5 .i:+ 1\n"
+						"i", 5);
+
+					// Test the value of the while loop
+					t.requireType("i: 5\n"
+						"while i < 5 .i:+ 1\n", "Nil");
+
+				t.closeSubTest();
+
+				t.initSubTest("Do-While loop");
+					// Test that the do-while loop works
+					t.requireEval("i: 0\n"
+								  "repeat i < 5\n"
+								  "	.i:+ 1\n"
+								  "i", 5);
+
+					// Test inline do-while loops
+					t.requireEval("i: 0\n"
+								  "repeat i < 5 .i:+ 1", 5);
+
+					// Test order of evaluationi in do-while loop
+					t.requireEval("i: 5\n"
+								  "repeat i < 5 .i:+ 1\n"
+								  "i", 6);
+				t.closeSubTest();
+
+				t.initSubTest("If statements");
+					t.requireEval("if i 3", 3);
+					t.requireEval("if i = 3 6", false);
+					t.requireEval("if i = 3 6\n"
+								  "else 7", 7);
+
+					t.requireEval("if i = 3 6\n"
+								  "elseif i = 4 7\n"
+								  "else 8", 8);
+
+					t.requireException<error::missing_node_x>("else \"Hello\"");
+					t.requireException<error::missing_node_x>("if i 3\n"
+																		"i: 3 + 3\n"
+																		"else 5");
+					t.requireException<error::invalid_ast_construction>("if i 3\n"
+																		"else 5\n"
+																		"elseif a = 3 .i: 6");
+
+				t.closeSubTest();
+
+				t.initSubTest("For loop");
+
+					t.requireEval("sum: 0\n"
+								  "for i in [ 1 2 3 4 5 ]\n"
+								  "	.sum:+ i\n"
+								  "sum", 15);
+
+					t.requireType("for i in [1]", "Nil");
+
+					t.requireEval("msg: \"\"\n"
+								  "for w in [ \"Hello,\" \"World!\" \"I'm\" \"Margaret\" ]\n"
+								  "	.msg:+ w + \" \"\n"
+								  "msg", "Hello, World! I'm Margaret ");
+
+					t.eval("a: [ 1 2 b: [ 3 4 5 ] ]");
+					t.requireEval("f: 1\n"
+								  "for i in a.b .f:* i\n", 60);
+
+					t.eval("a: [ 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 ]");
+					t.requireTrue("sum_a, sum_b: 0, 0\n"
+								  "for i in (a ^ [ 1 2 3 5 7 11 13 17 ])\n"
+								  "	.sum_a:+ i\n"
+								  "for i in [ 1 2 3 5 7 11 13 17 ]\n"
+								  "	.sum_b:+ i\n"
+								  "sum_a = sum_b");
+				t.closeSubTest();
+			t.closeSubTest();
+
+			t.initSubTest("Functions");
+				t.requireType("abs", "Function");
+
+				t.initSubTest("Calling Free Functions");
+					t.requireEval("abs(1)", 1);
+					t.requireEval("abs(-1)", 1);
+
+					t.requireEval("add(2, 3)", 5);
+					t.requireEval("add( 1 + 1,3)", 5);
+
+					t.requireException<error::base>("foo(3)");
+				t.closeSubTest();
+				
+				t.initSubTest("Calling Member Functions");
+					t.eval("a: 1");
+
+					t.requireEval("a.abs()", 1);
+					t.requireEval("-1.abs()", 1);
+					t.requireEval("(5 * -2).abs()", 10);
+					t.requireEval("Int.abs(a - 3)", 2);
+
+					t.requireException<error::dispatch_error>("\"Hello\".abs()");
+
+				t.closeSubTest();
+
+				t.initSubTest("Functions as Values");
+					t.eval("sba: abs");
+					t.requireType("sba", "Function");
+					t.requireTrue("sba(-3) = abs(3)");
+
+					t.eval("a: [ abs: abs ]");
+					t.requireTrue("a.abs(3) = 3.abs()");
+
+					t.eval("abs: 5");
+					t.requireType("abs", "Int");
+				t.closeSubTest();
+			t.closeSubTest();
+
+			t.initSubTest("Metamethods");
+			t.closeSubTest();
 
 			t.printReview(std::cout);
 		}

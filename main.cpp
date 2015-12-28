@@ -10,17 +10,11 @@
 #define nl() pl("")
 
 
-// Things to work on
-	// Improving and consolidating the API
-	// Improving and updating documentation
-
 // Other Stuff and Pipe Dreams
 	// Consider changing name of _op() due to semantical differences
-	// Consider specializing the control template argument (see PEGTL for more)
-		// This would give me greater control over error messages and throwing from the parser stage
 	// Way of formatting float -> string conversion ???
 
-// Do I need to protect other TypeSystem methods from indexing with NIL
+// Do I need to protect other TypeSystem methods from indexing with NIL ???
 
 using namespace dust;
 
@@ -60,14 +54,38 @@ int main(int argc, const char* argv[]) {
 	while (getmultiline(std::cin, input) && input != "exit") {
 		if (input == "gc") {
 
+		// Type checking (ala. Haskell)
+		} else if (input.substr(0, 2) == ":t") {
+			parse::ScopeTracker scp{};
+			pegtl::parse<grammar, action, parse::control>(input.substr(3), input, parse_tree, scp);
+			parse_tree.pop()->eval(e);
+
+			std::cout << e.getTS().getName(e.pop().type_id) << "\n";
+
+		// Run file (basic implementation)
+		} else if (input.substr(0, 2) == ":r") {
+			std::string file = input.substr(3);
+			if (file.compare(file.length() - 4, 4, ".dst")) file += ".dst";				// Append .dst if not provided
+
+			std::cout << " Running file \"" << file << "\"\n";
+
+			try {
+				parse::ScopeTracker scp{};
+				pegtl::file_parser{ file }.parse<grammar, action, parse::control>(parse_tree, scp);
+
+				if (!parse_tree.empty())
+					parse_tree.pop()->eval(e).stream(std::cout << ":: ") << "\n";
+
+			} catch (std::exception& e) {
+				std::cout << e.what() << std::endl;
+			}
+
+		// Parse checking
 		} else {
 			try {
 				parse::ScopeTracker scp{};
-
 				pegtl::parse<grammar, action, parse::control>(input, input, parse_tree, scp);
-				//pegtl::parse<grammar, action, parse::control>(parse::trim(input), input, parse_tree, scp);
 
-				// This allows "3 # Hello" to run (should throw an error)
 				if (!parse_tree.empty()) {
 					printAST(std::cout, parse_tree.at());
 
@@ -85,9 +103,9 @@ int main(int argc, const char* argv[]) {
 			} catch (error::base& e) {
 				std::cout << e.what() << std::endl;
 			}
-
-			parse_tree.clear();
 		}
+
+		parse_tree.clear();
 		std::cout << "\n> ";
 	}
 

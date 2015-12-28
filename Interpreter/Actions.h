@@ -10,7 +10,7 @@ namespace dust {
 		template <typename Rule>
 		struct action : pegtl::nothing<Rule> {};
 
-		// Organization Action
+		// Organization Actions
 		template <> struct action<scope> {
 			static void apply(input& in, AST& ast, ScopeTracker& lvl) {
 				if (lvl.empty()) {
@@ -42,20 +42,47 @@ namespace dust {
 					ast.push(makeNode<Control>(in));
 			}
 
-			// Also handles try-catch reduction
 			static void reduce(AST& ast, int n, input& in) {
-				while (n--> 0) {
+				while (n-- > 0) {
 					auto block = makeNode<Block>(in);
 
-					do block->addChild(ast.at());
-					while (!isNode<Control>(ast.pop()));
+					// Collect sub-expressions
+					//do block->addChild(ast.at());
+					//while (!isNode<Control>(ast.pop()));
 
-					// Try-Catch reduction (need to generalize for If-Elseif-Else and functions)
-					if (!ast.empty() && isNode<TryCatch>(ast.at()) && !std::dynamic_pointer_cast<TryCatch>(ast.at())->isFull())
+					while (!isNode<Control>(ast.at()))
+						block->addChild(ast.pop());
+
+					if (std::dynamic_pointer_cast<Control>(ast.at())->type != Control::NONE)
+						std::dynamic_pointer_cast<Block>(block)->excep_if_empty = false;
+
+					block->addChild(ast.pop());
+
+					// Combine expressions that expect a block (TryCatch, If-Else, Function, ...)
+						// Note: Loops are handled with their control structure (function might take the same route)
+					if (atNode<TryCatch>(ast))
 						ast.at()->addChild(block);
+
+					else if (atNode<If>(ast, -2)) {
+						auto expr = ast.pop();
+						std::dynamic_pointer_cast<If>(ast.at())->addBlock(expr, std::dynamic_pointer_cast<Block>(block));
+
+					} else if (atFunction(ast))
+						int i = 3;
+
 					else
 						ast.push(block);
 				}
+			}
+
+			static bool atFunction(AST& ast) {
+				//return !ast.empty() && isNode<Function>(ast.at());
+				return false;
+			}
+
+			template <class Node>
+			static bool atNode(AST& ast, int loc = -1) {
+				return (ast.size() > abs(loc)) && isNode<Node>(ast.at(loc));
 			}
 		};
 
@@ -110,6 +137,78 @@ namespace dust {
 		};
 
 
+		// Control Flow Actions
+		template <Control::Type t, unsigned int num_children = 1>
+		struct loop_statement {
+			static void apply(input& in, AST& ast, ScopeTracker& lvl) {
+				// stack: ..., {condition...}
+
+				auto c = makeNode<Control>(in, t);
+				for (int i = 0; i != num_children; ++i)
+					c->addChild(ast.pop());
+
+				ast.push(c);
+				lvl.push(lvl.at() + 1);
+
+				// stack: ..., {Control}
+			}
+		};
+
+		template <> struct action<ee_while> : loop_statement<Control::WHILE> {};
+		template <> struct action<ee_repeat> : loop_statement<Control::DO_WHILE> {};
+		template <> struct action<expr_for> : loop_statement<Control::FOR, 2> {};
+
+		template <> struct action<ee_if> {
+			static void apply(input& in, AST& ast, ScopeTracker& lvl) {
+				// stack: ..., {condition}
+
+				ast.push(makeNode<If>(in));
+				ast.push(makeNode<Control>(in));
+				lvl.push(lvl.at() + 1);
+				ast.swap(-3, -2);
+
+				// stack: ..., {If}, {condition}, {Control}
+			}
+		};
+
+		template <> struct action<ee_elseif> {
+			static void apply(input& in, AST& ast, ScopeTracker& lvl) {
+				// stack: ..., {If}, {condition}
+
+				if (!isNode<If>(ast.at(-2)))
+					throw error::missing_node_x{ "If-ElseIf" };
+
+				if (std::dynamic_pointer_cast<If>(ast.at(-2))->isFull())
+					throw error::invalid_ast_construction{ "Attempt to add elseif node to completed If statement" };
+
+				ast.push(makeNode<Control>(in));
+				lvl.push(lvl.at() + 1);
+
+				// stack: ..., {If}, {condition}, {Control}
+			}
+		};
+
+		template <> struct action<k_else> {
+			static void apply(input& in, AST& ast, ScopeTracker& lvl) {
+				// stack: ..., {If}
+
+				if (!isNode<If>(ast.at()))
+					throw error::missing_node_x{ "If-Else" };
+
+				auto n_if = std::dynamic_pointer_cast<If>(ast.at());
+				if (n_if->isFull())
+					throw error::invalid_ast_construction{ "Attempt to add else node to completed If statement" };
+				n_if->setFull();
+
+				ast.push(makeNode<Literal>(in, "true", type::Traits<bool>::id));
+				ast.push(makeNode<Control>(in));
+				lvl.push(lvl.at() + 1);
+
+				// stack: ..., {If}, {true}, {Control}
+			}
+		};
+		
+
 		// Try-Catch Actions
 		template <> struct action<k_try> {
 			static void apply(input& in, AST& ast, ScopeTracker& lvl) {
@@ -123,14 +222,21 @@ namespace dust {
 			}
 		};
 
-		template <> struct action<k_catch> {
+		template <> struct action<ee_catch> {
 			static void apply(input& in, AST& ast, ScopeTracker& lvl) {
-				// stack : ..., {TryCatch}
+				// stack: ..., {TryCatch}, {VarName}
 
-				if (!isNode<TryCatch>(ast.at()))
+				// Ensure there is a preceding try statement
+				if (!isNode<TryCatch>(ast.at(-2)))
 					throw error::missing_node_x{ "Catch", "TryCatch" };
 
-				action<scope>::push(ast, 1, in);
+				// Ensure there is an accepting try statement
+				if (std::dynamic_pointer_cast<TryCatch>(ast.at(-2))->isFull())
+					throw error::invalid_ast_construction{ "Attempt to add catch node to completed TryCatch statement" };
+
+				ast.push(makeNode<Control>(in, Control::TRY_CATCH));
+				ast.at()->addChild(ast.pop(-2));
+				ast.push(makeNode<Literal>(in, "", type::Traits<Nil>::id));					// Prevent exceptions on empty catch statements
 				lvl.push(lvl.at() + 1);
 
 				// stack: ..., {TryCatch}, {Control}

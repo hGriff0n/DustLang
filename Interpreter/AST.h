@@ -15,7 +15,6 @@ namespace dust {
 		/*
 		 * Creation statistics for a node
 		 */
-		// Move to AST.cpp
 		struct ParseData {
 			size_t col, line;
 
@@ -116,6 +115,23 @@ namespace dust {
 				EvalState& eval(EvalState& e);
 
 				std::string toString();		// Possibly temporary implementation
+				std::string printString(std::string buf);
+		};
+
+		/*
+		 * Represents a runtime-value (for possible optimization purposes)
+		 */
+		class Value : public ASTNode {
+			private:
+				impl::Value val;
+
+			public:
+				Value(const ParseData& in, impl::Value v);
+				static std::string node_type;
+
+				EvalState& eval(EvalState& e);
+
+				std::string toString();
 				std::string printString(std::string buf);
 		};
 
@@ -251,18 +267,23 @@ namespace dust {
 		class Control : public ASTNode {
 			private:
 				std::shared_ptr<ASTNode> expr;
+				std::shared_ptr<List<VarName>> vars;
+
 				bool next;
-				int type;
 
 			public:
-				Control(const ParseData& in, int typ = -1);
-
-				static std::string node_type;
 				enum Type {
+					NONE = -1,
 					FOR,
 					WHILE,
-					DO_WHILE
+					DO_WHILE,
+					TRY_CATCH
 				};
+
+				Control(const ParseData& in, Type typ = NONE);
+
+				static std::string node_type;
+				Type type;
 				
 				virtual EvalState& eval(EvalState& e);
 				virtual void addChild(std::shared_ptr<ASTNode>& c);
@@ -270,7 +291,7 @@ namespace dust {
 				virtual std::string toString();
 				virtual std::string printString(std::string buf);
 
-				bool iterate(EvalState& e);
+				bool iterate(EvalState& e, size_t loc);
 		};
 
 		/*
@@ -337,7 +358,7 @@ namespace dust {
 		};
 
 		/*
-		 * Exception handling for sub-nodes
+		 * Node for exception handling
 		 */
 		class TryCatch : public ASTNode {
 			private:
@@ -356,6 +377,42 @@ namespace dust {
 
 				bool isFull();
 		};
+
+		/*
+		 * Node for branching statements
+		 */
+		class If : public ASTNode {
+			using BlockType = std::shared_ptr<Block>;
+			using ExprType = std::shared_ptr<ASTNode>;
+
+			private:
+				std::vector<std::pair<ExprType, BlockType>>	statements;
+				bool accepting = true;
+
+			public:
+				If(const ParseData& in);
+				static std::string node_type;
+
+				EvalState& eval(EvalState& e);
+
+				std::string toString();
+				virtual std::string printString(std::string buf);
+
+				void addBlock(ExprType& expr, BlockType& block);
+
+				void setFull();
+				bool isFull();
+		};
+
+		/*
+		 * Node for a function call
+		 */
+		//class FunctionCall : public ASTNode {};
+
+		/*
+		 * Node for a function definition
+		 */
+		//class FunctionDef : public ASTNode {};
 
 		template<class T> std::string List<T>::node_type = "List<" + T::node_type + ">";
 	}

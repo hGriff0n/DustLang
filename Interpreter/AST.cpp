@@ -76,6 +76,15 @@ namespace dust {
 			return buf + "+- " + node_type + toString() + "\n";
 		}
 
+		// Value methods
+		Value::Value(const ParseData& in, impl::Value v) : ASTNode{ in }, val { v } {}
+		EvalState& Value::eval(EvalState& e) {
+			e.push(val);
+			return e;
+		}
+		std::string Value::toString() { return ""; }
+		std::string Value::printString(std::string buf) { return ""; }
+
 		// Operator methods
 		Operator::Operator(const ParseData& in, std::string o) : ASTNode{ in }, l{ nullptr }, r{ nullptr }, op{ o } {}
 		EvalState& Operator::eval(EvalState& e) {
@@ -341,13 +350,43 @@ namespace dust {
 		}
 
 		// Control methods
-		Control::Control(const ParseData& in, int typ) : ASTNode{ in }, type{ typ }, next{ true } {}
+		Control::Control(const ParseData& in, Type typ) : ASTNode{ in }, type{ typ }, next{ true } {}
 		EvalState& Control::eval(EvalState& e) {
 			switch (type) {
 				case Type::FOR:
+					if (!expr->eval(e).is<Table>())
+						throw error::bad_node_eval{ "Attempt to iterate over a non-table" };
+
+					// Generator Abstraction (needs work)
+					/*
+
+					// Get generator function into local state
+					if (!has_generator) {
+
+						// Try for an implied generator
+						if (!e.is<Function>()) {
+							e.copy();
+							e.push("_iterator");
+							e.get();
+
+							if (e.is<Nil>())
+								throw error::bad_node_eval{ "Attempt to iterate over a non-iterable object" };
+						}
+
+						generator = e.pop();
+						has_generator = true;
+					}
+					*/
+
+					e.pushNil();					// Push initial argument
+					break;
+				case Type::TRY_CATCH:
+					std::dynamic_pointer_cast<VarName>(expr)->set(e, true, false);
 					break;
 				case Type::WHILE:
+					e.pushNil();
 					break;
+				case Type::DO_WHILE:
 				default:
 					next = true;
 					break;										// Removing this line causes C2059: syntax error: '}'
@@ -356,21 +395,108 @@ namespace dust {
 			return e;
 		}
 		void Control::addChild(std::shared_ptr<ASTNode>& c) {
-			if (expr) throw error::operands_error{ "Attempt to construct control node with more than two expresions" };
-			expr = c;
+			if (expr) {
+				if (type == Type::FOR && isNode<List<VarName>>(c))
+					vars = std::dynamic_pointer_cast<List<VarName>>(c);
+				else
+					throw error::operands_error{ "Attempt to construct control node with more than two expresions" };
+			} else
+				expr = c;
 		}
 		std::string Control::toString() { return ""; }
 		std::string Control::printString(std::string buf) {
 			return "";
 		}
-		bool Control::iterate(EvalState& e) {
+		bool Control::iterate(EvalState& e, size_t loc) {
 			switch (type) {
-				case 0:				// for
-				case 1:				// while
-					return (bool)expr->eval(e);
-				case 2:				// do-while
-					if (!next)
-						return (bool)expr->eval(e);
+				case Type::FOR:						// for
+				{
+					Table t = e.pop<Table>(loc - 2);
+					auto kv = t->next(e.pop(loc - 2));
+
+					// continue loop
+					if (kv != t->end()) {
+						e.settop(loc - 2);											// Remove trash from stack (value of last iteration)
+
+						e.push(t);													// Keep table for next iteration
+						e.push(kv->first);											// Push key on stack
+						e.push(kv->second.val);										// Push value on stack
+
+					// exit loop
+					} else
+						return false;												// exit loop
+
+
+					// Generator abstraction (needs work)
+					/*
+					e.copy(loc - 2);
+					e.copy(loc - 1);
+					e.push(generator);
+					e.call();
+
+					if (e.is<Nil>()) {
+						e.pop(loc - 2);
+						e.pop(loc - 2);
+						e.pop();
+
+						return false;
+					}
+					*/
+
+					// Alternate implementation (need to modify to work on non-table state)
+					/*
+					Table t = e.pop<Table>(loc - 2);
+					auto k = e.pop(loc - 2);
+
+					auto siz = e.size();
+					generator(e, t, k);
+
+					if (e.is<Nil>()) {
+						e.pop();
+						return false;
+					}
+
+					// Assign variables
+
+					// Remember last state
+					if (vars->size() == 2) {
+						e.settop(loc - 2);
+						e.push(t);
+						(*vars->begin())->eval(e);
+					} else {
+						auto key = e.pop();
+						e.settop(loc - 2);
+						e.push(t);
+						e.push(key);
+					}
+					*/
+
+					// Assign variables
+					auto var = vars->rbegin();
+
+					while (var != vars->rend())
+						(*var++)->set(e, false, false);								// Assign value then key to trackers
+
+					// Remember last key (if not assigned)
+					if (vars->size() == 2)
+						(*vars->begin())->eval(e);
+
+					e.settop(loc);
+					return true;
+				}
+					break;
+				case Type::WHILE:					// while
+				{
+					bool val = (bool)expr->eval(e);
+					if (val) e.settop(loc);
+					return val;
+				}
+				case Type::DO_WHILE:				// do-while
+					if (!next) {
+						bool val = (bool)expr->eval(e);
+						if (val) e.settop(loc);
+						return val;
+					}
 				default:
 					next = !next;
 					return !next;
@@ -405,7 +531,10 @@ namespace dust {
 			e.newScope();
 			control->eval(e);								// Perform loop setup (if needed)
 
-			while (control->iterate(e)) {
+			// Special stack handling of for loops
+			x += ((control->type == Control::FOR) * 2);
+
+			while (control->iterate(e, x)) {
 				for (const auto& i : *this) {
 					e.settop(x);							// Pops the results of the last expression (Not executed for the last expression)
 
@@ -489,9 +618,47 @@ namespace dust {
 			return try_code && catch_code;
 		}
 
+		// If methods
+		If::If(const ParseData& in) : ASTNode{ in }, statements{} {}
+		EvalState& If::eval(EvalState& e) {
+			auto b = std::begin(statements);
+			auto siz = e.size();
+
+			// Find the selected block
+			while (b != std::end(statements)) {
+				b->first->eval(e);
+
+				if (e.pop<bool>()) break;
+
+				++b;
+			}
+
+			e.settop(siz);
+
+			// Evaluate the selected block (or none if fall through
+			if (b != std::end(statements))
+				b->second->eval(e);
+			else
+				e.push(false);
+
+			return e;
+		}
+		std::string If::toString() { return ""; }
+		std::string If::printString(std::string buf) { return ""; }
+		void If::addBlock(ExprType& expr, BlockType& block) {
+			statements.emplace_back(std::make_pair(expr, block));
+		}
+		bool If::isFull() {
+			return !accepting;
+		}
+		void If::setFull() {
+			accepting = false;
+		}
+
 		std::string ASTNode::node_type = "ASTNode";
 		std::string Debug::node_type = "Debug";
 		std::string Literal::node_type = "Literal";
+		std::string Value::node_type = "Value";
 		std::string Operator::node_type = "Operator";
 		std::string VarName::node_type = "Variable";
 		std::string TypeName::node_type = "Type";
