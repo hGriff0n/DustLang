@@ -19,7 +19,7 @@ namespace dust {
 			private:
 				Table* parent;
 				storage vars;
-				size_t next = 1;
+				size_t next_val = 1;
 
 			public:
 				Table();
@@ -37,6 +37,8 @@ namespace dust {
 
 				// Iterators
 				storage::iterator begin();				// Begin
+				storage::iterator next(const key_type& key);
+				storage::iterator find(const key_type& key);
 				storage::iterator iend();				// Array end (needs testing)
 				storage::iterator end();				// End
 

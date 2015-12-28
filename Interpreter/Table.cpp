@@ -52,6 +52,18 @@ namespace dust {
 			return vars.end();
 		}
 
+		Table::storage::iterator Table::next(const key_type& key) {
+			if (key.type_id == type::Traits<Nil>::id) return vars.begin();
+
+			return ++find(key);
+		}
+
+		Table::storage::iterator Table::find(const key_type& key) {
+			if (key.type_id == type::Traits<Nil>::id) return vars.end();
+
+			return vars.find(key);
+		}
+
 		Table::storage::iterator Table::iend() {
 			return std::find_if_not(begin(), end(), [](auto e) {
 				return e.first.type_id == type::Traits<int>::id;
@@ -67,15 +79,15 @@ namespace dust {
 		}
 
 		void Table::setNext(int n) {
-			next = n;
+			next_val = n;
 		}
 
 		int Table::getNext() {
-			return next++;
+			return next_val++;
 		}
 
 		//Variable& Table::getNext() {
-		//	return vars[impl::Value{ next++, type::Traits<int>::id }];
+		//	return vars[impl::Value{ next_val++, type::Traits<int>::id }];
 		//}
 	}
 }
