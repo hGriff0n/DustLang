@@ -655,6 +655,31 @@ namespace dust {
 			accepting = false;
 		}
 
+		// FunctionCall methods
+		FunctionCall::FunctionCall(const ParseData& in) : ASTNode{ in } {}
+		EvalState& FunctionCall::eval(EvalState& e) {
+			return e;
+		}
+		void FunctionCall::addChild(std::shared_ptr<ASTNode>& c) {
+			if (isNode<VarName>(c)) {
+				if (!fn)
+					fn = c;		// std::dynamic_pointer_cast<VarName>(c);
+				else
+					throw error::base{ "" };
+
+			} else if (isNode<List<ASTNode>>(c)) {
+				if (!args)
+					args = c;	// std::dynamic_pointer_cast<List<ASTNode>>(c);
+				else
+					throw error::base{ "" };
+
+			} else
+				throw error::base{ "" };
+		}
+		std::string FunctionCall::toString() { return ""; }
+		std::string FunctionCall::printString(std::string buf) { return ""; }
+
+
 		std::string ASTNode::node_type = "ASTNode";
 		std::string Debug::node_type = "Debug";
 		std::string Literal::node_type = "Literal";
@@ -670,5 +695,6 @@ namespace dust {
 		std::string Control::node_type = "Control";
 		std::string Block::node_type = "Block";
 		std::string TryCatch::node_type = "Try-Catch";
+		std::string FunctionCall::node_type = "Function Call";
 	}
 }

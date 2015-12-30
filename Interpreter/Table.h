@@ -7,7 +7,7 @@ namespace dust {
 	namespace impl {
 
 		/*
-		 * C++ implementation of dust table's
+		 * C++ implementation of dust tables
 		 *  This class is also used internally to implement scopes 
 		 */
 		class Table {

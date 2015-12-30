@@ -10,6 +10,23 @@ namespace dust {
 		template <typename Rule>
 		struct action : pegtl::nothing<Rule> {};
 
+		template <> struct action<fn_call> {
+			static void apply(input& in, AST& ast, ScopeTracker& _) {
+				// stack: ..., {fn}, {args}
+
+				if (!isNode<List<ASTNode>>(ast.at())) throw error::base{ "" };
+				if (!isNode<VarName>(ast.at(-2))) throw error::base{ "" };
+
+				auto fn = makeNode<FunctionCall>(in);
+				fn->addChild(ast.pop());
+				fn->addChild(ast.pop());
+
+				ast.push(fn);
+
+				// stack: ..., {Function}
+			}
+		};
+
 		// Organization Actions
 		template <> struct action<scope> {
 			static void apply(input& in, AST& ast, ScopeTracker& lvl) {
