@@ -49,6 +49,17 @@ int main(int argc, const char* argv[]) {
 	initState(e);
 	test::runTests(e, show_all_tests);
 
+	Function f{ [](EvalState& e) {
+		auto x = (int)e;
+		e.push(x > 0 ? x : -x);
+		return 1;
+	} };
+
+	e.push(-3);
+	f(e);
+	f(e, -4);
+	std::cout << "\nabs(-3) = " << (int)e << " and abs(-4) = " << (int)e << "\n";
+
 	std::cout << "\n> ";
 
 	while (getmultiline(std::cin, input) && input != "exit") {

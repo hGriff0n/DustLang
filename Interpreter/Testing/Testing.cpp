@@ -326,6 +326,8 @@ namespace dust {
 					t.requireEval("add(2, 3)", 5);
 					t.requireEval("add( 1 + 1,3)", 5);
 
+					t.requireEval("give5()", 5);
+
 					t.requireException<error::base>("foo(3)");
 				t.closeSubTest();
 				

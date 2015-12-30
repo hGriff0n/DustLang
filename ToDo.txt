@@ -76,13 +76,23 @@ Timeline
 
 	1 Function Calling		ie. print("Hello World!") and abs(3)
 		Be able to store functions as values
-			Create the necessary Collector structure (needs to handle C++ functions/lambdas and dust AST's)
-				Basically a std::variant<std::function<int(EvalState&)>, std::shared_ptr<Function>>
-			Get assignment to work as expected with functions
-				Relevant tests: 320, 344
+			Add in necessary GC interfaces
+				Add Collector specialization
+				Uncomment FuncStorage field
+				Add getFuncs method
+			Hook up the type::Traits specializations
+				Need to determine where to place them
+					Should I also specialize for NativeFn and std::shared_ptr<ASTNode> ???
+						I think that would simplify the api (e.push(...) would automatically create the Function)
+				Uncomment the id setting in initTypeSystem
+				Tests 320 and 348 should work once I get this settup
+					Have to assign "abs" first
+						Put it in initState for now
+		Implement the FunctionCall class
+			Settle on argument passing procedure
+				Use the procedure for operators
+			Settle on "OOP" procedure
 		Implement the evaluation hooks/etc. to be able to call functions	# Get functions callable
-			Use hard coded translations, etc. at this time (don't need to handle variable args, etc.)
-			Have the basic syntax and semantics working (Argument passing, etc.)
 			Relevant tests: 323, 324, 326, 327, 329, 345
 		Convert Types completely to impl::Table for storage concerns
 			Allow Type methods to be called using '.'/'[]' syntax on non-table values and variables (ie. -3.abs())
@@ -99,6 +109,7 @@ Timeline
 		Optional: Get no parens syntax to work
 	
 	2 Dust Function Definition
+		Implement toString and printString for If, Control/Block, FunctionCall, and FunctionDef
 		Update project version to 0.8.1
 		Add in the correct syntax and action calls to create dust functions
 		Convert tables away from pure references
