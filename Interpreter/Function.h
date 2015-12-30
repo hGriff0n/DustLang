@@ -8,6 +8,7 @@ namespace dust {
 
 	// Forward Declarations
 	class EvalState;
+	using NativeFn = std::function<int(EvalState&)>;
 
 	namespace parse {
 		class ASTNode;
@@ -48,9 +49,11 @@ namespace dust {
 					impl::push(e, type::Traits<T>::make(val, getGC(e)));
 				}
 
+				void push(EvalState& e, Value&& v);
+
 			public:
 				Function(const std::shared_ptr<parse::ASTNode>& f);
-				Function(const std::function<int(EvalState& e)>& f);
+				Function(const NativeFn& f);
 				Function(const Function& f) = delete;
 				Function(Function&& f);
 				~Function();

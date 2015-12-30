@@ -8,7 +8,7 @@
 
 namespace dust {
 	class EvalState;
-	typedef std::function<int(EvalState&)> NativeFn;
+	using NativeFn = std::function<int(EvalState&)>;
 
 	namespace type {
 

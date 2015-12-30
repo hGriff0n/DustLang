@@ -92,6 +92,11 @@ Timeline
 			Settle on argument passing procedure
 				Use the procedure for operators
 			Settle on "OOP" procedure
+			How is testing going to work
+				To test I need to assign the functions
+					However I have to test that assignment works first
+					How do I assign functions in runTests
+						Perform the operations manually (I do have access to the EvalState)
 		Implement the evaluation hooks/etc. to be able to call functions	# Get functions callable
 			Relevant tests: 323, 324, 326, 327, 329, 345
 		Convert Types completely to impl::Table for storage concerns

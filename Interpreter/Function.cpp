@@ -7,10 +7,10 @@ namespace dust {
 		// Native specialization
 		class SysFunction : public FunctionBase {
 			private:
-				std::function<int(EvalState&)> fn;
+				NativeFn fn;
 
 			public:
-				SysFunction(const std::function<int(EvalState&)>& f) : fn{ f } {}
+				SysFunction(const NativeFn& f) : fn{ f } {}
 
 				virtual int call(EvalState& e) {
 					return fn(e);
@@ -34,12 +34,16 @@ namespace dust {
 
 		// Function interface
 		Function::Function(const std::shared_ptr<parse::ASTNode>& f) : fn{ new DustFunction{ f } } {}
-		Function::Function(const std::function<int(EvalState& e)>& f) : fn{ new SysFunction{ f } } {}
+		Function::Function(const NativeFn& f) : fn{ new SysFunction{ f } } {}
 		Function::Function(Function&& f) : fn{ f.fn } {
 			f.fn = nullptr;
 		}
 		Function::~Function() {
 			delete fn;
+		}
+
+		void Function::push(EvalState& e, Value&& val) {
+			impl::push(e, val);
 		}
 
 		int Function::call(EvalState& e) {

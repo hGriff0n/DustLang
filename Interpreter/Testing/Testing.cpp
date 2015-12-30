@@ -317,6 +317,7 @@ namespace dust {
 			t.closeSubTest();
 
 			t.initSubTest("Functions");
+				// e.push(...);
 				t.requireType("abs", "Function");
 
 				t.initSubTest("Calling Free Functions");
