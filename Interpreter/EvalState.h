@@ -3,10 +3,6 @@
 #include "CallStack.h"
 #include "TypeSystem.h"
 
-#include "Table.h"
-typedef dust::impl::Table table_type;
-
-
 namespace dust {
 	namespace type {
 		// Traits conversion specializations (Could I move these into TypeTraits.h ???)
@@ -106,12 +102,8 @@ namespace dust {
 	class EvalState : public impl::CallStack {
 		private:
 			Table curr_scp;
-			table_type global;
+			impl::Table global;
 			type::TypeSystem ts;
-
-			//impl::RuntimeStorage<std::string> strings;
-			//impl::RuntimeStorage<impl::Table> tables;
-			//impl::RuntimeStorage<void*> user_data;
 			impl::GC gc;
 
 		protected:
@@ -174,6 +166,7 @@ namespace dust {
 
 			// Get the current type system
 			type::TypeSystem& getTS();
+			impl::GC& getGC();
 
 			// Pass the top element on the stack to the stream
 				// Handles non-printable values and string-special printing
@@ -191,6 +184,5 @@ namespace dust {
 			friend void initState(EvalState&);
 			template <class Stream> friend class test::Tester;
 	};
-
 
 }

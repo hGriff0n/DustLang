@@ -5,6 +5,17 @@
 
 namespace dust {
 
+	// Definitions expected by Function::push
+	namespace impl {
+		GC& getGC(EvalState& e) {
+			return e.getGC();
+		}
+
+		void push(EvalState& e, impl::Value v) {
+			e.push(v);
+		}
+	}
+
 	void EvalState::forceType(int idx, size_t type) {
 		if (at(idx).type_id == type) return;
 		swap(idx, -1);								// Move the value to the stack top
@@ -226,7 +237,7 @@ namespace dust {
 	}
 
 	void EvalState::newScope() {
-		curr_scp = curr_scp ? new table_type{ curr_scp } : &global;
+		curr_scp = curr_scp ? new impl::Table{ curr_scp } : &global;
 	}
 
 	void EvalState::endScope() {
@@ -256,6 +267,9 @@ namespace dust {
 		return ts;
 	}
 
+	impl::GC& EvalState::getGC() {
+		return gc;
+	}
 
 	void initState(EvalState& e) {
 		initTypeSystem(e.ts);
@@ -279,6 +293,7 @@ namespace dust {
 		type::Traits<std::string>::id = String;
 		type::Traits<bool>::id = Bool;
 		type::Traits<dust::Table>::id = Table;
+		//type::Traits<dust::Function>::id = Function;
 	}
 
 	void initConversions(type::TypeSystem& ts) {
@@ -309,11 +324,12 @@ namespace dust {
 		auto String = ts.getType("String");
 		auto Bool = ts.getType("Bool");
 		auto Table = ts.getType("Table");
+		auto Function = ts.getType("Function");
 
 		//! -
 		//^ * / + - % < = > <= != >=
 
-		// Define _op<= in relation to _op< and _op= for all types
+		// Define _op<=, _op>=, and _op!= in relation to _op<, _op>, _ou!, and _ou= for all types
 		Object.addOp("_op<=", [](EvalState& e) {
 			e.copy(-2);				// Make copies of the arguments
 			e.copy(-2);
@@ -331,7 +347,6 @@ namespace dust {
 			return 1;
 		});
 		
-		// Define _op>= in relation to _op< and _op= for all types
 		Object.addOp("_op>=", [](EvalState& e) {
 			e.copy(-2);				// Make copies of the arguments
 			e.copy(-2);
@@ -349,20 +364,19 @@ namespace dust {
 			return 1;
 		});
 		
-		// Define _op!= in relation to _op= and Bool._ou! for all types
 		Object.addOp("_op!=", [](EvalState& e) {
 			e.callOp("_op=");			// Throws if _op= is not defined by the type
 			e.callOp("_ou!");			// Throws if _op= doesn't return a boolean
 			return 1;
 		});
 
-		// Define _op^ (exponentation) for Ints and Floats
+		// Define _op^ and _op/ (exponentation and division) for Ints and Floats
 		Number.addOp("_op^", [](EvalState& e) {
 			auto base = (double)e;
 			e.push(pow(base, (double)e));
 			return 1;
 		});
-		// Define _op/ (division) for Ints and Floats
+		
 		Number.addOp("_op/", [](EvalState& e) { e.push((double)e / (double)e); return 1; });
 
 		// Define math operators for Ints
@@ -421,6 +435,7 @@ namespace dust {
 			e.pushScope(nxt);
 			return 1;
 		});
+
 		// Remove element(s) from table (-)
 		Table.addOp("_op-", [](EvalState& e) {
 			dust::Table lt = e.pop<dust::Table>(), rt = e.pop<dust::Table>();
@@ -440,6 +455,7 @@ namespace dust {
 			e.pushScope(nxt);
 			return 1;
 		});
+		
 		// Union (Append and remove duplicates) (*)
 		Table.addOp("_op*", [](EvalState& e) {
 			dust::Table lt = e.pop<dust::Table>(), rt = e.pop<dust::Table>();
@@ -464,6 +480,7 @@ namespace dust {
 			e.pushScope(nxt);
 			return 0;
 		});
+		
 		// Intersection (Elements in both tables) (^)
 		Table.addOp("_op^", [](EvalState& e) {
 			dust::Table lt = e.pop<dust::Table>(), rt = e.pop<dust::Table>();
@@ -483,6 +500,7 @@ namespace dust {
 			e.pushScope(nxt);
 			return 1;
 		});
+		
 		// Member-wise comparison (=)
 		Table.addOp("_op=", [](EvalState& e) {
 			if (e.at().val.i == e.at(-2).val.i) {		// Short-cut if the two tables are the same reference
@@ -518,5 +536,8 @@ namespace dust {
 
 			return 1;
 		});
+	
+
+		// Function functions
 	}
 }
