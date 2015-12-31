@@ -4,14 +4,61 @@
 #include <unordered_map>
 
 #include "Table.h"
+#include "Function.h"
 #include "StorageBase.h"
 #include "Exceptions\runtime.h"
 
 namespace dust {
 	namespace impl {
 
+		/*
+		 * Class to enable a registry for std::string
+		 * Default class performs no work when called
+		 *  - Is there a generic way to select the registry specialization ???
+		 */
 		template <typename Value>
-		class Collector : public StorageBase {
+		class RegCollector : public StorageBase {
+			protected:
+				void removeEntry(const Value& v) {}
+				bool hasEntry(const Value& v) { return false; }
+				size_t getEntry(const Value& v) { return -1; }
+				size_t newEntry(const Value& v, size_t ref) { return ref; }
+				size_t setEntry(const Value& v, size_t ref) { return ref; }
+		};
+
+		template <>
+		class RegCollector<std::string> : public StorageBase {
+			private:
+				std::unordered_map<std::string, size_t> registry;
+
+			protected:
+				void removeEntry(const std::string& v) {
+					registry.erase(v);
+				}
+
+				bool hasEntry(const std::string& v) {
+					return registry.count(v) > 0;
+				}
+
+				size_t getEntry(const std::string& v) {
+					return registry[v];
+				}
+
+				size_t newEntry(const std::string& v, size_t ref) {
+					return setEntry(v, ref);
+				}
+
+				size_t setEntry(const std::string& v, size_t ref) {
+					return registry[v] = ref;
+				}
+		};
+
+		/*
+		 * Storage "bin" for non-primitive objects for use in dust
+		 * Basically transforms Value into size_t (which impl::Value accepts)
+		 */
+		template <typename Value>
+		class Collector : public RegCollector<Value> {
 			struct StorageType {
 				Value val;
 				int num_refs = 0;
@@ -33,7 +80,6 @@ namespace dust {
 
 			private:
 				std::vector<StorageType*> store;
-				std::unordered_map<Value, size_t> registry;
 
 				// Possibly replace "if !validIndex throw" pattern ???
 				void throwIfInvalid(size_t idx) {
@@ -47,10 +93,11 @@ namespace dust {
 					store[alloc] = new StorageType{ s };
 					return alloc;
 				}
+
 			protected:
 				// Mark the given index as "free"
 				void markFree(size_t idx) {
-					registry.erase(store[idx]->val);
+					removeEntry(store[idx]->val);
 
 					delete store[idx];
 					store[idx] = nullptr;
@@ -78,10 +125,9 @@ namespace dust {
 					return store[r]->val;
 				}
 
-				// Create a record with the 
+				// Create a record with the given value
 				size_t loadRef(Value s) {
-					size_t ref = (registry.count(s) > 0) ? registry[s] : (registry[s] = nxtRecord(s));
-					//incRef(ref);
+					size_t ref = hasEntry(s) ? getEntry(s) : newEntry(s, nxtRecord(s));
 					return ref;
 				}
 
@@ -89,15 +135,18 @@ namespace dust {
 				size_t setRef(size_t r, Value s) {
 					decRef(r);
 
-					if (registry.count(s) > 0)
-						r = registry[s];
+					// Attempt to look into the registry
+					if (hasEntry(s))
+						r = getEntry(s);
+					
+					// Reuse the memory if possible
+					else if (store[r]->num_refs == 0) {
+						removeEntry(store[r]->val);
+						store[setEntry(s, r)]->val = s;
 
-					else if (store[r].num_refs == 0) {
-						registry.erase(store[r]->val);
-						store[registry[s] = r]->val = s;
-
+					// Create a new record
 					} else
-						registry[s] = r = nxtRecord(val);
+						newEntry(s, r = nxtRecord(s));
 
 					store[r]->num_refs++;
 					return r;
@@ -131,8 +180,9 @@ namespace dust {
 				}
 		};
 
-		typedef Collector<std::string> StringStorage;
-		typedef Collector<dust::Table> TableStorage;
+		using StringStorage = Collector<std::string>;
+		using TableStorage = Collector<dust::Table>;
+		using FuncStorage = Collector<dust::Function>;
 
 	}
 }

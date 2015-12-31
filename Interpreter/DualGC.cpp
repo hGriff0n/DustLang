@@ -10,10 +10,18 @@ namespace dust {
 				return std::min(c_idx + std::min((size_t)32, curr.capacity() / 4), curr.capacity());
 			}
 
+			StorageBase& GC::getCurrentTarget() {
+				if (collection_target == 0)
+					return strings;
+				if (collection_target == 1)
+					return tables;
+				return funcs;
+			}
+
 			GC::GC() : strings{}, curr{ strings } {}
 
 			int GC::run(bool f) {
-				curr = collect_strings ? strings : (StorageBase&)tables;
+				curr = getCurrentTarget();
 
 				auto ret = f ? incrParse() : stopWorld();
 
@@ -50,6 +58,10 @@ namespace dust {
 
 			StringStorage& GC::getStrings() {
 				return strings;
+			}
+
+			FuncStorage& GC::getFunctions() {
+				return funcs;
 			}
 
 	}
