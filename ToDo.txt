@@ -84,10 +84,8 @@ Timeline
 			Allow Type methods to be called using '.'/'[]' syntax on non-table values and variables (ie. -3.abs())
 				Relevant tests: 370, 371, 372, 375, 385
 			Allow Type methods to be called using '.'/'[]' syntax directly from the TypeName (ie. Int.abs(-3))
-				Current  disallows type_ids to be used outside of new_type and type_checking
+				Current grammar disallows type_ids outside of new_type and type_checking
 				Relevant tests: 373
-		Rework Assign::eval to account for multiple returns
-			Relevant tests: 392, 393
 		Try to enable "e.push([](EvalState& e){ return 0; })"
 			Surround with Function{} in the meantime
 			has_interface.h has the necessary templates

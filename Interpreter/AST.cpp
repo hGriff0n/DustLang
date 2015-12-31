@@ -269,29 +269,25 @@ namespace dust {
 
 			auto l_var = vars->begin(), r_var = vars->end();
 			auto l_val = vals->begin(), r_val = vals->end();
-			auto var_s = vars->size(), val_s = vals->size();
+			size_t exp = e.size() + vars->size();
 
-			// This code is currently not suited to multiple returns and the splat operator
-				// For multiple returns, combining the next two loops should work
-
-			// More values than variables. Readjust val
-			while (val_s > var_s) {
-				--r_val; --val_s;
-			}
-
+			// This code does not account for the splat operator
+				// Assign -1 to exp if a splat exists ???
+			
 			// Evaluate expression list (left -> right)
-			while (l_val != r_val)
+			while (l_val != r_val && e.size() < exp)
 				(*l_val++)->eval(e);
 
-			// More variables than values. Push nils
+			// More variables than values. Push nil
 				// Might change to copy() depending on compound assignment semantics (extend the last value to match)
-			while (var_s > val_s) {
-				e.pushNil(); ++val_s;
-			}
+			while (e.size() < exp) e.pushNil();
 
-			// Reverse the stack to enable left->right evaluation
-			e.reverse(val_s);
+			// More values than variables (due to multiple returns). Pop extras
+			while (e.size() > exp) e.pop();
 
+			// Reverse the stack to enable left->right evaluation of assignments
+			e.reverse(vars->size());
+			
 			// Perform assignments. Compound if necessary
 			while (r_var != l_var) {
 				if (op.size()) (*l_var)->eval(e).callOp(op);
