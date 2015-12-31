@@ -35,7 +35,7 @@ namespace dust {
 		*/
 		class Function {
 			private:
-				FunctionBase* fn;
+				std::shared_ptr<FunctionBase> fn;
 
 				template <typename T, typename... Args>
 				void push(EvalState& e, T&& val, Args&&... args) {
@@ -43,20 +43,15 @@ namespace dust {
 					push(e, std::forward<Args>(args)...);
 					//push(e, std::forward<T>(val));			// first arg on the top
 				}
-
 				template <typename T>
 				void push(EvalState& e, T&& val) {
 					impl::push(e, type::Traits<T>::make(val, getGC(e)));
 				}
-
 				void push(EvalState& e, Value&& v);
 
 			public:
 				Function(const std::shared_ptr<parse::ASTNode>& f);
 				Function(const NativeFn& f);
-				Function(const Function& f) = delete;
-				Function(Function&& f);
-				~Function();
 
 				// Call the function using the arguments on the stack
 				int call(EvalState& e);
@@ -78,4 +73,5 @@ namespace dust {
 	}
 
 	using Function = impl::Function;
+
 }

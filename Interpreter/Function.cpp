@@ -33,14 +33,8 @@ namespace dust {
 
 
 		// Function interface
-		Function::Function(const std::shared_ptr<parse::ASTNode>& f) : fn{ new DustFunction{ f } } {}
-		Function::Function(const NativeFn& f) : fn{ new SysFunction{ f } } {}
-		Function::Function(Function&& f) : fn{ f.fn } {
-			f.fn = nullptr;
-		}
-		Function::~Function() {
-			delete fn;
-		}
+		Function::Function(const std::shared_ptr<parse::ASTNode>& f) : fn{ std::make_shared<DustFunction>(f) } {}
+		Function::Function(const NativeFn& f) : fn{ std::make_shared<SysFunction>(f) } {}
 
 		void Function::push(EvalState& e, Value&& val) {
 			impl::push(e, val);
@@ -49,8 +43,10 @@ namespace dust {
 		int Function::call(EvalState& e) {
 			return fn->call(e);
 		}
+
 		int Function::operator()(EvalState& e) {
 			return fn->call(e);
 		}
 	}
+
 }
