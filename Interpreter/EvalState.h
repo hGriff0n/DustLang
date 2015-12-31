@@ -5,6 +5,7 @@
 
 namespace dust {
 	namespace type {
+
 		// Traits conversion specializations (Could I move these into TypeTraits.h ???)
 		template<> int Traits<int>::get(const impl::Value& v, impl::GC& gc) {
 			try {
@@ -87,6 +88,17 @@ namespace dust {
 
 			return nullptr;				// return nil;
 		}
+
+		template<> Function Traits<Function>::get(const impl::Value& v, impl::GC& gc) {
+			try {
+				if (v.type_id == Traits<Function>::id)
+					return gc.getFunctions().deref(v.val.i);
+
+			} catch (...) {}
+
+			throw error::conversion_error{ "Traits<Function>::get", "Function" };
+		}
+
 	}
 
 	namespace test {

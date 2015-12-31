@@ -293,7 +293,7 @@ namespace dust {
 		type::Traits<std::string>::id = String;
 		type::Traits<bool>::id = Bool;
 		type::Traits<dust::Table>::id = Table;
-		//type::Traits<dust::Function>::id = Function;
+		type::Traits<dust::Function>::id = Function;
 	}
 
 	void initConversions(type::TypeSystem& ts) {

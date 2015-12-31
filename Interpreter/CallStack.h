@@ -8,13 +8,35 @@
 #include "Exceptions\runtime.h"
 
 namespace dust {
-	// Can I move this specialization to EvalState.h?  NO
-	template<> impl::Value type::Traits<std::string>::make(std::string s, impl::GC& gc) {
-		return{ gc.getStrings().loadRef(s), type::Traits<std::string>::id };
-	}
+	namespace type {
+		// Can I move this specialization to EvalState.h?  NO
+		template<> impl::Value Traits<std::string>::make(const std::string& s, impl::GC& gc) {
+			return{ gc.getStrings().loadRef(s), Traits<std::string>::id };
+		}
 
-	template<> impl::Value type::Traits<Table>::make(Table t, impl::GC& gc) {
-		return{ gc.getTables().loadRef(t), type::Traits<Table>::id };
+		template<> impl::Value Traits<Table>::make(const Table& t, impl::GC& gc) {
+			return{ gc.getTables().loadRef(t), Traits<Table>::id };
+		}
+
+		template<> impl::Value Traits<Function>::make(const Function& f, impl::GC& gc) {
+			return{ gc.getFunctions().loadRef(f), Traits<Function>::id };
+		}
+
+		template<> impl::Value Traits<std::shared_ptr<parse::ASTNode>>::make(const std::shared_ptr<parse::ASTNode>& f, impl::GC& gc) {
+			return Traits<Function>::make(f, gc);
+		}
+
+		/*
+		// I have a way of "catching" all functions, just need to determine where I can/must "put" it
+			// has_interface<T, int(EvalState&)>::value
+
+		//template <typename T, typename = std::enable_if_t<has_interface<T, int(EvalState&)>::value>>
+
+		// This won't match lambdas or free functions
+		template <> impl::Value Traits<NativeFn>::make(const NativeFn& f, impl::GC& gc) {
+			return Traits<Function>::make(f, gc);
+		}
+		//*/
 	}
 
 	namespace impl {

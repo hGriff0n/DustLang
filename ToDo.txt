@@ -76,22 +76,20 @@ Timeline
 
 	1 Function Calling		ie. print("Hello World!") and abs(3)
 		Be able to store functions as values
-			Add in necessary GC interfaces
-				Add Collector specialization
-				Uncomment FuncStorage field
-				Add getFuncs method
+			Try to enable "e.push([](EvalState& e){ return 0; })"
+				Surround with Function{} in the meantime
+				has_interface.h has the necessary templates
 			Hook up the type::Traits specializations
-				Need to determine where to place them
-					Should I also specialize for NativeFn and std::shared_ptr<ASTNode> ???
-						I think that would simplify the api (e.push(...) would automatically create the Function)
-				Uncomment the id setting in initTypeSystem
-				Tests 320 and 348 should work once I get this settup
-					Have to assign "abs" first
-						Put it in initState for now
+				Tests 344 and 348 should work once I get this settup
+					Uncomment the function assignments first
 		Implement the FunctionCall class
 			Settle on argument passing procedure
 				Use the procedure for operators
 			Settle on "OOP" procedure
+				Have a "self" field in EvalState ???
+					Any code that refers to "self" first checks the self field
+					If nil, goes to the current scope
+					Just need to figure out setting/reseting
 			How is testing going to work
 				To test I need to assign the functions
 					However I have to test that assignment works first

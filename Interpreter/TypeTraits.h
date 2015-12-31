@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Value.h"
-//#include "DualGC.h"				// Wouldn't need to include <string>
 #include <string>
 
 #include "Exceptions\logic.h"
@@ -27,7 +26,7 @@ namespace dust {
 		struct Traits {
 			static size_t id;
 
-			static impl::Value make(T v, impl::GC& gc) {
+			static impl::Value make(const T& v, impl::GC& gc) {
 				return{ v, Traits<T>::id };
 			}
 
@@ -41,7 +40,7 @@ namespace dust {
 
 		// Nil type specializations
 		template<> size_t Traits<Nil>::id = 0;
-		template<> impl::Value Traits<Nil>::make(Nil v, impl::GC& gc) {
+		template<> impl::Value Traits<Nil>::make(const Nil& v, impl::GC& gc) {
 			return{ 0, Traits<Nil>::id };
 		}
 	}

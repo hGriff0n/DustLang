@@ -317,7 +317,29 @@ namespace dust {
 			t.closeSubTest();
 
 			t.initSubTest("Functions");
-				// e.push(...);
+				e.push("abs");
+				//e.push([](EvalState& e) {
+				e.push(Function{[](EvalState& e) {
+					auto x = (int)e;
+					e.push(x > 0 ? x : -x);
+					return 1;
+				}});
+				e.setScoped();
+
+				e.push("add");
+				e.push(Function{[](EvalState& e) {
+					e.push((int)e + (int)e);
+					return 1;
+				}});
+				e.setScoped();
+
+				e.push("give5");
+				e.push(Function{[](EvalState& e) {
+					e.push(5);
+					return 1;
+				}});
+				e.setScoped();
+
 				t.requireType("abs", "Function");
 
 				t.initSubTest("Calling Free Functions");
