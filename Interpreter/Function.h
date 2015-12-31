@@ -39,9 +39,9 @@ namespace dust {
 
 				template <typename T, typename... Args>
 				void push(EvalState& e, T&& val, Args&&... args) {
-					push(e, std::forward<T>(val));				// first arg on the bottom
+					//push(e, std::forward<T>(val));				// first arg on the bottom
 					push(e, std::forward<Args>(args)...);
-					//push(e, std::forward<T>(val));			// first arg on the top
+					push(e, std::forward<T>(val));					// first arg on the top
 				}
 				template <typename T>
 				void push(EvalState& e, T&& val) {

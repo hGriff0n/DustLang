@@ -290,8 +290,7 @@ namespace dust {
 			}
 
 			// Reverse the stack to enable left->right evaluation
-			for (int top = -1, bottom = -(int)val_s; top > bottom; --top, ++bottom)
-				e.swap(top, bottom);
+			e.reverse(val_s);
 
 			// Perform assignments. Compound if necessary
 			while (r_var != l_var) {
@@ -658,23 +657,40 @@ namespace dust {
 		// FunctionCall methods
 		FunctionCall::FunctionCall(const ParseData& in) : ASTNode{ in } {}
 		EvalState& FunctionCall::eval(EvalState& e) {
+			// Get arguments on the stack
+			auto top = e.size();
+			for (auto arg : *args) arg->eval(e);
+
+			// Rotate so that the first (left) argument is on the top
+			e.reverse(args->size());
+
+			// Get and call the function
+			auto num_ret = ((Function)fn->eval(e)).call(e);
+
+			// Trim the stack of garbage
+			if (num_ret >= 0) {
+				auto new_vals = e.size() - top++;
+				while (new_vals-- > num_ret) e.pop(top);
+			}
+
+			// The last (right) return value is on the top
 			return e;
 		}
 		void FunctionCall::addChild(std::shared_ptr<ASTNode>& c) {
 			if (isNode<VarName>(c)) {
 				if (!fn)
-					fn = c;		// std::dynamic_pointer_cast<VarName>(c);
+					fn = std::dynamic_pointer_cast<VarName>(c);
 				else
-					throw error::base{ "" };
+					throw error::base{ "Attempt to assign multiple functions" };
 
 			} else if (isNode<List<ASTNode>>(c)) {
 				if (!args)
-					args = c;	// std::dynamic_pointer_cast<List<ASTNode>>(c);
+					args = std::dynamic_pointer_cast<List<ASTNode>>(c);
 				else
-					throw error::base{ "" };
+					throw error::base{ "Attempt to assign multiple argument lists" };
 
 			} else
-				throw error::base{ "" };
+				throw error::base{ "Attempt to assign a unaccepted node type" };
 		}
 		std::string FunctionCall::toString() { return ""; }
 		std::string FunctionCall::printString(std::string buf) { return ""; }

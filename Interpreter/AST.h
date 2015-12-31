@@ -39,6 +39,12 @@ namespace dust {
 				virtual std::string printString(std::string buf);
 		};
 
+		//class Nothing {
+		//	public:
+		//		EvalState& eval(EvalState& e);
+		//		std::string toString();
+		//};
+
 		/*
 		 * An iterable collection of nodes of a desired type
 		 */
@@ -409,9 +415,8 @@ namespace dust {
 		 */
 		class FunctionCall : public ASTNode {
 			private:
-				//std::shared_ptr<VarName> fn;
-				//std::shared_ptr<List<ASTNode>> args;
-				std::shared_ptr<ASTNode> fn, args;
+				std::shared_ptr<VarName> fn;
+				std::shared_ptr<List<ASTNode>> args;
 
 			public:
 				FunctionCall(const ParseData& in);

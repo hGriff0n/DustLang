@@ -340,6 +340,15 @@ namespace dust {
 				}});
 				e.setScoped();
 
+				e.push("bound");
+				e.push(Function{ [](EvalState& e) {
+					auto d = (double)e;
+					e.push((int)std::floor(d));
+					e.push((int)std::ceil(d));
+					return 2;
+				} });
+				e.setScoped();
+
 				t.requireType("abs", "Function");
 
 				t.initSubTest("Calling Free Functions");
@@ -350,8 +359,9 @@ namespace dust {
 					t.requireEval("add( 1 + 1,3)", 5);
 
 					t.requireEval("give5()", 5);
+					//t.requireEval("give5(3)", 5);
 
-					t.requireException<error::base>("foo(3)");
+					t.requireException<error::dispatch_error>("foo(3)");
 				t.closeSubTest();
 				
 				t.initSubTest("Calling Member Functions");
@@ -376,6 +386,13 @@ namespace dust {
 
 					t.eval("abs: 5");
 					t.requireType("abs", "Int");
+				t.closeSubTest();
+
+				t.initSubTest("Multiple Returns");
+					t.requireEval("a, b: bound(3.3)", 4);
+					t.requireEval("a + b", 7);
+
+					t.requireEval("add(bound(3.3))", 7);
 				t.closeSubTest();
 			t.closeSubTest();
 
