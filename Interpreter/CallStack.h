@@ -26,16 +26,16 @@ namespace dust {
 			return Traits<Function>::make(f, gc);
 		}
 
+		// Won't match lambdas and free functions
+		template<> impl::Value Traits<NativeFn>::make(const NativeFn& f, impl::GC& gc) {
+			return Traits<Function>::make(f, gc);
+		}
+
 		/*
 		// I have a way of "catching" all functions, just need to determine where I can/must "put" it
 			// has_interface<T, int(EvalState&)>::value
 
 		//template <typename T, typename = std::enable_if_t<has_interface<T, int(EvalState&)>::value>>
-
-		// This won't match lambdas or free functions
-		template <> impl::Value Traits<NativeFn>::make(const NativeFn& f, impl::GC& gc) {
-			return Traits<Function>::make(f, gc);
-		}
 		//*/
 	}
 

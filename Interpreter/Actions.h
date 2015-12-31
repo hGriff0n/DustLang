@@ -14,8 +14,8 @@ namespace dust {
 			static void apply(input& in, AST& ast, ScopeTracker& _) {
 				// stack: ..., {fn}, {args}
 
-				if (!isNode<List<ASTNode>>(ast.at())) throw error::base{ "" };
-				if (!isNode<VarName>(ast.at(-2))) throw error::base{ "" };
+				if (!isNode<List<ASTNode>>(ast.at())) throw error::base{ "No arguments present" };
+				if (!isNode<VarName>(ast.at(-2))) throw error::base{ "No function present" };
 
 				auto fn = makeNode<FunctionCall>(in);
 				fn->addChild(ast.pop());
@@ -23,9 +23,20 @@ namespace dust {
 
 				ast.push(fn);
 
-				// stack: ..., {Function}
+				// stack: ..., {FunctionCall}
 			}
 		};
+
+		template <> struct action<no_args> {
+			static void apply(input& in, AST& ast, ScopeTracker& lvl) {
+				// stack: ...
+
+				ast.push(makeNode<List<ASTNode>>(in));
+
+				// stack: ..., {List}
+			}
+		};
+
 
 		// Organization Actions
 		template <> struct action<scope> {

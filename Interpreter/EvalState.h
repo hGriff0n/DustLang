@@ -10,7 +10,7 @@ namespace dust {
 		template<> int Traits<int>::get(const impl::Value& v, impl::GC& gc) {
 			try {
 				if (v.type_id == Traits<double>::id)
-					return v.val.d;
+					return (int)v.val.d;
 
 				else if (v.type_id == Traits<int>::id)
 					return v.val.i;
@@ -70,7 +70,7 @@ namespace dust {
 
 		template<> bool Traits<bool>::get(const impl::Value& v, impl::GC& gc) {
 			if (v.type_id == Traits<bool>::id)
-				return v.val.i;
+				return (bool)v.val.i;
 
 			else if (v.type_id == Traits<Nil>::id)
 				return false;

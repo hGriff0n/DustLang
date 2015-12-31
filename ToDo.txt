@@ -75,43 +75,33 @@ Timeline
 		See VagueToDo.txt
 
 	1 Function Calling		ie. print("Hello World!") and abs(3)
-		Be able to store functions as values
-			Try to enable "e.push([](EvalState& e){ return 0; })"
-				Surround with Function{} in the meantime
-				has_interface.h has the necessary templates
-			Hook up the type::Traits specializations
-				Tests 344 and 348 should work once I get this settup
-					Uncomment the function assignments first
 		Implement the FunctionCall class
-			Settle on argument passing procedure
-				Use the procedure for operators
 			Settle on "OOP" procedure
 				Have a "self" field in EvalState ???
-					Any code that refers to "self" first checks the self field
-					If nil, goes to the current scope
-					Just need to figure out setting/reseting
-			How is testing going to work
-				To test I need to assign the functions
-					However I have to test that assignment works first
-					How do I assign functions in runTests
-						Perform the operations manually (I do have access to the EvalState)
-		Implement the evaluation hooks/etc. to be able to call functions	# Get functions callable
-			Relevant tests: 323, 324, 326, 327, 329, 345
+					Need to figure out interaction and control hooks
+					How would it be referenced / set ???
 		Convert Types completely to impl::Table for storage concerns
 			Allow Type methods to be called using '.'/'[]' syntax on non-table values and variables (ie. -3.abs())
-				Relevant tests: 333, 334, 335, 338, 348
+				Relevant tests: 370, 371, 372, 375, 385
 			Allow Type methods to be called using '.'/'[]' syntax directly from the TypeName (ie. Int.abs(-3))
-				Current grammar disallows type_ids to be used outside of new_type and type_checking
-				Relevant tests: 336
+				Current  disallows type_ids to be used outside of new_type and type_checking
+				Relevant tests: 373
+		Rework Assign::eval to account for multiple returns
+			Relevant tests: 392, 393
+		Try to enable "e.push([](EvalState& e){ return 0; })"
+			Surround with Function{} in the meantime
+			has_interface.h has the necessary templates
 		Move function calling work into the _op() metamethod
 			Argument evaluation to be done l->r
 				Question: Evaluate all arguments or not (ala Assignment)
 			Functions need to intrinsically handle having more/fewer arguments than expected
 				However, I will not know this information until the function is run
 			This should be handled through the objects "_op()" metamethod
+			Relevant tests: 364
 		Optional: Get no parens syntax to work
 	
 	2 Dust Function Definition
+		Transfer Types to using Tables for member functions
 		Implement toString and printString for If, Control/Block, FunctionCall, and FunctionDef
 		Update project version to 0.8.1
 		Add in the correct syntax and action calls to create dust functions

@@ -121,7 +121,8 @@ namespace dust {
 		// Indexable/Callable variables/values
 		struct dot_index : seq<one<'.'>, sor<var_id, integer>> {};						// \.({var_id}|{integer})
 		struct brac_index : seq<one<'['>, seps, expr_7, seps, one<']'>> {};				// \[ *{expr_7} *\]
-		struct fn_call : seq<one<'('>, seps, expr_list, one<')'>> {};					// \( *{expr_list}\)
+		struct no_args : at<one<')'>> {};												// FunctionCall expects a List<ASTNode>
+		struct fn_call : seq<one<'('>, seps, sor<expr_list, no_args>, one<')'>> {};		// \( *{expr_list}?\)
 		struct expr_0 : seq<lvalue, star<sor<dot_index, brac_index, fn_call>>> {}; 		// {lvalue}({dot_index}|{brac_index}|{fn_call})
 
 
