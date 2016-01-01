@@ -318,35 +318,34 @@ namespace dust {
 
 			t.initSubTest("Functions");
 				e.push("abs");
-				//e.push([](EvalState& e) {
-				e.push(Function{[](EvalState& e) {
+				e.push([](EvalState& e) {
 					auto x = (int)e;
 					e.push(x > 0 ? x : -x);
 					return 1;
-				}});
+				});
 				e.setScoped();
 
 				e.push("add");
-				e.push(Function{[](EvalState& e) {
+				e.push([](EvalState& e) {
 					e.push((int)e + (int)e);
 					return 1;
-				}});
+				});
 				e.setScoped();
 
 				e.push("give5");
-				e.push(Function{[](EvalState& e) {
+				e.push([](EvalState& e) {
 					e.push(5);
 					return 1;
-				}});
+				});
 				e.setScoped();
 
 				e.push("bound");
-				e.push(Function{ [](EvalState& e) {
+				e.push([](EvalState& e) {
 					auto d = (double)e;
 					e.push((int)std::floor(d));
 					e.push((int)std::ceil(d));
 					return 2;
-				} });
+				});
 				e.setScoped();
 
 				t.requireType("abs", "Function");

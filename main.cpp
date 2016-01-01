@@ -49,6 +49,7 @@ int main(int argc, const char* argv[]) {
 	initState(e);
 	test::runTests(e, show_all_tests);
 
+
 	// Function demonstration
 	Function add{ [](EvalState& e) {
 		e.push((int)e + (int)e);
@@ -74,6 +75,7 @@ int main(int argc, const char* argv[]) {
 	e.push(-3);
 	add(e, 4, e.pop());		// No errors with impl::Value
 	std::cout << "-3 + 4 = " << (int)e << "\n";
+
 
 	// Main repl loop
 	std::cout << "\n> ";

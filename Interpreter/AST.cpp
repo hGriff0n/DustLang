@@ -269,10 +269,11 @@ namespace dust {
 
 			auto l_var = vars->begin(), r_var = vars->end();
 			auto l_val = vals->begin(), r_val = vals->end();
-			size_t exp = e.size() + vars->size();
+			size_t old = e.size(), exp = e.size() + vars->size();
 
-			// This code does not account for the splat operator
-				// Assign -1 to exp if a splat exists ???
+			//auto n = num<Splat>(vars);		// Still needs to handle splat assignment
+			//if (n > 1) throw error::
+			//if (n == 1) exp = -1;				// Cause the evaluate loop to evaluate all expressions
 			
 			// Evaluate expression list (left -> right)
 			while (l_val != r_val && e.size() < exp)

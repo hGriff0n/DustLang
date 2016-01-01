@@ -22,7 +22,7 @@ namespace dust {
 		 * Traits is a basic type traits struct that abstracts the process
 		 * Of creating and accessing impl::Values for any type
 		 */
-		template <typename T>
+		template <typename T, typename = void>
 		struct Traits {
 			static size_t id;
 
@@ -36,7 +36,8 @@ namespace dust {
 		};
 
 		// Default id definition
-		template<typename T> size_t Traits<T>::id = -1;
+		template<typename T, typename v> size_t Traits<T, v>::id = -1;
+		//template<typename T> size_t Traits<T>::id = -1;
 
 		// Nil type specializations
 		template<> size_t Traits<Nil>::id = 0;

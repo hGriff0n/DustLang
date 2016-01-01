@@ -86,9 +86,6 @@ Timeline
 			Allow Type methods to be called using '.'/'[]' syntax directly from the TypeName (ie. Int.abs(-3))
 				Current grammar disallows type_ids outside of new_type and type_checking
 				Relevant tests: 373
-		Try to enable "e.push([](EvalState& e){ return 0; })"
-			Surround with Function{} in the meantime
-			has_interface.h has the necessary templates
 		Move function calling work into the _op() metamethod
 			Argument evaluation to be done l->r
 				Question: Evaluate all arguments or not (ala Assignment)

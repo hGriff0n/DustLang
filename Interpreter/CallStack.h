@@ -4,10 +4,13 @@
 #include "Value.h"
 #include "Stack.h"
 #include "DualGC.h"
+#include "../has_interface.h"
 
 #include "Exceptions\runtime.h"
 
 namespace dust {
+	class EvalState;
+
 	namespace type {
 		// Can I move this specialization to EvalState.h?  NO
 		template<> impl::Value Traits<std::string>::make(const std::string& s, impl::GC& gc) {
@@ -26,17 +29,19 @@ namespace dust {
 			return Traits<Function>::make(f, gc);
 		}
 
-		// Won't match lambdas and free functions
-		template<> impl::Value Traits<NativeFn>::make(const NativeFn& f, impl::GC& gc) {
-			return Traits<Function>::make(f, gc);
-		}
+		// Allow e.push to accept lambdas/std::functions/free functions
+		template <typename T>
+		struct Traits<T, std::enable_if_t<shl::has_interface<T, int(EvalState&)>::value>> {
+			static size_t id;		// this will always be -1
 
-		/*
-		// I have a way of "catching" all functions, just need to determine where I can/must "put" it
-			// has_interface<T, int(EvalState&)>::value
+			static impl::Value make(const T& v, impl::GC& gc) {
+				return Traits<Function>::make(NativeFn{ v }, gc);
+			}
 
-		//template <typename T, typename = std::enable_if_t<has_interface<T, int(EvalState&)>::value>>
-		//*/
+			static T get(const impl::Value& v, impl::GC& gc) {
+				throw error::illegal_template("Traits<T>::get is not implemented for type ", typeid(T));
+			}
+		};
 	}
 
 	namespace impl {
