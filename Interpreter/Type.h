@@ -8,7 +8,7 @@
 
 namespace dust {
 	class EvalState;
-	typedef std::function<int(EvalState&)> Function;
+	using NativeFn = std::function<int(EvalState&)>;
 
 	namespace type {
 
@@ -20,7 +20,7 @@ namespace dust {
 			size_t id, parent;
 
 			// Internal storage of type methods
-			std::map<std::string, Function> ops;				// Temporary fix
+			std::map<std::string, NativeFn> ops;				// Temporary fix
 			Table _ops_;										// Future implementation
 				
 			// Default values and typed/const variables ???

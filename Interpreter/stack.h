@@ -75,6 +75,11 @@ namespace dust {
 				std::swap(s[idx1], s[idx2]);
 			}
 
+			// Reverses the top n elements
+			void reverse(size_t n) {
+				std::reverse(n > s.size() ? std::begin(s) : std::end(s) - n, std::end(s));
+			}
+
 			// stl interface methods
 			bool empty() {
 				return s.empty();

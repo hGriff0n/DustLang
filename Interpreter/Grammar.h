@@ -112,16 +112,19 @@ namespace dust {
 
 		// Atomic Tokens
 		struct unary : seq<op_0, expr_0> {};
-		struct cast : seq<one<'('>, type_id, one<')'>> {};								// to avoid matching parens (error?)S
+		struct cast : seq<one<'('>, type_id, one<')'>> {};								// to avoid matching parens (error?)
 		struct parens : if_must<o_paren, seps, expr, seps, c_paren> {};					// \( *{expr} *\)
-		struct lvalue : sor<literals, var_name, unary, cast, parens> {};				// {number}|{var_name}|{unary}|{parens}
+		struct lvalue : sor<literals, var_name, unary, cast, parens> {};				// {literal}|{var_name}|{unary}|{parens}
 
-
+		
 		// Expression Tokens
-		// Indexable variables/values
-		struct dot_index : seq<one<'.'>, sor<var_id, integer>> {};
-		struct brac_index : seq<one<'['>, seps, expr_7, seps, one<']'>> {};				// will need to update if I add a layer above expr_7
-		struct expr_0 : seq<lvalue, star<sor<dot_index, brac_index>>> {}; 				// {lvalue}(\.({var_id}|{integer})|\[{expr_7}\])*
+		// Indexable/Callable variables/values
+		struct dot_index : seq<one<'.'>, sor<var_id, integer>> {};						// \.({var_id}|{integer})
+		struct brac_index : seq<one<'['>, seps, expr_7, seps, one<']'>> {};				// \[ *{expr_7} *\]
+		struct no_args : at<one<')'>> {};												// FunctionCall expects a List<ASTNode>
+		struct fn_call : seq<one<'('>, seps, sor<expr_list, no_args>, one<')'>> {};		// \( *{expr_list}?\)
+		struct expr_0 : seq<lvalue, star<sor<dot_index, brac_index, fn_call>>> {}; 		// {lvalue}({dot_index}|{brac_index}|{fn_call})
+
 
 		// Type Casts
 		//struct type_cast : seq<type_id, parens> {};									// {type_id}{parens}			Int("4")

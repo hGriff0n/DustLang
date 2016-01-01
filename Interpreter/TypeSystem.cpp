@@ -10,7 +10,7 @@ namespace dust {
 
 		TypeVisitor::TypeVisitor(size_t i, TypeSystem* self) : id{ i }, ts{ self } {}
 
-		TypeVisitor& TypeVisitor::addOp(std::string op, Function f) {
+		TypeVisitor& TypeVisitor::addOp(std::string op, NativeFn f) {
 			// Check if the function is a converter
 			if (ts->type_id.count(op) > 0)
 				ts->addConv(id, ts->type_id[op]);

@@ -269,30 +269,26 @@ namespace dust {
 
 			auto l_var = vars->begin(), r_var = vars->end();
 			auto l_val = vals->begin(), r_val = vals->end();
-			auto var_s = vars->size(), val_s = vals->size();
+			size_t old = e.size(), exp = e.size() + vars->size();
 
-			// This code is currently not suited to multiple returns and the splat operator
-				// For multiple returns, combining the next two loops should work
-
-			// More values than variables. Readjust val
-			while (val_s > var_s) {
-				--r_val; --val_s;
-			}
-
+			//auto n = num<Splat>(vars);		// Still needs to handle splat assignment
+			//if (n > 1) throw error::
+			//if (n == 1) exp = -1;				// Cause the evaluate loop to evaluate all expressions
+			
 			// Evaluate expression list (left -> right)
-			while (l_val != r_val)
+			while (l_val != r_val && e.size() < exp)
 				(*l_val++)->eval(e);
 
-			// More variables than values. Push nils
+			// More variables than values. Push nil
 				// Might change to copy() depending on compound assignment semantics (extend the last value to match)
-			while (var_s > val_s) {
-				e.pushNil(); ++val_s;
-			}
+			while (e.size() < exp) e.pushNil();
 
-			// Reverse the stack to enable left->right evaluation
-			for (int top = -1, bottom = -(int)val_s; top > bottom; --top, ++bottom)
-				e.swap(top, bottom);
+			// More values than variables (due to multiple returns). Pop extras
+			while (e.size() > exp) e.pop();
 
+			// Reverse the stack to enable left->right evaluation of assignments
+			e.reverse(vars->size());
+			
 			// Perform assignments. Compound if necessary
 			while (r_var != l_var) {
 				if (op.size()) (*l_var)->eval(e).callOp(op);
@@ -655,6 +651,48 @@ namespace dust {
 			accepting = false;
 		}
 
+		// FunctionCall methods
+		FunctionCall::FunctionCall(const ParseData& in) : ASTNode{ in } {}
+		EvalState& FunctionCall::eval(EvalState& e) {
+			// Get arguments on the stack
+			auto top = e.size();
+			for (auto arg : *args) arg->eval(e);
+
+			// Rotate so that the first (left) argument is on the top
+			e.reverse(args->size());
+
+			// Get and call the function
+			auto num_ret = ((Function)fn->eval(e)).call(e);
+
+			// Trim the stack of garbage
+			if (num_ret >= 0) {
+				auto new_vals = e.size() - top++;
+				while (new_vals-- > num_ret) e.pop(top);
+			}
+
+			// The last (right) return value is on the top
+			return e;
+		}
+		void FunctionCall::addChild(std::shared_ptr<ASTNode>& c) {
+			if (isNode<VarName>(c)) {
+				if (!fn)
+					fn = std::dynamic_pointer_cast<VarName>(c);
+				else
+					throw error::base{ "Attempt to assign multiple functions" };
+
+			} else if (isNode<List<ASTNode>>(c)) {
+				if (!args)
+					args = std::dynamic_pointer_cast<List<ASTNode>>(c);
+				else
+					throw error::base{ "Attempt to assign multiple argument lists" };
+
+			} else
+				throw error::base{ "Attempt to assign a unaccepted node type" };
+		}
+		std::string FunctionCall::toString() { return ""; }
+		std::string FunctionCall::printString(std::string buf) { return ""; }
+
+
 		std::string ASTNode::node_type = "ASTNode";
 		std::string Debug::node_type = "Debug";
 		std::string Literal::node_type = "Literal";
@@ -670,5 +708,6 @@ namespace dust {
 		std::string Control::node_type = "Control";
 		std::string Block::node_type = "Block";
 		std::string TryCatch::node_type = "Try-Catch";
+		std::string FunctionCall::node_type = "Function Call";
 	}
 }

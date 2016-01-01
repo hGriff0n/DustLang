@@ -3,17 +3,14 @@
 #include "CallStack.h"
 #include "TypeSystem.h"
 
-#include "Table.h"
-typedef dust::impl::Table table_type;
-
-
 namespace dust {
 	namespace type {
+
 		// Traits conversion specializations (Could I move these into TypeTraits.h ???)
 		template<> int Traits<int>::get(const impl::Value& v, impl::GC& gc) {
 			try {
 				if (v.type_id == Traits<double>::id)
-					return v.val.d;
+					return (int)v.val.d;
 
 				else if (v.type_id == Traits<int>::id)
 					return v.val.i;
@@ -73,7 +70,7 @@ namespace dust {
 
 		template<> bool Traits<bool>::get(const impl::Value& v, impl::GC& gc) {
 			if (v.type_id == Traits<bool>::id)
-				return v.val.i;
+				return (bool)v.val.i;
 
 			else if (v.type_id == Traits<Nil>::id)
 				return false;
@@ -91,6 +88,17 @@ namespace dust {
 
 			return nullptr;				// return nil;
 		}
+
+		template<> Function Traits<Function>::get(const impl::Value& v, impl::GC& gc) {
+			try {
+				if (v.type_id == Traits<Function>::id)
+					return gc.getFunctions().deref(v.val.i);
+
+			} catch (...) {}
+
+			throw error::conversion_error{ "Traits<Function>::get", "Function" };
+		}
+
 	}
 
 	namespace test {
@@ -106,12 +114,8 @@ namespace dust {
 	class EvalState : public impl::CallStack {
 		private:
 			Table curr_scp;
-			table_type global;
+			impl::Table global;
 			type::TypeSystem ts;
-
-			//impl::RuntimeStorage<std::string> strings;
-			//impl::RuntimeStorage<impl::Table> tables;
-			//impl::RuntimeStorage<void*> user_data;
 			impl::GC gc;
 
 		protected:
@@ -174,6 +178,7 @@ namespace dust {
 
 			// Get the current type system
 			type::TypeSystem& getTS();
+			impl::GC& getGC();
 
 			// Pass the top element on the stack to the stream
 				// Handles non-printable values and string-special printing
@@ -191,6 +196,5 @@ namespace dust {
 			friend void initState(EvalState&);
 			template <class Stream> friend class test::Tester;
 	};
-
 
 }
