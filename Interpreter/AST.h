@@ -121,7 +121,6 @@ namespace dust {
 				EvalState& eval(EvalState& e);
 
 				std::string toString();		// Possibly temporary implementation
-				std::string printString(std::string buf);
 		};
 
 		/*
@@ -341,7 +340,6 @@ namespace dust {
 				void addChild(std::shared_ptr<ASTNode>& c);
 
 				std::string toString();
-				virtual std::string printString(std::string buf);
 		};
 
 		/*

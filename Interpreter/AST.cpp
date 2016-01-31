@@ -1,6 +1,5 @@
 #include "AST.h"
 #include <regex>
-#include <cctype>
 
 #include "Exceptions\parsing.h"
 #include "Exceptions\dust.h"
@@ -20,9 +19,11 @@ namespace dust {
 		}
 
 		std::string trim(std::string s) {
-			auto front = std::find_if_not(s.begin(), s.end(), std::isspace);
-			auto back = std::find_if_not(s.rbegin(), s.rend(), std::isspace).base();
-			return back <= front ? "" : std::string{front, back};
+			// Include <cctype>
+			//auto front = std::find_if_not(s.begin(), s.end(), std::isspace);
+			//auto back = std::find_if_not(s.rbegin(), s.rend(), strd::isspace).base();
+			//return back <= front ? "" : std::string{front, back};
+			return s;
 		}
 
 		// ParseData methods
@@ -66,14 +67,11 @@ namespace dust {
 			return e;
 		}
 		std::string Literal::toString() {
-			return (id == type::Traits<int>::id ? " Int " :
-					id == type::Traits<double>::id ? " Float " :
-					id == type::Traits<bool>::id ? " Bool " :
-					id == type::Traits<std::string>::id ? " String \"" : " Nil ")
-				+ val + (id == type::Traits<std::string>::id ? "\"" : "");
-		}
-		std::string Literal::printString(std::string buf) {
-			return buf + "+- " + node_type + toString() + "\n";
+			if (id == type::Traits<std::string>::id) return "String \"" + val + "\"";
+
+			return (id == type::Traits<int>::id ? "Int " :
+					id == type::Traits<double>::id ? "Float " :
+					id == type::Traits<bool>::id ? "Bool " : "Nil ") + val;
 		}
 
 		// Value methods
@@ -102,8 +100,8 @@ namespace dust {
 			return buf + "+- " + node_type + " " + op + "\n" + l->printString(buf + " ") + (r ? r->printString(buf + " ") : "");
 		}
 		void Operator::addChild(std::shared_ptr<ASTNode>& c) {
-			if (!l) l.swap(c);
-			else if (!r) r.swap(c);
+			if (!l) l = c;
+			else if (!r) r = c;
 			else throw error::unimplemented_operation{ "Dust does not currently support ternary operators using the Operator node" };
 		}
 
@@ -168,7 +166,7 @@ namespace dust {
 		// TypeName methods
 		TypeName::TypeName(const ParseData& in, std::string n) : ASTNode{ in }, name{ n } {}
 		EvalState& TypeName::eval(EvalState& e) {
-			//e.getTS().getType(name);
+			//e.push(e.getTS().getType(name).fields);
 			return e;
 		}
 		std::string TypeName::toString() { return name; }
@@ -183,10 +181,10 @@ namespace dust {
 		}
 		void TypeCast::addChild(std::shared_ptr<ASTNode>& c) {
 			if (!convert && std::dynamic_pointer_cast<TypeName>(c))
-				convert.swap(std::dynamic_pointer_cast<TypeName>(c));
+				convert = std::dynamic_pointer_cast<TypeName>(c);
 
 			else if (!expr)
-				expr.swap(c);
+				expr = c;
 
 			else
 				throw error::invalid_ast_construction{ "Attempt to construct TypeCast Node with multiple expressions" };
@@ -203,27 +201,22 @@ namespace dust {
 			auto nType = ts.newType(name, ts.get(inherit));
 
 			definition->eval(e);
-
-			//e.pushScope();
-			// associate table to type
-			//e.pop();
+			
+			// Associate the table to the type
+			//e.setTypeMembers(nType);						// Associate the created table to the type
 
 			return e;
 		}
 		std::string NewType::toString() { return name + " extends " + inherit; }
-		std::string NewType::printString(std::string buf) {
-			return buf + "+- " + node_type + " " + toString() + "\n";
-		}
 		void NewType::addChild(std::shared_ptr<ASTNode>& c) {
 			if (std::dynamic_pointer_cast<TypeName>(c))
 				(name == "" ? name : inherit) = c->toString();
 
-			else {
-				definition.swap(std::dynamic_pointer_cast<Block>(c));
+			else if (std::dynamic_pointer_cast<Block>(c))
+				definition = std::dynamic_pointer_cast<Block>(c);
 
-				if (!definition)
-					throw error::invalid_ast_construction{ "Attempt to construct NewType node without a definition (Block) node" };
-			}
+			else
+				throw error::invalid_ast_construction{ "Attempt to construct NewType node without a definition (Block) node" };
 		}
 
 		// TypeCheck methods
@@ -253,7 +246,7 @@ namespace dust {
 				type = c->toString();
 
 			else if (!l)
-				l.swap(c);
+				l = c;
 
 			else
 				throw error::invalid_ast_construction{ "Attempt to construct TypeCheck node with more than one expression" };
@@ -287,6 +280,8 @@ namespace dust {
 			while (e.size() > exp) e.pop();
 
 			// Reverse the stack to enable left->right evaluation of assignments
+				// Doesn't handle multiple returns
+				// Do I really need this (The actual assignments can be right->left)
 			e.reverse(vars->size());
 			
 			// Perform assignments. Compound if necessary
@@ -303,17 +298,14 @@ namespace dust {
 			return buf + "+- " + node_type + " " + toString() + "\n" + vars->printString(buf + " ") + vals->printString(buf + " ");
 		}
 		void Assign::addChild(std::shared_ptr<ASTNode>& c) {
-			if (!vars) {
-				vars.swap(std::dynamic_pointer_cast<var_type>(c));
-				if (vars) return;
-			}
+			if (!vars && std::dynamic_pointer_cast<var_type>(c))
+				vars = std::dynamic_pointer_cast<var_type>(c);
 
-			if (!vals) {
-				vals.swap(std::dynamic_pointer_cast<val_type>(c));
-				if (vals) return;
-			}
+			else if (!vals && std::dynamic_pointer_cast<val_type>(c))
+				vals = std::dynamic_pointer_cast<val_type>(c);
 
-			if (vars && vals) throw error::operands_error{ "Assignment is a binary operation" };
+			else
+				throw error::operands_error{ "Assignment is a binary operation" };
 		}
 
 		// BooleanOperator methods
@@ -340,8 +332,8 @@ namespace dust {
 			return buf + "+- " + node_type + " " + toString() + "\n" + l->printString(buf + " ") + (r ? r->printString(buf + " ") : "");
 		}
 		void BooleanOperator::addChild(std::shared_ptr<ASTNode>& c) {
-			if (!l) l.swap(c);
-			else if (!r) r.swap(c);
+			if (!l) l = c;
+			else if (!r) r = c;
 			else throw error::operands_error{ "Attempt to add more than three operands to BinaryKeyword node" };
 		}
 
@@ -349,13 +341,17 @@ namespace dust {
 		Control::Control(const ParseData& in, Type typ) : ASTNode{ in }, type{ typ }, next{ true } {}
 		EvalState& Control::eval(EvalState& e) {
 			switch (type) {
-				case Type::FOR:
+				case TRY_CATCH:
+					std::dynamic_pointer_cast<VarName>(expr)->set(e, true, false);
+					break;
+
+				case FOR:
 					if (!expr->eval(e).is<Table>())
 						throw error::bad_node_eval{ "Attempt to iterate over a non-table" };
 
 					// Generator Abstraction (needs work)
-					/*
 
+					/*
 					// Get generator function into local state
 					if (!has_generator) {
 
@@ -365,6 +361,7 @@ namespace dust {
 							e.push("_iterator");
 							e.get();
 
+							// Should this be a dust_error ???
 							if (e.is<Nil>())
 								throw error::bad_node_eval{ "Attempt to iterate over a non-iterable object" };
 						}
@@ -374,15 +371,10 @@ namespace dust {
 					}
 					*/
 
-					e.pushNil();					// Push initial argument
-					break;
-				case Type::TRY_CATCH:
-					std::dynamic_pointer_cast<VarName>(expr)->set(e, true, false);
-					break;
-				case Type::WHILE:
-					e.pushNil();
-					break;
-				case Type::DO_WHILE:
+				case WHILE:
+					e.pushNil();								// Initial loop value
+
+				case DO_WHILE:
 				default:
 					next = true;
 					break;										// Removing this line causes C2059: syntax error: '}'
@@ -392,20 +384,31 @@ namespace dust {
 		}
 		void Control::addChild(std::shared_ptr<ASTNode>& c) {
 			if (expr) {
-				if (type == Type::FOR && isNode<List<VarName>>(c))
+				if (type == FOR && isNode<List<VarName>>(c))
 					vars = std::dynamic_pointer_cast<List<VarName>>(c);
 				else
 					throw error::operands_error{ "Attempt to construct control node with more than two expresions" };
 			} else
 				expr = c;
 		}
-		std::string Control::toString() { return ""; }
+		std::string Control::toString() {
+			return (type == DO_WHILE ? "repeat" :
+					type == FOR ? "for" :
+					type == TRY_CATCH ? "try-catch" :
+					type == WHILE ? "while" : "");
+		}
 		std::string Control::printString(std::string buf) {
-			return "";
+			std::string ret = buf + "+- " + node_type + " " + toString();
+
+			if (type == FOR) {
+				ret += " " + vars->printString("");
+			}
+
+			return ret + "\n" + expr->printString(buf + " ");
 		}
 		bool Control::iterate(EvalState& e, size_t loc) {
 			switch (type) {
-				case Type::FOR:						// for
+				case FOR:
 				{
 					Table t = e.pop<Table>(loc - 2);
 					auto kv = t->next(e.pop(loc - 2));
@@ -481,13 +484,13 @@ namespace dust {
 					return true;
 				}
 					break;
-				case Type::WHILE:					// while
+				case WHILE:
 				{
 					bool val = (bool)expr->eval(e);
 					if (val) e.settop(loc);
 					return val;
 				}
-				case Type::DO_WHILE:				// do-while
+				case DO_WHILE:
 					if (!next) {
 						bool val = (bool)expr->eval(e);
 						if (val) e.settop(loc);
@@ -560,7 +563,7 @@ namespace dust {
 			return e;
 		}
 		std::string Block::toString() {
-			return table ? " []" : "";
+			return " " + (table ? "[]" : control->toString());
 		}
 		std::string Block::printString(std::string buf) {
 			std::string ret = buf + "+- " + node_type + toString() + "\n";
@@ -607,10 +610,11 @@ namespace dust {
 		}
 		void TryCatch::addChild(std::shared_ptr<ASTNode>& c) {
 			auto& code_block = try_code ? catch_code : try_code;
-			if (code_block) throw error::operands_error{ "Attempt to add more than two blocks to TryCatch node" };
 
-			code_block.swap(std::dynamic_pointer_cast<Block>(c));
-			if (!code_block) throw error::invalid_ast_construction{ "Attempt to construct TryCatch node with a non-Block node" };
+			if (code_block) throw error::operands_error{ "Attempt to add more than two blocks to TryCatch node" };
+			if (!std::dynamic_pointer_cast<Block>(c)) throw error::invalid_ast_construction{ "Attempt to construct TryCatch node with a non-Block node" };
+
+			code_block = std::dynamic_pointer_cast<Block>(c);
 		}
 		bool TryCatch::isFull() {
 			return try_code && catch_code;
@@ -637,12 +641,24 @@ namespace dust {
 			if (b != std::end(statements))
 				b->second->eval(e);
 			else
-				e.push(false);
+				e.pushNil();
 
 			return e;
 		}
 		std::string If::toString() { return ""; }
-		std::string If::printString(std::string buf) { return ""; }
+		std::string If::printString(std::string buf) {
+			std::string stub = buf + "+- ";
+			buf += " ";
+
+			auto b = std::begin(statements);
+			std::string ret = stub + "If\n" + b->first->printString(buf) + b->second->printString(buf);
+
+			while (++b != std::end(statements))
+				ret += stub + "Else-If\n" + b->first->printString(buf) + b->second->printString(buf);
+
+			return ret;
+		
+		}
 		void If::addBlock(ExprType& expr, BlockType& block) {
 			statements.emplace_back(std::make_pair(expr, block));
 		}
@@ -693,8 +709,10 @@ namespace dust {
 			} else
 				throw error::base{ "Attempt to assign a unaccepted node type" };
 		}
-		std::string FunctionCall::toString() { return ""; }
-		std::string FunctionCall::printString(std::string buf) { return ""; }
+		std::string FunctionCall::toString() { return fn->toString(); }
+		std::string FunctionCall::printString(std::string buf) {
+			return buf + "+- " + node_type + "\n" + fn->printString(buf + " ") + buf + " +- Arguments:\n" + args->printString(buf + "  ");
+		}
 
 		// FunctionDef methods
 		FunctionDef::FunctionDef(const ParseData& in) : ASTNode{ in } {}
@@ -718,6 +736,7 @@ namespace dust {
 		std::string Control::node_type = "Control";
 		std::string Block::node_type = "Block";
 		std::string TryCatch::node_type = "Try-Catch";
+		std::string If::node_type = "If";
 		std::string FunctionCall::node_type = "Function Call";
 		std::string FunctionDef::node_type = "Function Definition";
 	}

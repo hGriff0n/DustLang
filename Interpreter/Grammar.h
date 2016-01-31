@@ -11,13 +11,15 @@ namespace dust {
 		using AST = Stack<std::shared_ptr<ASTNode>>;
 		using eps = success;
 
-		// Rule Templates
-		template <typename Rule, typename Sep, typename Pad>							// Covers pegtl::list (apes list_tail)
+		/*
+		 * Helper templates
+		 */
+		template <typename Rule, typename Sep, typename Pad>								// Covers pegtl::list (apes list_tail)
 		struct list : seq<pegtl::list<Rule, Sep, Pad>, opt<star<Pad>, disable<Sep>>> {};	// Prevents the comma action from being called multiple times (is this necessary?)
 		template <typename Rule>
-		struct unless : if_then_else<at<Rule>, failure, any> {};
+		struct unless : if_then_else<at<Rule>, failure, any> {};		// Actually gets used
 		template <typename Cond, typename Then>
-		struct _if : if_then_else<Cond, Then, eps> {};
+		struct if_then : if_then_else<Cond, Then, eps> {};
 
 
 		// Forward Declarations
@@ -25,7 +27,9 @@ namespace dust {
 		struct keywords;	struct expr_7;
 
 
-		// Whitespace 
+		/*
+		 * Whitespace declarations
+		 */
 		//struct space : one<' ', '\n', '\r', \t', '\v', '\f'> {};
 		struct spaces : plus<one<' '>> {};
 		struct seps : star<space> {};
@@ -35,7 +39,9 @@ namespace dust {
 		struct endline : until<eolf, space> {};
 
 
-		// Readability Tokens
+		/*
+		 * Readability Tokens
+		 */
 		struct comma : one<','> {};
 
 		template <typename Rule>
@@ -48,13 +54,15 @@ namespace dust {
 		struct o_brack : one<'['> {};
 		struct c_brack : one<']'> {};
 		struct quote : one<'"'> {};
-		struct esc : one<'\\'> {};		// % ???
+		struct esc : one<'\\'> {};		// Change to % ???
 		struct comment : if_must<two<'#'>, until<eolf>> {};								// ##.*
 		struct var_list : s_list<expr_0> {};											// AST and lookahead? (seq<var_name, seps, sor<one<','>, op_5>>)  // this could technically match an expression list
 		struct expr_list : s_list<expr_x> {};											// {expr_5} *, *
 
 
-		// Identifier Tokens
+		/*
+		 * Identifier Tokens
+		 */
 		struct id_end : identifier_other {};
 		struct type_id : seq<range<'A', 'Z'>, star<id_end>> {};							// [A-Z]{id_end}*
 		struct var_id : seq<not_at<keywords>, range<'a', 'z'>, star<id_end>> {};		// [a-z]{id_end}*
@@ -62,7 +70,9 @@ namespace dust {
 		struct var_name : seq<var_lookup, var_id> {};									// \.*{var_id}
 
 
-		// Keyword Tokens
+		/*
+		 * Keywords
+		 */
 		template <class Str>
 		struct key : seq<Str, not_at<id_end>> {};
 
@@ -88,21 +98,25 @@ namespace dust {
 		struct keywords : sor<k_and, k_true, k_false, k_or, k_nil, k_do, k_in, k_if, k_else, k_elseif, k_while, k_for, k_type, k_try, k_catch, k_repeat, k_def, k_self> {};
 
 
-		// Literal Tokens
-		struct integer : plus<digit> {};												// [0-9]+
-		struct decimal : seq<plus<digit>, one<'.'>, not_at<var_id>, star<digit>> {};	// [0-9]+\.[0-9]*
-		struct bad_decimal : seq<one<'.'>, not_at<var_id>, star<digit>> {};				// \.[0-9]*				Rule to catch invalid decimals at "parse-time"
+		/*
+		 * Literal Tokens
+		 */
+		struct integer : plus<digit> {};																// [0-9]+
+		struct decimal : seq<plus<digit>, one<'.'>, not_at<var_id>, star<digit>> {};					// [0-9]+\.[0-9]*
+		struct bad_decimal : seq<one<'.'>, not_at<var_id>, star<digit>> {};								// \.[0-9]*				Rule to catch invalid decimals at "parse-time"
 		struct boolean : sor<k_true, k_false> {};
-		struct body : star<sor<seq<esc, quote>, unless<quote>>> {};						// ((\\\")|[^"])*
-		struct str : seq<quote, body, quote> {};										// \"{body}\"
+		struct body : star<sor<seq<esc, quote>, unless<quote>>> {};										// ((\\\")|[^"])*
+		struct str : seq<quote, body, quote> {};														// \"{body}\"
 
 		struct table_inner : until<c_brack, sor<white, expr>> {};
-		struct table : seq<o_brack, seps, table_inner> {};								// \[ *{expr}* *\]
+		struct table : seq<o_brack, seps, table_inner> {};												// \[ *{expr}* *\]
 
 		struct literals : sor<decimal, bad_decimal, integer, boolean, table, str, k_nil> {};
 
 
-		// Operators
+		/*
+		 * Operator Tokens
+		 */
 		struct op_0 : one<'!', '-'> {};																	// unary operators
 		struct op_1 : one<'^'> {};
 		struct op_2 : one<'*', '/'> {};
@@ -112,14 +126,18 @@ namespace dust {
 		struct op_inherit : pstring("<-") {};
 
 
-		// Atomic Tokens
+		/*
+		 * Atomic Tokens
+		 */
 		struct unary : seq<op_0, expr_0> {};
 		struct cast : seq<one<'('>, type_id, one<')'>> {};								// to avoid matching parens (error?)
 		struct parens : if_must<o_paren, seps, expr, seps, c_paren> {};					// \( *{expr} *\)
 		struct lvalue : sor<literals, var_name, unary, cast, parens> {};				// {literal}|{var_name}|{unary}|{parens}
 
 		
-		// Expression Tokens
+		/*
+		 * Expression Tokens
+		 */
 		// Indexable/Callable variables/values
 		struct dot_index : seq<one<'.'>, sor<var_id, integer>> {};						// \.({var_id}|{integer})
 		struct brac_index : seq<one<'['>, seps, expr_7, seps, one<']'>> {};				// \[ *{expr_7} *\]
@@ -204,7 +222,9 @@ namespace dust {
 		struct expr : expr_x {};
 
 
-		// Organization Tokens
+		/*
+		 * Organizational Tokens
+		 */
 		// line = \t*[ ]*{expr}? *{comment}?\n
 
 		// This is slow (Has to parse over eval_line twice on match)
