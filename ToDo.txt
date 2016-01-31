@@ -32,6 +32,7 @@ Timeline
 			Consider splitting test sections (see comments in Testing.h)
 			Add comments to each test describing what's being tested
 			Consider moving excep_if_empty from Block to Control
+			Comment on what the individual tests do
 		Consider removing the test for operator isDefd in com
 			Would remove ambiguity in code execution
 			"3" - 3 => String._op- not defined
@@ -72,27 +73,36 @@ Timeline
 			Try converting some code once I understand it
 		Various Changes
 			Change 0 => false ???
+		Figure out where to put "Utility" stuff
 		See VagueToDo.txt
 
 	1 Function Calling		ie. print("Hello World!") and abs(3)
-		Implement the FunctionCall class
-			Settle on "OOP" procedure
-				Have a "self" field in EvalState ???
-					Need to figure out interaction and control hooks
-					How would it be referenced / set ???
+		Rewrite EvalState
+			Simplify EvalState, especially in regards to get/set/call
+			Add in self parameter usage
+				Possibly work on the FunctionCall class for this
+
 		Convert Types completely to impl::Table for storage concerns
 			Allow Type methods to be called using '.'/'[]' syntax on non-table values and variables (ie. -3.abs())
+				Probably have to generalize get for non-table values
 				Relevant tests: 370, 371, 372, 375, 385
+
 			Allow Type methods to be called using '.'/'[]' syntax directly from the TypeName (ie. Int.abs(-3))
+				Convert Types to storing their members in the _ops_ table first
+					First convert FunctionCall->eval to using EvalState::call
+					Need to convert EvalState::callOp to be smilar to FunctionCall->eval
 				Current grammar disallows type_ids outside of new_type and type_checking
+					Need to allow type_id's as the first value in a variable chain
 				Relevant tests: 373
+
 		Move function calling work into the _op() metamethod
 			Argument evaluation to be done l->r
 				Question: Evaluate all arguments or not (ala Assignment)
 			Functions need to intrinsically handle having more/fewer arguments than expected
 				However, I will not know this information until the function is run
 			This should be handled through the objects "_op()" metamethod
-			Relevant tests: 364
+			Relevant tests: 364 (?)
+
 		Optional: Get no parens syntax to work
 	
 	2 Dust Function Definition

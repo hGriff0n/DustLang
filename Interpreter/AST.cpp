@@ -574,7 +574,9 @@ namespace dust {
 		void Block::addChild(std::shared_ptr<ASTNode>& c) {
 			if (std::dynamic_pointer_cast<Control>(c)) {
 				if (control) throw error::operands_error{ "Attempt to construct Block with multiple Control nodes" };
-				control.swap(std::dynamic_pointer_cast<Control>(c));
+				control = std::dynamic_pointer_cast<Control>(c);
+
+				if (control->type != Control::NONE) excep_if_empty = false;
 
 			} else
 				expr.push_back(c);
@@ -661,6 +663,8 @@ namespace dust {
 			// Rotate so that the first (left) argument is on the top
 			e.reverse(args->size());
 
+			//return fn->eval(e).call(top);
+
 			// Get and call the function
 			auto num_ret = ((Function)fn->eval(e)).call(e);
 
@@ -692,6 +696,12 @@ namespace dust {
 		std::string FunctionCall::toString() { return ""; }
 		std::string FunctionCall::printString(std::string buf) { return ""; }
 
+		// FunctionDef methods
+		FunctionDef::FunctionDef(const ParseData& in) : ASTNode{ in } {}
+		EvalState& FunctionDef::eval(EvalState& e) { return e; }
+		void FunctionDef::addChild(std::shared_ptr<ASTNode>& c) {}
+		std::string FunctionDef::toString() { return ""; }
+		std::string FunctionDef::printString(std::string buf) { return ""; }
 
 		std::string ASTNode::node_type = "ASTNode";
 		std::string Debug::node_type = "Debug";
@@ -709,5 +719,6 @@ namespace dust {
 		std::string Block::node_type = "Block";
 		std::string TryCatch::node_type = "Try-Catch";
 		std::string FunctionCall::node_type = "Function Call";
+		std::string FunctionDef::node_type = "Function Definition";
 	}
 }

@@ -9,22 +9,22 @@ namespace dust {
 
 			// Basics and Type System tests
 			t.initSubTest("Basics and Type System");
-				t.requireEval("3", 3);											// 1
-				t.requireType("3", "Int");										// 2
-				t.requireNoError("## Hello");									// 3
-				t.requireEval("3## Hello", 3);									// 4
-				t.requireNoError(" ");											// 5
-				t.requireType("", "Nil");										// 6
+				t.requireEval("3", 3);
+				t.requireType("3", "Int");
+				t.requireNoError("## Hello");									// Testing that comments parse correctly
+				t.requireEval("3## Hello", 3);									// Testing that comments parse correctly
+				t.requireNoError(" ");
+				t.requireType("", "Nil");
 
-				t.requireEval("\"3\"", "3");									// 7
-				t.requireType("\"3\"", "String");								// 8
+				t.requireEval("\"3\"", "3");
+				t.requireType("\"3\"", "String");
 
-				t.requireError(".3");											// 9
-				t.requireEval("3.3", 3.3);										// 10
-				t.requireType("3.3", "Float");									// 11
+				t.requireError(".3");											// Testing that decimals must be well formed
+				t.requireEval("3.3", 3.3);
+				t.requireType("3.3", "Float");
 
-				t.requireEval("true", true);									// 12
-				t.requireType("true", "Bool");									// 13
+				t.requireEval("true", true);
+				t.requireType("true", "Bool");
 			t.closeSubTest();
 
 			// Operator resolution tests

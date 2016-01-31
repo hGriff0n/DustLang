@@ -49,39 +49,15 @@ int main(int argc, const char* argv[]) {
 	initState(e);
 	test::runTests(e, show_all_tests);
 
-
-	// Function demonstration
-	Function add{ [](EvalState& e) {
-		e.push((int)e + (int)e);
-		return 1;
-	} };
-
-	e.push(2);
-	e.push(5);
-	add(e);					// Works in dust context
-	std::cout << "\n2 + 5 = " << (int)e << "\n";
-
-	add(e, 9, 15);			// Works in C++ context
-	std::cout << "9 + 15 = " << (int)e << "\n";
-
-	// Supports function currying (not sure about ability to be used however)
-	Function add2{ [&add](EvalState& e) {
-		return add(e, 2);
-	} };
-
-	add2(e, 5);
-	std::cout << "add2(5) = " << (int)e << "\n";
-
-	e.push(-3);
-	add(e, 4, e.pop());		// No errors with impl::Value
-	std::cout << "-3 + 4 = " << (int)e << "\n";
-
-
 	// Main repl loop
 	std::cout << "\n> ";
 
+	// repl loop
 	while (getmultiline(std::cin, input) && input != "exit") {
-		if (input == "gc") {
+
+		// Run the garbage collector
+		if (input == ":gc") {
+			e.getGC().run();
 
 		// Type checking (ala. Haskell)
 		} else if (input.substr(0, 2) == ":t") {
@@ -121,10 +97,6 @@ int main(int argc, const char* argv[]) {
 					parse_tree.pop()->eval(e).stream(std::cout << ":: ") << "\n";
 				}
 				//e.eval(parse_tree.pop()).stream(std::cout << ":: ") << "\n";
-
-				// Need to make a generic 'pop' here
-				// Or I can insist that printable equates to String convertible
-				// e >> input;		Define operator<< and operator>> for EvalState/Stack ???
 
 			} catch (pegtl::parse_error& e) {
 				std::cout << e.what() << std::endl;

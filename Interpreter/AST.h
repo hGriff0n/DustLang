@@ -432,7 +432,19 @@ namespace dust {
 		/*
 		 * Node for a function definition
 		 */
-		//class FunctionDef : public ASTNode {};
+		class FunctionDef : public ASTNode {
+			private:
+				std::shared_ptr<Block> body;
+			public:
+				FunctionDef(const ParseData& in);
+				static std::string node_type;
+
+				EvalState& eval(EvalState& e);
+				void addChild(std::shared_ptr<ASTNode>& c);
+				
+				std::string toString();
+				virtual std::string printString(std::string buf);
+		};
 
 		template<class T> std::string List<T>::node_type = "List<" + T::node_type + ">";
 	}
