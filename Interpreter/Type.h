@@ -20,13 +20,12 @@ namespace dust {
 			size_t id, parent;
 
 			// Internal storage of type methods
-			std::map<std::string, NativeFn> ops;				// Temporary fix
-			Table _ops_;										// Future implementation
+			Table fields;
 				
 			// Default values and typed/const variables ???
 
 			Type(std::string t, size_t s) : Type(t, s, -1) {}
-			Type(std::string t, size_t s, size_t p) : name{ t }, id{ s }, parent{ p }, _ops_{ nullptr } {}
+			Type(std::string t, size_t s, size_t p) : name{ t }, id{ s }, parent{ p }, fields{ nullptr } {}
 			Type(std::string t, size_t s, Type p) : Type(t, s, p.id) {}
 		};
 

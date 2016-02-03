@@ -185,12 +185,17 @@ namespace dust {
 			
 			template <typename T>
 			type::TypeSystem::TypeVisitor& addMember(type::TypeSystem::TypeVisitor& t, std::string op, T val) {
-				e.push(val);
+				auto v = type::Traits<T>::make(val, gc);
+				auto fn = type::Traits<std::string>::make(op, gc);
 
-				auto v = e.pop();
-				try_incRef(v);
+				try_incRef(val);
+				try_incRef(fn);
 
-				return t.addOp(op, v);
+				// If op is a converter, note that the conversion exists
+				if (ts.type_id.count(op) > 0)
+					ts.addConv(type::Traits<T>::id, ts.getId(op));
+
+				return t.addOp(fn, v);
 			}
 
 			// Pass the top element on the stack to the stream

@@ -35,7 +35,7 @@ namespace dust {
 					public:
 						TypeVisitor(size_t i, TypeSystem* self);
 
-						TypeVisitor& addOp(std::string op, NativeFn f);
+						TypeVisitor& addOp(impl::Value op, impl::Value v);
 
 						operator size_t();
 				};
