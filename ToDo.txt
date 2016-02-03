@@ -79,12 +79,7 @@ Timeline
 		See VagueToDo.txt
 
 	1 Function Calling		ie. print("Hello World!") and abs(3)
-		Rewrite EvalState
-			Simplify EvalState, especially in regards to get/set/call
-			Add in self parameter usage
-				Possibly work on the FunctionCall class for this
-
-		Convert Types completely to impl::Table for storage concerns
+		Enable OOP syntax
 			Allow Type methods to be called using '.'/'[]' syntax on non-table values and variables (ie. -3.abs())
 				Probably have to generalize get for non-table values
 				Relevant tests: 370, 371, 372, 375, 385
