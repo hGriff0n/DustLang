@@ -15,6 +15,13 @@ namespace dust {
 			return *this;
 		}
 
+		TypeVisitor& TypeVisitor::addOp(impl::Value op, impl::Value v, const std::string& fn) {
+			if (ts->type_id.count(fn) > 0)
+				ts->addConv(id, ts->type_id[fn]);
+
+			return addOp(op, v);
+		}
+
 		TypeVisitor::operator size_t() {
 			return id;
 		}

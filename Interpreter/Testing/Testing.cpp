@@ -323,21 +323,21 @@ namespace dust {
 					e.push(x > 0 ? x : -x);
 					return 1;
 				});
-				e.setScoped();
+				e.set(EvalState::SCOPE);
 
 				e.push("add");
 				e.push([](EvalState& e) {
 					e.push((int)e + (int)e);
 					return 1;
 				});
-				e.setScoped();
+				e.set(EvalState::SCOPE);
 
 				e.push("give5");
 				e.push([](EvalState& e) {
 					e.push(5);
 					return 1;
 				});
-				e.setScoped();
+				e.set(EvalState::SCOPE);
 
 				e.push("bound");
 				e.push([](EvalState& e) {
@@ -346,7 +346,7 @@ namespace dust {
 					e.push((int)std::ceil(d));
 					return 2;
 				});
-				e.setScoped();
+				e.set(EvalState::SCOPE);
 
 				t.requireType("abs", "Function");
 

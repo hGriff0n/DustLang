@@ -188,14 +188,10 @@ namespace dust {
 				auto v = type::Traits<T>::make(val, gc);
 				auto fn = type::Traits<std::string>::make(op, gc);
 
-				try_incRef(val);
+				try_incRef(v);
 				try_incRef(fn);
 
-				// If op is a converter, note that the conversion exists
-				if (ts.type_id.count(op) > 0)
-					ts.addConv(type::Traits<T>::id, ts.getId(op));
-
-				return t.addOp(fn, v);
+				return t.addOp(fn, v, op);
 			}
 
 			// Pass the top element on the stack to the stream

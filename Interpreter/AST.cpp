@@ -93,7 +93,8 @@ namespace dust {
 				e.swap();						// Operators expect stack = ..., {rhs}, {lhs}
 			}
 
-			return e.callOp(op);
+			e.callOp(op);
+			return e;
 		}
 		std::string Operator::toString() { return op; }
 		std::string Operator::printString(std::string buf) {
@@ -132,10 +133,10 @@ namespace dust {
 			(*field)->eval(e);
 
 			if (!sub_var) {
-				e.getScoped(lvl);
+				e.get(EvalState::SCOPE, lvl);
 
 				while (++field != std::end(fields))
-					(*field)->eval(e).get();
+					(*field)->eval(e).get(-2);
 			}
 
 			return e;
@@ -146,18 +147,19 @@ namespace dust {
 
 			if (field == end) {
 				e.swap();
-				e.setScoped(lvl, is_const, is_static);
+				e.set(EvalState::SCOPE, lvl);
+				//e.setScoped(lvl, is_const, is_static);
 
 			} else {
-				e.getScoped(lvl);
+				e.get(EvalState::SCOPE, lvl);
 
 				while (++field != end)
-					(*field)->eval(e).get();
+					(*field)->eval(e).get(-2);
 					//if (e.is<Nil>()) throw error::dust_error{ "Attempt to assign to a Nil value" };
 
 				e.swap();
 				(*end)->eval(e).swap();
-				e.set();
+				e.set(-3);
 			}
 
 			return e;
@@ -177,7 +179,14 @@ namespace dust {
 		// TypeCast methods
 		TypeCast::TypeCast(const ParseData& in) : ASTNode{ in } {}
 		EvalState& TypeCast::eval(EvalState& e) {
-			return expr->eval(e).callMethod(convert->toString());
+			expr->eval(e);
+
+			// Get the converter on the stack
+			auto key = type::Traits<std::string>::make(convert->toString(), e.getGC());
+			e.push(e.getTS().get(e.at().type_id).fields->getVal(key));
+			e.call(1);
+
+			return e;
 		}
 		void TypeCast::addChild(std::shared_ptr<ASTNode>& c) {
 			if (!convert && std::dynamic_pointer_cast<TypeName>(c))
@@ -548,14 +557,15 @@ namespace dust {
 					if (table && !std::dynamic_pointer_cast<Assign>(i)) {
 						e.push<int>(next++);
 						e.swap();
-						e.setScoped();					// WARNING! Might give "wrong" answers
+						e.set(EvalState::SCOPE);		// WARNING! Might give "wrong" answers
 					}
 				}
 			}
 
 			if (save_scope) {
 				e.settop(x);
-				e.pushScope(next);
+				e.push(next);
+				e.pushScope();
 
 			} else
 				e.endScope();
