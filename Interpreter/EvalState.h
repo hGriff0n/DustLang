@@ -218,4 +218,7 @@ namespace dust {
 			template <class Stream> friend class test::Tester;
 	};
 
+	void initConversions(EvalState& e);
+	void initOperations(EvalState& e);
+
 }

@@ -71,7 +71,7 @@ namespace dust {
 	}
 
 	// Constructor
-	EvalState::EvalState() : ts{}, gc{}, CallStack{ gc }, self{}, global {}, curr_scp{ nullptr } {}
+	EvalState::EvalState() : ts{}, gc{}, CallStack{ gc }, self{}, global{}, curr_scp{ nullptr } {}
 
 	void EvalState::call(int num_args) {
 		// stack: ..., {arg0}, {fn}			The first argument is on the top
@@ -252,7 +252,7 @@ namespace dust {
 		// Set SELF to stack top if it isn't set
 		if (self.type_id == type::Traits<Nil>::id)
 			self = pop();
-		
+
 		// Set SCOPE.self to SELF
 		push("self");
 		push(self);
@@ -279,7 +279,7 @@ namespace dust {
 	void EvalState::markTyped(const impl::Value& name, size_t typ) {
 		auto scp = findScope(name, 0);
 		if (!scp) return;		// throw error::base{ "Attempt to static type a nil value" };
-		
+
 		auto& var = scp->getVar(name);
 
 		// If the typing change may require type conversion (ie. typ not Nil and !(type(var) <= typ))
@@ -352,8 +352,8 @@ namespace dust {
 
 	void initState(EvalState& e) {
 		initTypeSystem(e.ts);
-		initConversions(e.ts);
-		initOperations(e.ts);
+		initConversions(e);
+		initOperations(e);
 	}
 
 	void initTypeSystem(type::TypeSystem& ts) {
@@ -375,26 +375,27 @@ namespace dust {
 		type::Traits<dust::Function>::id = Function;
 	}
 
-	void initConversions(type::TypeSystem& ts) {
+	void initConversions(EvalState& e) {
+		auto& ts = e.getTS();
 		auto Int = ts.getType("Int");
 		auto Float = ts.getType("Float");
 		auto String = ts.getType("String");
 
 		// Initialize Conversions
-		Int.addOp("String", [](EvalState& e) { e.push((std::string)e); return 1; });
-		Int.addOp("Float", [](EvalState& e) { e.push((double)e); return 1; });
+		e.addMember(Int, "String", [](EvalState& e) { e.push((std::string)e); return 1; });
+		e.addMember(Int, "Float", [](EvalState& e) { e.push((double)e); return 1; });
 
-		Float.addOp("String", [](EvalState& e) { e.push((std::string)e); return 1; });
-		Float.addOp("Int", [](EvalState& e) { e.push((int)e); return 1; });
+		e.addMember(Float, "String", [](EvalState& e) { e.push((std::string)e); return 1; });
+		e.addMember(Float, "Int", [](EvalState& e) { e.push((int)e); return 1; });
 
-		String.addOp("Int", [](EvalState& e) { e.push((int)e); return 1; });
-		String.addOp("Float", [](EvalState& e) { e.push((float)e); return 1; });
-
-		Int.addOp("String", [](EvalState& e) { e.push((std::string)e); return 1; });
+		e.addMember(String, "Int", [](EvalState& e) { e.push((int)e); return 1; });
+		e.addMember(String, "Float", [](EvalState& e) { e.push((float)e); return 1; });
 
 	}
 
-	void initOperations(type::TypeSystem& ts) {
+	void initOperations(EvalState& e) {
+		auto& ts = e.getTS();
+
 		auto Nil = ts.getType("Nil");
 		auto Object = ts.getType("Object");
 		auto Number = ts.getType("Number");
@@ -409,8 +410,7 @@ namespace dust {
 		//^ * / + - % < = > <= != >=
 
 		// Define _op<=, _op>=, and _op!= in relation to _op<, _op>, _ou!, and _ou= for all types
-		//e.addMember(Object, "_op<=", [](EvalState& e) {
-		Object.addOp("_op<=", [](EvalState& e) {
+		e.addMember(Object, "_op<=", [](EvalState& e) {
 			e.copy(-2);				// Make copies of the arguments
 			e.copy(-2);
 			e.callOp("_op<");		// Call the _op< function
@@ -426,9 +426,8 @@ namespace dust {
 
 			return 1;
 		});
-		
-		//e.addMember(Object, "_op>=", [](EvalState& e) {
-		Object.addOp("_op>=", [](EvalState& e) {
+
+		e.addMember(Object, "_op>=", [](EvalState& e) {
 			e.copy(-2);				// Make copies of the arguments
 			e.copy(-2);
 			e.callOp("_op>");		// Call the _op> for the types
@@ -444,55 +443,47 @@ namespace dust {
 
 			return 1;
 		});
-		
-		//e.addMember(Object, "_op!=", [](EvalState& e) {
-		Object.addOp("_op!=", [](EvalState& e) {
+
+		e.addMember(Object, "_op!=", [](EvalState& e) {
 			e.callOp("_op=");			// Throws if _op= is not defined by the type
 			e.callOp("_ou!");				// Throws if _op= doesn't return a boolean
 			return 1;
 		});
 
 		// Define _op^ and _op/ (exponentation and division) for Ints and Floats
-		//e.addMember(Number, "_op^", [](EvalState& e) {
-		Number.addOp("_op^", [](EvalState& e) {
+		e.addMember(Number, "_op^", [](EvalState& e) {
 			auto base = (double)e;
 			e.push(pow(base, (double)e));
 			return 1;
 		});
-		
-		//e.addMember(Number, "_op/", [](EvalState& e) { e.push((double)e / (double)e); return 1; });
-		Number.addOp("_op/", [](EvalState& e) { e.push((double)e / (double)e); return 1; });
+		e.addMember(Number, "_op/", [](EvalState& e) { e.push((double)e / (double)e); return 1; });
 
 		// Define math operators for Ints
-		//Int.addOp( => e.addMember(Int, 
-		Int.addOp("_op+", [](EvalState& e) { e.push((int)e + (int)e); return 1; });
-		Int.addOp("_op-", [](EvalState& e) { e.push((int)e - (int)e); return 1; });
-		Int.addOp("_op*", [](EvalState& e) { e.push((int)e * (int)e); return 1; });
-		Int.addOp("_op%", [](EvalState& e) { e.push((int)e % (int)e); return 1; });
-		Int.addOp("_op<", [](EvalState& e) { e.push((int)e < (int)e); return 1; });		// 
-		Int.addOp("_op=", [](EvalState& e) { e.push((int)e == (int)e); return 1; });
-		Int.addOp("_op>", [](EvalState& e) { e.push((int)e >(int)e); return 1; });
-		Int.addOp("_ou-", [](EvalState& e) { e.push(-(int)e); return 1; });
+		e.addMember(Int, "_op+", [](EvalState& e) { e.push((int)e + (int)e); return 1; });
+		e.addMember(Int, "_op-", [](EvalState& e) { e.push((int)e - (int)e); return 1; });
+		e.addMember(Int, "_op*", [](EvalState& e) { e.push((int)e * (int)e); return 1; });
+		e.addMember(Int, "_op%", [](EvalState& e) { e.push((int)e % (int)e); return 1; });
+		e.addMember(Int, "_op<", [](EvalState& e) { e.push((int)e < (int)e); return 1; });		// 
+		e.addMember(Int, "_op=", [](EvalState& e) { e.push((int)e == (int)e); return 1; });
+		e.addMember(Int, "_op>", [](EvalState& e) { e.push((int)e > (int)e); return 1; });
+		e.addMember(Int, "_ou-", [](EvalState& e) { e.push(-(int)e); return 1; });
 
 		// Define math operators for Floats
-		//Float.addOp( => e.addMember(Float, 
-		Float.addOp("_op+", [](EvalState& e) { e.push((double)e + (double)e); return 1; });
-		Float.addOp("_op-", [](EvalState& e) { e.push((double)e - (double)e); return 1; });
-		Float.addOp("_op*", [](EvalState& e) { e.push((double)e * (double)e); return 1; });
-		Float.addOp("_op<", [](EvalState& e) { e.push((double)e < (double)e); return 1; });		// 
-		Float.addOp("_op=", [](EvalState& e) { e.push((double)e == (double)e); return 1; });
-		Float.addOp("_op>", [](EvalState& e) { e.push((double)e >(double)e); return 1; });
-		Float.addOp("_ou-", [](EvalState& e) { e.push(-(double)e); return 1; });
+		e.addMember(Float, "_op+", [](EvalState& e) { e.push((double)e + (double)e); return 1; });
+		e.addMember(Float, "_op-", [](EvalState& e) { e.push((double)e - (double)e); return 1; });
+		e.addMember(Float, "_op*", [](EvalState& e) { e.push((double)e * (double)e); return 1; });
+		e.addMember(Float, "_op<", [](EvalState& e) { e.push((double)e < (double)e); return 1; });		// 
+		e.addMember(Float, "_op=", [](EvalState& e) { e.push((double)e == (double)e); return 1; });
+		e.addMember(Float, "_op>", [](EvalState& e) { e.push((double)e > (double)e); return 1; });
+		e.addMember(Float, "_ou-", [](EvalState& e) { e.push(-(double)e); return 1; });
 
 		// Define concatentation (+) and equality (=) operators for Strings
-		//String.addOp( => e.addMember(String, 
-		String.addOp("_op+", [](EvalState& e) { e.push((std::string)e + e.pop<std::string>(-2)); return 1; });			// Why is Int._op- correct then???
-		String.addOp("_op=", [](EvalState& e) { e.push(e.pop().val.i == e.pop().val.i); return 1; });
+		e.addMember(String, "_op+", [](EvalState& e) { e.push((std::string)e + e.pop<std::string>(-2)); return 1; });			// Why is Int._op- correct then???
+		e.addMember(String, "_op=", [](EvalState& e) { e.push(e.pop().val.i == e.pop().val.i); return 1; });
 
 		// Define _op= and _ou! for Bools
-		//Bool.addOp( => e.addMember(Bool, 
-		Bool.addOp("_op=", [](EvalState& e) { e.push((bool)e == (bool)e); return 1; });
-		Bool.addOp("_ou!", [](EvalState& e) { e.push(!(bool)e);  return 1; });
+		e.addMember(Bool, "_op=", [](EvalState& e) { e.push((bool)e == (bool)e); return 1; });
+		e.addMember(Bool, "_ou!", [](EvalState& e) { e.push(!(bool)e);  return 1; });
 
 		// Table functions
 			// Currently these functions "erase" non-integer key values
@@ -500,8 +491,7 @@ namespace dust {
 				// However the value is assigned based on the current open integer key
 
 		// Append element(s) to table (+)
-		//Table.addOp( => e.addMember(Table, 
-		Table.addOp("_op+", [](EvalState& e) {
+		e.addMember(Table, "_op+", [](EvalState& e) {
 			dust::Table lt = e.pop<dust::Table>(), rt = e.pop<dust::Table>();
 
 			e.newScope();			// Create a new table
@@ -527,7 +517,7 @@ namespace dust {
 		});
 
 		// Remove element(s) from table (-)
-		Table.addOp("_op-", [](EvalState& e) {
+		e.addMember(Table, "_op-", [](EvalState& e) {
 			dust::Table lt = e.pop<dust::Table>(), rt = e.pop<dust::Table>();
 
 			e.newScope();			// Create a new table
@@ -546,9 +536,9 @@ namespace dust {
 			e.pushScope();
 			return 1;
 		});
-		
+
 		// Union (Append and remove duplicates) (*)
-		Table.addOp("_op*", [](EvalState& e) {
+		e.addMember(Table, "_op*", [](EvalState& e) {
 			dust::Table lt = e.pop<dust::Table>(), rt = e.pop<dust::Table>();
 
 			// Push all elemnts from both tables into a set
@@ -572,9 +562,9 @@ namespace dust {
 			e.pushScope();
 			return 0;
 		});
-		
+
 		// Intersection (Elements in both tables) (^)
-		Table.addOp("_op^", [](EvalState& e) {
+		e.addMember(Table, "_op^", [](EvalState& e) {
 			dust::Table lt = e.pop<dust::Table>(), rt = e.pop<dust::Table>();
 
 			e.newScope();		// Create a table
@@ -593,9 +583,9 @@ namespace dust {
 			e.pushScope();
 			return 1;
 		});
-		
+
 		// Member-wise comparison (=)
-		Table.addOp("_op=", [](EvalState& e) {
+		e.addMember(Table, "_op=", [](EvalState& e) {
 			if (e.at().val.i == e.at(-2).val.i) {		// Short-cut if the two tables are the same reference
 				e.pop();
 				e.pop();
@@ -603,7 +593,7 @@ namespace dust {
 
 				return 1;
 			}
-			
+
 			dust::Table rt = e.pop<dust::Table>(), lt = e.pop<dust::Table>();
 
 			if (lt->size() != rt->size()) {			// Short-cut if the two tables have different sizes
@@ -631,20 +621,20 @@ namespace dust {
 			return 1;
 		});
 
-		//e.push("type");
-		//e.push([](EvalState& e) {
-		//	e.push(e.pop().type_id);
-		//	return 1;
-		//});
-		//e.set(EvalState::SCOPE);
+		e.push("type");
+		e.push([](EvalState& e) {
+			e.push(e.pop().type_id);
+			return 1;
+		});
+		e.set(EvalState::SCOPE);
 
-		//e.push("typename");
-		//e.push([](EvalState& e) {
-		//	e.push(e.getTS().getName(e.pop().type_id));
-		//	return 1;
-		//});
-		//e.set(EvalState::SCOPE);
-	
+		e.push("typename");
+		e.push([](EvalState& e) {
+			e.push(e.getTS().getName(e.pop().type_id));
+			return 1;
+		});
+		e.set(EvalState::SCOPE);
+
 
 		// Function functions
 	}
