@@ -133,7 +133,7 @@ namespace dust {
 					t.requireEval("a: 3\n	a + 2", 5);							// 4
 					t.requireEval("a: 4\n"
 								  "	a: 3\n"
-								  "	b: a + .a", 7);							// 5
+								  "	b: a + .a", 7);								// 5
 					t.requireEval(".a", 4);										// 6
 				t.closeSubTest();
 
@@ -323,21 +323,21 @@ namespace dust {
 					e.push(x > 0 ? x : -x);
 					return 1;
 				});
-				e.setScoped();
+				e.set(EvalState::SCOPE);
 
 				e.push("add");
 				e.push([](EvalState& e) {
 					e.push((int)e + (int)e);
 					return 1;
 				});
-				e.setScoped();
+				e.set(EvalState::SCOPE);
 
 				e.push("give5");
 				e.push([](EvalState& e) {
 					e.push(5);
 					return 1;
 				});
-				e.setScoped();
+				e.set(EvalState::SCOPE);
 
 				e.push("bound");
 				e.push([](EvalState& e) {
@@ -346,7 +346,7 @@ namespace dust {
 					e.push((int)std::ceil(d));
 					return 2;
 				});
-				e.setScoped();
+				e.set(EvalState::SCOPE);
 
 				t.requireType("abs", "Function");
 

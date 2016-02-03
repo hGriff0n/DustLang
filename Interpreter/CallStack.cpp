@@ -6,13 +6,15 @@ namespace dust {
 
 		CallStack::CallStack(impl::GC& g) : gc{ g } {}
 
-		// Handle reference incrementing/decrementing if the type requires it
 		void CallStack::try_incRef(const impl::Value& val) {
 			if (val.type_id == type::Traits<std::string>::id)
 				gc.getStrings().incRef(val.val.i);
 
 			if (val.type_id == type::Traits<dust::Table>::id)
 				gc.getTables().incRef(val.val.i);
+
+			if (val.type_id == type::Traits<Function>::id)
+				gc.getFunctions().incRef(val.val.i);
 		}
 
 		void CallStack::try_decRef(const impl::Value& val) {
@@ -21,6 +23,15 @@ namespace dust {
 
 			if (val.type_id == type::Traits<dust::Table>::id)
 				gc.getTables().decRef(val.val.i);
+
+			if (val.type_id == type::Traits<Function>::id)
+				gc.getFunctions().decRef(val.val.i);
+		}
+
+		size_t CallStack::setMinSize(size_t new_min) {
+			auto ret = min_size;
+			min_size = new_min;
+			return ret;
 		}
 
 		void CallStack::push(const char* val) {
@@ -38,6 +49,8 @@ namespace dust {
 		}
 
 		impl::Value CallStack::pop(int idx) {
+			if (empty()) throw error::runtime_error{ "Used up allotted stack space" };
+
 			try_decRef(at(idx));
 
 			return Stack::pop(idx);
@@ -66,6 +79,10 @@ namespace dust {
 
 			try_decRef(v);
 			try_incRef(v = pop());
+		}
+
+		bool CallStack::empty() {
+			return size() == min_size;
 		}
 
 	}

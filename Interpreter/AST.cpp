@@ -93,7 +93,8 @@ namespace dust {
 				e.swap();						// Operators expect stack = ..., {rhs}, {lhs}
 			}
 
-			return e.callOp(op);
+			e.callOp(op);
+			return e;
 		}
 		std::string Operator::toString() { return op; }
 		std::string Operator::printString(std::string buf) {
@@ -132,10 +133,10 @@ namespace dust {
 			(*field)->eval(e);
 
 			if (!sub_var) {
-				e.getScoped(lvl);
+				e.get(EvalState::SCOPE, lvl);
 
 				while (++field != std::end(fields))
-					(*field)->eval(e).get();
+					(*field)->eval(e).get(-2);
 			}
 
 			return e;
@@ -146,18 +147,19 @@ namespace dust {
 
 			if (field == end) {
 				e.swap();
-				e.setScoped(lvl, is_const, is_static);
+				e.set(EvalState::SCOPE, lvl);
+				//e.setScoped(lvl, is_const, is_static);
 
 			} else {
-				e.getScoped(lvl);
+				e.get(EvalState::SCOPE, lvl);
 
 				while (++field != end)
-					(*field)->eval(e).get();
+					(*field)->eval(e).get(-2);
 					//if (e.is<Nil>()) throw error::dust_error{ "Attempt to assign to a Nil value" };
 
 				e.swap();
 				(*end)->eval(e).swap();
-				e.set();
+				e.set(-3);
 			}
 
 			return e;
@@ -166,7 +168,7 @@ namespace dust {
 		// TypeName methods
 		TypeName::TypeName(const ParseData& in, std::string n) : ASTNode{ in }, name{ n } {}
 		EvalState& TypeName::eval(EvalState& e) {
-			//e.push(e.getTS().getType(name).fields);
+			e.push(e.getTS().get(name).fields);
 			return e;
 		}
 		std::string TypeName::toString() { return name; }
@@ -177,7 +179,14 @@ namespace dust {
 		// TypeCast methods
 		TypeCast::TypeCast(const ParseData& in) : ASTNode{ in } {}
 		EvalState& TypeCast::eval(EvalState& e) {
-			return expr->eval(e).callMethod(convert->toString());
+			expr->eval(e);
+
+			// Get the converter on the stack
+			auto key = type::Traits<std::string>::make(convert->toString(), e.getGC());
+			e.push(e.getTS().get(e.at().type_id).fields->getVal(key));
+			e.call(1);
+
+			return e;
 		}
 		void TypeCast::addChild(std::shared_ptr<ASTNode>& c) {
 			if (!convert && std::dynamic_pointer_cast<TypeName>(c))
@@ -548,14 +557,15 @@ namespace dust {
 					if (table && !std::dynamic_pointer_cast<Assign>(i)) {
 						e.push<int>(next++);
 						e.swap();
-						e.setScoped();					// WARNING! Might give "wrong" answers
+						e.set(EvalState::SCOPE);		// WARNING! Might give "wrong" answers
 					}
 				}
 			}
 
 			if (save_scope) {
 				e.settop(x);
-				e.pushScope(next);
+				e.push(next);
+				e.pushScope();
 
 			} else
 				e.endScope();
@@ -676,21 +686,19 @@ namespace dust {
 			auto top = e.size();
 			for (auto arg : *args) arg->eval(e);
 
+			// Determine the number of arguments
+			auto num_args = e.size() - top;
+
 			// Rotate so that the first (left) argument is on the top
-			e.reverse(args->size());
+			e.reverse(num_args);
 
-			//return fn->eval(e).call(top);
+			// Get the function onto the stack
+			e.setResolvingFunctionName();
+			fn->eval(e);
+			e.setResolvingFunctionName();
 
-			// Get and call the function
-			auto num_ret = ((Function)fn->eval(e)).call(e);
-
-			// Trim the stack of garbage
-			if (num_ret >= 0) {
-				auto new_vals = e.size() - top++;
-				while (new_vals-- > num_ret) e.pop(top);
-			}
-
-			// The last (right) return value is on the top
+			// Call the function
+			e.call(num_args);
 			return e;
 		}
 		void FunctionCall::addChild(std::shared_ptr<ASTNode>& c) {
@@ -715,6 +723,7 @@ namespace dust {
 		}
 
 		// FunctionDef methods
+			// However I implement dust functions, the entry point must take care to completely allocate the arguments (and clean the stack to empty) before execution
 		FunctionDef::FunctionDef(const ParseData& in) : ASTNode{ in } {}
 		EvalState& FunctionDef::eval(EvalState& e) { return e; }
 		void FunctionDef::addChild(std::shared_ptr<ASTNode>& c) {}

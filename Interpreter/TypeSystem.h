@@ -35,7 +35,8 @@ namespace dust {
 					public:
 						TypeVisitor(size_t i, TypeSystem* self);
 
-						TypeVisitor& addOp(std::string op, NativeFn f);
+						TypeVisitor& addOp(impl::Value op, impl::Value v);
+						TypeVisitor& addOp(impl::Value op, impl::Value v, const std::string& fn);
 
 						operator size_t();
 				};
@@ -68,23 +69,23 @@ namespace dust {
 				// Inheritance Resolution (returns NO_DEF if no definition is found)
 				// Find a definition for the function in type or ancestors(type)
 				// Returns findDef(Traits<bool>::id, fn) if t == Traits<Nil>::id
-				size_t findDef(size_t t, std::string fn);
+				size_t findDef(size_t t, const impl::Value& key);
 
 
 				// Find op definition in type without considering inheritance relationships
-				size_t isDefd(size_t t, std::string fn);
+				size_t isDefd(size_t t, const impl::Value& key);
 
 
 				// Common Type Resolution (Find a type that defines op and that both l and r can be cast to)
 				// Returns Nil or Table if l or r are of the given types
-				size_t com(size_t l, size_t r, std::string op);
-				size_t com(Type& l, Type& r, std::string op);
+				size_t com(size_t l, size_t r, const impl::Value& op);
+				size_t com(Type& l, Type& r, const impl::Value& op);
 
 
 				// Type Definition methods
 				// Create a type visitor to a new type with an optional parent
 				TypeVisitor newType(std::string t);
-				TypeVisitor newType(std::string t, Type& p);
+				TypeVisitor newType(std::string t, const Type& p);
 				TypeVisitor newType(std::string t, TypeVisitor& p);
 
 
@@ -94,8 +95,8 @@ namespace dust {
 
 
 				// Get the implementation type (for eval, etc.)
-				Type get(size_t t);
-				Type get(std::string t);
+				const Type& get(size_t t);
+				const Type& get(std::string t);
 
 
 				// Temporary/Ungrouped Methods (may be expanded/grouped later)
@@ -113,7 +114,5 @@ namespace dust {
 
 	// Helper methods for setting up dust's typesystem
 	void initTypeSystem(dust::type::TypeSystem&);
-	void initConversions(dust::type::TypeSystem&);
-	void initOperations(dust::type::TypeSystem&);
 
 }

@@ -13,3 +13,16 @@ Improve the Table API
 	This is particularly important with regards to "appending" to the table (uses the next open int)
 	Possibly start to add in evaluation hooks
 	Add in more API functions
+	
+Changes
+	Changed entire EvalState api
+	get/set expect exact number of '.' in lookup
+
+Calling Functions
+	FunctionCall
+		e.setResolvingFunctionName();
+		fn->get(e);
+		e.setResolvingFunctionName();
+		e.call(##);
+	Function
+		e.enableObjectSyntax(self : args)
