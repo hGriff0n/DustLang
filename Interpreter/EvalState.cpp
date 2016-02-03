@@ -80,7 +80,8 @@ namespace dust {
 
 		if (num_args >= size()) throw error::bad_api_call{ "Attempt to call function with more arguments than values on the stack" };
 
-		size_t loc = size() - num_args - 2;								// Index of the value before the argument list (the function being called)
+		// Note: loc may equal -1 if num_args == size() - 1
+		size_t loc = size() - num_args - 2;									// Index of the value before the argument list (the function being called)
 
 		// Ensure there is a callable object at the expected location
 		if (!is<Function>()) {
@@ -93,12 +94,12 @@ namespace dust {
 
 		// Enter the function
 		newScope();
-		size_t old_limit = setMinSize(loc++);							// Limit the stack size for the child process (handles too few arguments)
+		size_t old_limit = setMinSize(loc++);								// Limit the stack size for the child process (handles too few arguments)
 		int num_ret = 1;
 
 		// Perform the call
 		try {
-			num_ret = pop<Function>()(*this);							// loc now points to the last argument
+			num_ret = pop<Function>()(*this);								// loc now points to the last argument
 
 			// Ensure self doesn't pollute outside of the function call
 			try_decRef(self);
@@ -106,7 +107,7 @@ namespace dust {
 
 		} catch (...) {
 			// Reset the stack and leave the function
-			while (!empty()) pop();										// Take advantage of limited access to clean the function record
+			while (!empty() && size()) pop();								// Clean the function's stack record
 			setMinSize(old_limit);
 			endScope();
 
@@ -119,7 +120,7 @@ namespace dust {
 			// Ensure return values are at the correct position on the stack
 			size_t ret_idx = size() - num_ret;								// Index of the first returned value
 			while (loc != ret_idx)											// Remove leftover values (handles too many arguments)
-				pop(ret_idx--);
+				pop(--ret_idx);
 		}
 
 		// Leave the function
@@ -202,7 +203,7 @@ namespace dust {
 					tbl = pop<Table>(idx);
 
 				else {
-					throw error::dust_error{ "Attempt to get a field from a non-table value" };
+					//throw error::dust_error{ "Attempt to get a field from a non-table value" };
 
 					// type({idx}).x
 					if (resolving_function) {
@@ -256,7 +257,7 @@ namespace dust {
 	EvalState& EvalState::enableObjectSyntax() {
 		// Set SELF to stack top if it isn't set
 		if (self.type_id == type::Traits<Nil>::id)
-			self = pop();
+			try_incRef(self = pop());
 
 		// Set SCOPE.self to SELF
 		push("self");

@@ -419,10 +419,13 @@ namespace dust {
 			static void apply(const input& in, AST& ast, ScopeTracker& _) {
 				// stack: ..., {var}, {field}
 
+				auto var = isNode<VarName>(ast.at(-2)) ? ast.pop(-2) : makeNode<VarName>(ast.pop(-2));
+
 				auto field = std::dynamic_pointer_cast<VarName>(ast.at());
 				if (field) field->setSubStatus();
 
-				ast.at(-2)->addChild(ast.pop());
+				var->addChild(ast.pop());
+				ast.push(var);
 
 				// stack: ..., {var}
 			}

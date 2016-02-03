@@ -107,8 +107,12 @@ namespace dust {
 		}
 
 		// VarName methods
-		VarName::VarName(const ParseData& in, std::string var) : VarName{ makeNode<Literal>(in, var, type::Traits<std::string>::id) } {}
+		VarName::VarName(const ParseData& in, std::string var) : ASTNode{ in } {
+			fields.emplace_back(makeNode<Literal>(in, var, type::Traits<std::string>::id));
+		}
 		VarName::VarName(std::shared_ptr<ASTNode>&& var) : ASTNode{ var->p } {
+			if (!isNode<VarName>(var)) get_first = false;
+
 			fields.emplace_back(var);
 		}
 		void VarName::addChild(std::shared_ptr<ASTNode>& c) {
@@ -133,7 +137,7 @@ namespace dust {
 			(*field)->eval(e);
 
 			if (!sub_var) {
-				e.get(EvalState::SCOPE, lvl);
+				if (get_first) e.get(EvalState::SCOPE, lvl);
 
 				while (++field != std::end(fields))
 					(*field)->eval(e).get(-2);

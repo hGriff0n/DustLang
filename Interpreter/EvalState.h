@@ -127,7 +127,7 @@ namespace dust {
 		private:
 			// Scoping
 			impl::Table global, *curr_scp;
-			
+
 			type::TypeSystem ts;
 			impl::GC gc;
 
@@ -167,7 +167,7 @@ namespace dust {
 
 			// Allow self to be set by get
 			void setResolvingFunctionName();
-		
+
 
 			// Variable flags (setters & getters)
 			//void markConst(const impl::Value& name);
@@ -184,7 +184,7 @@ namespace dust {
 			// Get the current type system
 			type::TypeSystem& getTS();
 			impl::GC& getGC();
-			
+
 			template <typename T>
 			type::TypeSystem::TypeVisitor& addMember(type::TypeSystem::TypeVisitor& t, std::string op, T val) {
 				auto v = type::Traits<T>::make(val, gc);

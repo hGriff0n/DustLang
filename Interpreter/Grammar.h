@@ -143,7 +143,8 @@ namespace dust {
 		struct brac_index : seq<one<'['>, seps, expr_7, seps, one<']'>> {};				// \[ *{expr_7} *\]
 		struct no_args : at<one<')'>> {};												// FunctionCall expects a List<ASTNode>
 		struct fn_call : seq<one<'('>, seps, sor<expr_list, no_args>, one<')'>> {};		// \( *{expr_list}?\)
-		struct expr_0 : seq<lvalue, star<sor<dot_index, brac_index, fn_call>>> {}; 		// {lvalue}({dot_index}|{brac_index}|{fn_call})
+		struct expr_0 : seq<sor<lvalue, type_id>,
+			star<sor<dot_index, brac_index, fn_call>>> {};								// ({lvalue}|{type_id})({dot_index}|{brac_index}|{fn_call})
 
 
 		// Type Casts
