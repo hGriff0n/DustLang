@@ -216,7 +216,7 @@ namespace dust {
 				break;
 		}
 
-		getTable(tbl, pop());
+		getTable(tbl ? tbl : &global, pop());
 
 		// stack: ..., {value}
 	}
@@ -227,14 +227,16 @@ namespace dust {
 
 		switch (idx) {
 			case SELF:
-				self = value;
-				return try_incRef(self);
+				try_decRef(self);
+				return try_incRef(self = value);
 
 			case SCOPE:
 				tbl = findDef(curr_scp ? curr_scp : &global, at(), lookup);
 
 				break;
 			default:
+				if (idx < 0) idx += 1;
+
 				if (is<Table>(idx)) {
 					tbl = pop<Table>(idx);
 
@@ -251,7 +253,7 @@ namespace dust {
 		// stack: ..., {value}
 	}
 
-	void EvalState::enableObjectSyntax() {
+	EvalState& EvalState::enableObjectSyntax() {
 		// Set SELF to stack top if it isn't set
 		if (self.type_id == type::Traits<Nil>::id)
 			self = pop();
@@ -264,6 +266,8 @@ namespace dust {
 		// Delete SELF
 		try_decRef(self);
 		self.type_id = type::Traits<Nil>::id;
+
+		return *this;
 	}
 
 	void EvalState::setResolvingFunctionName() {
@@ -563,7 +567,7 @@ namespace dust {
 
 			e.push(nxt);
 			e.pushScope();
-			return 0;
+			return 1;
 		});
 
 		// Intersection (Elements in both tables) (^)
@@ -610,8 +614,7 @@ namespace dust {
 			for (auto rt_elem : *rt) {
 				e.push(lt_iter->second.val);
 				e.push(rt_elem.second.val);
-				e.push("_op=");
-				e.call(2);
+				e.callOp("_op=");
 
 				if (!e.at().val.i)
 					return 1;		// Short-circuit if an element is not found in r
@@ -626,7 +629,9 @@ namespace dust {
 
 
 		// Free functions
-		e.push("type");
+		// This isn't getting set ???
+		//e.push("_type");							// This doesn't work
+		e.push("ttype");							// This works ???
 		e.push([](EvalState& e) {
 			e.push(e.pop().type_id);
 			return 1;

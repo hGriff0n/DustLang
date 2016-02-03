@@ -163,7 +163,7 @@ namespace dust {
 			void callOp(std::string op);
 
 			// Ensure OOP structure exists/doesn't exist
-			void enableObjectSyntax();
+			EvalState& enableObjectSyntax();
 
 			// Allow self to be set by get
 			void setResolvingFunctionName();

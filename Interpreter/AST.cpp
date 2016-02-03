@@ -686,15 +686,19 @@ namespace dust {
 			auto top = e.size();
 			for (auto arg : *args) arg->eval(e);
 
-			// Rotate so that the first (left) argument is on the top
-			e.reverse(args->size());
+			// Determine the number of arguments
+			auto num_args = e.size() - top;
 
+			// Rotate so that the first (left) argument is on the top
+			e.reverse(num_args);
+
+			// Get the function onto the stack
 			e.setResolvingFunctionName();
 			fn->eval(e);
 			e.setResolvingFunctionName();
 
-			e.call(args->size());
-
+			// Call the function
+			e.call(num_args);
 			return e;
 		}
 		void FunctionCall::addChild(std::shared_ptr<ASTNode>& c) {
