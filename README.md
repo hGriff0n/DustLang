@@ -1,4 +1,4 @@
-# The Dust Programming Language (v 0.8.4)
+# The Dust Programming Language (v 0.8.8)
 	
 Dust is the working title for a multi-paradigm, expression-based, interpreted programming language. The development and design of Dust is largely intended as a hobby project that would explore how
 programming languages are designed and implemented by growing and nurturing the small seed that has sat in my mind for a couple of years into a fully-featured language. It is not intended to be a

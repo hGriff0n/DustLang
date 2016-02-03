@@ -39,54 +39,61 @@ namespace dust {
 		}
 
 		template<> std::string Traits<std::string>::get(const impl::Value& v, impl::GC& gc) {
-			if (v.type_id == Traits<std::string>::id)
-				return gc.getStrings().deref(v.val.i);
+			try {
+				if (v.type_id == Traits<std::string>::id)
+					return gc.getStrings().deref(v.val.i);
 
-			else if (v.type_id == Traits<bool>::id)
-				return v.val.i ? "true" : "false";
+				else if (v.type_id == Traits<bool>::id)
+					return v.val.i ? "true" : "false";
 
-			else if (v.type_id == Traits<int>::id)
-				return std::to_string(v.val.i);
+				else if (v.type_id == Traits<int>::id)
+					return std::to_string(v.val.i);
 
-			else if (v.type_id == Traits<double>::id)
-				return std::to_string(v.val.d);
+				else if (v.type_id == Traits<double>::id)
+					return std::to_string(v.val.d);
 
-			else if (v.type_id == Traits<Table>::id) {
-				std::string t = "[";
-				bool notFirst = false;
+				else if (v.type_id == Traits<Table>::id) {
+					std::string t = "[";
+					bool notFirst = false;
 
-				for (auto pair : *(gc.getTables().deref(v.val.i))) {
-					t += ((notFirst ? ", " : " ") +
-						(pair.first.type_id == Traits<int>::id ? "" : Traits<std::string>::get(pair.first, gc) + ": ") +
-						Traits<std::string>::get(pair.second.val, gc));
-					notFirst = true;
+					for (auto pair : *(gc.getTables().deref(v.val.i))) {
+						t += ((notFirst ? ", " : " ") +
+							(pair.first.type_id == Traits<int>::id ? "" : Traits<std::string>::get(pair.first, gc) + ": ") +
+							Traits<std::string>::get(pair.second.val, gc));
+						notFirst = true;
+					}
+
+					return t + " ]";
 				}
-
-				return t + " ]";
-			}
+			} catch (...) {}
 
 			throw error::conversion_error{ "Traits<string>::get", "String" };
 		}
 
 		template<> bool Traits<bool>::get(const impl::Value& v, impl::GC& gc) {
-			if (v.type_id == Traits<bool>::id)
-				return (bool)v.val.i;
+			try {
+				if (v.type_id == Traits<bool>::id)
+					return (bool)v.val.i;
 
-			else if (v.type_id == Traits<Nil>::id)
+				else if (v.type_id == Traits<Table>::id) {
+					return gc.getTables().deref(v.val.i)->size() != 0;
+				}
+
+			} catch (...) {
 				return false;
-
-			else if (v.type_id == Traits<Table>::id) {
-				return gc.getTables().deref(v.val.i)->size() != 0;
 			}
 
-			return true;
+			return v.type_id != Traits<Nil>::id;
 		}
 
 		template<> Table Traits<Table>::get(const impl::Value& v, impl::GC& gc) {
-			if (v.type_id == Traits<Table>::id)
-				return gc.getTables().deref(v.val.i);
+			try {
+				if (v.type_id == Traits<Table>::id)
+					return gc.getTables().deref(v.val.i);
+			} catch (...) {}
 
-			return nullptr;				// return nil;
+			throw error::conversion_error{ "Traits<Table>::get", "Table" };
+			//return nullptr;	// Nil
 		}
 
 		template<> Function Traits<Function>::get(const impl::Value& v, impl::GC& gc) {
@@ -98,6 +105,8 @@ namespace dust {
 
 			throw error::conversion_error{ "Traits<Function>::get", "Function" };
 		}
+
+		template <> struct Traits<size_t> : Traits<int> {};
 
 	}
 
@@ -112,73 +121,80 @@ namespace dust {
 	 * - Passed to ASTNode::eval to perform evaluation
 	 */
 	class EvalState : public impl::CallStack {
+		public:
+			static const int SELF = INT_MAX, SCOPE = INT_MAX - 1;
+
 		private:
-			Table curr_scp;
-			impl::Table global;
+			// Scoping
+			impl::Table global, *curr_scp;
+
 			type::TypeSystem ts;
 			impl::GC gc;
 
+			impl::Value self;
+			bool resolving_function = false;
+
 		protected:
-			// Convert the object at the given index to the given type
-			void forceType(int, size_t);
+			// Force the value at {idx} to have type {typ}
+			void forceType(int idx, size_t typ);
 
-			// Scope lookup for the given variable
-			Table findScope(const impl::Value&, int, bool = false);
+			// Find the nth definition of key in [tbl..global]
+			static Table findDef(Table tbl, const impl::Value& key, int lookup);
 
-			// Set var.val = stack top
-			void setVar(impl::Variable& var, bool is_const, bool is_typed);
-			void setVar(dust::Table t, const impl::Value& key, bool is_const, bool is_typed);
+			// Put tbl[key] on the stack
+			void getTable(Table tbl, const impl::Value& key);
 
-			// Push tbl[var] on the stack (or nil)
-			void getVar(Table tbl, const impl::Value& var);
+			// Set tbl[key] = val
+			void setTable(Table tbl, const impl::Value& key, const impl::Value& val);
 
 		public:
 			EvalState();
 
-			// Call functions	(Temporary methods until I determine how functions and tables will be implemented)
-			EvalState& call(const std::string& fn);
-			EvalState& callOp(const std::string& fn);
-			EvalState& callMethod(const std::string& fn);
+			// Get variable at {-1} in {idx} (unless idx = SELF)
+			void get(int idx, int lookup = 0);
 
-			// EvalState doesn't know about shared_ptr or ASTNode
-			//EvalState& eval(std::shared_ptr<parse::ASTNode>&);
+			// Set variable at {-2} to value at {-1} in {idx} (unless idx = SELF)
+			void set(int idx, int lookup = 0);
 
-			// Set/Get Variables
-				// Need to clean up this interface a bit more (when I consolidate get/set)
-			// Assign to the evaluation scope
-			void setScoped(int lvl = 0, bool is_const = false, bool is_typed = false);
-			void setScoped(const impl::Value& name, int lvl = 0, bool is_const = false, bool is_typed = false);
+			// Call the function at {idx - 1} passing {idx} arguments
+			void call(int num_args);
 
-			// Assign to a table on the call stack
-			void set();
-			void set(const impl::Value& name);
+			// Call the operator (with type resolution)
+			void callOp(std::string op);
 
-			// Index the evaluation scope
-			void getScoped(int lvl = 0);
-			void getScoped(const impl::Value& var, int lvl = 0);
+			// Ensure OOP structure exists/doesn't exist
+			EvalState& enableObjectSyntax();
 
-			// Index a table on the call stack
-			void get();
-			void get(const impl::Value& var);
-			
+			// Allow self to be set by get
+			void setResolvingFunctionName();
+
+
 			// Variable flags (setters & getters)
-			void markConst(const impl::Value& name);
-			void markTyped(const impl::Value& name, size_t typ);
-			bool isConst(const impl::Value& name);
-			bool isTyped(const impl::Value& name);
+			//void markConst(const impl::Value& name);
+			//void markTyped(const impl::Value& name, size_t typ);
+			//bool isConst(const impl::Value& name);
+			//bool isTyped(const impl::Value& name);
+
 
 			// Scope Interaction
-
-			// Start a new scope with the current scope as parent
-			void newScope();
-			// Delete current scope (Cleans up memory. Doesn't handle reference decrementing)
-			void endScope();
-			// Push scope on the stack (used in building tables)
-			void pushScope(int nxt = 1);
+			void newScope();				// Start a new scope with the current scope as parent
+			void endScope();				// Delete current scope (Cleans up memory)
+			void pushScope();				// Push scope on the stack (used in building tables)
 
 			// Get the current type system
 			type::TypeSystem& getTS();
 			impl::GC& getGC();
+
+			template <typename T>
+			type::TypeSystem::TypeVisitor& addMember(type::TypeSystem::TypeVisitor& t, std::string op, T val) {
+				auto v = type::Traits<T>::make(val, gc);
+				auto fn = type::Traits<std::string>::make(op, gc);
+
+				try_incRef(v);
+				try_incRef(fn);
+
+				return t.addOp(fn, v, op);
+			}
 
 			// Pass the top element on the stack to the stream
 				// Handles non-printable values and string-special printing
@@ -190,11 +206,17 @@ namespace dust {
 				else if (is<Nil>())
 					return s << (pop(), "nil");
 
+				else if (is<Function>())
+					return s << (pop(), "function");
+
 				return s << pop<std::string>();
 			}
 
 			friend void initState(EvalState&);
 			template <class Stream> friend class test::Tester;
 	};
+
+	void initConversions(EvalState& e);
+	void initOperations(EvalState& e);
 
 }

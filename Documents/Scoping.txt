@@ -73,3 +73,35 @@ Continuation Expressions
 	For table indexing, should the '.' immediately follow the table or can there be a {seps} in between
 		This would be a minor step to allowing indexing to be a continuation expression
 		ie. Should "foo() . bar . call()" parse correctly
+
+def Int.abs(self)				## This should work in defining abs for
+	return self < 0 and -self or self	## Int.abs(3) and 3.abs()
+						## what about "(sba: Int.abs)(3)" Yes
+
+How to set self
+	self needs to be implicit and explicit
+	There's a limited set of times where self can be set
+		lookup failure that succeeds on type lookup
+			When trying to get a function to call
+		foo.baz: 3
+			I don't know how I'm going to implement types entirely yet
+			This may become an issue further down the road
+				For now I'm just going to assume self is only needed in functions
+	I'll have to reset self at some point
+		Though if I only set it in a function call, it will always get used
+			Doesn't become a problem then
+
+Lookup rules (x) (slightly different for get/set)
+	idx = SCOPE
+		SCOPE.x (only check in SCOPE)
+		SCOPE.self.x (can't get in set)
+		par(SCOPE).x (check global scope)
+	idx = SELF
+		get -> SCOPE.self
+		set -> SELF
+	otherwise
+		idx.x
+		type(idx).x => self = idx
+
+	Interaction with forced lookup (idx = SCOPE)
+		SCOPE.x (filter through)

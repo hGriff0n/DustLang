@@ -31,7 +31,7 @@ Timeline
 			"Global Review" is duplicated at the end, consider removing it
 			Consider splitting test sections (see comments in Testing.h)
 			Add comments to each test describing what's being tested
-			Consider moving excep_if_empty from Block to Control
+			Comment on what the individual tests do
 		Consider removing the test for operator isDefd in com
 			Would remove ambiguity in code execution
 			"3" - 3 => String._op- not defined
@@ -44,7 +44,6 @@ Timeline
 			Currently tables are references (ie. pointers)
 				This is passable but not what I want from the language
 		Redo how get/set are handled (in relation to exception throwing)
-			Ensure that EvalState::setVar static typing works correctly (I think it's currently bidirectional, should be unidirectional)
 		Check on changing ts.convertible(t1, t2) to ts.convertible(f, t)
 			Basically stopping convertible(a, b) = convertible(b, a) from always being true
 			Where did I want to change this from (EvalState::setVar)
@@ -59,8 +58,6 @@ Timeline
 			Unsure about behavior of action<c_paren> for empty parentheses
 			Speed up the performance of parsing line
 				Currently has to read eval_line twice to ensure correctness
-			Minimize the cost of specializing Control (too many declarations)
-				Check the documentation first, I might be missing something there
 			Consider rearranging/repurposing actions to provide better parser data
 			Errors need to be better
 				"for i in [1..5] .sum: + i" throws an "Attempt to evaluate an empty block" at runtime
@@ -72,27 +69,24 @@ Timeline
 			Try converting some code once I understand it
 		Various Changes
 			Change 0 => false ???
+		Figure out where to put "Utility" stuff
+		Consider moving excep_if_empty from Block to Control
+		Create an Optional<T> class
+			Possibly simplify optional argument handling for client code
 		See VagueToDo.txt
 
 	1 Function Calling		ie. print("Hello World!") and abs(3)
-		Implement the FunctionCall class
-			Settle on "OOP" procedure
-				Have a "self" field in EvalState ???
-					Need to figure out interaction and control hooks
-					How would it be referenced / set ???
-		Convert Types completely to impl::Table for storage concerns
-			Allow Type methods to be called using '.'/'[]' syntax on non-table values and variables (ie. -3.abs())
-				Relevant tests: 370, 371, 372, 375, 385
-			Allow Type methods to be called using '.'/'[]' syntax directly from the TypeName (ie. Int.abs(-3))
-				Current grammar disallows type_ids outside of new_type and type_checking
-				Relevant tests: 373
+		Test the argument passing
+			Add in an "optional" parameter test
+				Probably need to strengthen the implementation of limited stack
+					I think you can manually query past the minSize
+
 		Move function calling work into the _op() metamethod
 			Argument evaluation to be done l->r
 				Question: Evaluate all arguments or not (ala Assignment)
-			Functions need to intrinsically handle having more/fewer arguments than expected
-				However, I will not know this information until the function is run
 			This should be handled through the objects "_op()" metamethod
-			Relevant tests: 364
+			Relevant tests: 364 (?)
+
 		Optional: Get no parens syntax to work
 	
 	2 Dust Function Definition

@@ -121,7 +121,6 @@ namespace dust {
 				EvalState& eval(EvalState& e);
 
 				std::string toString();		// Possibly temporary implementation
-				std::string printString(std::string buf);
 		};
 
 		/*
@@ -166,7 +165,7 @@ namespace dust {
 		class VarName : public ASTNode {
 			private:
 				std::vector<std::shared_ptr<ASTNode>> fields;
-				int lvl = 0; bool sub_var = false;
+				int lvl = 0; bool sub_var = false, get_first = true;
 
 			public:
 				VarName(const ParseData& p, std::string var);
@@ -341,7 +340,6 @@ namespace dust {
 				void addChild(std::shared_ptr<ASTNode>& c);
 
 				std::string toString();
-				virtual std::string printString(std::string buf);
 		};
 
 		/*
@@ -432,7 +430,19 @@ namespace dust {
 		/*
 		 * Node for a function definition
 		 */
-		//class FunctionDef : public ASTNode {};
+		class FunctionDef : public ASTNode {
+			private:
+				std::shared_ptr<Block> body;
+			public:
+				FunctionDef(const ParseData& in);
+				static std::string node_type;
+
+				EvalState& eval(EvalState& e);
+				void addChild(std::shared_ptr<ASTNode>& c);
+				
+				std::string toString();
+				virtual std::string printString(std::string buf);
+		};
 
 		template<class T> std::string List<T>::node_type = "List<" + T::node_type + ">";
 	}
