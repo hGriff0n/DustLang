@@ -53,11 +53,14 @@ namespace dust {
 		class CallStack : public Stack<impl::Value> {
 			private:
 				impl::GC& gc;
+				size_t min_size = 0;
 
 			protected:
 				// Handle reference incrementing/decrementing based on type
 				void try_incRef(const impl::Value&);
 				void try_decRef(const impl::Value&);
+
+				size_t setMinSize(size_t new_min);
 
 			public:
 				CallStack(impl::GC&);
@@ -107,6 +110,9 @@ namespace dust {
 
 				// Resizes the stack to the given size
 				void settop(int siz);
+
+				// Overload of empty to account for the variable minimum size
+				bool empty();
 		};
 	}
 }

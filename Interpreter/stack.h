@@ -81,7 +81,7 @@ namespace dust {
 			}
 
 			// stl interface methods
-			bool empty() {
+			virtual bool empty() {
 				return s.empty();
 			}
 
