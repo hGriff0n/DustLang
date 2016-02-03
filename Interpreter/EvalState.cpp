@@ -29,8 +29,10 @@ namespace dust {
 			push(2);
 			pushScope();
 
-		} else
+		} else {
 			push(ts.get(at().type_id).fields->getVal(type::Traits<std::string>::make(ts.getName(type), gc)));		// Call the converter (if execution reaches here, the converter exists)
+			call(1);
+		}
 
 		swap(idx, -1);								// Restore the stack positions
 	}
@@ -64,10 +66,10 @@ namespace dust {
 		if (!tbl->okayValue(val))
 			throw error::illegal_operation{ "Attempt to store an invalid value in a table" };
 
-		auto var = tbl->getVar(key);
+		auto& var = tbl->getVar(key);
 
 		try_decRef(var.val);
-		try_incRef(var.val = pop());
+		try_incRef(var.val = val);
 	}
 
 	// Constructor
@@ -91,7 +93,7 @@ namespace dust {
 
 		// Enter the function
 		newScope();
-		size_t old_limit = setMinSize(loc);								// Limit the stack size for the child process (handles too few arguments)
+		size_t old_limit = setMinSize(loc++);							// Limit the stack size for the child process (handles too few arguments)
 		int num_ret = 1;
 
 		// Perform the call
@@ -149,6 +151,7 @@ namespace dust {
 			if (dis_t == ts.NO_DEF) throw error::dispatch_error{ op, ts.getName(l), ts.getName(r) };
 
 			// Determine whether com selected a converter and perform the conversions
+				// Should I forceType if dis_t is a parent of r and l
 			if (((com_t == l) ^ (com_t == r)) && (com_t == type::Traits<Table>::id || ts.convertible(l, r))) {
 				forceType(-1, com_t);
 				forceType(-2, com_t);
@@ -228,7 +231,7 @@ namespace dust {
 				return try_incRef(self);
 
 			case SCOPE:
-				tbl = findDef(curr_scp, at(), lookup);
+				tbl = findDef(curr_scp ? curr_scp : &global, at(), lookup);
 
 				break;
 			default:
@@ -621,6 +624,8 @@ namespace dust {
 			return 1;
 		});
 
+
+		// Free functions
 		e.push("type");
 		e.push([](EvalState& e) {
 			e.push(e.pop().type_id);
@@ -634,8 +639,6 @@ namespace dust {
 			return 1;
 		});
 		e.set(EvalState::SCOPE);
-
-
-		// Function functions
+		
 	}
 }

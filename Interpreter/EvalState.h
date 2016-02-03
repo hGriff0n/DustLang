@@ -106,6 +106,8 @@ namespace dust {
 			throw error::conversion_error{ "Traits<Function>::get", "Function" };
 		}
 
+		template <> struct Traits<size_t> : Traits<int> {};
+
 	}
 
 	namespace test {

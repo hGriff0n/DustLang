@@ -85,7 +85,7 @@ namespace dust {
 				// Type Definition methods
 				// Create a type visitor to a new type with an optional parent
 				TypeVisitor newType(std::string t);
-				TypeVisitor newType(std::string t, Type& p);
+				TypeVisitor newType(std::string t, const Type& p);
 				TypeVisitor newType(std::string t, TypeVisitor& p);
 
 
@@ -95,8 +95,8 @@ namespace dust {
 
 
 				// Get the implementation type (for eval, etc.)
-				Type get(size_t t);
-				Type get(std::string t);
+				const Type& get(size_t t);
+				const Type& get(std::string t);
 
 
 				// Temporary/Ungrouped Methods (may be expanded/grouped later)

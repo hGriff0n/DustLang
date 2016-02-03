@@ -70,7 +70,7 @@ namespace dust {
 
 			// Test for new type definition
 			if (type_id.count(t) == 0) {
-				types.push_back({ t, types.size(), p });
+				types.emplace_back(Type{ t, types.size(), p });
 
 				type_id[t] = types.size() - 1;						// Add a new name association
 
@@ -90,7 +90,7 @@ namespace dust {
 			return newType(t, 1);
 		}
 
-		TypeVisitor TypeSystem::newType(std::string t, Type& p) {
+		TypeVisitor TypeSystem::newType(std::string t, const Type& p) {
 			return newType(t, p.id);
 		}
 
@@ -146,11 +146,11 @@ namespace dust {
 			return{ type_id[t], this };
 		}
 
-		Type TypeSystem::get(size_t t) {
+		const Type& TypeSystem::get(size_t t) {
 			return types[t];
 		}
 
-		Type TypeSystem::get(std::string t) {
+		const Type& TypeSystem::get(std::string t) {
 			return types[type_id[t]];
 		}
 

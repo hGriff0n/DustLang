@@ -133,7 +133,7 @@ namespace dust {
 					t.requireEval("a: 3\n	a + 2", 5);							// 4
 					t.requireEval("a: 4\n"
 								  "	a: 3\n"
-								  "	b: a + .a", 7);							// 5
+								  "	b: a + .a", 7);								// 5
 					t.requireEval(".a", 4);										// 6
 				t.closeSubTest();
 

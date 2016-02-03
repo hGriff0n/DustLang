@@ -25,8 +25,15 @@ namespace dust {
 			// Default values and typed/const variables ???
 
 			Type(std::string t, size_t s) : Type(t, s, -1) {}
-			Type(std::string t, size_t s, size_t p) : name{ t }, id{ s }, parent{ p }, fields{ nullptr } {}
+			Type(std::string t, size_t s, size_t p) : name{ t }, id{ s }, parent{ p }, fields{ new impl::Table{} } {}
 			Type(std::string t, size_t s, Type p) : Type(t, s, p.id) {}
+			Type(Type&& t) : name{ std::move(t.name) }, id{ t.id }, parent{ t.parent }, fields{ t.fields } {
+				t.fields = nullptr;
+			}
+
+			~Type() {
+				delete fields;
+			}
 		};
 
 		/*
