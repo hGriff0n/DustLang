@@ -91,20 +91,20 @@ namespace dust {
 			return newType(t, (size_t)p);
 		}
 
-		size_t TypeSystem::findDef(size_t t, std::string fn) {
+		size_t TypeSystem::findDef(size_t t, const impl::Value& key) {
 			t = (t == Traits<Nil>::id ? Traits<bool>::id : t);
 
-			while (t != NO_DEF && isDefd(t, fn) == NO_DEF)
+			while (t != NO_DEF && isDefd(t, key) == NO_DEF)
 				t = types[t].parent;
 
 			return t;
 		}
 
-		size_t TypeSystem::isDefd(size_t t, std::string fn) {
-			return types[t].ops.count(fn) > 0 ? t : NO_DEF;
+		size_t TypeSystem::isDefd(size_t t, const impl::Value& key) {
+			return types[t].fields->hasKey(key) ? t : NO_DEF;
 		}
 
-		size_t TypeSystem::com(size_t l, size_t r, std::string op) {
+		size_t TypeSystem::com(size_t l, size_t r, const impl::Value& op) {
 			if (l == r) return l;																// Avoid memoizing ancestor(l, l) == l
 
 			// Shortcut for table and Nil
@@ -113,7 +113,7 @@ namespace dust {
 			
 			// Try for direct conversion
 			auto idx = key(l, r);
-			if (conv.count(idx) > 0) {							// If there is a defined conversion
+			if (conv.count(idx) > 0) {								// If there is a defined conversion
 				auto convs = conv[idx];
 
 				if (findDef(convs[0], op) != NO_DEF)				// Test the highest precedence
@@ -127,7 +127,7 @@ namespace dust {
 			return siblings.count(idx) == 0 ? siblings[idx] = ancestor(l, r) : siblings[idx];
 		}
 
-		size_t TypeSystem::com(Type& l, Type& r, std::string op) {
+		size_t TypeSystem::com(Type& l, Type& r, const impl::Value& op) {
 			return com(l.id, r.id, op);
 		}
 

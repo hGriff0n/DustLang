@@ -68,17 +68,17 @@ namespace dust {
 				// Inheritance Resolution (returns NO_DEF if no definition is found)
 				// Find a definition for the function in type or ancestors(type)
 				// Returns findDef(Traits<bool>::id, fn) if t == Traits<Nil>::id
-				size_t findDef(size_t t, std::string fn);
+				size_t findDef(size_t t, const impl::Value& key);
 
 
 				// Find op definition in type without considering inheritance relationships
-				size_t isDefd(size_t t, std::string fn);
+				size_t isDefd(size_t t, const impl::Value& key);
 
 
 				// Common Type Resolution (Find a type that defines op and that both l and r can be cast to)
 				// Returns Nil or Table if l or r are of the given types
-				size_t com(size_t l, size_t r, std::string op);
-				size_t com(Type& l, Type& r, std::string op);
+				size_t com(size_t l, size_t r, const impl::Value& op);
+				size_t com(Type& l, Type& r, const impl::Value& op);
 
 
 				// Type Definition methods

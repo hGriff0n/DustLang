@@ -134,7 +134,7 @@ namespace dust {
 		auto fn = type::Traits<std::string>::make(op, gc);
 
 		if (op.at(2) == 'u') {
-			auto dis_t = ts.findDef(at().type_id, op);
+			auto dis_t = ts.findDef(at().type_id, fn);
 
 			if (dis_t == ts.NO_DEF) throw error::dispatch_error{ op, ts.getName(at().type_id) };
 
@@ -143,8 +143,8 @@ namespace dust {
 
 		} else if (op.at(2) == 'p' && op.at(3) != '(') {
 			auto r = at(-2).type_id, l = at().type_id;
-			auto com_t = ts.com(l, r, op);					// Find the common type of the two argments
-			auto dis_t = ts.findDef(com_t, op);				// Find the dispatch type of the function
+			auto com_t = ts.com(l, r, fn);					// Find the common type of the two argments
+			auto dis_t = ts.findDef(com_t, fn);				// Find the dispatch type of the function
 
 			if (dis_t == ts.NO_DEF) throw error::dispatch_error{ op, ts.getName(l), ts.getName(r) };
 
