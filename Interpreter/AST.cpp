@@ -168,7 +168,7 @@ namespace dust {
 		// TypeName methods
 		TypeName::TypeName(const ParseData& in, std::string n) : ASTNode{ in }, name{ n } {}
 		EvalState& TypeName::eval(EvalState& e) {
-			//e.push(e.getTS().getType(name).fields);
+			e.push(e.getTS().get(name).fields);
 			return e;
 		}
 		std::string TypeName::toString() { return name; }
@@ -689,18 +689,12 @@ namespace dust {
 			// Rotate so that the first (left) argument is on the top
 			e.reverse(args->size());
 
-			//return fn->eval(e).call(top);
+			e.setResolvingFunctionName();
+			fn->eval(e);
+			e.setResolvingFunctionName();
 
-			// Get and call the function
-			auto num_ret = ((Function)fn->eval(e)).call(e);
+			e.call(args->size());
 
-			// Trim the stack of garbage
-			if (num_ret >= 0) {
-				auto new_vals = e.size() - top++;
-				while (new_vals-- > num_ret) e.pop(top);
-			}
-
-			// The last (right) return value is on the top
 			return e;
 		}
 		void FunctionCall::addChild(std::shared_ptr<ASTNode>& c) {
