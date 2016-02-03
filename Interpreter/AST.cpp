@@ -715,6 +715,7 @@ namespace dust {
 		}
 
 		// FunctionDef methods
+			// However I implement dust functions, the entry point must take care to completely allocate the arguments (and clean the stack to empty) before execution
 		FunctionDef::FunctionDef(const ParseData& in) : ASTNode{ in } {}
 		EvalState& FunctionDef::eval(EvalState& e) { return e; }
 		void FunctionDef::addChild(std::shared_ptr<ASTNode>& c) {}

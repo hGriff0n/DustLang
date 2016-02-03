@@ -74,6 +74,8 @@ Timeline
 		Various Changes
 			Change 0 => false ???
 		Figure out where to put "Utility" stuff
+		Create an Optional<T> class
+			Simplify optional argument handling for client code
 		See VagueToDo.txt
 
 	1 Function Calling		ie. print("Hello World!") and abs(3)
