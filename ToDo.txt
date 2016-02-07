@@ -32,6 +32,9 @@ Timeline
 			Consider splitting test sections (see comments in Testing.h)
 			Add comments to each test describing what's being tested
 			Comment on what the individual tests do
+		Type Tables can concievably be deleted if they are pushed on the stack at some point
+			There's nothing keeping the num_references > 0
+			Fix this when I actualy implement the semantics of type creation
 		Consider removing the test for operator isDefd in com
 			Would remove ambiguity in code execution
 			"3" - 3 => String._op- not defined
@@ -76,23 +79,56 @@ Timeline
 		See VagueToDo.txt
 
 	1 Function Calling		ie. print("Hello World!") and abs(3)
-		Test the argument passing
-			Add in an "optional" parameter test
-				Probably need to strengthen the implementation of limited stack
-					I think you can manually query past the minSize
+		Strengthen the limited stack API
+			You can manipulate the stack below the minimum size (especially with Stack methods)
+				Possibly fixable by modifying invalidIndex and normalize
+				Also have to change reverse (I could just add a check)
+
+		Improve the api in regards to optional parameters
+
+		Get ":r test" to work properly with file_parser
+			There's a bug with pegtl::file_reader
+				Had set up test.dst to test file input
+				Added an extra line and it suddenly failed
+					First spent some time trying to find fread eerno (0)
+				So stepped through the debug process
+					Came to the failure point in file_reader
+				Googled around and came to realization that fread converts \r\n
+					Checked semantics of fseek/ftell and saw that they are raw
+				Created test files (one in windows, one in linux)
+					The linux one works, the windows one doesn't
+
+			fseek/ftell gets the number of bytes in the file (http://stackoverflow.com/a/9138149/2468698)
+				file_reader::size uses this to get the number of characters
+				Windows uses "\r\n" to indicate newline in files
+				fseek/ftell doesn't return the number of characters
+			fread gets all characters in the file (http://forums.codeguru.com/showthread.php?253826-C-String-What-is-the-difference-between-n-and-r-n)
+				fread replaces \r\n with \n when reading
+				fread returns the number of objects successfully read
+					It expects an object of size file_reader::size
+					Reads an object with all \r\n converted (what was 2 bytes is read as 1)
+					file_reader::read fails on multiline files on Windows
+			error.dst and success.dst are the same files with one exception
+				success.dst was created on a linux machine and has no \r\n
+				file_reader::read works fine on success and fails on error
+					debugging file_reader::read shows that on error.dst the last character of the return string is '\0', meaning it wasn't read
+					there are exactly 1 '\r' characters in the input files
+
+		Fix stack issue with test.dst
+			for k, v in arr print(k, "-", v)	=> Used up alloted stack
 
 		Move function calling work into the _op() metamethod
 			Argument evaluation to be done l->r
 				Question: Evaluate all arguments or not (ala Assignment)
 			This should be handled through the objects "_op()" metamethod
-			Relevant tests: 364 (?)
 
-		Optional: Get no parens syntax to work
+		Experiment with no parens syntax a bit
 	
 	2 Dust Function Definition
-		Transfer Types to using Tables for member functions
-		Implement toString and printString for If, Control/Block, FunctionCall, and FunctionDef
 		Update project version to 0.8.1
+		Improve the implementation of Tables for storing Type member functions
+			Enable dust new type creation
+			Prevent type tables from being deleted during a garbage collection sweep
 		Add in the correct syntax and action calls to create dust functions
 		Convert tables away from pure references
 			Particularly important for functions
@@ -110,7 +146,9 @@ Timeline
 	4 Type/Table metamethods
 		Convert for loop to the generator idiom
 
-	5 Ranges
+	5 Ranges and Library support
+
+	6 Lambdas and Table Comprehensions
 
 Notes (In case I forget some of my decisions)
 	3 + e: 4	=> (3 + e): 4		/> (3 + (e: 4))		// To difficult to modify the grammar. I can't find anywhere that I expected it
