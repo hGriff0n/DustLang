@@ -62,6 +62,11 @@ namespace dust {
 
 				size_t setMinSize(size_t new_min);
 
+				int normalize(int& idx);
+				bool invalidIndex(int idx);
+
+				std::vector<impl::Value>::iterator __begin();
+
 			public:
 				CallStack(impl::GC&);
 
@@ -73,7 +78,7 @@ namespace dust {
 
 				// Special Overloads
 				void push(const char* val);
-				void push(impl::Value val);	// impl::Value& ???
+				void push(const impl::Value& val);
 				void pushNil();
 
 				// Overload cast operator to perform a pop
@@ -105,7 +110,7 @@ namespace dust {
 				void copy(int idx = -1);
 
 				// Replaces the value at the given index with the top
-				// Stack size decreases by 1
+					// Stack size decreases by 1
 				void replace(int idx = -1);
 
 				// Resizes the stack to the given size
@@ -113,6 +118,9 @@ namespace dust {
 
 				// Overload of empty to account for the variable minimum size
 				bool empty();
+
+				// Overload of size to possibly account for the variable minimum size
+				size_t size();
 		};
 	}
 }

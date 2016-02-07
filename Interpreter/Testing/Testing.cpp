@@ -361,6 +361,26 @@ namespace dust {
 				});
 				e.set(EvalState::SCOPE);
 
+				e.push("max");
+				e.push([](EvalState& e) {
+					auto l = e.pop();
+
+					if (e.empty())
+						e.push(l);
+
+					else {
+						auto r = e.pop();
+						e.push(r);
+						e.push(l);
+						e.callOp("_op>");
+
+						e.push((bool)e ? l : r);
+					}
+
+					return 1;
+				});
+				e.set(EvalState::SCOPE);
+
 				t.requireType("abs", "Function");
 
 				// Need to add tests for having more values than expected or less
@@ -377,9 +397,10 @@ namespace dust {
 					
 					t.requireEval("give5(3)", 5);							// Test more arguments than expected
 					t.requireSize("give5(3)", 1);
-					t.requireException<error::out_of_bounds>("add(2)");		// Test fewer arguments than expected
+					t.requireException<error::runtime_error>("add(2)");		// Test fewer arguments than expected
 
-					// Test optional arguments
+					t.requireEval("max(3, 5)", 5);							// Testing optional arguments
+					t.requireEval("max(3)", 3);
 
 					t.requireException<error::dispatch_error>("foo(3)");	// Test dispatch error
 				t.closeSubTest();

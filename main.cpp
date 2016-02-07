@@ -51,6 +51,24 @@ int main(int argc, const char* argv[]) {
 	initState(e);
 	test::runTests(e, show_all_tests);
 
+	e.push("error");
+	e.push([](EvalState& e) {
+		e.push(e.size());				// Since I don't take the 4 off the stack, loc = 1 and ret_idx = 2
+		return 1;
+	});
+	e.set(EvalState::SCOPE);
+
+	e.push("test");
+	e.push([](EvalState& e) {
+		e.push(3);
+		e.push(4);
+		e.push("error");
+		e.get(EvalState::SCOPE);
+		e.call(1);
+		return 1;
+	});
+	e.set(EvalState::SCOPE);
+
 	// Main repl loop
 	std::cout << "\n> ";
 
@@ -61,7 +79,7 @@ int main(int argc, const char* argv[]) {
 		if (input == ":gc") {
 			e.getGC().run();
 
-		// Type checking (ala. Haskell)
+		// Type checking (ala. GHCI)
 		} else if (input.substr(0, 2) == ":t") {
 			parse::ScopeTracker scp{};
 			pegtl::parse<grammar, action, parse::control>(input.substr(3), input, parse_tree, scp);

@@ -49,7 +49,8 @@ namespace dust {
 	}
 
 	void EvalState::getTable(Table tbl, const impl::Value& key) {
-		if (!tbl) return pushNil(); // throw error::null_exception{ "tbl is null in getTable" };
+		if (!tbl) return pushNil();
+			// throw error::null_exception{ "tbl is null in getTable" };
 
 		if (!tbl->okayKey(key))
 			throw error::illegal_operation{ "Attempt to index a table with an invalid key" };
@@ -81,20 +82,20 @@ namespace dust {
 		if (num_args >= size()) throw error::bad_api_call{ "Attempt to call function with more arguments than values on the stack" };
 
 		// Note: loc may equal -1 if num_args == size() - 1
-		size_t loc = size() - num_args - 2;									// Index of the value before the argument list (the function being called)
+		size_t loc = Stack::size() - num_args - 1;							// Index of the value before the argument list (the function being called)
 
 		// Ensure there is a callable object at the expected location
 		if (!is<Function>()) {
 			// I can set self in here (especially when I add in metamethods)
 			//push("_op()");
-			//get(-1);
+			//get(-2);
 
 			throw error::dispatch_error{ "Attempt to call a non-function" };
 		}
 
 		// Enter the function
 		newScope();
-		size_t old_limit = setMinSize(loc++);								// Limit the stack size for the child process (handles too few arguments)
+		size_t old_limit = setMinSize(loc);									// Limit the stack size for the child process (handles too few arguments)
 		int num_ret = 1;
 
 		// Perform the call
@@ -105,27 +106,28 @@ namespace dust {
 			try_decRef(self);
 			self.type_id = type::Traits<Nil>::id;
 
+			// I'm guessing -1 means "I got this" (the function handles the stack)
+			if (num_ret >= 0) {
+
+				// Ensure return values are at the correct position on the stack
+				size_t ret_idx = Stack::size() - num_ret;						// Index of the first returned value
+				while (loc != ret_idx)											// Remove leftover values (handles too many arguments)
+					pop(--ret_idx);
+			}
+
+			// Leave the function
+			setMinSize(old_limit);
+			endScope();
+
 		} catch (...) {
 			// Reset the stack and leave the function
-			while (!empty() && size()) pop();								// Clean the function's stack record
+			while (!empty()) pop();
+
 			setMinSize(old_limit);
 			endScope();
 
 			throw;
 		}
-
-		// I'm guessing -1 means "I got this" (the function handles the stack)
-		if (num_ret >= 0) {
-
-			// Ensure return values are at the correct position on the stack
-			size_t ret_idx = size() - num_ret;								// Index of the first returned value
-			while (loc != ret_idx)											// Remove leftover values (handles too many arguments)
-				pop(--ret_idx);
-		}
-
-		// Leave the function
-		setMinSize(old_limit);
-		endScope();
 
 		// stack: ..., {ret0}, ...				The last return value is on the top
 	}
@@ -358,6 +360,7 @@ namespace dust {
 		return gc;
 	}
 
+
 	void initState(EvalState& e) {
 		initTypeSystem(e.ts);
 		initConversions(e);
@@ -390,14 +393,32 @@ namespace dust {
 		auto String = ts.getType("String");
 
 		// Initialize Conversions
-		e.addMember(Int, "String", [](EvalState& e) { e.push((std::string)e); return 1; });
-		e.addMember(Int, "Float", [](EvalState& e) { e.push((double)e); return 1; });
+		e.addMember(Int, "String", [](EvalState& e) {
+			e.push((std::string)e);
+			return 1;
+		});
+		e.addMember(Int, "Float", [](EvalState& e) {
+			e.push((double)e);
+			return 1;
+		});
 
-		e.addMember(Float, "String", [](EvalState& e) { e.push((std::string)e); return 1; });
-		e.addMember(Float, "Int", [](EvalState& e) { e.push((int)e); return 1; });
+		e.addMember(Float, "String", [](EvalState& e) {
+			e.push((std::string)e);
+			return 1;
+		});
+		e.addMember(Float, "Int", [](EvalState& e) {
+			e.push((int)e);
+			return 1;
+		});
 
-		e.addMember(String, "Int", [](EvalState& e) { e.push((int)e); return 1; });
-		e.addMember(String, "Float", [](EvalState& e) { e.push((float)e); return 1; });
+		e.addMember(String, "Int", [](EvalState& e) {
+			e.push((int)e);
+			return 1;
+		});
+		e.addMember(String, "Float", [](EvalState& e) {
+			e.push((float)e);
+			return 1;
+		});
 
 	}
 
@@ -453,7 +474,7 @@ namespace dust {
 		});
 
 		e.addMember(Object, "_op!=", [](EvalState& e) {
-			e.callOp("_op=");			// Throws if _op= is not defined by the type
+			e.callOp("_op=");				// Throws if _op= is not defined by the type
 			e.callOp("_ou!");				// Throws if _op= doesn't return a boolean
 			return 1;
 		});
@@ -464,34 +485,94 @@ namespace dust {
 			e.push(pow(base, (double)e));
 			return 1;
 		});
-		e.addMember(Number, "_op/", [](EvalState& e) { e.push((double)e / (double)e); return 1; });
+		e.addMember(Number, "_op/", [](EvalState& e) {
+			e.push((double)e / (double)e);
+			return 1;
+		});
 
 		// Define math operators for Ints
-		e.addMember(Int, "_op+", [](EvalState& e) { e.push((int)e + (int)e); return 1; });
-		e.addMember(Int, "_op-", [](EvalState& e) { e.push((int)e - (int)e); return 1; });
-		e.addMember(Int, "_op*", [](EvalState& e) { e.push((int)e * (int)e); return 1; });
-		e.addMember(Int, "_op%", [](EvalState& e) { e.push((int)e % (int)e); return 1; });
-		e.addMember(Int, "_op<", [](EvalState& e) { e.push((int)e < (int)e); return 1; });		// 
-		e.addMember(Int, "_op=", [](EvalState& e) { e.push((int)e == (int)e); return 1; });
-		e.addMember(Int, "_op>", [](EvalState& e) { e.push((int)e > (int)e); return 1; });
-		e.addMember(Int, "_ou-", [](EvalState& e) { e.push(-(int)e); return 1; });
+		e.addMember(Int, "_op+", [](EvalState& e) {
+			e.push((int)e + (int)e);
+			return 1;
+		});
+		e.addMember(Int, "_op-", [](EvalState& e) {
+			e.push((int)e - (int)e);
+			return 1;
+		});
+		e.addMember(Int, "_op*", [](EvalState& e) {
+			e.push((int)e * (int)e);
+			return 1;
+		});
+		e.addMember(Int, "_op%", [](EvalState& e) {
+			e.push((int)e % (int)e);
+			return 1;
+		});
+		e.addMember(Int, "_op<", [](EvalState& e) {
+			e.push((int)e < (int)e);
+			return 1;
+		});
+		e.addMember(Int, "_op=", [](EvalState& e) {
+			e.push((int)e == (int)e);
+			return 1;
+		});
+		e.addMember(Int, "_op>", [](EvalState& e) {
+			e.push((int)e >(int)e);
+			return 1;
+		});
+		e.addMember(Int, "_ou-", [](EvalState& e) {
+			e.push(-(int)e);
+			return 1;
+		});
 
 		// Define math operators for Floats
-		e.addMember(Float, "_op+", [](EvalState& e) { e.push((double)e + (double)e); return 1; });
-		e.addMember(Float, "_op-", [](EvalState& e) { e.push((double)e - (double)e); return 1; });
-		e.addMember(Float, "_op*", [](EvalState& e) { e.push((double)e * (double)e); return 1; });
-		e.addMember(Float, "_op<", [](EvalState& e) { e.push((double)e < (double)e); return 1; });		// 
-		e.addMember(Float, "_op=", [](EvalState& e) { e.push((double)e == (double)e); return 1; });
-		e.addMember(Float, "_op>", [](EvalState& e) { e.push((double)e > (double)e); return 1; });
-		e.addMember(Float, "_ou-", [](EvalState& e) { e.push(-(double)e); return 1; });
+		e.addMember(Float, "_op+", [](EvalState& e) {
+			e.push((double)e + (double)e);
+			return 1;
+		});
+		e.addMember(Float, "_op-", [](EvalState& e) {
+			e.push((double)e - (double)e);
+			return 1;
+		});
+		e.addMember(Float, "_op*", [](EvalState& e) {
+			e.push((double)e * (double)e);
+			return 1;
+		});
+		e.addMember(Float, "_op<", [](EvalState& e) {
+			e.push((double)e < (double)e);
+			return 1;
+		});		// 
+		e.addMember(Float, "_op=", [](EvalState& e) {
+			e.push((double)e == (double)e);
+			return 1;
+		});
+		e.addMember(Float, "_op>", [](EvalState& e) {
+			e.push((double)e >(double)e);
+		return 1;
+		});
+		e.addMember(Float, "_ou-", [](EvalState& e) {
+			e.push(-(double)e);
+			return 1;
+		});
 
 		// Define concatentation (+) and equality (=) operators for Strings
-		e.addMember(String, "_op+", [](EvalState& e) { e.push((std::string)e + e.pop<std::string>(-2)); return 1; });			// Why is Int._op- correct then???
-		e.addMember(String, "_op=", [](EvalState& e) { e.push(e.pop().val.i == e.pop().val.i); return 1; });
+		e.addMember(String, "_op+", [](EvalState& e) {
+			e.push((std::string)e + e.pop<std::string>(-2));
+			return 1;
+		});
+		e.addMember(String, "_op=", [](EvalState& e) {
+			e.push(e.pop().val.i == e.pop().val.i);
+			return 1;
+		});
 
 		// Define _op= and _ou! for Bools
-		e.addMember(Bool, "_op=", [](EvalState& e) { e.push((bool)e == (bool)e); return 1; });
-		e.addMember(Bool, "_ou!", [](EvalState& e) { e.push(!(bool)e);  return 1; });
+		e.addMember(Bool, "_op=", [](EvalState& e) {
+			e.push((bool)e == (bool)e);
+			return 1;
+		});
+		e.addMember(Bool, "_ou!", [](EvalState& e) {
+			e.push(!(bool)e);
+			return 1;
+		});
 
 		// Table functions
 			// Currently these functions "erase" non-integer key values
@@ -630,9 +711,7 @@ namespace dust {
 
 
 		// Free functions
-		// This isn't getting set ???
-		//e.push("_type");							// This doesn't work
-		e.push("ttype");							// This works ???
+		e.push("ttype");
 		e.push([](EvalState& e) {
 			e.push(e.pop().type_id);
 			return 1;
@@ -643,6 +722,16 @@ namespace dust {
 		e.push([](EvalState& e) {
 			e.push(e.getTS().getName(e.pop().type_id));
 			return 1;
+		});
+		e.set(EvalState::SCOPE);
+
+		e.push("print");
+		e.push([](EvalState& e) {
+			while (!e.empty())
+				std::cout << e.pop<std::string>();
+			
+			std::cout << std::endl;
+			return 0;
 		});
 		e.set(EvalState::SCOPE);
 		
