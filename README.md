@@ -1,4 +1,4 @@
-# The Dust Programming Language (v 0.8.8)
+# The Dust Programming Language (v 0.9.1)
 	
 Dust is the working title for a multi-paradigm, expression-based, interpreted programming language. The development and design of Dust is largely intended as a hobby project that would explore how
 programming languages are designed and implemented by growing and nurturing the small seed that has sat in my mind for a couple of years into a fully-featured language. It is not intended to be a
@@ -8,7 +8,7 @@ programming languages are designed and implemented by growing and nurturing the 
 Dust is built using the [PEGTL](https://github.com/ColinH/PEGTL) library to implement its parsing algorithm. Many thanks to ColinH for both creating an intuitive and efficient parsing library, and for providing excellent documentation.
 
 Dust is built and designed using Visual Studio 2015 and remains untested on other compilers. However, provided the compiler supports C++14, compilation should not be an issue.
-Currently the Dust interpreter and runtime, along with the included testing framework and repl loop, consist of just over 3000 SLOC, split across header and source files
+Currently the Dust interpreter and runtime, along with the included testing framework and repl loop, consist of just under 5000 SLOC, split across header and source files
 
 
 # Dust
@@ -76,6 +76,17 @@ Naturally, the Table type also defines a set of operators (+ (addition), - (subt
     a ^ c and "C is in A" or "C is not in A"                ## C is not in A
     b * 4                                                   ## [ 1 3 5 4 ]
     a + c                                                   ## [ 1 2 3 4 1 3 5 ]
+
+### Functions
+
+Functions are very important to dust, both in implementation and in spirit.
+
+Function calling is fairly simple and largely unexciting. The only interesting thing is that dust functions naturally handle any number of arguments with no issues of stack corruption.
+
+	Int.abs(3) = -3.abs()					## Demonstrating OOP syntax. Both sides call the same function Int.abs
+	max(1, 2, 3, 5)							## Max takes >1 arguments
+	give5(3)								## Gives 5 as expected. The 3 is evaluated, but unused
+
 
 #### Metamethods
 

@@ -61,15 +61,9 @@ Timeline
 			Consider change EvalState methods to return *this
 		Figure out where to put "Utility" stuff
 		Consider moving excep_if_empty from Block to Control
-		Create an Optional class
-			Need to overload EvalState::pop and ::push to get it to work
 		See VagueToDo.txt
 
-	1 Function Calling		ie. print("Hello World!") and abs(3)
-		Experiment with no parens syntax a bit
-	
-	2 Dust Function Definition
-		Update project version to 0.8.1
+	1 Dust Function Definition
 		Improve the implementation of Tables for storing Type member functions
 			Enable dust new type creation
 			Prevent type tables from being deleted during a garbage collection sweep
@@ -78,7 +72,6 @@ Timeline
 			Particularly important for functions
 
 	3 Grammar Framework Update
-		Update project verstion to 0.9.1
 		Potentially change the grammar to follow the basic framework in "lua53_parse.h"
 		Update all documents to ensure that they reflect the current language spec
 			Start working heavily on the language manual
