@@ -49,24 +49,6 @@ int main(int argc, const char* argv[]) {
 	initState(e);
 	test::runTests(e, show_all_tests);
 
-	e.push("error");
-	e.push([](EvalState& e) {
-		e.push(e.size());				// Since I don't take the 4 off the stack, loc = 1 and ret_idx = 2
-		return 1;						// I'm actually trying to pop(loc), normalize changes the idx back to 2
-	});
-	e.set(EvalState::SCOPE);
-
-	e.push("test");
-	e.push([](EvalState& e) {
-		e.push(3);
-		e.push(4);
-		e.push("error");
-		e.get(EvalState::SCOPE);
-		e.call(1);
-		return 1;
-	});
-	e.set(EvalState::SCOPE);
-
 	// Main repl loop
 	std::cout << "\n> ";
 

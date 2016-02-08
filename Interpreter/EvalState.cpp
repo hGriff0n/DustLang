@@ -110,9 +110,9 @@ namespace dust {
 			if (num_ret >= 0) {
 
 				// Ensure return values are at the correct position on the stack
-				size_t ret_idx = Stack::size() - num_ret;						// Index of the first returned value
-				while (loc != ret_idx)											// Remove leftover values (handles too many arguments)
-					pop(--ret_idx);
+				loc += num_ret++;												// Stack size with all return values left
+				while (loc != Stack::size())									// Remove leftover values (handles too many arguments)
+					pop(-num_ret);												// The return values are on the stack's top
 			}
 
 		} catch (...) {
