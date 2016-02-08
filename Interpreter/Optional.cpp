@@ -8,12 +8,13 @@ namespace dust {
 		if (!e.empty()) value = e.pop();
 	}
 
-	bool Optional::isValid() {
+	bool Optional::isValid() const {
 		return valid;
 	}
 
 	bool Optional::set(EvalState& e) {
-		if (valid = !e.empty()) value = e.pop();
+		copy(e);
+		if (valid) e.pop();
 
 		return valid;
 	}
@@ -24,9 +25,16 @@ namespace dust {
 		return valid = o.valid;
 	}
 
-	impl::Value Optional::get() {
-		if (!valid) value.type_id = type::Traits<Nil>::id;				// Ensure the value is a Nil type if the optional is not valid
+	bool Optional::copy(EvalState& e) {
+		if (valid = !e.empty())
+			value = e.at();
+		else
+			value.type_id = type::Traits<Nil>::id;
 
+		return valid;
+	}
+
+	impl::Value Optional::get() const {
 		return value;
 	}
 

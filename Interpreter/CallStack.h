@@ -4,12 +4,14 @@
 #include "Value.h"
 #include "Stack.h"
 #include "DualGC.h"
+#include "Optional.h"
 #include "../has_interface.h"
 
 #include "Exceptions\runtime.h"
 
 namespace dust {
 	class EvalState;
+	class Optional;
 
 	namespace type {
 		// Can I move this specialization to EvalState.h?  NO
@@ -43,7 +45,7 @@ namespace dust {
 			}
 		};
 	}
-
+	
 	namespace impl {
 
 		/*
@@ -79,6 +81,7 @@ namespace dust {
 				// Special Overloads
 				void push(const char* val);
 				void push(const impl::Value& val);
+				void push(const Optional& opt);
 				void pushNil();
 
 				// Overload cast operator to perform a pop

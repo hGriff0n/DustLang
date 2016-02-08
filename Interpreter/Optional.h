@@ -18,12 +18,14 @@ namespace dust {
 			Optional();
 			Optional(EvalState&);
 
-			bool isValid();
+			bool isValid() const;
 
 			bool set(EvalState&);
 			bool set(const Optional&);
 
-			impl::Value get();
+			bool copy(EvalState&);
+
+			impl::Value get() const;
 	};
 
 }

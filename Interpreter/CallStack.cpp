@@ -60,6 +60,11 @@ namespace dust {
 			Stack::push(val);
 		}
 
+		void CallStack::push(const Optional& opt) {
+			if (!opt.isValid()) return pushNil();
+			push(opt.get());
+		}
+
 		void CallStack::pushNil() {
 			push<Nil>({});
 		}
