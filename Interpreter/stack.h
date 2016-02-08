@@ -31,7 +31,7 @@ namespace dust {
 				s.insert(s.begin() + normalize(bef) + 1, v);
 			}
 
-			virtual typename std::vector<Value>::iterator __begin() {
+			virtual typename std::vector<Value>::iterator rbegin() {
 				return std::begin(s);
 			}
 
@@ -83,7 +83,7 @@ namespace dust {
 
 			// Reverses the top n elements
 			void reverse(size_t n) {
-				std::reverse(n > size() ? __begin() : std::end(s) - n, std::end(s));
+				std::reverse(n > size() ? rbegin() : std::end(s) - n, std::end(s));
 			}
 
 			// stl interface methods

@@ -65,7 +65,7 @@ namespace dust {
 				int normalize(int& idx);
 				bool invalidIndex(int idx);
 
-				std::vector<impl::Value>::iterator __begin();
+				std::vector<impl::Value>::iterator rbegin();
 
 			public:
 				CallStack(impl::GC&);

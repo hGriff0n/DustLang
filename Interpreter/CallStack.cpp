@@ -46,8 +46,8 @@ namespace dust {
 			return idx < min_size || Stack::invalidIndex(idx);
 		}
 
-		std::vector<impl::Value>::iterator CallStack::__begin() {
-			return Stack::__begin() + min_size;
+		std::vector<impl::Value>::iterator CallStack::rbegin() {
+			return Stack::rbegin() + min_size;
 		}
 
 		void CallStack::push(const char* val) {

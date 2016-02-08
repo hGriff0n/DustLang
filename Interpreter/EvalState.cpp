@@ -20,7 +20,7 @@ namespace dust {
 		if (at(idx).type_id == type) return;
 		swap(idx, -1);								// Move the value to the stack top
 
-													// Special conversion for Tables (needs to be simplified)
+		// Special conversion for Tables (needs to be simplified)
 		if (type == type::Traits<Table>::id) {
 			newScope();
 			push(1);
@@ -82,7 +82,7 @@ namespace dust {
 		if (num_args >= size()) throw error::bad_api_call{ "Attempt to call function with more arguments than values on the stack" };
 
 		// Note: loc may equal -1 if num_args == size() - 1
-		size_t loc = Stack::size() - num_args - 1;							// Index of the value before the argument list (the function being called)
+		size_t loc = Stack::size() - num_args - 1;								// Index of the value before the argument list (the function being called)
 
 		// Ensure there is a callable object at the expected location
 		if (!is<Function>()) {
@@ -95,12 +95,12 @@ namespace dust {
 
 		// Enter the function
 		newScope();
-		size_t old_limit = setMinSize(loc);									// Limit the stack size for the child process (handles too few arguments)
+		size_t old_limit = setMinSize(loc);										// Limit the stack size for the child process (handles too few arguments)
 		int num_ret = 1;
 
 		// Perform the call
 		try {
-			num_ret = pop<Function>()(*this);								// loc now points to the last argument
+			num_ret = pop<Function>()(*this);									// loc now points to the last argument
 
 			// Ensure self doesn't pollute outside of the function call
 			try_decRef(self);
@@ -115,10 +115,6 @@ namespace dust {
 					pop(--ret_idx);
 			}
 
-			// Leave the function
-			setMinSize(old_limit);
-			endScope();
-
 		} catch (...) {
 			// Reset the stack and leave the function
 			while (!empty()) pop();
@@ -128,6 +124,10 @@ namespace dust {
 
 			throw;
 		}
+
+		// Leave the function
+		setMinSize(old_limit);
+		endScope();
 
 		// stack: ..., {ret0}, ...				The last return value is on the top
 	}
