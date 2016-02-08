@@ -113,6 +113,8 @@ namespace dust {
 				loc += num_ret++;												// Stack size with all return values left
 				while (loc != Stack::size())									// Remove leftover values (handles too many arguments)
 					pop(-num_ret);												// The return values are on the stack's top
+
+				if (num_ret == 1) pushNil();									// Enable usage on right side of assignment for all functions
 			}
 
 		} catch (...) {

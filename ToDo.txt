@@ -66,12 +66,6 @@ Timeline
 		See VagueToDo.txt
 
 	1 Function Calling		ie. print("Hello World!") and abs(3)
-		Fix stack issues with for loop
-			for k, v in arr print(k, "-", v)	=> Prints out all key-values, then attempts to index stack with -1
-				The exceptions from the repl loop
-				Nothing is being put on the stack
-					A nil should be put on there at least
-
 		Experiment with no parens syntax a bit
 	
 	2 Dust Function Definition
