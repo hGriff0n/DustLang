@@ -4,5 +4,4 @@ arr: [ 1 5 7 2 3 35 12 ]
 
 sum: 0
 for k, v in arr
-	## print(k, "-", v)	=>	Used up alloted stack space
-	.sum:+ v
+	print(k, "-", v)

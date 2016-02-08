@@ -4,8 +4,6 @@
 #include <iostream>
 #include <pegtl/analyze.hh>
 
-#include <fstream>
-
 #define p(x) std::cout << (x)
 #define ps(x) p(x) << " :: "
 #define pl(x) p(x) << "\n"
@@ -54,7 +52,7 @@ int main(int argc, const char* argv[]) {
 	e.push("error");
 	e.push([](EvalState& e) {
 		e.push(e.size());				// Since I don't take the 4 off the stack, loc = 1 and ret_idx = 2
-		return 1;
+		return 1;						// I'm actually trying to pop(loc), normalize changes the idx back to 2
 	});
 	e.set(EvalState::SCOPE);
 
@@ -96,14 +94,22 @@ int main(int argc, const char* argv[]) {
 
 			try {
 				parse::ScopeTracker scp{};
-
-				std::string input{ std::istreambuf_iterator<char>(std::ifstream{ file }), std::istreambuf_iterator<char>() };
-				pegtl::parse<grammar, action, parse::control>(input, file, parse_tree, scp);
-				//pegtl::file_parser{ file }.parse<grammar, action, parse::control>(parse_tree, scp);
+				pegtl::file_parser{ file }.parse<grammar, action, parse::control>(parse_tree, scp);
 
 				if (!parse_tree.empty())
 					parse_tree.pop()->eval(e).stream(std::cout << ":: ") << "\n";
 
+			} catch (std::exception& e) {
+				std::cout << e.what() << std::endl;
+			}
+
+		// Show file (basic implementation)
+		} else if (input.substr(0, 2) == ":l") {
+			std::string file = input.substr(3);
+			if (file.size() < 5 || file.compare(file.length() - 4, 4, ".dst")) file += ".dst";				// Append .dst if not provided
+
+			try {
+				std::cout << " Reading file \"" << file << "\"\n\n" << pegtl::internal::file_reader{ file }.read() << "\n";
 			} catch (std::exception& e) {
 				std::cout << e.what() << std::endl;
 			}
