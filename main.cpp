@@ -59,7 +59,7 @@ int main(int argc, const char* argv[]) {
 		if (input == ":gc") {
 			e.getGC().run();
 
-		// Type checking (ala. Haskell)
+		// Type checking (ala. GHCI)
 		} else if (input.substr(0, 2) == ":t") {
 			parse::ScopeTracker scp{};
 			pegtl::parse<grammar, action, parse::control>(input.substr(3), input, parse_tree, scp);
@@ -70,7 +70,7 @@ int main(int argc, const char* argv[]) {
 		// Run file (basic implementation)
 		} else if (input.substr(0, 2) == ":r") {
 			std::string file = input.substr(3);
-			if (file.compare(file.length() - 4, 4, ".dst")) file += ".dst";				// Append .dst if not provided
+			if (file.size() < 5 || file.compare(file.length() - 4, 4, ".dst")) file += ".dst";				// Append .dst if not provided
 
 			std::cout << " Running file \"" << file << "\"\n";
 
@@ -81,6 +81,17 @@ int main(int argc, const char* argv[]) {
 				if (!parse_tree.empty())
 					parse_tree.pop()->eval(e).stream(std::cout << ":: ") << "\n";
 
+			} catch (std::exception& e) {
+				std::cout << e.what() << std::endl;
+			}
+
+		// Show file (basic implementation)
+		} else if (input.substr(0, 2) == ":l") {
+			std::string file = input.substr(3);
+			if (file.size() < 5 || file.compare(file.length() - 4, 4, ".dst")) file += ".dst";				// Append .dst if not provided
+
+			try {
+				std::cout << " Reading file \"" << file << "\"\n\n" << pegtl::internal::file_reader{ file }.read() << "\n";
 			} catch (std::exception& e) {
 				std::cout << e.what() << std::endl;
 			}

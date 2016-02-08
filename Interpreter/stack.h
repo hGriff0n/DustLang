@@ -15,20 +15,24 @@ namespace dust {
 			std::vector<Value> s;
 
 		protected:
-			int normalize(int& idx) {
-				return idx = idx < 0 ? idx + s.size() : idx;
+			virtual int normalize(int& idx) {
+				return idx = (idx < 0 ? idx + s.size() : idx);
 			}
 
-			bool invalidIndex(int idx) {
-				return idx < 0 || idx >(int)s.size();
+			virtual bool invalidIndex(int idx) {
+				return idx < 0 || idx > (int)s.size();
 			}
 
-			virtual void before(const Value& v, int bef) {
-				s.insert(s.begin() + normalize(bef), v);
+			void before(const Value& v, int bef) {
+				s.insert(s.begin() + bef, v);
 			}
 
-			virtual void after(const Value& v, int bef) {
+			void after(const Value& v, int bef) {
 				s.insert(s.begin() + normalize(bef) + 1, v);
+			}
+
+			virtual typename std::vector<Value>::iterator rbegin() {
+				return std::begin(s);
 			}
 
 		public:
@@ -53,14 +57,16 @@ namespace dust {
 			}
 
 			// References the value at the given index
-			virtual Value& at(int idx = -1) {
+			Value& at(int idx = -1) {
 				if (invalidIndex(normalize(idx))) throw error::out_of_bounds{ "Stack::at", idx, size() };
 
 				return s[idx];
 			}
 
 			// Inserts the top at the given index
-			virtual void insert(int idx = -1) {
+			void insert(int idx = -1) {
+				if (invalidIndex(normalize(idx))) throw error::out_of_bounds{ "Stack::insert", idx, size() };
+
 				before(pop(), idx);
 			}
 
@@ -77,7 +83,7 @@ namespace dust {
 
 			// Reverses the top n elements
 			void reverse(size_t n) {
-				std::reverse(n > s.size() ? std::begin(s) : std::end(s) - n, std::end(s));
+				std::reverse(n > size() ? rbegin() : std::end(s) - n, std::end(s));
 			}
 
 			// stl interface methods
@@ -85,12 +91,12 @@ namespace dust {
 				return s.empty();
 			}
 
-			void clear() {
-				s.clear();
+			virtual size_t size() {
+				return s.size();
 			}
 
-			size_t size() {
-				return s.size();
+			void clear() {
+				s.clear();
 			}
 
 			void reserve(size_t space) {

@@ -200,6 +200,9 @@ namespace dust {
 				// Handles non-printable values and string-special printing
 			template <class Stream>
 			Stream& stream(Stream& s) {
+				if (empty())
+					return s << "No values on the stack";
+
 				if (is<std::string>())
 					return s << "\"" << pop<std::string>() << "\"";
 

@@ -65,7 +65,8 @@ namespace dust {
 		 */
 		struct id_end : identifier_other {};
 		struct type_id : seq<range<'A', 'Z'>, star<id_end>> {};							// [A-Z]{id_end}*
-		struct var_id : seq<not_at<keywords>, range<'a', 'z'>, star<id_end>> {};		// [a-z]{id_end}*
+		struct var_id : seq<not_at<keywords>, sor<one<'_'>, range<'a', 'z'>>,			// [a-z]{id_end}*
+			star<id_end>> {};			// Need to validate metamethods (ie. _op+, etc.). Currently don't parse the last character
 		struct var_lookup : seq<star<one<'.'>>, at<var_id>> {};
 		struct var_name : seq<var_lookup, var_id> {};									// \.*{var_id}
 

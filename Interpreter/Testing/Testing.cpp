@@ -361,6 +361,42 @@ namespace dust {
 				});
 				e.set(EvalState::SCOPE);
 
+				e.push("max");
+				e.push([](EvalState& e) {
+					auto num_args = e.size() - 1;					// The number of arguments to a function is the number of items on the available stack
+					auto max = e.pop();
+
+					while (num_args--> 0) {
+						auto r = e.pop();
+
+						e.push(r);
+						e.push(max);
+						e.callOp("_op>");
+
+						if (!(bool)e) max = r;
+					}
+
+					e.push(max);
+					return 1;
+				});
+				/*
+				e.push([](EvalState& e) {
+					Optional max{ e }, opt;							// Max guaranteed to have a value, opt guaranteed to be nil
+
+					while (opt.set(e)) {							// For each optional argument, try to beat max
+						e.push(max);
+						e.push(opt);
+						e.callOp("_op>");							// Run opt > max
+
+						if ((bool)e) max.set(opt);
+					}
+
+					e.push(max);
+					return 1;
+				});
+				*/
+				e.set(EvalState::SCOPE);
+
 				t.requireType("abs", "Function");
 
 				// Need to add tests for having more values than expected or less
@@ -377,9 +413,10 @@ namespace dust {
 					
 					t.requireEval("give5(3)", 5);							// Test more arguments than expected
 					t.requireSize("give5(3)", 1);
-					t.requireException<error::out_of_bounds>("add(2)");		// Test fewer arguments than expected
+					t.requireException<error::runtime_error>("add(2)");		// Test fewer arguments than expected
 
-					// Test optional arguments
+					t.requireEval("max(3, 5)", 5);							// Testing optional arguments
+					t.requireEval("max(3)", 3);
 
 					t.requireException<error::dispatch_error>("foo(3)");	// Test dispatch error
 				t.closeSubTest();

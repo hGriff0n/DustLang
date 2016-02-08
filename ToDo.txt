@@ -4,22 +4,8 @@ Notes
 		In Git Shell, navigate to "Visual Studio 2015/MyResources/MyLib"
 		Currently, delete the existing PEGTL directory
 		Execute "git clone https://github.com/ColinH/PEGTL.git"
-	Using newline in repl/testing
+	Using newline in testing
 		Just add "\n" in the automated tests (although the display is wonky)
-		For the repl loop, use getmultiline
-			getmultiline waits until [ENTER] is hit twice before accepting
-
-Opinions on adapting code to use the C++ Common Code Standards and the GSL
-	I feel like this would be a good idea on the whole
-		I currently can't explain why though
-
-	However there are many downsides the mean I won't implement it yet
-		Time-costly to go through and implement for the whole project
-			This will only get worse as time goes on however
-		I'm not used to the new standards
-			Error prone if I perform the switch while I'm figuring this stuff out
-			If I don't understand my current code at times, how can I accurately adapt it to the new standard?
-		Some of	the juicy stuff is not available yet (static analyzers)
 
 Timeline
 	0 Bugfixes / Improvements
@@ -32,6 +18,9 @@ Timeline
 			Consider splitting test sections (see comments in Testing.h)
 			Add comments to each test describing what's being tested
 			Comment on what the individual tests do
+		Type Tables can concievably be deleted if they are pushed on the stack at some point
+			There's nothing keeping the num_references > 0
+			Fix this when I actualy implement the semantics of type creation
 		Consider removing the test for operator isDefd in com
 			Would remove ambiguity in code execution
 			"3" - 3 => String._op- not defined
@@ -69,48 +58,46 @@ Timeline
 			Try converting some code once I understand it
 		Various Changes
 			Change 0 => false ???
+			Consider change EvalState methods to return *this
 		Figure out where to put "Utility" stuff
 		Consider moving excep_if_empty from Block to Control
-		Create an Optional<T> class
-			Possibly simplify optional argument handling for client code
+		Create an Optional class
+			Need to overload EvalState::pop and ::push to get it to work
 		See VagueToDo.txt
 
 	1 Function Calling		ie. print("Hello World!") and abs(3)
-		Test the argument passing
-			Add in an "optional" parameter test
-				Probably need to strengthen the implementation of limited stack
-					I think you can manually query past the minSize
-
-		Move function calling work into the _op() metamethod
-			Argument evaluation to be done l->r
-				Question: Evaluate all arguments or not (ala Assignment)
-			This should be handled through the objects "_op()" metamethod
-			Relevant tests: 364 (?)
-
-		Optional: Get no parens syntax to work
+		Experiment with no parens syntax a bit
 	
 	2 Dust Function Definition
-		Transfer Types to using Tables for member functions
-		Implement toString and printString for If, Control/Block, FunctionCall, and FunctionDef
 		Update project version to 0.8.1
+		Improve the implementation of Tables for storing Type member functions
+			Enable dust new type creation
+			Prevent type tables from being deleted during a garbage collection sweep
 		Add in the correct syntax and action calls to create dust functions
 		Convert tables away from pure references
 			Particularly important for functions
 
 	3 Grammar Framework Update
+		Update project verstion to 0.9.1
 		Potentially change the grammar to follow the basic framework in "lua53_parse.h"
 		Update all documents to ensure that they reflect the current language spec
+			Start working heavily on the language manual
 		Update the readme to show off recent aditions
 		Determine the next set of features that need to be implemented
+		Look for interesting libraries to include/use
+			Start building up the dust standard library
 		Update testing suite
 			Improve documentation and coverage of tests
 			I have a better idea of what I'm doing now
 		Bugfixes
+		Update project version to 1.0.0
 
 	4 Type/Table metamethods
 		Convert for loop to the generator idiom
 
-	5 Ranges
+	5 Ranges and Library support
+
+	6 Lambdas and Table Comprehensions
 
 Notes (In case I forget some of my decisions)
 	3 + e: 4	=> (3 + e): 4		/> (3 + (e: 4))		// To difficult to modify the grammar. I can't find anywhere that I expected it
