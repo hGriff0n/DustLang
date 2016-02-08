@@ -363,22 +363,38 @@ namespace dust {
 
 				e.push("max");
 				e.push([](EvalState& e) {
-					auto l = e.pop();
+					auto num_args = e.size() - 1;					// The number of arguments to a function is the number of items on the available stack
+					auto max = e.pop();
 
-					if (e.empty())
-						e.push(l);
-
-					else {
+					while (num_args--> 0) {
 						auto r = e.pop();
+
 						e.push(r);
-						e.push(l);
+						e.push(max);
 						e.callOp("_op>");
 
-						e.push((bool)e ? l : r);
+						if (!(bool)e) max = r;
 					}
 
+					e.push(max);
 					return 1;
 				});
+				/*
+				e.push([](EvalState& e) {
+					Optional max{ e }, opt;							// Max guaranteed to have a value, opt guaranteed to be nil
+
+					while (opt.set(e)) {							// For each optional argument, try to beat max
+						e.push(max);
+						e.push(opt);
+						e.callOp("_op>");							// Run opt > max
+
+						if ((bool)e) max.set(opt);
+					}
+
+					e.push(max);
+					return 1;
+				});
+				*/
 				e.set(EvalState::SCOPE);
 
 				t.requireType("abs", "Function");
