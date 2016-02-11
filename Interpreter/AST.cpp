@@ -155,7 +155,8 @@ namespace dust {
 				//e.setScoped(lvl, is_const, is_static);
 
 			} else {
-				e.get(EvalState::SCOPE, lvl);
+				if (!isNode<TypeName>(*field))
+					e.get(EvalState::SCOPE, lvl);
 
 				while (++field != end)
 					(*field)->eval(e).get(-2);
@@ -543,7 +544,8 @@ namespace dust {
 			e.newScope();
 			control->eval(e);								// Perform setup (if needed)
 
-			// Special stack handling of for loops
+			// Special stack handling
+			if (control->type == Control::FUNCTION) x = 0;
 			x += ((control->type == Control::FOR) * 2);
 
 			while (control->iterate(e, x)) {
@@ -751,10 +753,13 @@ namespace dust {
 				if ((*arg)->self)
 					e.enableObjectSyntax();
 
-				while (arg != args->end())
+				while (arg != args->end()) {
+					if (e.empty()) e.pushNil();
 					(*arg++)->eval(e);
+				}
 			}
 
+			while (!e.empty()) e.pop();
 			// and other necessary stuff
 
 			return e;

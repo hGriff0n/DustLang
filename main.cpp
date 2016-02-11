@@ -34,7 +34,7 @@ istream& getmultiline(istream& in, std::string& s) {
 	return in;
 }
 
-constexpr bool show_all_tests = 4 % 2;
+constexpr bool show_tests = false;
 
 int main(int argc, const char* argv[]) {
 	std::cout << "Analyzing `dust::grammar`.....\n";
@@ -47,7 +47,7 @@ int main(int argc, const char* argv[]) {
 	EvalState e;
 
 	initState(e);
-	test::runTests(e, show_all_tests);
+	test::runTests(e, show_tests);
 
 	// Main repl loop
 	std::cout << "\n> ";
@@ -105,7 +105,8 @@ int main(int argc, const char* argv[]) {
 				if (!parse_tree.empty()) {
 					printAST(std::cout, parse_tree.at());
 
-					parse_tree.pop()->eval(e).stream(std::cout << ":: ") << "\n";
+					parse_tree.pop()->eval(e);
+					e.stream(std::cout << ":: ") << "\n";
 				}
 				//e.eval(parse_tree.pop()).stream(std::cout << ":: ") << "\n";
 

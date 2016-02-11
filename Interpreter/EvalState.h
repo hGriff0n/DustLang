@@ -184,7 +184,7 @@ namespace dust {
 			void endScope();				// Delete current scope (Cleans up memory)
 			void pushScope();				// Push scope on the stack (used in building tables)
 
-			// Get the current type system
+
 			type::TypeSystem& getTS();
 			impl::GC& getGC();
 

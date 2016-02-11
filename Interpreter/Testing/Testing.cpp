@@ -471,16 +471,19 @@ namespace dust {
 					t.requireSize("min(3, 5, 7)", 1);
 					t.requireException<error::dispatch_error>("min(3)");	// With fewer arguments
 
-				
 					t.requireType("def Float.abs(self)\n"					// Test OOP function definition
 								"	self < 0 and -self or self", "Function");
 					t.requireType("Float.abs", "Function");
 
 					t.requireEval("Float.abs(-3.3)", 3.3);					// Test direct calling semantics
-					t.requireEval("(-5.5).abs()", 5.5);						// Test OOP semantics
-
+					t.requireEval("(-5.5).abs()", 5.5);						// Test OOP calling semantics
+					t.requireEval("5.5.abs()", 5.5);						// Testing parser construction
 
 					// Test Operator Overloading
+					t.requireType("def Bool._op+(self, o)\n"				// Testing metamethod definition
+								"	self or o", "Function");
+					
+					t.requireEval("true + false", true);					// Testing operator lookup
 
 				t.closeSubTest();
 			t.closeSubTest();

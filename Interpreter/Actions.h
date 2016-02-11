@@ -105,7 +105,7 @@ namespace dust {
 				if (in.string() == "self")
 					ast.push(makeNode<VarName>(in, "self"));
 				
-				ast.push(makeNode<Argument>(std::dynamic_pointer_cast<VarName>(ast.pop()), false));
+				ast.push(makeNode<Argument>(std::dynamic_pointer_cast<VarName>(ast.pop()), in.string() == "self"));
 
 				// stack: ..., {Arg}
 			}

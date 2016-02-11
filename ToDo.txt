@@ -64,7 +64,7 @@ Timeline
 
 	1 Dust Function Definition
 		Add in the grammar and actions for defining dust functions
-			Improve argument handling (more/less arguments)
+			Get operator overloading working
 			Need to add in multiple returns
 		Define the correct API for running dust functions
 		Improve the implementation of Tables for storing Type member functions
