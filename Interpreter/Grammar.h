@@ -24,7 +24,7 @@ namespace dust {
 
 		// Forward Declarations
 		struct expr;		struct expr_0;		struct expr_x;
-		struct keywords;	struct expr_7;
+		struct keywords;	struct expr_7;		struct metamethods;
 
 
 		/*
@@ -65,8 +65,8 @@ namespace dust {
 		 */
 		struct id_end : identifier_other {};
 		struct type_id : seq<range<'A', 'Z'>, star<id_end>> {};							// [A-Z]{id_end}*
-		struct var_id : seq<not_at<keywords>, sor<one<'_'>, range<'a', 'z'>>,			// [a-z]{id_end}*
-			star<id_end>> {};			// Need to validate metamethods (ie. _op+, etc.). Currently don't parse the last character
+		struct var_id : seq<not_at<keywords>, sor<metamethods,
+			seq<sor<one<'_'>, range<'a', 'z'>>, star<id_end>>>> {};						// [_a-z]{id_end}*|{metamethod}
 		struct var_lookup : seq<star<one<'.'>>, at<var_id>> {};
 		struct var_name : seq<var_lookup, var_id> {};									// \.*{var_id}
 
@@ -97,6 +97,27 @@ namespace dust {
 		struct k_self : key_string("self");
 
 		struct keywords : sor<k_and, k_true, k_false, k_or, k_nil, k_do, k_in, k_if, k_else, k_elseif, k_while, k_for, k_type, k_try, k_catch, k_repeat, k_def> {};
+
+
+		/*
+		 * Metamethods
+		 */
+
+		struct m_not : key_string("_ou!");
+		struct m_neg : key_string("_ou-");
+		struct m_exp : key_string("_op^");
+		struct m_mul : key_string("_op*");
+		struct m_div : key_string("_op/");
+		struct m_add : key_string("_op+");
+		struct m_sub : key_string("_op-");
+		struct m_eq : key_string("_op=");
+		struct m_lt : key_string("_op<");
+		struct m_le : key_string("_op<=");
+		struct m_gt : key_string("_op>");
+		struct m_ge : key_string("_op>=");
+		struct m_ne : key_string("_op!=");
+
+		struct metamethods : sor<m_not, m_neg, m_exp, m_mul, m_div, m_add, m_sub, m_eq, m_lt, m_le, m_gt, m_ge, m_ne> {};
 
 
 		/*
