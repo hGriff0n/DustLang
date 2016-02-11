@@ -8,7 +8,7 @@ namespace shl {
 	* Check if the Callable type has the given Signature
 	* Fails to compile when not given a Callable for the first template
 	*/
-	template <typename Callable, typename Signature>
+	template <typename Callable, typename>
 	struct has_signature {
 		static constexpr bool value = false;
 	};

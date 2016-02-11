@@ -87,6 +87,7 @@ Function calling is fairly simple and largely unexciting. The only interesting t
 	max(1, 2, 3, 5)							## Max takes >1 arguments
 	give5(3)								## Gives 5 as expected. The 3 is evaluated, but unused
 
+OOP in dust is performed using the special argument, "self". 
 
 #### Metamethods
 
