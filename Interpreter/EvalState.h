@@ -134,6 +134,8 @@ namespace dust {
 			impl::Value self;
 			bool resolving_function = false;
 
+			Table getScope();
+
 		protected:
 			// Force the value at {idx} to have type {typ}
 			void forceType(int idx, size_t typ);
