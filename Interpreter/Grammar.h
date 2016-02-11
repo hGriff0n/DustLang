@@ -142,8 +142,8 @@ namespace dust {
 		// Indexable/Callable variables/values
 		struct dot_index : seq<one<'.'>, sor<var_id, integer>> {};						// \.({var_id}|{integer})
 		struct brac_index : seq<one<'['>, seps, expr_7, seps, one<']'>> {};				// \[ *{expr_7} *\]
-		struct no_args : at<one<')'>> {};												// FunctionCall expects a List<ASTNode>
-		struct fn_call : seq<one<'('>, seps, sor<expr_list, no_args>, one<')'>> {};		// \( *{expr_list}?\)
+		struct no_vals : at<one<')'>> {};												// FunctionCall expects a List<ASTNode>
+		struct fn_call : seq<one<'('>, seps, sor<expr_list, no_vals>, one<')'>> {};		// \( *{expr_list}?\)
 		struct expr_0 : seq<sor<lvalue, type_id>,
 			star<sor<dot_index, brac_index, fn_call>>> {};								// ({lvalue}|{type_id})({dot_index}|{brac_index}|{fn_call})
 
@@ -217,10 +217,19 @@ namespace dust {
 		//struct arg : seq<var_id, opt<one<':'>, tail, expr_4>> {};
 		//struct arg_list : until<at<Stop>, arg> {};
 		//struct ee_lmb : if_must<one<'\'>, arg_list<k_inherit>, opt<inline_expr>> {};
-		//struct ee_fdef : if_must<k_def, tail, expr_0, one<'('>, arg_list<one<')'>>, opt<inline_expr>> {};
+
+		// How am I going to recognize self ????
+
+		struct fn_name : seq<opt<type_id, one<'.'>>, var_id> {};			// This could be a custom rule
+		struct arg {};
+		struct no_args : at<one<')'>> {};
+		struct arg_list {};
+		struct ee_fdef : if_must<k_def, tail, fn_name, one<'('>, no_args, one<')'>> {};
+		//struct ee_fdef : if_must<k_def, tail, opt<fn_name>, one<'('>, seps, sor<arg_list, no_args>, one<')'>> {};			// what's the point of lambdas then ???
+		struct expr_fdef : sor<seq<ee_fdef, opt<inline_expr>>, expr_cond> {};
 
 		// Collector Tags
-		struct expr_x : expr_cond {};
+		struct expr_x : expr_fdef {};
 		struct expr : expr_x {};
 
 

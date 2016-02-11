@@ -541,7 +541,7 @@ namespace dust {
 			size_t x = e.size(), next = 1;
 
 			e.newScope();
-			control->eval(e);								// Perform loop setup (if needed)
+			control->eval(e);								// Perform setup (if needed)
 
 			// Special stack handling of for loops
 			x += ((control->type == Control::FOR) * 2);
@@ -728,11 +728,45 @@ namespace dust {
 
 		// FunctionDef methods
 			// However I implement dust functions, the entry point must take care to completely allocate the arguments (and clean the stack to empty) before execution
-		FunctionDef::FunctionDef(const ParseData& in) : ASTNode{ in } {}
-		EvalState& FunctionDef::eval(EvalState& e) { return e; }
-		void FunctionDef::addChild(std::shared_ptr<ASTNode>& c) {}
-		std::string FunctionDef::toString() { return ""; }
-		std::string FunctionDef::printString(std::string buf) { return ""; }
+		FunctionDef::FunctionDef(const ParseData& in) : Control{ in, Control::FUNCTION } {}
+		EvalState& FunctionDef::eval(EvalState& e) {
+			// set arguments to the values on the stack
+
+			// and other necessary stuff
+
+			return e;
+		}
+		void FunctionDef::addChild(std::shared_ptr<ASTNode>& c) {
+			if (isNode<List<Argument>>(c))
+				args = std::dynamic_pointer_cast<List<Argument>>(c);
+			else
+				throw error::missing_node_x{ "FunctionDef", "List<Argument>" };
+		}
+		std::string FunctionDef::toString() {
+			return "";
+		}
+		std::string FunctionDef::printString(std::string buf) {
+			return "";
+		}
+		bool FunctionDef::iterate(EvalState& e, size_t loc) {
+			// might want to add some special stuff for recursion ???
+			return Control::iterate(e, loc);
+		}
+
+		// FunctionLiteral methods
+		FunctionLiteral::FunctionLiteral(std::shared_ptr<ASTNode>& node) : ASTNode{ node->p }, fn{ node } {}
+		EvalState& FunctionLiteral::eval(EvalState& e) {
+			e.push(fn);
+			return e;
+		}
+		std::string FunctionLiteral::toString() {
+			return "";
+		}
+		std::string FunctionLiteral::printString(std::string buf) {
+			return "";
+		}
+
+
 
 		std::string ASTNode::node_type = "ASTNode";
 		std::string Debug::node_type = "Debug";

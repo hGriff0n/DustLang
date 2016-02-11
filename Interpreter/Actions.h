@@ -10,9 +10,118 @@ namespace dust {
 		template <typename Rule>
 		struct action : pegtl::nothing<Rule> {};
 
+
+		/*
+		 * Variable Actions
+		 */
+		template <> struct action<dot_index> {
+			static void apply(const input& in, AST& ast, ScopeTracker& _) {
+				// stack: ..., {var}, {field}
+
+				auto var = isNode<VarName>(ast.at(-2)) ? ast.pop(-2) : makeNode<VarName>(ast.pop(-2));
+
+				auto field = std::dynamic_pointer_cast<VarName>(ast.at());
+				if (field) field->setSubStatus();
+
+				var->addChild(ast.pop());
+				ast.push(var);
+
+				// stack: ..., {var}
+			}
+		};
+
+		template <> struct action<brac_index> {
+			static void apply(const input& in, AST& ast, ScopeTracker& _) {
+				// stack: ..., {var}, {field}
+
+				ast.at(-2)->addChild(ast.pop());
+
+				// stack: ..., {var}
+			}
+		};
+
+		template <> struct action<lvalue> {
+			static void apply(input& in, AST& ast, ScopeTracker& _) {
+
+			}
+		};
+
+		template <> struct action<var_id> {
+			static void apply(input& in, AST& ast, ScopeTracker& _) {
+				// stack: ...
+
+				ast.push(makeNode<VarName>(in, in.string()));
+
+				// stack: ..., {var}
+			}
+		};
+
+		template <> struct action<var_lookup> {
+			static void apply(input& in, AST& ast, ScopeTracker& _) {
+				// stack: ...
+
+				ast.push(makeNode<Debug>(in, in.string()));
+
+				// stack: ..., {lookup}
+			}
+		};
+
+		template <> struct action<var_name> {
+			static void apply(input& in, AST& ast, ScopeTracker& _) {
+				// stack: ..., {lookup}, {var}
+
+				std::dynamic_pointer_cast<VarName>(ast.at())->addLevel(ast.pop(-2)->toString());
+
+				// stack: ..., {var}
+			}
+		};
+
+
 		/*
 		 * Function Actions
 		 */
+
+		// temporary marker
+		template <> struct action<k_def> {
+			static void apply(input& in, AST& ast, ScopeTracker& _) {
+				ast.push(makeNode<Debug>(in, "def"));
+			}
+		};
+
+		template <> struct action<fn_name> {
+			static void apply(input& in, AST& ast, ScopeTracker& _) {
+				if (!isNode<Debug>(ast.at(-2)))
+					action<dot_index>::apply(in, ast, _);
+
+				else if (!isNode<VarName>(ast.at()))
+					ast.push(makeNode<VarName>(ast.pop()));
+			}
+		};
+
+		template <> struct action<arg> {
+			static void apply(input& in, AST& ast, ScopeTracker& _) {
+
+			}
+		};
+
+		// Can likely move this with the other list actions
+		template <> struct action<arg_list> {
+			static void apply(input& in, AST& ast, ScopeTracker& _) {
+
+			}
+		};
+
+		template <> struct action<ee_fdef> {
+			static void apply(input& in, AST& ast, ScopeTracker& _) {
+				// stack: ..., {def}, {VarName}, {List}
+
+				auto def = makeNode<FunctionDef>(in);
+				def->addChild(ast.pop());
+				ast.push(def);
+
+				// stack: ..., {def}, {VarName}, {FunctionDef}
+			}
+		};
 
 		template <> struct action<fn_call> {
 			static void apply(input& in, AST& ast, ScopeTracker& _) {
@@ -32,15 +141,20 @@ namespace dust {
 		};
 
 		// Pushes an empty list on the stack
-		template <> struct action<no_args> {
-			static void apply(input& in, AST& ast, ScopeTracker& lvl) {
+		template <typename Node>
+		struct empty_list {
+			static void apply(input& in, AST& ast, ScopeTracker& _) {
 				// stack: ...
 
-				ast.push(makeNode<List<ASTNode>>(in));
+				ast.push(makeNode<List<Node>>(in));
 
 				// stack: ..., {List}
 			}
 		};
+
+		template <> struct action<no_vals> : empty_list<ASTNode> {};
+		template <> struct action<no_args> : empty_list<Argument> {};
+
 
 		/*
 		 * Organizational Actions
@@ -102,19 +216,33 @@ namespace dust {
 						auto expr = ast.pop();
 						std::dynamic_pointer_cast<If>(ast.at())->addBlock(expr, std::dynamic_pointer_cast<Block>(block));
 
-					}// else if (atFunction(ast))
-					//	int i = 3;
+					} else if (atFunction(ast, -2)) {
+						auto assign = makeNode<Assign>(in, "", false, false);
 
-					else
+						auto vals = makeNode<List<ASTNode>>(in);
+						vals->addChild(makeNode<FunctionLiteral>(block));
+						assign->addChild(vals);
+
+						auto vars = makeNode<List<VarName>>(in);
+						vars->addChild(ast.pop());
+						assign->addChild(vars);
+
+						ast.pop();
+						ast.push(assign);
+
+					} else if (atFunction(ast, -1)) {
+						ast.pop();
+						ast.push(block);
+
+					} else
 						ast.push(block);
 				}
 
 				// stack: ..., {Block}
 			}
 
-			static bool atFunction(AST& ast) {
-				//return !ast.empty() && isNode<Function>(ast.at());
-				return false;
+			static bool atFunction(AST& ast, int idx) {
+				return atNode<Debug>(ast, idx) && ast.at(idx)->toString() == "def";
 			}
 
 			template <class Node>
@@ -140,7 +268,8 @@ namespace dust {
 
 				}
 
-				setFields(ast);
+				if (isNode<Block>(ast.at()))
+					setFields(ast);
 			}
 
 			// Set fields of the file block to ensure proper evaluation
@@ -326,8 +455,10 @@ namespace dust {
 		template <> struct action<ee_6> : ee_actions<BooleanOperator> {};
 		template <> struct action<ee_7> : ee_actions<Assign> {};				// ee_x is Assignmnet, which needs and uses Assignment nodes. ee_acctions requires Operator nodes (???)
 
-																				// List Actions (there has to be a way to simplify this code)
-		template <class type, bool force_type = false>
+		/*
+		 * List Actions
+		 */
+		template <class type, bool = false>
 		struct list_actions {
 			static void apply(input& in, AST& ast, ScopeTracker& _) {
 				auto list = makeNode<List<type>>(in);
@@ -408,72 +539,6 @@ namespace dust {
 				ast.push(makeNode<Assign>(in, in.string().substr(1)));
 
 				// stack: ..., {Assign}
-			}
-		};
-
-
-		/*
-		 * Variable Actions
-		 */
-		template <> struct action<dot_index> {
-			static void apply(const input& in, AST& ast, ScopeTracker& _) {
-				// stack: ..., {var}, {field}
-
-				auto var = isNode<VarName>(ast.at(-2)) ? ast.pop(-2) : makeNode<VarName>(ast.pop(-2));
-
-				auto field = std::dynamic_pointer_cast<VarName>(ast.at());
-				if (field) field->setSubStatus();
-
-				var->addChild(ast.pop());
-				ast.push(var);
-
-				// stack: ..., {var}
-			}
-		};
-
-		template <> struct action<brac_index> {
-			static void apply(const input& in, AST& ast, ScopeTracker& _) {
-				// stack: ..., {var}, {field}
-
-				ast.at(-2)->addChild(ast.pop());
-
-				// stack: ..., {var}
-			}
-		};
-
-		template <> struct action<lvalue> {
-			static void apply(input& in, AST& ast, ScopeTracker& _) {
-
-			}
-		};
-
-		template <> struct action<var_id> {
-			static void apply(input& in, AST& ast, ScopeTracker& _) {
-				// stack: ...
-
-				ast.push(makeNode<VarName>(in, in.string()));
-
-				// stack: ..., {var}
-			}
-		};
-
-		template <> struct action<var_lookup> {
-			static void apply(input& in, AST& ast, ScopeTracker& _) {
-				// stack: ...
-
-				ast.push(makeNode<Debug>(in, in.string()));
-
-				// stack: ..., {lookup}
-			}
-		};
-
-		template <> struct action<var_name> {
-			static void apply(input& in, AST& ast, ScopeTracker& _) {
-				// stack: ..., {lookup}, {var}
-
-				std::dynamic_pointer_cast<VarName>(ast.at())->addLevel(ast.pop(-2)->toString());
-
-				// stack: ..., {var}
 			}
 		};
 
