@@ -431,7 +431,20 @@ namespace dust {
 		/*
 		 * Node for function arguments
 		 */
-		class Argument : public ASTNode {};
+		class Argument : public ASTNode {
+			private:
+				std::shared_ptr<VarName> var;
+				
+			public:
+				Argument(std::shared_ptr<VarName>& v, bool is_self);
+				static std::string node_type;
+				const bool self;
+
+				EvalState& eval(EvalState& e);
+
+				std::string toString();
+				std::string printString(std::string buf);
+		};
 
 		/*
 		 * Node for a function definition

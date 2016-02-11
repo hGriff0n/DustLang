@@ -57,7 +57,7 @@ namespace dust {
 		struct esc : one<'\\'> {};		// Change to % ???
 		struct comment : if_must<two<'#'>, until<eolf>> {};								// ##.*
 		struct var_list : s_list<expr_0> {};											// AST and lookahead? (seq<var_name, seps, sor<one<','>, op_5>>)  // this could technically match an expression list
-		struct expr_list : s_list<expr_x> {};											// {expr_5} *, *
+		struct expr_list : s_list<expr_x> {};
 
 
 		/*
@@ -221,10 +221,11 @@ namespace dust {
 		// How am I going to recognize self ????
 
 		struct fn_name : seq<opt<type_id, one<'.'>>, var_id> {};			// This could be a custom rule
-		struct arg {};
+		//struct arg : seq<var_id, opt<op_7, seps, expr_6>> {};							// {var_id}({op_7} *{expr_6})?
+		struct arg : sor<k_self, var_id> {};			// self doesn't push a VarName
 		struct no_args : at<one<')'>> {};
-		struct arg_list {};
-		struct ee_fdef : if_must<k_def, tail, fn_name, one<'('>, no_args, one<')'>> {};
+		struct arg_list : s_list<arg> {};
+		struct ee_fdef : if_must<k_def, tail, fn_name, one<'('>, seps, sor<arg_list, no_args>, one<')'>> {};
 		//struct ee_fdef : if_must<k_def, tail, opt<fn_name>, one<'('>, seps, sor<arg_list, no_args>, one<')'>> {};			// what's the point of lambdas then ???
 		struct expr_fdef : sor<seq<ee_fdef, opt<inline_expr>>, expr_cond> {};
 

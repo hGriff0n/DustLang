@@ -100,14 +100,14 @@ namespace dust {
 
 		template <> struct action<arg> {
 			static void apply(input& in, AST& ast, ScopeTracker& _) {
+				// stack: ..., {VarName} | ...
 
-			}
-		};
+				if (in.string() == "self")
+					ast.push(makeNode<VarName>(in, "self"));
+				
+				ast.push(makeNode<Argument>(std::dynamic_pointer_cast<VarName>(ast.pop()), false));
 
-		// Can likely move this with the other list actions
-		template <> struct action<arg_list> {
-			static void apply(input& in, AST& ast, ScopeTracker& _) {
-
+				// stack: ..., {Arg}
 			}
 		};
 
@@ -232,7 +232,7 @@ namespace dust {
 
 					} else if (atFunction(ast, -1)) {
 						ast.pop();
-						ast.push(block);
+						ast.push(makeNode<FunctionLiteral>(block));
 
 					} else
 						ast.push(block);
@@ -502,6 +502,7 @@ namespace dust {
 
 		template <> struct action<var_list> : list_actions<VarName, true> {};
 		template <> struct action<expr_list> : list_actions<ASTNode> {};
+		template <> struct action<arg_list> : list_actions<Argument> {};
 
 
 		/*

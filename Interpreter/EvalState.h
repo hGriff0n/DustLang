@@ -131,6 +131,7 @@ namespace dust {
 			type::TypeSystem ts;
 			impl::GC gc;
 
+			// OOP semantics
 			impl::Value self;
 			bool resolving_function = false;
 

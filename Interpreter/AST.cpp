@@ -70,12 +70,12 @@ namespace dust {
 			if (id == type::Traits<std::string>::id) return "String \"" + val + "\"";
 
 			return (id == type::Traits<int>::id ? "Int " :
-					id == type::Traits<double>::id ? "Float " :
-					id == type::Traits<bool>::id ? "Bool " : "Nil ") + val;
+				id == type::Traits<double>::id ? "Float " :
+				id == type::Traits<bool>::id ? "Bool " : "Nil ") + val;
 		}
 
 		// Value methods
-		Value::Value(const ParseData& in, impl::Value v) : ASTNode{ in }, val { v } {}
+		Value::Value(const ParseData& in, impl::Value v) : ASTNode{ in }, val{ v } {}
 		EvalState& Value::eval(EvalState& e) {
 			e.push(val);
 			return e;
@@ -159,7 +159,7 @@ namespace dust {
 
 				while (++field != end)
 					(*field)->eval(e).get(-2);
-					//if (e.is<Nil>()) throw error::dust_error{ "Attempt to assign to a Nil value" };
+				//if (e.is<Nil>()) throw error::dust_error{ "Attempt to assign to a Nil value" };
 
 				e.swap();
 				(*end)->eval(e).swap();
@@ -214,7 +214,7 @@ namespace dust {
 			auto nType = ts.newType(name, ts.get(inherit));
 
 			definition->eval(e);
-			
+
 			// Associate the table to the type
 			//e.setTypeMembers(nType);						// Associate the created table to the type
 
@@ -237,7 +237,7 @@ namespace dust {
 		EvalState& TypeCheck::eval(EvalState& e) {
 			auto x = e.size();
 			auto res = l->eval(e).pop();						// Possible issue with multiple returns (might pick up the last return, hopefully picks up the first)
-			
+
 			e.settop(x);
 
 			if (res.type_id == type::Traits<Nil>::id)			// Nil isn't part of the current type hierarchr
@@ -280,7 +280,7 @@ namespace dust {
 			//auto n = num<Splat>(vars);		// Still needs to handle splat assignment
 			//if (n > 1) throw error::
 			//if (n == 1) exp = -1;				// Cause the evaluate loop to evaluate all expressions
-			
+
 			// Evaluate expression list (left -> right)
 			while (l_val != r_val && e.size() < exp)
 				(*l_val++)->eval(e);
@@ -296,7 +296,7 @@ namespace dust {
 				// Doesn't handle multiple returns
 				// Do I really need this (The actual assignments can be right->left)
 			e.reverse(vars->size());
-			
+
 			// Perform assignments. Compound if necessary
 			while (r_var != l_var) {
 				if (op.size()) (*l_var)->eval(e).callOp(op);
@@ -334,7 +334,7 @@ namespace dust {
 
 			} else if (e.pop<bool>())
 				return e;							// or: if lhs == true return immediately
-			
+
 
 			// Otherwise leave the right argument on the stack
 			e.pop();
@@ -406,9 +406,9 @@ namespace dust {
 		}
 		std::string Control::toString() {
 			return (type == DO_WHILE ? "repeat" :
-					type == FOR ? "for" :
-					type == TRY_CATCH ? "try-catch" :
-					type == WHILE ? "while" : "");
+				type == FOR ? "for" :
+				type == TRY_CATCH ? "try-catch" :
+				type == WHILE ? "while" : "");
 		}
 		std::string Control::printString(std::string buf) {
 			std::string ret = buf + "+- " + node_type + " " + toString();
@@ -496,7 +496,7 @@ namespace dust {
 					e.settop(loc);
 					return true;
 				}
-					break;
+				break;
 				case WHILE:
 				{
 					bool val = (bool)expr->eval(e);
@@ -620,7 +620,7 @@ namespace dust {
 		std::string TryCatch::toString() { return ""; }
 		std::string TryCatch::printString(std::string buf) {
 			return buf + "+- " + node_type + "::try\n" + try_code->printString(buf + " ") +
-				   buf + "+- " + node_type + "::catch\n" + catch_code->printString(buf + " ");
+				buf + "+- " + node_type + "::catch\n" + catch_code->printString(buf + " ");
 		}
 		void TryCatch::addChild(std::shared_ptr<ASTNode>& c) {
 			auto& code_block = try_code ? catch_code : try_code;
@@ -671,7 +671,7 @@ namespace dust {
 				ret += stub + "Else-If\n" + b->first->printString(buf) + b->second->printString(buf);
 
 			return ret;
-		
+
 		}
 		void If::addBlock(ExprType& expr, BlockType& block) {
 			statements.emplace_back(std::make_pair(expr, block));
@@ -726,11 +726,34 @@ namespace dust {
 			return buf + "+- " + node_type + "\n" + fn->printString(buf + " ") + buf + " +- Arguments:\n" + args->printString(buf + "  ");
 		}
 
+		// Argument methods
+		Argument::Argument(std::shared_ptr<VarName>& v, bool is_self) : ASTNode{ v->p }, var{ v }, self { is_self } {}
+		EvalState& Argument::eval(EvalState& e) {
+			if (!self)							// self gets handled by client code
+				var->set(e, false, false);
+
+			return e;
+		}
+		std::string Argument::toString() {
+			return var->toString();
+		}
+		std::string Argument::printString(std::string buf) {
+			return var->printString(buf);
+		}
+
 		// FunctionDef methods
 			// However I implement dust functions, the entry point must take care to completely allocate the arguments (and clean the stack to empty) before execution
 		FunctionDef::FunctionDef(const ParseData& in) : Control{ in, Control::FUNCTION } {}
 		EvalState& FunctionDef::eval(EvalState& e) {
-			// set arguments to the values on the stack
+			if (args->size() > 0) {
+				auto arg = args->begin();
+
+				if ((*arg)->self)
+					e.enableObjectSyntax();
+
+				while (arg != args->end())
+					(*arg++)->eval(e);
+			}
 
 			// and other necessary stuff
 
@@ -743,13 +766,14 @@ namespace dust {
 				throw error::missing_node_x{ "FunctionDef", "List<Argument>" };
 		}
 		std::string FunctionDef::toString() {
-			return "";
+			return "Function";
 		}
 		std::string FunctionDef::printString(std::string buf) {
 			return "";
 		}
 		bool FunctionDef::iterate(EvalState& e, size_t loc) {
 			// might want to add some special stuff for recursion ???
+
 			return Control::iterate(e, loc);
 		}
 
@@ -763,7 +787,7 @@ namespace dust {
 			return "";
 		}
 		std::string FunctionLiteral::printString(std::string buf) {
-			return "";
+			return fn->printString(buf);
 		}
 
 
@@ -785,6 +809,8 @@ namespace dust {
 		std::string TryCatch::node_type = "Try-Catch";
 		std::string If::node_type = "If";
 		std::string FunctionCall::node_type = "Function Call";
+		std::string Argument::node_type = "Argument";
+		std::string FunctionLiteral::node_type = "Function Literal";
 		std::string FunctionDef::node_type = "Function Definition";
 	}
 }
