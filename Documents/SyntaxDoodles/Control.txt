@@ -179,7 +179,7 @@ Variable Scope Lookup					(ie. How to determine which variable is being referenc
 Statement seperator
 	Allow multiple, independent statements to coincide on one line
 	x: 5
-	print x							## This can be translated to "print (x: 5)" within the current rules (I'm not sure about the assignment however)
+	print x							## This can be translated to "print (x: 5)" within the current rules
 
 	Option ()			## Lisp-style
 		Generalize the rules so that every expression results in a value

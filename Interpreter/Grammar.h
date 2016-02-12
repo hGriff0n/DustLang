@@ -24,7 +24,7 @@ namespace dust {
 
 		// Forward Declarations
 		struct expr;		struct expr_0;		struct expr_x;
-		struct keywords;	struct expr_7;
+		struct keywords;	struct expr_7;		struct metamethods;
 
 
 		/*
@@ -57,7 +57,7 @@ namespace dust {
 		struct esc : one<'\\'> {};		// Change to % ???
 		struct comment : if_must<two<'#'>, until<eolf>> {};								// ##.*
 		struct var_list : s_list<expr_0> {};											// AST and lookahead? (seq<var_name, seps, sor<one<','>, op_5>>)  // this could technically match an expression list
-		struct expr_list : s_list<expr_x> {};											// {expr_5} *, *
+		struct expr_list : s_list<expr_x> {};
 
 
 		/*
@@ -65,8 +65,8 @@ namespace dust {
 		 */
 		struct id_end : identifier_other {};
 		struct type_id : seq<range<'A', 'Z'>, star<id_end>> {};							// [A-Z]{id_end}*
-		struct var_id : seq<not_at<keywords>, sor<one<'_'>, range<'a', 'z'>>,			// [a-z]{id_end}*
-			star<id_end>> {};			// Need to validate metamethods (ie. _op+, etc.). Currently don't parse the last character
+		struct var_id : seq<not_at<keywords>, sor<metamethods,
+			seq<sor<one<'_'>, range<'a', 'z'>>, star<id_end>>>> {};						// [_a-z]{id_end}*|{metamethod}
 		struct var_lookup : seq<star<one<'.'>>, at<var_id>> {};
 		struct var_name : seq<var_lookup, var_id> {};									// \.*{var_id}
 
@@ -96,7 +96,28 @@ namespace dust {
 		struct k_def : key_string("def");
 		struct k_self : key_string("self");
 
-		struct keywords : sor<k_and, k_true, k_false, k_or, k_nil, k_do, k_in, k_if, k_else, k_elseif, k_while, k_for, k_type, k_try, k_catch, k_repeat, k_def, k_self> {};
+		struct keywords : sor<k_and, k_true, k_false, k_or, k_nil, k_do, k_in, k_if, k_else, k_elseif, k_while, k_for, k_type, k_try, k_catch, k_repeat, k_def> {};
+
+
+		/*
+		 * Metamethods
+		 */
+
+		struct m_not : key_string("_ou!");
+		struct m_neg : key_string("_ou-");
+		struct m_exp : key_string("_op^");
+		struct m_mul : key_string("_op*");
+		struct m_div : key_string("_op/");
+		struct m_add : key_string("_op+");
+		struct m_sub : key_string("_op-");
+		struct m_eq : key_string("_op=");
+		struct m_lt : key_string("_op<");
+		struct m_le : key_string("_op<=");
+		struct m_gt : key_string("_op>");
+		struct m_ge : key_string("_op>=");
+		struct m_ne : key_string("_op!=");
+
+		struct metamethods : sor<m_not, m_neg, m_exp, m_mul, m_div, m_add, m_sub, m_eq, m_lt, m_le, m_gt, m_ge, m_ne> {};
 
 
 		/*
@@ -142,8 +163,8 @@ namespace dust {
 		// Indexable/Callable variables/values
 		struct dot_index : seq<one<'.'>, sor<var_id, integer>> {};						// \.({var_id}|{integer})
 		struct brac_index : seq<one<'['>, seps, expr_7, seps, one<']'>> {};				// \[ *{expr_7} *\]
-		struct no_args : at<one<')'>> {};												// FunctionCall expects a List<ASTNode>
-		struct fn_call : seq<one<'('>, seps, sor<expr_list, no_args>, one<')'>> {};		// \( *{expr_list}?\)
+		struct no_vals : at<one<')'>> {};												// FunctionCall expects a List<ASTNode>
+		struct fn_call : seq<one<'('>, seps, sor<expr_list, no_vals>, one<')'>> {};		// \( *{expr_list}?\)
 		struct expr_0 : seq<sor<lvalue, type_id>,
 			star<sor<dot_index, brac_index, fn_call>>> {};								// ({lvalue}|{type_id})({dot_index}|{brac_index}|{fn_call})
 
@@ -217,10 +238,20 @@ namespace dust {
 		//struct arg : seq<var_id, opt<one<':'>, tail, expr_4>> {};
 		//struct arg_list : until<at<Stop>, arg> {};
 		//struct ee_lmb : if_must<one<'\'>, arg_list<k_inherit>, opt<inline_expr>> {};
-		//struct ee_fdef : if_must<k_def, tail, expr_0, one<'('>, arg_list<one<')'>>, opt<inline_expr>> {};
+
+		// How am I going to recognize self ????
+
+		struct fn_name : seq<opt<type_id, one<'.'>>, var_id> {};			// This could be a custom rule
+		//struct arg : seq<var_id, opt<op_7, seps, expr_6>> {};							// {var_id}({op_7} *{expr_6})?
+		struct arg : sor<k_self, var_id> {};
+		struct no_args : at<one<')'>> {};
+		struct arg_list : s_list<arg> {};
+		struct ee_fdef : if_must<k_def, tail, fn_name, one<'('>, seps, sor<arg_list, no_args>, one<')'>> {};
+		//struct ee_fdef : if_must<k_def, tail, opt<fn_name>, one<'('>, seps, sor<arg_list, no_args>, one<')'>> {};			// what's the point of lambdas then ???
+		struct expr_fdef : sor<seq<ee_fdef, opt<inline_expr>>, expr_cond> {};
 
 		// Collector Tags
-		struct expr_x : expr_cond {};
+		struct expr_x : expr_fdef {};
 		struct expr : expr_x {};
 
 

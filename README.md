@@ -1,4 +1,4 @@
-# The Dust Programming Language (v 0.9.1)
+# The Dust Programming Language (v 0.9.4)
 	
 Dust is the working title for a multi-paradigm, expression-based, interpreted programming language. The development and design of Dust is largely intended as a hobby project that would explore how
 programming languages are designed and implemented by growing and nurturing the small seed that has sat in my mind for a couple of years into a fully-featured language. It is not intended to be a
@@ -87,6 +87,7 @@ Function calling is fairly simple and largely unexciting. The only interesting t
 	max(1, 2, 3, 5)							## Max takes >1 arguments
 	give5(3)								## Gives 5 as expected. The 3 is evaluated, but unused
 
+OOP in dust is performed using the special argument, "self". 
 
 #### Metamethods
 

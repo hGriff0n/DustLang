@@ -282,7 +282,8 @@ namespace dust {
 					FOR,
 					WHILE,
 					DO_WHILE,
-					TRY_CATCH
+					TRY_CATCH,
+					FUNCTION
 				};
 
 				Control(const ParseData& in, Type typ = NONE);
@@ -296,7 +297,7 @@ namespace dust {
 				virtual std::string toString();
 				virtual std::string printString(std::string buf);
 
-				bool iterate(EvalState& e, size_t loc);
+				virtual bool iterate(EvalState& e, size_t loc);
 		};
 
 		/*
@@ -428,11 +429,30 @@ namespace dust {
 		};
 
 		/*
+		 * Node for function arguments
+		 */
+		class Argument : public ASTNode {
+			private:
+				std::shared_ptr<VarName> var;
+				
+			public:
+				Argument(std::shared_ptr<VarName>& v, bool is_self);
+				static std::string node_type;
+				const bool self;
+
+				EvalState& eval(EvalState& e);
+
+				std::string toString();
+				std::string printString(std::string buf);
+		};
+
+		/*
 		 * Node for a function definition
 		 */
-		class FunctionDef : public ASTNode {
+		class FunctionDef : public Control {
 			private:
-				std::shared_ptr<Block> body;
+				std::shared_ptr<List<Argument>> args;
+
 			public:
 				FunctionDef(const ParseData& in);
 				static std::string node_type;
@@ -442,6 +462,25 @@ namespace dust {
 				
 				std::string toString();
 				virtual std::string printString(std::string buf);
+
+				bool iterate(EvalState& e, size_t loc);
+		};
+
+		/*
+		 * Node for putting dust functions on the stack
+		 */
+		class FunctionLiteral : public ASTNode {
+			private:
+				std::shared_ptr<ASTNode> fn;
+
+			public:
+				FunctionLiteral(std::shared_ptr<ASTNode>& fn);
+				static std::string node_type;
+
+				EvalState& eval(EvalState& e);
+
+				std::string toString();
+				std::string printString(std::string buf);
 		};
 
 		template<class T> std::string List<T>::node_type = "List<" + T::node_type + ">";
