@@ -5,21 +5,6 @@ Could I also define '_op^' for strings to performing indexing ???
 	String._op^: \x -> (x <- Int) and self[x] or Table(self) ^ x	## "Hello" ^ 3 = 'l'
 	This would entail that operators can take on values of different types
 
-Could I redefine table literals to expect an expr_list instead of a entry_list
-	Basically turns the table into a special type of block
-		Memorizes the values of variables (or "lines" if an assignment is not evaluated)
-		Expressions would be evaluated within the table's "scope"
-		Could be a simplistic way of implementing modules
-			What I want is slightly more complex and fine-grained than this solution
-
-	Implementation problems
-		This would entail having ',' be a statement seperator
-		It only provides a marginal decrease in typing
-		
-		x, y: 3, 5
-		t: [ y: x + 3, x: z: y ]			## t: [ y: x + 3, z: y, x: z ] (only 3 characters shorter)
-		print t				## outputs [y, 6], [x, 6], [z, 6]
-
 Multiple comparators
 	Take use of the work on multiple assignment to enable multiple comparisons to be performed as part of one expression
 

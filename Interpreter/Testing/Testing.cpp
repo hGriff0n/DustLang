@@ -382,7 +382,12 @@ namespace dust {
 
 				e.push("reduce");
 				e.push([](EvalState& e) {
-					Optional sum{ e }, nxt;
+					/*
+					while (e.size() > 1)							// Simpler implementation
+						e.callOp("_op+");
+					*/
+
+					Optional sum{ e }, nxt;							// But I want to demonstrate Optional
 
 					while (nxt.copy(e)) {
 						e.push(sum);
@@ -466,6 +471,7 @@ namespace dust {
 					t.requireEval("min(3, 5)", 3);							// Test function calling of dust functions
 					t.requireEval("min(3, 5, 7)", 3);						// With more arguments
 					t.requireSize("min(3, 5, 7)", 1);
+
 					t.requireException<dispatch_error>("min(3)");			// With fewer arguments
 
 					t.requireType("def Float.abs(self)\n"					// Test OOP function definition
@@ -476,6 +482,7 @@ namespace dust {
 					t.requireEval("(-5.5).abs()", 5.5);						// Test OOP calling semantics
 					t.requireEval("5.5.abs()", 5.5);						// Testing parser construction
 
+					// Test Operator Overloading
 					t.requireType("def Bool._op+(self, o)\n"				// Testing metamethod definition
 								"	self or o", "Function");
 					
@@ -492,8 +499,8 @@ namespace dust {
 				t.closeSubTest();
 			t.closeSubTest();
 
-			t.initSubTest("Metamethods");
-			t.closeSubTest();
+			//t.initSubTest("Metamethods");
+			//t.closeSubTest();
 
 			t.printReview(std::cout);
 		}

@@ -16,6 +16,10 @@ namespace dust {
 		}
 	}
 
+	Table EvalState::getScope() {
+		return curr_scp ? curr_scp : &global;
+	}
+
 	void EvalState::forceType(int idx, size_t type) {
 		if (at(idx).type_id == type) return;
 		swap(idx, -1);								// Move the value to the stack top
@@ -177,26 +181,28 @@ namespace dust {
 
 		switch (idx) {
 			case SELF:												// SCOPE.self
-				return getTable(curr_scp, self_key);
+				return getTable(getScope(), self_key);
 
 			case SCOPE:
 				// No forced lookup
 				if (!lookup) {
 
 					// SCOPE.x (no filter)
-					if (curr_scp->hasKey(at()))
-						tbl = curr_scp;
+					// curr_scp not set
+					auto scp = getScope();
+					if (scp->hasKey(at()))
+						tbl = scp;
 
 					// SCOPE.self.x
-					else if (curr_scp->hasKey(self_key)) {
-						tbl = type::Traits<Table>::get(curr_scp->getVal(self_key), gc);
+					else if (scp->hasKey(self_key)) {
+						tbl = type::Traits<Table>::get(scp->getVal(self_key), gc);
 
 						if (!tbl->hasKey(at())) tbl = nullptr;
 					}
 				}
 
 				// SCOPE.x (filter)
-				if (!tbl) tbl = findDef(curr_scp, at(), lookup + 1);
+				if (!tbl) tbl = findDef(getScope(), at(), lookup + 1);
 
 				break;
 			default:
@@ -234,7 +240,7 @@ namespace dust {
 				return try_incRef(self = value);
 
 			case SCOPE:
-				tbl = findDef(curr_scp ? curr_scp : &global, at(), lookup);
+				tbl = findDef(getScope(), at(), lookup);
 
 				break;
 			default:

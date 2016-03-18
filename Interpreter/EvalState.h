@@ -131,8 +131,11 @@ namespace dust {
 			type::TypeSystem ts;
 			impl::GC gc;
 
+			// OOP semantics
 			impl::Value self;
 			bool resolving_function = false;
+
+			Table getScope();
 
 		protected:
 			// Force the value at {idx} to have type {typ}
@@ -181,7 +184,7 @@ namespace dust {
 			void endScope();				// Delete current scope (Cleans up memory)
 			void pushScope();				// Push scope on the stack (used in building tables)
 
-			// Get the current type system
+
 			type::TypeSystem& getTS();
 			impl::GC& getGC();
 
