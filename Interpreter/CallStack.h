@@ -5,7 +5,7 @@
 #include "Stack.h"
 #include "DualGC.h"
 #include "Optional.h"
-#include "../has_interface.h"
+#include "../Utility/has_interface.h"
 
 #include "Exceptions\runtime.h"
 
@@ -14,7 +14,7 @@ namespace dust {
 	class Optional;
 
 	namespace type {
-		// Can I move this specialization to EvalState.h?  NO
+		// Can I move this specialization to EvalState.h?  NO (I don't think so)
 		template<> impl::Value Traits<std::string>::make(const std::string& s, impl::GC& gc) {
 			return{ gc.getStrings().loadRef(s), Traits<std::string>::id };
 		}

@@ -5,6 +5,8 @@
 namespace dust {
 	namespace test {
 		void runTests(EvalState& e, bool print_all) {
+			using dispatch_error = error::dispatch_error;
+
 			auto t = makeTester(e, std::cout, print_all);
 
 			// Testing basic literals and type resolution
@@ -35,7 +37,7 @@ namespace dust {
 					"The answer is 39.690000");
 				t.requireEval("\"4\" - 3", 1);									// Testing the converters selected based on the operator
 
-				t.requireException<error::dispatch_error>("3 + true");			// Testing that correct exceptions are produced
+				t.requireException<dispatch_error>("3 + true");					// Testing that correct exceptions are produced
 			t.closeSubTest();
 
 			// Testing basic variable assignment
@@ -61,10 +63,10 @@ namespace dust {
 					t.requireEval("a, b:+ 2, 2", 2);							// Testing basic compound assignment semantics
 					t.requireTrue("a = 5 and b = 2");
 
-					t.requireException<error::dispatch_error>("a, b:* 2");		// Throws errors when expected
+					t.requireException<dispatch_error>("a, b:* 2");				// Throws errors when expected
 					t.requireTrue("a = 10");									// Testing l->r evaluation
 
-					t.requireException<error::dispatch_error>("a, b:* nil, 2");
+					t.requireException<dispatch_error>("a, b:* nil, 2");
 					t.requireTrue("b = 2");
 
 					t.eval("a, b: 5, 2");
@@ -415,7 +417,7 @@ namespace dust {
 					t.requireEval("max(3, 5)", 5);							// Testing optional arguments
 					t.requireEval("max(3)", 3);
 
-					t.requireException<error::dispatch_error>("foo(3)");	// Test dispatch error
+					t.requireException<dispatch_error>("foo(3)");			// Test dispatch error
 				t.closeSubTest();
 				
 				// Testing OOP semantics
@@ -429,7 +431,7 @@ namespace dust {
 					t.requireEval("Int.abs(a - 3)", 4);						// Test calling through type
 
 					// Error message: Attempt to call a non-function ???
-					t.requireException<error::dispatch_error>("\"Hello\".abs()");
+					t.requireException<dispatch_error>("\"Hello\".abs()");
 
 				t.closeSubTest();
 
@@ -456,6 +458,37 @@ namespace dust {
 
 				// Testing defining functions
 				t.initSubTest("Function Definitions");
+					t.requireType("def min(x, y)\n"							// Test basic function definition
+									"	if x < y x\n"
+									"	else y", "Function");
+					t.requireType("min", "Function");
+
+					t.requireEval("min(3, 5)", 3);							// Test function calling of dust functions
+					t.requireEval("min(3, 5, 7)", 3);						// With more arguments
+					t.requireSize("min(3, 5, 7)", 1);
+					t.requireException<dispatch_error>("min(3)");			// With fewer arguments
+
+					t.requireType("def Float.abs(self)\n"					// Test OOP function definition
+								"	self < 0 and -self or self", "Function");
+					t.requireType("Float.abs", "Function");
+
+					t.requireEval("Float.abs(-3.3)", 3.3);					// Test direct calling semantics
+					t.requireEval("(-5.5).abs()", 5.5);						// Test OOP calling semantics
+					t.requireEval("5.5.abs()", 5.5);						// Testing parser construction
+
+					t.requireType("def Bool._op+(self, o)\n"				// Testing metamethod definition
+								"	self or o", "Function");
+					
+					t.requireEval("true + false", true);					// Testing operator lookup
+
+					//t.requireType("def Int.diverge(a)\n"					// Testing function construction
+					//			"	a + 1, a - 1", "Function");
+
+					//t.requireEval("a, b: Int.diverge(3)", 4);				// Testing basic semantics
+					//t.requireEval("a + b", 6);
+
+					//t.requireException<dispatch_error>("3.diverge()");		// Testing OOP interaction
+
 				t.closeSubTest();
 			t.closeSubTest();
 

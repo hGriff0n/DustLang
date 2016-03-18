@@ -65,14 +65,21 @@ Timeline
 
 	1 Dust Function Definition
 		Improve the implementation of Tables for storing Type member functions
-			Enable dust new type creation
-			Prevent type tables from being deleted during a garbage collection sweep
-		Add in the correct syntax and action calls to create dust functions
-		Convert tables away from pure references
-			Particularly important for functions
+			Also need to ensure the safety of C++ tables
+				pop a Table (references get decremented -> Table can be collected)
+			Add an impl::Value member (possibly remove the Table member)
+			Prevent type tables from being deleted during a garbage collection sweep (and enable new type)
+		Improve the implementation of Collector<Tables>
+			Convert tables away from pure references
+				Particularly important for argument passing
+		Enable usage on other computers
+			Get makefile/installer working
+			Release (v 1.0.0)
 
 	3 Grammar Framework Update
 		Potentially change the grammar to follow the basic framework in "lua53_parse.h"
+			See if I can remove the analysis errors
+			Try to add in multiple returns
 		Update all documents to ensure that they reflect the current language spec
 			Start working heavily on the language manual
 		Update the readme to show off recent aditions
@@ -85,12 +92,18 @@ Timeline
 		Bugfixes
 		Update project version to 1.0.0
 
+	3 Improving Functions
+		Add in multiple returns and recursion support
+			These 
+
 	4 Type/Table metamethods
 		Convert for loop to the generator idiom
 
 	5 Ranges and Library support
 
 	6 Lambdas and Table Comprehensions
+
+	7 Developer API
 
 Notes (In case I forget some of my decisions)
 	3 + e: 4	=> (3 + e): 4		/> (3 + (e: 4))		// To difficult to modify the grammar. I can't find anywhere that I expected it

@@ -94,6 +94,7 @@ namespace dust {
 		struct k_else : key_string("else");
 		struct k_elseif : key_string("elseif");
 		struct k_def : key_string("def");
+		struct k_return : key_string("return");
 		struct k_self : key_string("self");
 
 		struct keywords : sor<k_and, k_true, k_false, k_or, k_nil, k_do, k_in, k_if, k_else, k_elseif, k_while, k_for, k_type, k_try, k_catch, k_repeat, k_def, k_self> {};
@@ -214,10 +215,14 @@ namespace dust {
 		struct expr_cond : sor<ee_cond, expr_loop> {};
 
 		// Function Definition
-		//struct arg : seq<var_id, opt<one<':'>, tail, expr_4>> {};
-		//struct arg_list : until<at<Stop>, arg> {};
-		//struct ee_lmb : if_must<one<'\'>, arg_list<k_inherit>, opt<inline_expr>> {};
-		//struct ee_fdef : if_must<k_def, tail, expr_0, one<'('>, arg_list<one<')'>>, opt<inline_expr>> {};
+		struct fn_name : seq<opt<type_id, one<'.'>>, var_id> {};			// This could be a custom rule
+		//struct arg : seq<var_id, opt<op_7, seps, expr_6>> {};							// {var_id}({op_7} *{expr_6})?
+		struct arg : sor<k_self, var_id> {};
+		struct no_args : at<one<')'>> {};
+		struct arg_list : s_list<arg> {};
+		struct ee_fdef : if_must<k_def, tail, fn_name, one<'('>, seps, sor<arg_list, no_args>, one<')'>> {};
+		struct expr_fdef : sor<seq<ee_fdef, opt<inline_expr>>, expr_cond> {};
+		//struct ee_lmb : if_must<one<'\'>, arg_list, k_inherit, opt<inline_expr>> {};
 
 		// Collector Tags
 		struct expr_x : expr_cond {};
