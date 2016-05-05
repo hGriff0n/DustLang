@@ -1,6 +1,15 @@
 #pragma once
 #include <iostream>
+
+#ifdef __linux__
+static_assert(false, "Support for console manipulators on Linux currently unimplemented");
+#elif _WIN32
 #include <Windows.h>
+#elif __APPLE__
+static_assert(false, "Support for console manipulators on Mac OSX currently unimplemented");
+#else
+static_assert(false, "Unsupported System");
+#endif
 
 
 namespace console {

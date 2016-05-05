@@ -31,8 +31,6 @@ Timeline
 				Change the expected exception on Testing:line 99 once implemented
 			Provide a way to set it for client code (maybe in the metamethods update)
 			Implement "string" keys-only for scopes
-		Implement Console manipulators for mac and linux
-			Apparently both use ansi color codes
 		GC References are screwy again
 		Parser Issues
 			Unsure about behavior of action<c_paren> for empty parentheses
