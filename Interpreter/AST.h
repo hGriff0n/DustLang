@@ -63,7 +63,9 @@ namespace dust {
 				static std::string node_type;
 
 				EvalState& eval(EvalState& e) {
-					throw error::bad_node_eval{ "Attempt to evaluate a List node" };
+					for (auto n = rbegin(); n != rend(); ++n) (*n)->eval(e);
+
+					return e;
 				}
 				void addChild(std::shared_ptr<ASTNode>& c) {
 					add(std::dynamic_pointer_cast<Node>(c));
@@ -74,8 +76,8 @@ namespace dust {
 					std::string ret = buf + "+- " + node_type + "\n";
 					buf += " ";
 
-					for (auto i = begin(); i != end(); ++i)		// for (auto i : *this)
-						ret += (*i)->printString(buf);
+					//for (auto i = begin(); i != end(); ++i)	ret += (*i)->printString(buf);
+					for (auto i : *this) ret += i->printString(buf);
 
 					return ret;
 				}

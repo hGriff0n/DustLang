@@ -488,13 +488,13 @@ namespace dust {
 					
 					t.requireEval("true + false", true);					// Testing operator lookup
 
-					//t.requireType("def Int.diverge(a)\n"					// Testing function construction
-					//			"	a + 1, a - 1", "Function");
+					t.requireType("def Int.diverge(a)\n"					// Testing function construction
+								"	return a + 1, a - 1", "Function");
 
-					//t.requireEval("a, b: Int.diverge(3)", 4);				// Testing basic semantics
-					//t.requireEval("a + b", 6);
+					t.requireEval("a, b: Int.diverge(3)", 4);				// Testing basic semantics
+					t.requireEval("a + b", 6);
 
-					//t.requireException<dispatch_error>("3.diverge()");		// Testing OOP interaction
+					t.requireException<dispatch_error>("3.diverge()");		// Testing OOP interaction
 
 				t.closeSubTest();
 			t.closeSubTest();

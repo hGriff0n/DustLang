@@ -63,9 +63,6 @@ Timeline
 		See VagueToDo.txt
 
 	1 Dust Function Definition
-		Add in the grammar and actions for defining dust functions
-			Need to add in multiple returns
-		Define the correct API for running dust functions
 		Improve the implementation of Tables for storing Type member functions
 			Also need to ensure the safety of C++ tables
 				pop a Table (references get decremented -> Table can be collected)
@@ -74,9 +71,7 @@ Timeline
 		Improve the implementation of Collector<Tables>
 			Convert tables away from pure references
 				Particularly important for argument passing
-		Enable usage on other computers
-			Get makefile/installer working
-			Release (v 1.0.0)
+		Release (v 1.0.0)
 
 	2 Grammar Framework Update
 		Potentially change the grammar to follow the basic framework in "lua53_parse.h"

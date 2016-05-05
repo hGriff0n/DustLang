@@ -233,7 +233,9 @@ namespace dust {
 		struct ee_if : if_must<k_if, seps, expr> {};
 		struct ee_elseif : if_must<k_elseif, seps, expr> {};
 		struct ee_cond : seq<sor<ee_if, ee_elseif, k_else>, opt<seps, k_do>, opt<inline_expr>> {};
-		struct expr_cond : sor<ee_cond, expr_loop> {};
+		struct ee_ret : if_must<k_return, seq<white, expr_list>> {};
+		struct expr_cond : sor<ee_cond, ee_ret, expr_loop> {};
+		//struct expr_cond : sor<ee_cond, expr_loop> {};
 
 		// Function Definition
 		struct fn_name : seq<opt<type_id, one<'.'>>, var_id> {};			// This could be a custom rule
@@ -244,6 +246,7 @@ namespace dust {
 		struct ee_fdef : if_must<k_def, tail, fn_name, one<'('>, seps, sor<arg_list, no_args>, one<')'>> {};
 		struct expr_fdef : sor<seq<ee_fdef, opt<inline_expr>>, expr_cond> {};
 		//struct ee_lmb : if_must<one<'\'>, arg_list, k_inherit, opt<inline_expr>> {};
+		//struct ee_ret : if_must<k_return, expr_list> {};
 
 		// Collector Tags
 		struct expr_x : expr_fdef {};
