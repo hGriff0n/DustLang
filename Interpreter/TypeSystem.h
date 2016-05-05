@@ -100,8 +100,8 @@ namespace dust {
 
 
 				// Temporary/Ungrouped Methods (may be expanded/grouped later)
-				// Checks if there is a converter between t1 and t2
-				bool convertible(size_t t1, size_t t2);
+				// Checks if there is a converter from type f to type t
+				bool convertible(size_t f, size_t t);
 
 				// Checks if t1 is a child of t2
 				bool isChildType(size_t t1, size_t t2);

@@ -531,12 +531,11 @@ namespace dust {
 		}
 		EvalState& Block::eval(EvalState& e) {
 			if (expr.empty() && !table) {
-				if (!excep_if_empty) {
-					e.pushNil();
-					return e;
-				}
+				if (excep_if_empty)
+					throw error::bad_node_eval{ "Attempt to evaluate an empty block" };
 
-				throw error::bad_node_eval{ "Attempt to evaluate an empty block" };
+				e.pushNil();
+				return e;
 			}
 
 			size_t x = e.size(), next = 1;

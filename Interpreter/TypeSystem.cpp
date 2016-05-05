@@ -154,8 +154,8 @@ namespace dust {
 			return types[type_id[t]];
 		}
 
-		bool TypeSystem::convertible(size_t t1, size_t t2) {
-			return conv.count(key(t1, t2));
+		bool TypeSystem::convertible(size_t f, size_t t) {
+			return conv.count(key(f, t));
 		}
 
 		bool TypeSystem::isChildType(size_t t1, size_t t2) {
