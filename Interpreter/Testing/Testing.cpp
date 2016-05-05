@@ -120,6 +120,15 @@ namespace dust {
 			t.initSubTest("Type System");
 				t.requireTrue("3 <- Int");										// Test that the type-check operator works
 				t.requireTrue("3 + 0.3 <- Float");
+
+				t.requireNoError("type NewType []");							// Test that custom types work properly
+				t.requireNoError("foo: NewType.new()");
+				t.requireTrue("foo <- NewType");
+
+				t.requireNoError("bar: NewType()");								// Test alternate type creation method
+				//t.requireNoError("bar: NewType[]");
+
+				t.requireTrue("bar <- foo.type");								// Test typeof operations
 			t.closeSubTest();
 
 			// Testing parser with multilined input

@@ -22,6 +22,8 @@ namespace dust {
 			// Internal storage of type methods
 			Table fields;
 			//impl::Value ref;
+			//Table private;
+			//Table public;
 				
 			// Default values and typed/const variables ???
 

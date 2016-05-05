@@ -269,7 +269,7 @@ namespace dust {
 		};
 
 		/*
-		 * Node for specifiying number of evaluations of a Block
+		 * Node for specifying number of evaluations of a Block
 		 */
 		class Control : public ASTNode {
 			private:

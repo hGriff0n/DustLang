@@ -209,7 +209,7 @@ namespace dust {
 		// Type Creation
 		struct ee_inherit : seq<seps, op_inherit, seps, type_id> {};
 		struct ee_type : seq<k_type, spaces, type_id, white, table, opt<ee_inherit>> {};
-		struct expr_type : sor<ee_type, expr_7> {};										// type[ ]*{type_id} *{table}( *<- *{type_id})?
+		struct expr_type : sor<ee_type, expr_7> {};										// type *{type_id} *{table}( *<- *{type_id})?
 
 		// Try-Catch
 		struct inline_expr : seq<plus<tail>, expr> {};
