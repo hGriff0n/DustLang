@@ -4,7 +4,7 @@
 
 namespace dust {
 	namespace test {
-		void runTests(EvalState& e, bool print_all) {
+		void runAllTests(EvalState& e, bool print_all) {
 			using dispatch_error = error::dispatch_error;
 
 			auto t = makeTester(e, std::cout, print_all);

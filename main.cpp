@@ -47,7 +47,7 @@ int main(int argc, const char* argv[]) {
 	EvalState e;
 
 	initState(e);
-	test::runTests(e, show_tests);
+	test::runAllTests(e, show_tests);
 
 	// Main repl loop
 	std::cout << "\n> ";
