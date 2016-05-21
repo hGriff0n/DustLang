@@ -35,8 +35,8 @@ namespace dust {
 				t.requireEval("3 + 3", 6);										// Testing that operators work
 				t.requireEval("\"The answer is \" + (6.3 ^ 2)",					// Testing that converters get selected
 					"The answer is 39.690000");
-				t.requireEval("\"4\" - 3", 1);									// Testing the converters selected based on the operator
 
+				t.requireException<dispatch_error>("\"4\" - 3");				// Testing that converter selection is consistant
 				t.requireException<dispatch_error>("3 + true");					// Testing that correct exceptions are produced
 			t.closeSubTest();
 
