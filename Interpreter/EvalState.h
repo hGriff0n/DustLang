@@ -188,7 +188,8 @@ namespace dust {
 			type::TypeSystem& getTS();
 			impl::GC& getGC();
 
-			template <typename T>
+			// Type Building
+			template <typename T>											// Add a member definition to a type
 			type::TypeSystem::TypeVisitor& addMember(type::TypeSystem::TypeVisitor& t, std::string op, T val) {
 				auto v = type::Traits<T>::make(val, gc);
 				auto fn = type::Traits<std::string>::make(op, gc);
@@ -198,6 +199,9 @@ namespace dust {
 
 				return t.addOp(fn, v, op);
 			}
+
+			void completeDef(type::TypeSystem::TypeVisitor& typ);			// Complete a custom type definition by providing language expected definitions for certain methods
+			void assignRef(type::Type& typ);								// Prevent the type table from being collected (Temporary TDD method)
 
 			// Pass the top element on the stack to the stream
 				// Handles non-printable values and string-special printing

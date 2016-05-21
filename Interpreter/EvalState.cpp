@@ -366,6 +366,34 @@ namespace dust {
 		return gc;
 	}
 
+	void EvalState::completeDef(type::TypeSystem::TypeVisitor& typ) {
+		using namespace type;
+
+		// Ensure the type table won't be collected
+		auto table = pop();
+		auto tbl = Traits<Table>::get(table, gc);
+
+		// List of all type methods that must have a definition
+		std::vector<impl::Value> method_list {
+			Traits<std::string>::make("new", gc)
+		};
+
+		// Query the table for "type" methods and provide the default behavior
+		for (auto& method : method_list) {
+			// If the function has a custom definition
+				// Replace it with a functor that performs the common behavior (in the table)
+				// But this behavior isn't consistent across all methods (ala _op() <- Don't replace if it exists)
+		}
+
+		// Associate the table to the relevant type
+		try_incRef(const_cast<Type&>(ts.get(typ)).ref = table);
+		ts.setMethods(typ, tbl);
+	}
+
+	void EvalState::assignRef(type::Type& typ) {
+		copy();
+		try_incRef(typ.ref = pop());
+	}
 
 	void initState(EvalState& e) {
 		initTypeSystem(e.ts);

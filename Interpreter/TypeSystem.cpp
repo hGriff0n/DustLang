@@ -16,8 +16,7 @@ namespace dust {
 		}
 
 		TypeVisitor& TypeVisitor::addOp(impl::Value op, impl::Value v, const std::string& fn) {
-			if (ts->type_id.count(fn) > 0)
-				ts->addConv(id, ts->type_id[fn]);
+			if (ts->type_id.count(fn)) ts->addConv(id, ts->type_id[fn]);
 
 			return addOp(op, v);
 		}
@@ -169,6 +168,12 @@ namespace dust {
 
 		size_t TypeSystem::getId(std::string t) {
 			return type_id[t];
+		}
+
+		// Temporary TDD method
+		void TypeSystem::setMethods(size_t t, Table tbl) {
+			types[t].fields = tbl;
+			tbl = nullptr;
 		}
 	}
 }

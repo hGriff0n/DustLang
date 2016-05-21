@@ -173,7 +173,16 @@ namespace dust {
 		// TypeName methods
 		TypeName::TypeName(const ParseData& in, std::string n) : ASTNode{ in }, name{ n } {}
 		EvalState& TypeName::eval(EvalState& e) {
-			e.push(e.getTS().get(name).fields);
+			auto& type = e.getTS().get(name);
+
+			if (type.ref.type_id == type::Traits<Nil>::id) {
+				e.push(type.fields);
+				e.assignRef(const_cast<type::Type&>(type));
+
+			} else {
+				e.push(type.ref);
+			}
+
 			return e;
 		}
 		std::string TypeName::toString() { return name; }
@@ -214,10 +223,9 @@ namespace dust {
 			auto& ts = e.getTS();
 			auto nType = ts.newType(name, ts.get(inherit));
 
+			// Associate the type with its provided method list and complete type definition
 			definition->eval(e);
-
-			// Associate the table to the type
-			//e.setTypeMembers(nType);						// Associate the created table to the type
+			e.completeDef(nType);
 
 			return e;
 		}
@@ -239,6 +247,7 @@ namespace dust {
 			auto x = e.size();
 			auto res = l->eval(e).pop();						// Possible issue with multiple returns (might pick up the last return, hopefully picks up the first)
 
+			// In-case l is a multiple return function
 			e.settop(x);
 
 			if (res.type_id == type::Traits<Nil>::id)			// Nil isn't part of the current type hierarchr

@@ -109,6 +109,9 @@ namespace dust {
 				// Type "data" functions
 				std::string getName(size_t t);
 				size_t getId(std::string t);
+
+				// Temporary TDD method
+				void setMethods(size_t t, Table tbl);			// Set the specific type's method list
 		};
 	}
 
