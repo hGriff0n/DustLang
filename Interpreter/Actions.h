@@ -561,11 +561,13 @@ namespace dust {
 			static void apply(input& in, AST& ast, ScopeTracker& _) {
 				// stack: ..., {NewType}, ...
 
-				int i = -1;
-				while (!std::dynamic_pointer_cast<NewType>(ast.at(i))) --i;
+				// Find the location of the NewType node
+				int i = ast.size();
+				while (!std::dynamic_pointer_cast<NewType>(ast.at(--i)));
 
+				// Pack the NewType node with the custom nodes
 				auto typ = ast.at(i++);
-				while (i++) typ->addChild(ast.pop(i));
+				while (i != ast.size()) typ->addChild(ast.pop(i));
 
 				// stack: ..., {NewType}
 			}

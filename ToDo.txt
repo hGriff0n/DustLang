@@ -38,10 +38,17 @@ Timeline
 		See VagueToDo.txt
 
 	1 Custom Types (Type.h, AST.cpp)
-		Get type creation to parse successfully
 		Determine how to implement type instances
+			The only thing I'll need to ensure is that the type_id field of Variable and Value are set properly
 		Complete the implementation of NewType to create types
-			This will likely entail some changes to Type
+			Fix the dependency graph issue for adding type methods
+				Main problem is the dependency graph for adding type methods
+					EvalState relies on TypeSystem, can't add type methods without EvalState
+			Consider moving the "finish definition" methods to the TypeSystem class
+			Prevent client code from modifying type method tables
+			Add in a connection to the type's impl::Value
+				This should fix the possible deletion during gc sweeps
+					Right now, anytime I push the method table onto the stack, a new impl::Value is created
 		Add in type "metamethods" and automatic type definitions
 		Improve the implementation of Tables for storing Type member functions
 			Also need to ensure the safety of C++ tables

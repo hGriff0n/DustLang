@@ -389,13 +389,8 @@ namespace dust {
 				});
 				e.set(EvalState::SCOPE);
 
-				e.push("reduce");
+				e.push("sum");
 				e.push([](EvalState& e) {
-					/*
-					while (e.size() > 1)							// Simpler implementation
-						e.callOp("_op+");
-					*/
-
 					Optional sum{ e }, nxt;							// But I want to demonstrate Optional
 
 					while (nxt.copy(e)) {
