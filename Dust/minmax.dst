@@ -1,0 +1,18 @@
+def max(arr)
+	if !(arr <- Table) return arr
+
+	curr_max = arr[0]
+	for e in arr
+		if e > curr_max
+			curr_max = e
+	curr_max
+
+def min(arr)
+	if !(arr <- Table) return arr
+
+	curr_min = arr[0]
+	for e in arr
+		if e < curr_min
+			curr_min = e
+
+	curr_min
