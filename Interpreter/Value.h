@@ -42,6 +42,7 @@ namespace dust {
 			Atom val;
 			//char idu;
 			size_t type_id;
+			bool object = false;
 
 			Value() { type_id = 0; }
 			Value(Atom v, size_t t) : val{ v }, type_id{ t } {}

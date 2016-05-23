@@ -35,25 +35,26 @@ Timeline
 					The error is the ": +" (I don't know what gets parsed though)
 		Generators
 			Need to generalize to allow for any number of state
+		Type Fixes
+			Allow for static members
+			Allow for function members to be copied (current behavior assumes Function = type method)
+			Determine the behavior for when new/drop are user-defined as non-functions
+				Implement the fix to EvalState::completeDef to prevent exceptions
 		See VagueToDo.txt
 
 	1 Custom Types (Type.h, AST.cpp)
-		Determine how to implement type instances
-			The only thing I'll need to ensure is that the type_id field of Variable and Value are set properly
-		Complete the implementation of NewType to create types
-			Fix the dependency graph issue for adding type methods
-				Main problem is the dependency graph for adding type methods
-					EvalState relies on TypeSystem, can't add type methods without EvalState
-			Consider moving the "finish definition" methods to the TypeSystem class
-			Prevent client code from modifying type method tables
-				Temporary TDD methods need to be reworked
-		Add in type "metamethods" and automatic type definitions
-		Ensure that the Type GC fix works properly
+		Fix errors on Testing.cpp:133 - Attempt to set a field of a non-table value
+		Allow methods to be added to custom types through "def" syntax
+		Should reflection be done through outside methods or with a type method
+		Come up with a better way to copy over class instances
+			Current way doesn't allow static members or function members
+		Improve Comments in all code (explain the why)
 
-	2 Grammar Framework Update
-		Potentially change the grammar to follow the basic framework in "lua53_parse.h"
+	2 Framework Update
+		Update and streamline the grammar to speed up parsing
+			Look at "lua53_parse.h" for possible hints
 			See if I can remove the analysis errors
-			Try to add in multiple returns
+			Try to add in implicit multiple returns
 		Update all documents to ensure that they reflect the current language spec
 			Start working heavily on the language manual
 		Update the readme to show off recent additions
@@ -70,22 +71,45 @@ Timeline
 				See Bugfixes for more
 		Bugfixes
 
-	3 Small Language Updates and Bugfixes
-		Specify the behavior for inheriting from primitive types (ie. string)
+	3 System Rewrite (Ground Up)
+		Fix Type Implementation to accommodate built-in and custom types
+			Rework "Temporary TDD methods" (Placing and access)
+			Prevent client code from modifying type method tables
+		Fix Dependency Loops that force bad code design
+			EvalState relies on TypeSystem, can't add type methods without EvalState
+			Consider moving some method definitions into the TypeSystem class
+				Can then make these "friends" within the EvalState/etc. contexts
+		Fix Garbage Collector implementation
+			Ensure that all references are correct
 
-	4 Improving Functions
-		Add recursion support
+	4 Standard Library
+		Small Language Updates and Bugfixes
+			Specify the behavior for inheriting from primitive types (ie. string)
+		Add "standard library" functions and classes
+		Ensure that "built-in" types have the expected class methods and fields
+			ie. "Int.new() = 0" should evaluate to true
+		Ensure the readme is up-to-date
+			Consider starting work on the github wiki
+
+	5 Improving Functions
+		Add recursion support ("factorial" doesn't work properly)
 		Make table arguments "copy-on-write"
 			Really just ensure that all "gets" get forwarded to the passed table
 
-	5 Type/Table metamethods
+	6 Ranges and stl update
+		Get generators to work in the context of for loops
+		Create ranges as syntactical sugar for basic arithmetic generators
+			Try to create more complex generators if possible
+		Create iterator methods for tables and move table for-each to use them
+		
+	7 Type/Table metamethods
 		Convert for loop to the generator idiom
 
-	6 Ranges and Library support
+	8 Lambdas and Table Comprehensions
 
-	7 Lambdas and Table Comprehensions
-
-	8 Developer API
+	9 Developer API work
+		Cleanup the working of the entire project
+		Update to 2.0.0
 
 Notes (In case I forget some of my decisions)
 	3 + e: 4	=> (3 + e): 4		/> (3 + (e: 4))		// To difficult to modify the grammar. I can't find anywhere that I expected it

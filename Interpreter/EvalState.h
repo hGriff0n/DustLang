@@ -88,7 +88,7 @@ namespace dust {
 
 		template<> Table Traits<Table>::get(const impl::Value& v, impl::GC& gc) {
 			try {
-				if (v.type_id == Traits<Table>::id)
+				if (v.type_id == Traits<Table>::id || v.object)					// If v is a Table or a custom-type
 					return gc.getTables().deref(v.val.i);
 			} catch (...) {}
 
@@ -202,6 +202,7 @@ namespace dust {
 
 			void completeDef(type::TypeSystem::TypeVisitor& typ);			// Complete a custom type definition by providing language expected definitions for certain methods
 			void assignRef(type::Type& typ);								// Prevent the type table from being collected (Temporary TDD method)
+			void copyInstance(Table t, Table f);							// Copy Type table f into Instance Table t (Temporary TDD method)
 
 			// Pass the top element on the stack to the stream
 				// Handles non-printable values and string-special printing

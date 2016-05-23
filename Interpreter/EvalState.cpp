@@ -368,31 +368,135 @@ namespace dust {
 
 	void EvalState::completeDef(type::TypeSystem::TypeVisitor& typ) {
 		using namespace type;
-
-		// Ensure the type table won't be collected
+		using std::string;
+		
 		auto table = pop();
 		auto tbl = Traits<Table>::get(table, gc);
 
-		// List of all type methods that must have a definition
-		std::vector<impl::Value> method_list {
-			Traits<std::string>::make("new", gc)
+
+		/*
+		 * Supplement User Methods with language code
+		 */
+
+		// New
+		auto method = Traits<string>::make("new", gc);
+		auto default_new = [id{ (size_t)typ }, type{ tbl }](EvalState& e) {
+			// Initialize type table (Just use a table for now)
+			Table obj = new impl::Table{ nullptr };
+
+			// Copy over type table entries
+			e.copyInstance(obj, type);
+			e.push(obj);
+
+			// Ensure the type information is correct
+			e.at().type_id = id;
+			e.at().object = true;
+
+			return 1;
 		};
 
-		// Query the table for "type" methods and provide the default behavior
-		for (auto& method : method_list) {
-			// If the function has a custom definition
-				// Replace it with a functor that performs the common behavior (in the table)
-				// But this behavior isn't consistent across all methods (ala _op() <- Don't replace if it exists)
+		// Throws an exception if tbl.new isn't a function
+		if (tbl->hasKey(method)) {
+			// Don't decrement the existing reference (so that the Function stays valid)
+				// TODO: This will result in a memory leak if the type gets deleted
+			push([fn{ Traits<Function>::get(tbl->getVal(method), gc) }, sysnew{ std::move(default_new) }](EvalState& e) {
+				// Create the object's structure
+				sysnew(e);
+
+				// Allow user code to modify the created object 
+				fn(e);
+
+				return 1;
+			});
+
+		} else {
+			push(default_new);
 		}
 
+		setTable(tbl, method, pop());
+
+		// Drop
+		auto default_drop = [](EvalState& e) {
+			Table instance = e.pop<Table>();
+
+			// Decrement all references
+			return 0;
+		};
+
+		// Throws an exception if tbl.drop isn't a function
+		if (tbl->hasKey(method = Traits<string>::make("drop", gc))) {
+			push([fn{ Traits<Function>::get(tbl->getVal(method), gc) }, sysdrop{ std::move(default_drop) }](EvalState& e) {
+				e.enableObjectSyntax().get(EvalState::SELF);
+
+				// Run the user function
+				fn(e);
+
+				// Setup code for language drop
+				e.get(EvalState::SELF);
+				sysdrop(e);
+
+				return 0;
+			});
+
+		} else {
+			push(default_drop);
+		}
+
+		setTable(tbl, method, pop());
+
+
+		/*
+		 * Provide Default Implementations
+		 */
+		// Copy
+		if (!tbl->hasKey(method = Traits<string>::make("copy", gc))) {
+			push([](EvalState& e) {
+				e.enableObjectSyntax().get(EvalState::SELF);
+
+				size_t id = e.at().type_id;
+				Table orig = e.pop<Table>();
+				Table copy = new impl::Table{ orig->getPar() };
+
+				// Copy the instance over
+				e.copyInstance(copy, orig);
+				e.push(copy);
+				e.at().type_id = id;
+				e.at().object = true;
+
+				return 1;
+			});
+
+			setTable(tbl, method, pop());
+		}
+
+
+		/*
+		 * Set auto-defined fields
+		 */
+		setTable(tbl, Traits<string>::make("type", gc), table);
+		setTable(tbl, Traits<string>::make("class", gc), Traits<string>::make(ts.getName(typ), gc));
+
+
 		// Associate the table to the relevant type
-		try_incRef(const_cast<Type&>(ts.get(typ)).ref = table);
+		try_incRef(const_cast<Type&>(ts.get(typ)).ref = table);												// Ensure the type table isn't collected
 		ts.setMethods(typ, tbl);
 	}
 
 	void EvalState::assignRef(type::Type& typ) {
 		copy();
 		try_incRef(typ.ref = pop());
+	}
+
+	void EvalState::copyInstance(Table t, Table f) {
+		// Copy over instance variables
+		for (auto entry : *f) {
+			if (entry.second.val.type_id != type::Traits<Function>::id) {
+				try_incRef(entry.first);
+				try_incRef((t->getVar(entry.first) = entry.second).val);
+			}
+		}
+
+		// Copy other state
 	}
 
 	void initState(EvalState& e) {

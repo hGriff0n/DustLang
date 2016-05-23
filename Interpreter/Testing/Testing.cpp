@@ -121,10 +121,18 @@ namespace dust {
 				t.requireTrue("3 <- Int");										// Test that the type-check operator works
 				t.requireTrue("3 + 0.3 <- Float");
 
-				t.requireNoError("type NewType []");							// Test that custom types work properly
+				t.requireNoError("type NewType [ a: 0 ]");						// Test that custom types work properly
 				t.requireNoError("foo: NewType.new()");
 				t.requireTrue("foo <- NewType");
-				t.requireEval("foo.class", "NewType");
+
+				t.requireEval("foo.class", "NewType");							// Test that the type is created properly
+				t.requireTrue("foo.type = NewType");
+					// Fails with pegtl::error <Can't find eolf>
+
+				t.requireTrue("foo.a = 0");										// Test that foo is a proper instance
+				t.requireEval("foo.a:+ 3", 3);
+				t.requireTrue("foo.a = 3");
+				t.requireTrue("NewType.a = 0");
 
 				//t.eval("bar = foo.type.new()");
 				//t.requireTrue("bar <- NewType");								// Test typeof operations
