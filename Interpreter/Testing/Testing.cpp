@@ -124,11 +124,10 @@ namespace dust {
 				t.requireNoError("type NewType []");							// Test that custom types work properly
 				t.requireNoError("foo: NewType.new()");
 				t.requireTrue("foo <- NewType");
+				t.requireEval("foo.class", "NewType");
 
-				t.requireNoError("bar: NewType()");								// Test alternate type creation method
-				//t.requireNoError("bar: NewType[]");
-
-				t.requireTrue("bar <- foo.type");								// Test typeof operations
+				//t.eval("bar = foo.type.new()");
+				//t.requireTrue("bar <- NewType");								// Test typeof operations
 			t.closeSubTest();
 
 			// Testing parser with multilined input
