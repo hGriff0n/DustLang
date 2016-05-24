@@ -43,9 +43,8 @@ Timeline
 		See VagueToDo.txt
 
 	1 Custom Types (Type.h, AST.cpp)
-		Fix errors on Testing.cpp:133 - Attempt to set a field of a non-table value
 		Allow methods to be added to custom types through "def" syntax
-			Figure out how to handle "def Type.new"
+			Figure out how to handle delayed "def Type.new"
 		Should reflection be done through outside methods or with a type method
 		Come up with a better way to copy over class instances
 			Current way doesn't allow static members or function members

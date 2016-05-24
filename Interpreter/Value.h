@@ -46,7 +46,7 @@ namespace dust {
 
 			Value() { type_id = 0; }
 			Value(Atom v, size_t t) : val{ v }, type_id{ t } {}
-			Value(const Value& v) : val{ v.val }, type_id{ v.type_id } {}
+			Value(const Value& v) : val{ v.val }, type_id{ v.type_id }, object{ v.object } {}
 
 			operator size_t() { return type_id; }
 

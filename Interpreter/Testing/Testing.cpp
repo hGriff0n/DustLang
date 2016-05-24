@@ -130,7 +130,7 @@ namespace dust {
 					// Fails with pegtl::error <Can't find eolf>
 
 				t.requireTrue("foo.a = 0");										// Test that foo is a proper instance
-				t.requireEval("foo.a:+ 3", 3);
+				t.requireEval("foo.a: 3", 3);
 				t.requireTrue("foo.a = 3");
 				t.requireTrue("NewType.a = 0");
 

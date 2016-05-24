@@ -283,6 +283,8 @@ namespace dust {
 			if (!vars) throw error::bad_node_eval{ "Attempt to use Assign node without a linked var_list" };
 			if (!vals) throw error::bad_node_eval{ "Attempt to use Assign node without a linked expr_list" };
 
+			// TODO: Add in splat semantics
+
 			auto l_var = vars->begin(), r_var = vars->end();
 			auto l_val = vals->begin(), r_val = vals->end();
 			size_t old = e.size(), exp = e.size() + vars->size();
@@ -314,6 +316,7 @@ namespace dust {
 				(*l_var++)->set(e, set_const, set_static);
 			}
 
+			// Can't memoize the last value due to splat/nil semantics
 			return (*vars->rbegin())->eval(e);				//return last_var->eval(e);
 		}
 		std::string Assign::toString() { return op; }

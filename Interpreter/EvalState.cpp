@@ -207,7 +207,7 @@ namespace dust {
 				break;
 			default:
 				// {idx}.x
-				if (is<Table>(idx))
+				if (is<Table>(idx) || at(idx).object)
 					tbl = pop<Table>(idx);
 
 				else {
@@ -246,11 +246,18 @@ namespace dust {
 			default:
 				if (idx < 0) idx += 1;
 
+				// Table handling
 				if (is<Table>(idx)) {
 					tbl = pop<Table>(idx);
 
+				// OOP handling
+				} else if (at(idx).object) {
+					tbl = pop<Table>(idx);
+
+					if (!tbl->hasKey(at()))
+						throw error::dust_error{ "Attempt to set non-instance field of an object" };
+
 				} else {
-					// OOP handling ????
 					throw error::dust_error{ "Attempt to set a field of a non-table value" };
 				}
 
@@ -382,7 +389,7 @@ namespace dust {
 		auto method = Traits<string>::make("new", gc);
 		auto default_new = [id{ (size_t)typ }, type{ tbl }](EvalState& e) {
 			// Initialize type table (Just use a table for now)
-			Table obj = new impl::Table{ nullptr };
+			Table obj = new impl::Table{ type };
 
 			// Copy over type table entries
 			e.copyInstance(obj, type);
