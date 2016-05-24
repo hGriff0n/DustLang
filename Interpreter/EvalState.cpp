@@ -51,36 +51,45 @@ namespace dust {
 				Table instance = new impl::Table{ typ };
 				e.copyInstance(instance, typ);
 
-				// Set the instance as the scope to streamline user new syntax (may change)
-				Table temp_scope = new impl::Table{ instance };
-				Table old_scope = e.setScope(temp_scope);
-
-				// Allow user code to modify the created object
-				try {
-					usernew(e);
-
-				} catch (...) {						// Clean up in-case user code throws
-					delete temp_scope;
-					delete instance;
-					e.setScope(old_scope);
-
-					throw;
-				}
-
-				// Reset scoping and setup the OOP structure
-				e.setScope(old_scope);
+				// Setup OOP structure and syntax
 				e.push(instance);
 				e.at().type_id = id;
 				e.at().object = true;
-				
-				delete temp_scope;
+				e.copy();
+				e.set(EvalState::SELF);
+				auto ret = e.pop();					// Get a reference to the object for returning
+
+				// Allow user code to modify the created object
+				usernew(e);
+
+				// TODO: Figure out a way to handle multiple returns from usernew
+				e.pop();							// I'm assuming one return value for now
+				e.push(ret);
+
 				return 1;
 			});
 
 			val = pop();
 
 		} else if (method == "drop") {
+			push([userdrop{ type::Traits<Function>::get(val, gc) }, id{ type_id }](EvalState& e) {
+				e.enableObjectSyntax().get(EvalState::SELF);
 
+				// Run the user function
+				userdrop(e);
+
+				// Setup code for language drop
+				e.get(EvalState::SELF);
+				auto tbl = e.pop();
+				Table instance = type::Traits<Table>::get(tbl, e.getGC());
+
+				// destroy the table
+				// How to do that ???
+
+				return 0;
+			});
+
+			val = pop();
 		}
 	}
 

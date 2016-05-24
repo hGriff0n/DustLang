@@ -141,8 +141,11 @@ namespace dust {
 				t.requireTrue("baz.a != foo.a");
 
 				t.requireNoError("type TestType [ a: 0 ]");
-				t.requireNoError("def TestType.new(_a)\n"
-								 "	.a = _a or 0\n");
+				t.requireNoError("def TestType.new(self, a)\n"
+								 "	self.a: a or 0\n");
+				//t.requireNoError("type TestType [ a: 0 ]\n"
+					//"def TestType.new(self, a)\n"
+					//"	self.a: a or 0\n");
 				t.requireType("bar: TestType.new(5)", "TestType");
 				t.requireEval("bar.a", 5);
 
