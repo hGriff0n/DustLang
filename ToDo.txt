@@ -36,15 +36,14 @@ Timeline
 		Generators
 			Need to generalize to allow for any number of state
 		Type Fixes
-			Allow for static members
-			Allow for function members to be copied (current behavior assumes Function = type method)
 			Determine the behavior for when new/drop are user-defined as non-functions
 				Implement the fix to EvalState::completeDef to prevent exceptions
 		See VagueToDo.txt
 
 	1 Custom Types (Type.h, AST.cpp)
-		Allow methods to be added to custom types through "def" syntax
-			Figure out how to handle delayed "def Type.new"
+		Modify Assign::eval (or whatever) to add in custom handling of type assignments (function definitions are assignments)
+			Wrapping user definitions for "new/drop" with system code
+				Strip down EvalState::completeDef to just provide defaults (the overriding code moves to the new sequence)
 		Should reflection be done through outside methods or with a type method
 		Come up with a better way to copy over class instances
 			Current way doesn't allow static members or function members

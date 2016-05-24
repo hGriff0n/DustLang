@@ -62,7 +62,7 @@ namespace dust {
 		tbl->hasKey(key) ? push(tbl->getVal(key)) : pushNil();
 	}
 
-	void EvalState::setTable(Table tbl, const impl::Value& key, const impl::Value& val) {
+	void EvalState::setTable(Table tbl, const impl::Value& key, const impl::Value& val, bool instance) {
 		if (!tbl) throw error::null_exception{ "tbl is null in setTable" };
 
 		if (!tbl->okayKey(key))
@@ -73,6 +73,7 @@ namespace dust {
 
 		auto& var = tbl->getVar(key);
 
+		var.is_member = instance;
 		try_decRef(var.val);
 		try_incRef(var.val = val);
 	}
@@ -206,20 +207,30 @@ namespace dust {
 
 				break;
 			default:
-				// {idx}.x
-				if (is<Table>(idx) || at(idx).object)
+				// {idx}.field
+				if (is<Table>(idx))
 					tbl = pop<Table>(idx);
 
+				// {type}.method
 				else {
-					//throw error::dust_error{ "Attempt to get a field from a non-table value" };
-
-					// type({idx}).x
+					// Ensure self gets set if necessary
 					if (resolving_function) {
 						copy(idx);
 						set(SELF);
 					}
 
-					tbl = ts.get(pop(idx).type_id).fields;
+					tbl = ts.get(at(idx).type_id).fields;
+
+					//Prefer accessing members over statics
+						// Note: If I remove this check, then all members are private (even from type methods, so not a good solution) 
+					if (at(idx).object) {
+						Table tmp = type::Traits<Table>::get(at(idx), gc);
+						
+						// If the instance has the member, take it
+						if (tmp->hasKey(at())) tbl = tmp;
+					}
+					
+					pop(idx);
 				}
 
 				break;
@@ -230,7 +241,7 @@ namespace dust {
 		// stack: ..., {value}
 	}
 
-	void EvalState::set(int idx, int lookup) {
+	void EvalState::set(int idx, bool instance, int lookup) {
 		Table tbl = nullptr;
 		auto value = pop();
 
@@ -255,7 +266,7 @@ namespace dust {
 					tbl = pop<Table>(idx);
 
 					if (!tbl->hasKey(at()))
-						throw error::dust_error{ "Attempt to set non-instance field of an object" };
+						throw error::dust_error{ "Attempt to set static field of an object" };
 
 				} else {
 					throw error::dust_error{ "Attempt to set a field of a non-table value" };
@@ -264,7 +275,7 @@ namespace dust {
 				break;
 		}
 
-		setTable(tbl, pop(), value);
+		setTable(tbl, pop(), value, instance);
 
 		// stack: ..., {value}
 	}
@@ -365,6 +376,12 @@ namespace dust {
 		// stack: ..., {table}
 	}
 
+	Table EvalState::setScope(Table new_scope) {
+		Table ret = curr_scp;
+		curr_scp = new_scope;
+		return ret;
+	}
+
 	type::TypeSystem& EvalState::getTS() {
 		return ts;
 	}
@@ -409,18 +426,50 @@ namespace dust {
 			push([fn{ Traits<Function>::get(tbl->getVal(method), gc) }, sysnew{ std::move(default_new) }](EvalState& e) {
 				// Create the object's structure
 				sysnew(e);
-
+				
 				// Allow user code to modify the created object 
 				fn(e);
 
 				return 1;
 			});
 
+			/*
+			push([type{}](EvalState& e) {
+				// Create the instance structure
+				Table typ = Traits<Table>::get(type.ref, e.getGC());
+				Table instance = new impl::Table{ typ };
+				e.copyInstance(instance, typ);
+
+				// Set the instance as the scope to streamline user new syntax
+				Table temp_scope = new impl::Table{ instance });
+				Table old_scope = e.setScope(temp_scope);
+
+				// Allow user code to modify the created object
+				try {
+					fn(e);
+
+				} catch(...) {							// Clean up memory in-case user code throws
+					delete temp_scope;
+					delete instance;
+					throw;
+				}
+
+				// Reset scoping and setup the OOP structure
+				e.setScope(old_scope);
+				e.push(instance);
+				e.at().type_id = type.id;
+				e.at().object = true;
+
+				delete temp_scope;
+			});
+			
+			*/
+
 		} else {
 			push(default_new);
 		}
 
-		setTable(tbl, method, pop());
+		setTable(tbl, method, pop(), false);
 
 		// Drop
 		auto default_drop = [](EvalState& e) {
@@ -449,7 +498,7 @@ namespace dust {
 			push(default_drop);
 		}
 
-		setTable(tbl, method, pop());
+		setTable(tbl, method, pop(), false);
 
 
 		/*
@@ -473,15 +522,15 @@ namespace dust {
 				return 1;
 			});
 
-			setTable(tbl, method, pop());
+			setTable(tbl, method, pop(), false);
 		}
 
 
 		/*
 		 * Set auto-defined fields
 		 */
-		setTable(tbl, Traits<string>::make("type", gc), table);
-		setTable(tbl, Traits<string>::make("class", gc), Traits<string>::make(ts.getName(typ), gc));
+		setTable(tbl, Traits<string>::make("type", gc), table, false);
+		setTable(tbl, Traits<string>::make("class", gc), Traits<string>::make(ts.getName(typ), gc), false);
 
 
 		// Associate the table to the relevant type
@@ -496,12 +545,9 @@ namespace dust {
 
 	void EvalState::copyInstance(Table t, Table f) {
 		// Copy over instance variables
-		for (auto entry : *f) {
-			if (entry.second.val.type_id != type::Traits<Function>::id) {
-				try_incRef(entry.first);
-				try_incRef((t->getVar(entry.first) = entry.second).val);
-			}
-		}
+		for (auto entry : *f)
+			if (entry.second.is_member)
+				setTable(t, entry.first, entry.second.val, true);
 
 		// Copy other state
 	}

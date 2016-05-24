@@ -134,6 +134,12 @@ namespace dust {
 				t.requireTrue("foo.a = 3");
 				t.requireTrue("NewType.a = 0");
 
+				t.requireNoError("type TestType [ a: 0 ]\n"
+								 "def TestType.new(_a)\n"
+								 "	.a = _a or 0\n");
+				t.requireType("bar: TestType.new(5)", "TestType");
+				t.requireEval("bar.a", 5);
+
 				//t.eval("bar = foo.type.new()");
 				//t.requireTrue("bar <- NewType");								// Test typeof operations
 			t.closeSubTest();

@@ -148,7 +148,7 @@ namespace dust {
 			void getTable(Table tbl, const impl::Value& key);
 
 			// Set tbl[key] = val
-			void setTable(Table tbl, const impl::Value& key, const impl::Value& val);
+			void setTable(Table tbl, const impl::Value& key, const impl::Value& val, bool instance);
 
 		public:
 			EvalState();
@@ -157,7 +157,7 @@ namespace dust {
 			void get(int idx, int lookup = 0);
 
 			// Set variable at {-2} to value at {-1} in {idx} (unless idx = SELF)
-			void set(int idx, int lookup = 0);
+			void set(int idx, bool instance = true, int lookup = 0);
 
 			// Call the function at {idx - 1} passing {idx} arguments
 			void call(int num_args);
@@ -183,6 +183,7 @@ namespace dust {
 			void newScope();				// Start a new scope with the current scope as parent
 			void endScope();				// Delete current scope (Cleans up memory)
 			void pushScope();				// Push scope on the stack (used in building tables)
+			Table setScope(Table new_scope);// Temporarily set the scope (Temporary TDD method)
 
 
 			type::TypeSystem& getTS();

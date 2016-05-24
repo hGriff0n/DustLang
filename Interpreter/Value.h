@@ -68,10 +68,12 @@ namespace dust {
 		struct Variable {
 			Value val;
 			bool is_const = false;
+			bool is_member = true;
 			size_t type_id;			// == NIL unless statically typed
 
-			Variable() { type_id = 0; }
-			Variable(Value v, size_t t, bool c) : type_id{ t }, val{ v }, is_const{ c } {}
+			Variable() : type_id{ 0 } { }
+			Variable(Value v, size_t t, bool c) : Variable{ v, t, c, true } {}
+			Variable(Value v, size_t t, bool c, bool m) : type_id{ t }, val{ v }, is_const{ c }, is_member{ m } {}
 
 		};
 	}

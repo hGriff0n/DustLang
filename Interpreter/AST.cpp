@@ -151,11 +151,11 @@ namespace dust {
 
 			if (field == end) {
 				e.swap();
-				e.set(EvalState::SCOPE, lvl);
-				//e.setScoped(lvl, is_const, is_static);
+				e.set(EvalState::SCOPE, true, lvl);
 
 			} else {
-				if (!isNode<TypeName>(*field))
+				bool instance;
+				if (instance = !isNode<TypeName>(*field))
 					e.get(EvalState::SCOPE, lvl);
 
 				while (++field != end)
@@ -164,7 +164,7 @@ namespace dust {
 
 				e.swap();
 				(*end)->eval(e).swap();
-				e.set(-3);
+				e.set(-3, instance);
 			}
 
 			return e;
@@ -574,7 +574,7 @@ namespace dust {
 					if (table && !std::dynamic_pointer_cast<Assign>(i)) {
 						e.push<int>(next++);
 						e.swap();
-						e.set(EvalState::SCOPE);		// WARNING! Might give "wrong" answers
+						e.set(EvalState::SCOPE);			// WARNING! Might give "wrong" answers
 					}
 				}
 			}
