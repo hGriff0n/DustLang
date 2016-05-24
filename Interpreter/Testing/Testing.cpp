@@ -126,13 +126,14 @@ namespace dust {
 				t.requireTrue("foo <- NewType");
 
 				t.requireEval("foo.class", "NewType");							// Test that the type is created properly
-				t.requireTrue("foo.type = NewType");
+				t.requireTrue("foo._type = NewType");
 					// Fails with pegtl::error <Can't find eolf>
 
-				t.requireTrue("foo.a = 0");										// Test that foo is a proper instance
+				t.requireTrue("foo.a = 0");										// Testing instance semantics
 				t.requireEval("foo.a: 3", 3);
-				t.requireTrue("foo.a = 3");
-				t.requireTrue("NewType.a = 0");
+				t.requireEval("foo.a - NewType.a", 3);
+				t.requireTrue("foo._type.a != foo.a");
+				t.requireException<error::dust_error>("foo._max: 3");
 
 				t.requireNoError("type TestType [ a: 0 ]\n"
 								 "def TestType.new(_a)\n"
@@ -513,6 +514,15 @@ namespace dust {
 
 					t.requireException<dispatch_error>("3.diverge()");		// Testing OOP interaction
 
+				t.closeSubTest();
+
+				t.initSubTest("Recursion");
+					t.requireType("def factorial(n)\n"
+								  "	if n = 0 return 1\n"
+								  "	n * factorial(n-1)", "Function");
+
+					t.requireEval("factorial(0)", 1);
+					t.requireEval("factorial(3)", 6);
 				t.closeSubTest();
 			t.closeSubTest();
 

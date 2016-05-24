@@ -529,7 +529,7 @@ namespace dust {
 		/*
 		 * Set auto-defined fields
 		 */
-		setTable(tbl, Traits<string>::make("type", gc), table, false);
+		setTable(tbl, Traits<string>::make("_type", gc), table, false);
 		setTable(tbl, Traits<string>::make("class", gc), Traits<string>::make(ts.getName(typ), gc), false);
 
 

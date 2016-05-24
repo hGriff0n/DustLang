@@ -33,6 +33,11 @@ Timeline
 			Errors need to be better
 				"for i in [1..5] .sum: + i" throws an "Attempt to evaluate an empty block" at runtime
 					The error is the ": +" (I don't know what gets parsed though)
+			Look into using multiple tailored parsers in a chaining fashion
+				eg. Variable lookup - "foo.type" should be valid syntax, current grammar sees "type" as a keyword
+					Possibility is the "foo." causes a variable parser to be invoked on the rest of the input
+				eg. "foo <- 3" and "foo <- Int" could both be parsed with a TypeCheck parser after the "<-"
+					This could also be done with a simple "sor" parsing rule though
 		Generators
 			Need to generalize to allow for any number of state
 		Type Fixes
@@ -45,11 +50,9 @@ Timeline
 			Wrapping user definitions for "new/drop" with system code
 				Strip down EvalState::completeDef to just provide defaults (the overriding code moves to the new sequence)
 		Should reflection be done through outside methods or with a type method
-		Come up with a better way to copy over class instances
-			Current way doesn't allow static members or function members
-		Improve Comments in all code (explain the why)
 
-	2 Framework Update
+	2 Framework/Documentation Update
+		Improve code comments (explain why)
 		Update and streamline the grammar to speed up parsing
 			Look at "lua53_parse.h" for possible hints
 			See if I can remove the analysis errors
@@ -92,6 +95,9 @@ Timeline
 
 	5 Improving Functions
 		Add recursion support ("factorial" doesn't work properly)
+			def factorial(n)
+				if n = 0 return 1
+				n * factorial(n - 1)
 		Make table arguments "copy-on-write"
 			Really just ensure that all "gets" get forwarded to the passed table
 
