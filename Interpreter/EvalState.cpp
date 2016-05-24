@@ -885,9 +885,9 @@ namespace dust {
 
 
 		// Free functions
-		e.push("ttype");
+		e.push("typeof");						// Reflection entry point: typeof({obj}) returns a reflection object
 		e.push([](EvalState& e) {
-			e.push(e.pop().type_id);
+			e.pushNil();
 			return 1;
 		});
 		e.set(EvalState::SCOPE);

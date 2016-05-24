@@ -26,15 +26,13 @@ Timeline
 			Determine the behavior for when new/drop are user-defined as non-functions
 				Implement the fix to EvalState::completeDef to prevent exceptions
 			Figure out why the commented code on Testing:146 doesn't work
-			New doesn't handle multiple returns from user code well at all
+			Fix Stack bloat for when "usernew" returns multiple values
 				Force the last line of new to be self (How?)
+				Set a member of e to the number of returned values (Possbile)
 			Implement drop and drop supplement
 		See VagueToDo.txt
 
-	1 Custom Types
-		Should reflection be done through outside methods or with a type method
-
-	2 Framework/Documentation Update
+	1 Framework/Documentation Update
 		Improve code comments (explain why)
 		Update all documents to ensure that they reflect the current language spec
 			Start working heavily on the language manual
@@ -52,7 +50,7 @@ Timeline
 			Ensure that no tests rely on un-proven behavior (if possible)
 		Bugfixes
 
-	3 System Rewrite (Ground Up)
+	2 System Rewrite (Ground Up)
 		Plan out the entire system on paper
 		Improve the grammar and parsing												## Look to "lua53_parse.h" for hints ???
 			Rewrite the grammar from the ground up (focus on speed and simplicity)
@@ -78,7 +76,7 @@ Timeline
 			Determine where to run the GC during evaluation
 			Improve the implementation in general
 
-	4 Standard Library
+	3 Standard Library
 		Small Language Updates and Bugfixes
 			Specify the behavior for inheriting from primitive types (ie. string)
 		Add "standard library" functions and classes
@@ -88,12 +86,12 @@ Timeline
 			Consider starting work on the github wiki
 		Release "2.0.0"
 
-	5 Improving Functions
+	4 Improving Functions
 		Get factorial to work properly
 		Make table arguments "copy-on-write"
 			Really just ensure that all "gets" get forwarded to the passed table
 
-	6 Ranges and stl update
+	5 Ranges and stl update
 		Implement a conception of generators
 			Need to be general for any amount of state
 				## Note: Apparently, I've already done some work on this
@@ -102,20 +100,25 @@ Timeline
 			Try to create more complex generators if possible
 		Create iterator methods for tables and move table for-each to use them
 		
-	7 Type/Table metamethods
+	6 Type/Table metamethods
 		Implement okayKey and okayValue for scopes (string-only keys)
 			These methods are how "3: 3" will be prevented in the global scope and allowed in tables
 		Allow for okayKey and okayValue to be set in client code
 		Convert for loop completely to the generator idiom
 			Implement "iterator" metamethod for tables
 
-	8 Lambdas and Table Comprehensions
+	7 Lambdas and Table Comprehensions
 
-	9 Developer API work
+	8 Developer API work
 		Streamline and Lockdown the public interface
 		Improve parsing error messages
 		Improve the dsl
 		Update to "3.0.0"
+
+	9 Reflection
+		Determine Reflection framework
+		Implement typeof to provide type level reflection
+		Create functions to run/load code from dust
 
 Notes (In case I forget some of my decisions)
 	3 + e: 4	=> (3 + e): 4		/> (3 + (e: 4))		// Too difficult to modify the grammar. I can't find anywhere that I expected it
