@@ -127,21 +127,21 @@ namespace dust {
 				t.requireTrue("foo <- NewType");
 
 				t.requireEval("foo.class", "NewType");							// Test that the type is created properly
-				t.requireTrue("foo._type = NewType");
+				t.requireTrue("foo.__type = NewType");
 					// Fails with pegtl::error <Can't find eolf>
 
 				t.requireTrue("foo.a = 0");										// Testing instance semantics
 				t.requireEval("foo.a: 3", 3);
 				t.requireEval("foo.a - NewType.a", 3);
-				t.requireTrue("foo._type.a != foo.a");
+				t.requireTrue("foo.__type.a != foo.a");
 				t.requireException<error::dust_error>("foo._max: 3");
 
 				t.requireNoError("baz: foo.copy()");							// Testing default copy
 				t.requireEval("baz.a:+ 2", 5);
 				t.requireTrue("baz.a != foo.a");
 
-				t.requireNoError("type TestType [ a: 0 ]\n"
-								 "def TestType.new(_a)\n"
+				t.requireNoError("type TestType [ a: 0 ]");
+				t.requireNoError("def TestType.new(_a)\n"
 								 "	.a = _a or 0\n");
 				t.requireType("bar: TestType.new(5)", "TestType");
 				t.requireEval("bar.a", 5);

@@ -150,6 +150,9 @@ namespace dust {
 			// Set tbl[key] = val
 			void setTable(Table tbl, const impl::Value& key, const impl::Value& val, bool instance);
 
+			// Supplement the static method if necessary (Temporary TDD method)
+			void try_supplement(impl::Value& val, size_t type_id);
+
 		public:
 			EvalState();
 

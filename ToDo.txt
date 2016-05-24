@@ -31,8 +31,6 @@ Timeline
 		Modify Assign::eval (or whatever) to add in custom handling of type assignments (function definitions are assignments)
 			Wrapping user definitions for "new/drop" with system code
 				How will I ever do this ???
-				Strip down EvalState::completeDef to just provide defaults (the overriding code moves to the new sequence)
-		Look into memoizing the default implementations (I'm pretty sure functions won't be combined)
 		Should reflection be done through outside methods or with a type method
 
 	2 Framework/Documentation Update

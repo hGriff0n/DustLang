@@ -41,6 +41,49 @@ namespace dust {
 		swap(idx, -1);								// Restore the stack positions
 	}
 
+	void EvalState::try_supplement(impl::Value& val, size_t type_id) {
+		auto method = type::Traits<std::string>::get(at(), gc);
+
+		if (method == "new") {
+			push([usernew{ type::Traits<Function>::get(val, gc) }, id{ type_id }](EvalState& e) {
+				// Create the object instance structure
+				Table typ = type::Traits<Table>::get(e.getTS().get(id).ref, e.getGC());
+				Table instance = new impl::Table{ typ };
+				e.copyInstance(instance, typ);
+
+				// Set the instance as the scope to streamline user new syntax (may change)
+				Table temp_scope = new impl::Table{ instance };
+				Table old_scope = e.setScope(temp_scope);
+
+				// Allow user code to modify the created object
+				try {
+					usernew(e);
+
+				} catch (...) {						// Clean up in-case user code throws
+					delete temp_scope;
+					delete instance;
+					e.setScope(old_scope);
+
+					throw;
+				}
+
+				// Reset scoping and setup the OOP structure
+				e.setScope(old_scope);
+				e.push(instance);
+				e.at().type_id = id;
+				e.at().object = true;
+				
+				delete temp_scope;
+				return 1;
+			});
+
+			val = pop();
+
+		} else if (method == "drop") {
+
+		}
+	}
+
 	/*	THIS NEEDS A BETTER EXPLANATION
 	 * Returns a parent scope where var is defined, var being a variable name, starting with the current evaluation scope
 	 *   lvl > 1  -> repeat this process starting with the intermediate scope, the result of findScope(var, 1, not_null)
@@ -261,6 +304,12 @@ namespace dust {
 				if (is<Table>(idx)) {
 					tbl = pop<Table>(idx);
 
+					// Type table specific handling
+					if (tbl->hasKey(type::Traits<std::string>::make("__type", gc))) {
+						auto typ = (size_t)tbl->getVal(type::Traits<std::string>::make("__typid", gc)).val.i;
+						try_supplement(value, typ);
+					}
+
 				// OOP handling
 				} else if (at(idx).object) {
 					tbl = pop<Table>(idx);
@@ -403,6 +452,7 @@ namespace dust {
 		 */
 
 		// New
+		static impl::Value new_fn;
 		push([id{ (size_t)typ }, type{ tbl }](EvalState& e) {
 			// Initialize type table (Just use a table for now)
 			Table obj = new impl::Table{ type };
@@ -450,7 +500,8 @@ namespace dust {
 		/*
 		 * Set auto-defined fields
 		 */
-		setTable(tbl, Traits<string>::make("_type", gc), table, false);
+		setTable(tbl, Traits<string>::make("__type", gc), table, false);
+		setTable(tbl, Traits<string>::make("__typid", gc), Traits<size_t>::make(typ, gc), false);
 		setTable(tbl, Traits<string>::make("class", gc), Traits<string>::make(ts.getName(typ), gc), false);
 
 
