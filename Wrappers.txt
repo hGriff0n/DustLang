@@ -1,0 +1,45 @@
+new = [usernew{ Traits<Function>::get(tbl->getVal(method), gc) }, type{ ... }](EvalState& e) {
+			// Create the instance structure
+			Table typ = Traits<Table>::get(type.ref, e.getGC());
+			Table instance = new impl::Table{ typ };
+			e.copyInstance(instance, typ);
+
+			// Set the instance as the scope to streamline user new syntax
+			Table temp_scope = new impl::Table{ instance });
+			Table old_scope = e.setScope(temp_scope);
+
+			// Allow user code to modify the created object
+			try {
+				usernew(e);
+	
+			} catch(...) {							// Clean up memory in-case user code throws
+				delete temp_scope;
+				delete instance;
+				throw;
+			}
+
+			// Reset scoping and setup the OOP structure
+			e.setScope(old_scope);
+			e.push(instance);
+			e.at().type_id = type.id;
+			e.at().object = true;
+
+			delete temp_scope;
+		}
+
+drop = [userdrop{ Traits<Function>::get(tbl->getVal(method), gc) }](EvalState& e) {
+			e.enableObjectSyntax().get(EvalState::SELF);
+
+			// Run the user function
+			userdrop(e);
+
+			// Setup code for language drop
+			e.get(EvalState::SELF);
+			auto tbl = e.pop();
+			Table instance = Taits<Table>::get(tbl, e.getGC());
+
+			// destroy the table
+			// How to do that ???
+
+			return 0;
+		}

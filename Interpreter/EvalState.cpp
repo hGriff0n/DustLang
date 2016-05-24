@@ -399,12 +399,11 @@ namespace dust {
 
 
 		/*
-		 * Supplement User Methods with language code
+		 * Provide default implementations for language functions
 		 */
 
 		// New
-		auto method = Traits<string>::make("new", gc);
-		auto default_new = [id{ (size_t)typ }, type{ tbl }](EvalState& e) {
+		push([id{ (size_t)typ }, type{ tbl }](EvalState& e) {
 			// Initialize type table (Just use a table for now)
 			Table obj = new impl::Table{ type };
 
@@ -417,113 +416,35 @@ namespace dust {
 			e.at().object = true;
 
 			return 1;
-		};
-
-		// Throws an exception if tbl.new isn't a function
-		if (tbl->hasKey(method)) {
-			// Don't decrement the existing reference (so that the Function stays valid)
-				// TODO: This will result in a memory leak if the type gets deleted
-			push([fn{ Traits<Function>::get(tbl->getVal(method), gc) }, sysnew{ std::move(default_new) }](EvalState& e) {
-				// Create the object's structure
-				sysnew(e);
-				
-				// Allow user code to modify the created object 
-				fn(e);
-
-				return 1;
-			});
-
-			/*
-			push([type{}](EvalState& e) {
-				// Create the instance structure
-				Table typ = Traits<Table>::get(type.ref, e.getGC());
-				Table instance = new impl::Table{ typ };
-				e.copyInstance(instance, typ);
-
-				// Set the instance as the scope to streamline user new syntax
-				Table temp_scope = new impl::Table{ instance });
-				Table old_scope = e.setScope(temp_scope);
-
-				// Allow user code to modify the created object
-				try {
-					fn(e);
-
-				} catch(...) {							// Clean up memory in-case user code throws
-					delete temp_scope;
-					delete instance;
-					throw;
-				}
-
-				// Reset scoping and setup the OOP structure
-				e.setScope(old_scope);
-				e.push(instance);
-				e.at().type_id = type.id;
-				e.at().object = true;
-
-				delete temp_scope;
-			});
-			
-			*/
-
-		} else {
-			push(default_new);
-		}
-
-		setTable(tbl, method, pop(), false);
+		});
+		setTable(tbl, Traits<string>::make("new", gc), pop(), false);
 
 		// Drop
-		auto default_drop = [](EvalState& e) {
+		push([](EvalState& e) {
 			Table instance = e.pop<Table>();
 
 			// Decrement all references
 			return 0;
-		};
+		});
+		setTable(tbl, Traits<string>::make("drop", gc), pop(), false);
 
-		// Throws an exception if tbl.drop isn't a function
-		if (tbl->hasKey(method = Traits<string>::make("drop", gc))) {
-			push([fn{ Traits<Function>::get(tbl->getVal(method), gc) }, sysdrop{ std::move(default_drop) }](EvalState& e) {
-				e.enableObjectSyntax().get(EvalState::SELF);
-
-				// Run the user function
-				fn(e);
-
-				// Setup code for language drop
-				e.get(EvalState::SELF);
-				sysdrop(e);
-
-				return 0;
-			});
-
-		} else {
-			push(default_drop);
-		}
-
-		setTable(tbl, method, pop(), false);
-
-
-		/*
-		 * Provide Default Implementations
-		 */
 		// Copy
-		if (!tbl->hasKey(method = Traits<string>::make("copy", gc))) {
-			push([](EvalState& e) {
-				e.enableObjectSyntax().get(EvalState::SELF);
+		push([](EvalState& e) {
+			e.enableObjectSyntax().get(EvalState::SELF);
 
-				size_t id = e.at().type_id;
-				Table orig = e.pop<Table>();
-				Table copy = new impl::Table{ orig->getPar() };
+			size_t id = e.at().type_id;
+			Table orig = e.pop<Table>();
+			Table copy = new impl::Table{ orig->getPar() };
 
-				// Copy the instance over
-				e.copyInstance(copy, orig);
-				e.push(copy);
-				e.at().type_id = id;
-				e.at().object = true;
+			// Copy the instance over
+			e.copyInstance(copy, orig);
+			e.push(copy);
+			e.at().type_id = id;
+			e.at().object = true;
 
-				return 1;
-			});
-
-			setTable(tbl, method, pop(), false);
-		}
+			return 1;
+		});
+		setTable(tbl, Traits<string>::make("copy", gc), pop(), false);
 
 
 		/*
@@ -533,7 +454,9 @@ namespace dust {
 		setTable(tbl, Traits<string>::make("class", gc), Traits<string>::make(ts.getName(typ), gc), false);
 
 
-		// Associate the table to the relevant type
+		/*
+		 * Associate the table to the relevant type
+		 */
 		try_incRef(const_cast<Type&>(ts.get(typ)).ref = table);												// Ensure the type table isn't collected
 		ts.setMethods(typ, tbl);
 	}

@@ -117,6 +117,7 @@ namespace dust {
 			t.closeSubTest();
 
 			// Testing type interactions
+				// TODO: Divide into subTests (probably won't as the Testing rewrite is next up)
 			t.initSubTest("Type System");
 				t.requireTrue("3 <- Int");										// Test that the type-check operator works
 				t.requireTrue("3 + 0.3 <- Float");
@@ -134,6 +135,10 @@ namespace dust {
 				t.requireEval("foo.a - NewType.a", 3);
 				t.requireTrue("foo._type.a != foo.a");
 				t.requireException<error::dust_error>("foo._max: 3");
+
+				t.requireNoError("baz: foo.copy()");							// Testing default copy
+				t.requireEval("baz.a:+ 2", 5);
+				t.requireTrue("baz.a != foo.a");
 
 				t.requireNoError("type TestType [ a: 0 ]\n"
 								 "def TestType.new(_a)\n"

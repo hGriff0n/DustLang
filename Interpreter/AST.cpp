@@ -154,9 +154,11 @@ namespace dust {
 				e.set(EvalState::SCOPE, true, lvl);
 
 			} else {
-				bool instance;
-				if (instance = !isNode<TypeName>(*field))
+				bool instance = fields.size() != 2;
+				if (!isNode<TypeName>(*field)) {
 					e.get(EvalState::SCOPE, lvl);
+					instance = true;
+				}
 
 				while (++field != end)
 					(*field)->eval(e).get(-2);

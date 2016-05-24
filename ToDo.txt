@@ -13,33 +13,15 @@ Timeline
 			Handling of non-printable values, specifically tables and nil
 				Currently have to require_true of a comparison
 				Could add in non-printable functions
-		Improve the implementation of GC
-		Determine where to run the GC during evaluation
 		Think of changing how operator resolution is handled (especially for equals)
 			Currently "[3] = 3" evaluates to true
 			Consider adding "meta-data" (such as com_t when calling other operators ???)
-		Redo how get/set exceptions are handled
-		Implement Table::okayKey and Table::okayValue
-			These methods are how "3: 3" will be prevented in the global scope and allowed in tables
-				Change the expected exception on Testing:line 99 once implemented
-			Provide a way to set it for client code (maybe in the metamethods update)
-			Implement "string" keys-only for scopes
-		GC References are screwy again
+		Redo how get/set exceptions are handled										## What do I even mean by this ???
 		Parser Issues
 			Unsure about behavior of action<c_paren> for empty parentheses
-			Speed up the performance of parsing a line
-				Currently has to read eval_line twice to ensure correctness
-			Consider rearranging/re-purposing actions to provide better parser data
 			Errors need to be better
 				"for i in [1..5] .sum: + i" throws an "Attempt to evaluate an empty block" at runtime
 					The error is the ": +" (I don't know what gets parsed though)
-			Look into using multiple tailored parsers in a chaining fashion
-				eg. Variable lookup - "foo.type" should be valid syntax, current grammar sees "type" as a keyword
-					Possibility is the "foo." causes a variable parser to be invoked on the rest of the input
-				eg. "foo <- 3" and "foo <- Int" could both be parsed with a TypeCheck parser after the "<-"
-					This could also be done with a simple "sor" parsing rule though
-		Generators
-			Need to generalize to allow for any number of state
 		Type Fixes
 			Determine the behavior for when new/drop are user-defined as non-functions
 				Implement the fix to EvalState::completeDef to prevent exceptions
@@ -48,15 +30,13 @@ Timeline
 	1 Custom Types (Type.h, AST.cpp)
 		Modify Assign::eval (or whatever) to add in custom handling of type assignments (function definitions are assignments)
 			Wrapping user definitions for "new/drop" with system code
+				How will I ever do this ???
 				Strip down EvalState::completeDef to just provide defaults (the overriding code moves to the new sequence)
+		Look into memoizing the default implementations (I'm pretty sure functions won't be combined)
 		Should reflection be done through outside methods or with a type method
 
 	2 Framework/Documentation Update
 		Improve code comments (explain why)
-		Update and streamline the grammar to speed up parsing
-			Look at "lua53_parse.h" for possible hints
-			See if I can remove the analysis errors
-			Try to add in implicit multiple returns
 		Update all documents to ensure that they reflect the current language spec
 			Start working heavily on the language manual
 		Update the readme to show off recent additions
@@ -64,16 +44,29 @@ Timeline
 		Determine future implementation roadmap
 			Look at what features still need to be implemented
 			Plan out implementation plan
-		Look for interesting libraries to include/use
-			Start building up the dust standard library
-		Update testing suite
-			Improve test coverage
-				Maybe add extra testing capabilities
-			Improve and streamline code base
-				See Bugfixes for more
+		Look for interesting libraries to include/use for implemtation
+		Start planning out the standard library
+		Rewrite testing suite
+			Improve the interface
+			Add extra capabilities
+		Improve testing coverage
+			Ensure that no tests rely on un-proven behavior (if possible)
 		Bugfixes
 
 	3 System Rewrite (Ground Up)
+		Plan out the entire system on paper
+		Improve the grammar and parsing												## Look to "lua53_parse.h" for hints ???
+			Rewrite the grammar from the ground up (focus on speed and simplicity)
+				Look into using multiple tailored parsers in a chaining fashion
+					eg. Variable lookup - "foo.type" should be valid syntax, current grammar sees "type" as a keyword
+						Possibility is the "foo." causes a variable parser to be invoked on the rest of the input
+					eg. "foo <- 3" and "foo <- Int" could both be parsed with a TypeCheck parser after the "<-"
+						This could also be done with a simple "sor" parsing rule though
+			Remove any analysis errors
+			Look into allowing implicit multiple returns
+				Right now, the grammar basically forces the explicit "return"
+			Rearrange/re-purpose grammar rules/actions to provide better data
+				Start beginning to use that data for better error messages
 		Fix Type Implementation to accommodate built-in and custom types
 			Rework "Temporary TDD methods" (Placing and access)
 			Prevent client code from modifying type method tables
@@ -83,6 +76,8 @@ Timeline
 				Can then make these "friends" within the EvalState/etc. contexts
 		Fix Garbage Collector implementation
 			Ensure that all references are correct
+			Determine where to run the GC during evaluation
+			Improve the implementation in general
 
 	4 Standard Library
 		Small Language Updates and Bugfixes
@@ -92,32 +87,39 @@ Timeline
 			ie. "Int.new() = 0" should evaluate to true
 		Ensure the readme is up-to-date
 			Consider starting work on the github wiki
+		Release "2.0.0"
 
 	5 Improving Functions
-		Add recursion support ("factorial" doesn't work properly)
-			def factorial(n)
-				if n = 0 return 1
-				n * factorial(n - 1)
+		Get factorial to work properly
 		Make table arguments "copy-on-write"
 			Really just ensure that all "gets" get forwarded to the passed table
 
 	6 Ranges and stl update
-		Get generators to work in the context of for loops
+		Implement a conception of generators
+			Need to be general for any amount of state
+				## Note: Apparently, I've already done some work on this
+			Get for loops to accept generators
 		Create ranges as syntactical sugar for basic arithmetic generators
 			Try to create more complex generators if possible
 		Create iterator methods for tables and move table for-each to use them
 		
 	7 Type/Table metamethods
-		Convert for loop to the generator idiom
+		Implement okayKey and okayValue for scopes (string-only keys)
+			These methods are how "3: 3" will be prevented in the global scope and allowed in tables
+		Allow for okayKey and okayValue to be set in client code
+		Convert for loop completely to the generator idiom
+			Implement "iterator" metamethod for tables
 
 	8 Lambdas and Table Comprehensions
 
 	9 Developer API work
-		Cleanup the working of the entire project
-		Update to 2.0.0
+		Streamline and Lockdown the public interface
+		Improve parsing error messages
+		Improve the dsl
+		Update to "3.0.0"
 
 Notes (In case I forget some of my decisions)
-	3 + e: 4	=> (3 + e): 4		/> (3 + (e: 4))		// To difficult to modify the grammar. I can't find anywhere that I expected it
+	3 + e: 4	=> (3 + e): 4		/> (3 + (e: 4))		// Too difficult to modify the grammar. I can't find anywhere that I expected it
 	(e: 3) + 3 * e = 12									// The assignment is evaluated before the multiplication (left->right evaluation). This has some problems with current organization
 	a, b:+ 2											// I'm going to go with the current semantics for now for simplicity. However, it still possible for it to be changed in the future
 	Nil is defined as Bool for the sake of operator resolution (something to watch out for?)
