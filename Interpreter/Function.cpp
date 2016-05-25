@@ -4,7 +4,7 @@
 namespace dust {
 	namespace impl {
 
-		// Native specialization
+		// Specialization for C++ functions
 		class SysFunction : public FunctionBase {
 			private:
 				NativeFn fn;
@@ -17,7 +17,7 @@ namespace dust {
 				}
 		};
 
-		// Dust specialization
+		// Specialization for Dust functions
 		class DustFunction : public FunctionBase {
 			private:
 				std::shared_ptr<parse::ASTNode> fn;
@@ -31,8 +31,7 @@ namespace dust {
 				}
 		};
 
-
-		// Function interface
+		// Function's constructor handles creating the correct polymorphic type based on it's arguments
 		Function::Function(const std::shared_ptr<parse::ASTNode>& f) : fn{ std::make_shared<DustFunction>(f) } {}
 		Function::Function(const NativeFn& f) : fn{ std::make_shared<SysFunction>(f) } {}
 

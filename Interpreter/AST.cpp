@@ -74,15 +74,6 @@ namespace dust {
 				id == type::Traits<bool>::id ? "Bool " : "Nil ") + val;
 		}
 
-		// Value methods
-		Value::Value(const ParseData& in, impl::Value v) : ASTNode{ in }, val{ v } {}
-		EvalState& Value::eval(EvalState& e) {
-			e.push(val);
-			return e;
-		}
-		std::string Value::toString() { return ""; }
-		std::string Value::printString(std::string buf) { return ""; }
-
 		// Operator methods
 		Operator::Operator(const ParseData& in, std::string o) : ASTNode{ in }, l{ nullptr }, r{ nullptr }, op{ o } {}
 		EvalState& Operator::eval(EvalState& e) {
@@ -129,10 +120,11 @@ namespace dust {
 			return ret;
 		}
 		void VarName::setSubStatus() { sub_var = !sub_var; }
-		void VarName::addLevel(const std::string& dots) {
+		void VarName::setLevel(const std::string& dots) {
 			lvl = dots.size();
 		}
 		EvalState& VarName::eval(EvalState& e) {
+			// Get the variable on to the stack
 			auto field = std::begin(fields);
 			(*field)->eval(e);
 
@@ -148,11 +140,13 @@ namespace dust {
 		EvalState& VarName::set(EvalState& e, bool is_const, bool is_static) {
 			auto field = std::begin(fields), end = std::end(fields) - 1;
 			(*field)->eval(e);
-
+			
+			// No indexing
 			if (field == end) {
 				e.swap();
 				e.set(EvalState::SCOPE, true, lvl);
 
+			// Handle indexing
 			} else {
 				bool instance = fields.size() != 2;
 				if (!isNode<TypeName>(*field)) {
@@ -177,6 +171,7 @@ namespace dust {
 		EvalState& TypeName::eval(EvalState& e) {
 			auto& type = e.getTS().get(name);
 
+			// If the type hasn't been reference-trapped yet (so never pushed on the stack)
 			if (type.ref.type_id == type::Traits<Nil>::id) {
 				e.push(type.fields);
 				e.assignRef(const_cast<type::Type&>(type));
@@ -249,7 +244,7 @@ namespace dust {
 			auto x = e.size();
 			auto res = l->eval(e).pop();						// Possible issue with multiple returns (might pick up the last return, hopefully picks up the first)
 
-			// In-case l is a multiple return function
+			// In-case l is a multiple return function, clean the stack
 			e.settop(x);
 
 			if (res.type_id == type::Traits<Nil>::id)			// Nil isn't part of the current type hierarchr
@@ -544,6 +539,7 @@ namespace dust {
 			return expr.size();
 		}
 		EvalState& Block::eval(EvalState& e) {
+			// Perform evaluation setup
 			if (expr.empty() && !table) {
 				if (excep_if_empty)
 					throw error::bad_node_eval{ "Attempt to evaluate an empty block" };
@@ -555,7 +551,7 @@ namespace dust {
 			size_t x = e.size(), next = 1;
 
 			e.newScope();
-			control->eval(e);								// Perform setup (if needed)
+			control->eval(e);								// Setup the control state
 
 			// Special stack handling
 			if (control->type == Control::FUNCTION) x = 0;

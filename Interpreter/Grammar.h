@@ -243,6 +243,7 @@ namespace dust {
 		struct arg : sor<k_self, var_id> {};
 		struct no_args : at<one<')'>> {};
 		struct arg_list : s_list<arg> {};
+		//struct ee_fdef : if_must<k_def, tail, opt<fn_name>, one<'('>, seps, sor<arg_list, no_args>, one<')'>> {};
 		struct ee_fdef : if_must<k_def, tail, fn_name, one<'('>, seps, sor<arg_list, no_args>, one<')'>> {};
 		struct expr_fdef : sor<seq<ee_fdef, opt<inline_expr>>, expr_cond> {};
 		//struct ee_lmb : if_must<one<'\'>, arg_list, k_inherit, opt<inline_expr>> {};

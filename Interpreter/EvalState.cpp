@@ -27,7 +27,7 @@ namespace dust {
 		// Special conversion for Tables (needs to be simplified)
 		if (type == type::Traits<Table>::id) {
 			newScope();
-			push(1);
+			push(1);								// Set scp.1 = pop
 			swap();
 			set(SCOPE);
 			push(2);
@@ -63,6 +63,7 @@ namespace dust {
 				usernew(e);
 
 				// TODO: Figure out a way to handle multiple returns from usernew
+					// I can't know the number of arguments either
 				e.pop();							// I'm assuming one return value for now
 				e.push(ret);
 
@@ -117,9 +118,11 @@ namespace dust {
 	void EvalState::setTable(Table tbl, const impl::Value& key, const impl::Value& val, bool instance) {
 		if (!tbl) throw error::null_exception{ "tbl is null in setTable" };
 
+		// TODO: Implement Table::okayKey
 		if (!tbl->okayKey(key))
 			throw error::illegal_operation{ "Attempt to index a table with an invalid key" };
 
+		// TODO: Implement Table::okayValue
 		if (!tbl->okayValue(val))
 			throw error::illegal_operation{ "Attempt to store an invalid value in a table" };
 
@@ -195,6 +198,7 @@ namespace dust {
 		if (op.at(0) != '_' && op.at(1) != 'o') throw error::bad_api_call{ "Attempt to call EvalState::callOp on a non-operator" };
 		auto fn = type::Traits<std::string>::make(op, gc);
 
+		// Handle unary operators
 		if (op.at(2) == 'u') {
 			auto dis_t = ts.findDef(at().type_id, fn);
 
@@ -203,6 +207,7 @@ namespace dust {
 			push(ts.get(dis_t).fields->getVal(fn));
 			call(1);
 
+		// Handle binary operators
 		} else if (op.at(2) == 'p' && op.at(3) != '(') {
 			auto r = at(-2).type_id, l = at().type_id;
 			auto com_t = ts.com(l, r, fn);					// Find the common type of the two argments
@@ -220,7 +225,9 @@ namespace dust {
 			push(ts.get(dis_t).fields->getVal(fn));
 			call(2);
 
+		// Handle _op()
 		} else if (op.at(2) == 'p' && op.at(3) == '(') {
+			// TODO: Implement
 
 		} else
 			throw error::bad_api_call{ "Attemp to call EvalState::callOp on a non-operator" };
@@ -237,12 +244,11 @@ namespace dust {
 				return getTable(getScope(), self_key);
 
 			case SCOPE:
-				// No forced lookup
-				if (!lookup) {
 
-					// SCOPE.x (no filter)
-					// curr_scp not set
+				// We're not forcing lookup, so first look in the current scope
+				if (!lookup) {
 					auto scp = getScope();
+
 					if (scp->hasKey(at()))
 						tbl = scp;
 
@@ -254,7 +260,7 @@ namespace dust {
 					}
 				}
 
-				// SCOPE.x (filter)
+				// March up the scope tree until I find a definition
 				if (!tbl) tbl = findDef(getScope(), at(), lookup + 1);
 
 				break;
@@ -304,8 +310,8 @@ namespace dust {
 
 			case SCOPE:
 				tbl = findDef(getScope(), at(), lookup);
-
 				break;
+
 			default:
 				if (idx < 0) idx += 1;
 
@@ -323,8 +329,10 @@ namespace dust {
 				} else if (at(idx).object) {
 					tbl = pop<Table>(idx);
 
-					if (!tbl->hasKey(at()))
+					if (!tbl->hasKey(at())) {
+						pop();
 						throw error::dust_error{ "Attempt to set static field of an object" };
+					}
 
 				} else {
 					throw error::dust_error{ "Attempt to set a field of a non-table value" };
@@ -409,6 +417,7 @@ namespace dust {
 	void EvalState::endScope() {
 		Table sav = nullptr;
 
+		// Delete curr_scp iff it's not the global scope
 		if (curr_scp != &global) {
 			for (auto pair : *curr_scp) {
 				try_decRef(pair.first);
@@ -432,12 +441,6 @@ namespace dust {
 		push(sav);
 
 		// stack: ..., {table}
-	}
-
-	Table EvalState::setScope(Table new_scope) {
-		Table ret = curr_scp;
-		curr_scp = new_scope;
-		return ret;
 	}
 
 	type::TypeSystem& EvalState::getTS() {
@@ -534,6 +537,9 @@ namespace dust {
 
 		// Copy other state
 	}
+
+
+	// Note: I'm going to be redoing these really soon
 
 	void initState(EvalState& e) {
 		initTypeSystem(e.ts);

@@ -40,12 +40,6 @@ namespace dust {
 			}
 		};
 
-		template <> struct action<lvalue> {
-			static void apply(input& in, AST& ast, ScopeTracker& _) {
-
-			}
-		};
-
 		template <> struct action<var_id> {
 			static void apply(input& in, AST& ast, ScopeTracker& _) {
 				// stack: ...
@@ -70,7 +64,7 @@ namespace dust {
 			static void apply(input& in, AST& ast, ScopeTracker& _) {
 				// stack: ..., {lookup}, {var}
 
-				std::dynamic_pointer_cast<VarName>(ast.at())->addLevel(ast.pop(-2)->toString());
+				std::dynamic_pointer_cast<VarName>(ast.at())->setLevel(ast.pop(-2)->toString());
 
 				// stack: ..., {var}
 			}
@@ -102,6 +96,7 @@ namespace dust {
 			static void apply(input& in, AST& ast, ScopeTracker& _) {
 				// stack: ..., {VarName} | ...
 
+				// Note: Why do I do this ??
 				if (in.string() == "self")
 					ast.push(makeNode<VarName>(in, "self"));
 				
@@ -162,7 +157,7 @@ namespace dust {
 
 		template <> struct action<scope> {
 			static void apply(input& in, AST& ast, ScopeTracker& lvl) {
-				// Handle empty ScopeTracker (rest expects lvl.at() to work)
+				// Handle empty ScopeTracker (the rest of the function expects lvl.at() to work)
 				if (lvl.empty()) {
 					push(ast, 1, in);
 					lvl.push(0);
@@ -175,7 +170,7 @@ namespace dust {
 					push(ast, depth - lvl.at(), in);
 					lvl.push(depth);
 
-				// Scope has decreased -> Create blocks from the stack
+				// Scope has decreased -> Reduce the stack (create blocks)
 				} else if (lvl.at() > depth) {
 					reduce(ast, lvl.at() - depth, in);
 
@@ -217,6 +212,7 @@ namespace dust {
 						std::dynamic_pointer_cast<If>(ast.at())->addBlock(expr, std::dynamic_pointer_cast<Block>(block));
 
 					} else if (atFunction(ast, -2)) {
+						// Named function definition is done by translating to an assignment
 						auto assign = makeNode<Assign>(in, "", false, false);
 
 						auto vals = makeNode<List<ASTNode>>(in);

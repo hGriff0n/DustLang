@@ -126,23 +126,6 @@ namespace dust {
 		};
 
 		/*
-		 * Represents a runtime-value (for possible optimization purposes)
-		 */
-		class Value : public ASTNode {
-			private:
-				impl::Value val;
-
-			public:
-				Value(const ParseData& in, impl::Value v);
-				static std::string node_type;
-
-				EvalState& eval(EvalState& e);
-
-				std::string toString();
-				std::string printString(std::string buf);
-		};
-
-		/*
 		 * Represents unary and binary operations using infix/prefix operators
 		 */
 		class Operator : public ASTNode {
@@ -181,7 +164,7 @@ namespace dust {
 				virtual std::string printString(std::string buf);
 
 				void setSubStatus();
-				void addLevel(const std::string& dots);
+				void setLevel(const std::string& dots);
 				EvalState& set(EvalState& e, bool is_const, bool is_static);
 		};
 

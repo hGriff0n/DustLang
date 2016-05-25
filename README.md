@@ -1,3 +1,4 @@
+# The Dust Programming Language (v 1.3.1)
 	
 Dust is the working title for a multi-paradigm, expression-based, interpreted programming language. The development and design of Dust is largely intended as a hobby project that would explore how
 programming languages are designed and implemented by growing and nurturing the small seed that has sat in my mind for a couple of years into a fully-featured language. It is not intended to be a
@@ -86,17 +87,7 @@ Function calling is fairly simple and largely unexciting. The only interesting t
 	max(1, 2, 3, 5)							## Max takes >1 arguments
 	give5(3)								## Gives 5 as expected. The 3 is evaluated, but unused
 
-OOP in dust is performed using the special argument, "self". 
+OOP in dust is performed using the special argument, "self".
 
-#### Metamethods
 
-Metamethods are a collection of methods and fields that can be defined for tables and types in order to customize the syntax and semantics of dust programs. The term, along with the general concept, are borrowed directly from Lua.
-
-One application of metamethods is to enable operator overloading. A unique aspect of the dust type system is that operators can only work on, and be defined for, objects of the same type. For values of types with common ancestors, this is not a difficult problem. However it still [usable] for the programmer to write "5 + 3 = " + (5 + 3) in order to build a string. The way dust resolves this syntactical quirk is through a process internally called "common type resolution". Common type resolution works by attempting to find a converter from one class to another, taking the first declared (current implementation: defined) in which the operation is defined if converters exist between both types. The other value is then implicitly cast to the common type before the operator is invoked.
-
-	"3" + 3                                              ## "33"
-	"3" - 3                                              ## 0
-
-	Unary Operators: _ou!, _ou-
-	Binary Operators: _op*, _op-, _op/, _op+, _op^, _op%
-	Relational Operators: _op=, _op<, _op>, _op!=, _op<=, _op>=
+## Type System

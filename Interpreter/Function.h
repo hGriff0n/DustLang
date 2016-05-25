@@ -16,6 +16,7 @@ namespace dust {
 
 	namespace impl {
 
+		// Forward declarations to get this to work
 		class GC;
 		GC& getGC(EvalState&);
 		void push(EvalState&, Value);
@@ -42,6 +43,7 @@ namespace dust {
 					push(e, std::forward<Args>(args)...);
 					push(e, std::forward<T>(val));					// first arg on the top
 				}
+
 				template <typename T>
 				void push(EvalState& e, T&& val) const {
 					impl::push(e, type::Traits<T>::make(val, getGC(e)));

@@ -33,21 +33,20 @@ Timeline
 		See VagueToDo.txt
 
 	1 Framework/Documentation Update
-		Improve code comments (explain why)
 		Update all documents to ensure that they reflect the current language spec
 			Start working heavily on the language manual
 		Update the readme to show off recent additions
 			See if there's anything I left "for later"
-		Determine future implementation roadmap
-			Look at what features still need to be implemented
-			Plan out implementation plan
-		Look for interesting libraries to include/use for implemtation
-		Start planning out the standard library
 		Rewrite testing suite
 			Improve the interface
 			Add extra capabilities
 		Improve testing coverage
 			Ensure that no tests rely on un-proven behavior (if possible)
+		Determine future implementation roadmap
+			Look at what features still need to be implemented
+			Plan out implementation plan
+		Look for interesting libraries to include/use for implemtation
+		Start planning out the standard library
 		Bugfixes
 
 	2 System Rewrite (Ground Up)
@@ -75,6 +74,7 @@ Timeline
 			Ensure that all references are correct
 			Determine where to run the GC during evaluation
 			Improve the implementation in general
+		Implement a basic C-side module loading system
 
 	3 Standard Library
 		Small Language Updates and Bugfixes

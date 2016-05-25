@@ -10,7 +10,7 @@ namespace dust {
 			if (val.type_id == type::Traits<std::string>::id)
 				gc.getStrings().incRef(val.val.i);
 
-			if (val.type_id == type::Traits<dust::Table>::id)
+			if (val.type_id == type::Traits<dust::Table>::id || val.object)
 				gc.getTables().incRef(val.val.i);
 
 			if (val.type_id == type::Traits<Function>::id)
@@ -21,7 +21,7 @@ namespace dust {
 			if (val.type_id == type::Traits<std::string>::id)
 				gc.getStrings().decRef(val.val.i);
 
-			if (val.type_id == type::Traits<dust::Table>::id)
+			if (val.type_id == type::Traits<dust::Table>::id || val.object)
 				gc.getTables().decRef(val.val.i);
 
 			if (val.type_id == type::Traits<Function>::id)
@@ -70,7 +70,7 @@ namespace dust {
 		}
 
 		impl::Value CallStack::pop(int idx) {
-			if (empty()) throw error::runtime_error{ "Used up allotted stack space" };
+			if (empty()) throw error::runtime_error{ "Can't pop from an empty stack" };
 
 			try_decRef(at(idx));
 
