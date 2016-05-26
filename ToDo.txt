@@ -33,8 +33,6 @@ Timeline
 		See VagueToDo.txt
 
 	1 Framework/Documentation Update
-		Update all documents to ensure that they reflect the current language spec
-			Start working heavily on the language manual
 		Update the readme to show off recent additions
 			See if there's anything I left "for later"
 		Rewrite testing suite
@@ -75,6 +73,7 @@ Timeline
 			Determine where to run the GC during evaluation
 			Improve the implementation in general
 		Implement a basic C-side module loading system
+			Work on the syntax/semantics for the dust side
 
 	3 Standard Library
 		Small Language Updates and Bugfixes

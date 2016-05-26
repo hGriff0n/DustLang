@@ -1,6 +1,8 @@
 This list doesn't seriously consider most whitespace
 	Need to go through and add those considerations in
 
+## I think I may be getting to the realm where I can't do this anymore
+
 ## Composition definitions (replace all mentions of # when defining a new definition. ie. a_list = <a>', <a>'*)
 #_list = <#>', <#>'*
 

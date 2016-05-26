@@ -69,7 +69,7 @@ int main(int argc, const char* argv[]) {
 
 		// Run file (basic implementation)
 		} else if (input.substr(0, 2) == ":r") {
-			std::string file = input.substr(3);
+			std::string file = "Dust\\" + input.substr(3);
 			if (file.size() < 5 || file.compare(file.length() - 4, 4, ".dst")) file += ".dst";				// Append .dst if not provided
 
 			std::cout << " Running file \"" << file << "\"\n";
@@ -87,7 +87,7 @@ int main(int argc, const char* argv[]) {
 
 		// Show file (basic implementation)
 		} else if (input.substr(0, 2) == ":l") {
-			std::string file = input.substr(3);
+			std::string file = "Dust\\" + input.substr(3);
 			if (file.size() < 5 || file.compare(file.length() - 4, 4, ".dst")) file += ".dst";				// Append .dst if not provided
 
 			try {

@@ -809,7 +809,6 @@ namespace dust {
 		std::string ASTNode::node_type = "ASTNode";
 		std::string Debug::node_type = "Debug";
 		std::string Literal::node_type = "Literal";
-		std::string Value::node_type = "Value";
 		std::string Operator::node_type = "Operator";
 		std::string VarName::node_type = "Variable";
 		std::string TypeName::node_type = "Type";

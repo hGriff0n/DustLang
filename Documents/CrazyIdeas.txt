@@ -1,10 +1,6 @@
 If we allow all types to define metamethods, it is possible to create the weird c-style array indexing within dust
 	Int._nindex: \t -> t[self]						## 3[t] = t[3] and 3.hello = "hello"[3] = 'l'
 
-Could I also define '_op^' for strings to performing indexing ???
-	String._op^: \x -> (x <- Int) and self[x] or Table(self) ^ x	## "Hello" ^ 3 = 'l'
-	This would entail that operators can take on values of different types
-
 Multiple comparators
 	Take use of the work on multiple assignment to enable multiple comparisons to be performed as part of one expression
 

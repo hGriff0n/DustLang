@@ -1,3 +1,5 @@
+## Deprecated
+
 "Easy" function memorization
 
 The naive implementaton of the fibonacci algorithm is that of its mathematical definition, ie.
