@@ -25,30 +25,29 @@ namespace dust {
 				Table();
 				Table(Table* p);
 
-				// Table Access functions
+				// Table Access
 				Value getVal(const key_type& key);
 				Variable& getVar(const key_type& key);
 				Table* findDef(const key_type& key);
+
+				// Table Queries
 				bool hasKey(const key_type& key);
 				bool contains(const Value& val);
 				bool okayKey(const Value& key);
 				bool okayValue(const Value& val);
 
-
 				// Iterators
-				storage::iterator begin();				// Begin
+				storage::iterator begin();
+				storage::iterator end();
+				storage::iterator iend();				// Array end (needs testing)
 				storage::iterator next(const key_type& key);
 				storage::iterator find(const key_type& key);
-				storage::iterator iend();				// Array end (needs testing)
-				storage::iterator end();				// End
 
-
-				// Internal Detail Operations
+				// Internal State Queries
 				size_t size();
 				Table* getPar();
 
-
-				// Array Interaction
+				// Array Interactions
 				int getNext();
 				void setNext(int n);
 				//Variable& getNext();

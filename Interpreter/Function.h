@@ -16,6 +16,7 @@ namespace dust {
 
 	namespace impl {
 
+		// Forward declarations to get this to work
 		class GC;
 		GC& getGC(EvalState&);
 		void push(EvalState&, Value);
@@ -25,7 +26,7 @@ namespace dust {
 		 * Not extensible in relation to Function (no way to construct a Function from a FunctionBase*)
 		 */
 		struct FunctionBase {
-			virtual int call(EvalState& e) =0;
+			virtual int call(EvalState& e) const =0;
 		};
 
 		/*
@@ -38,34 +39,34 @@ namespace dust {
 				std::shared_ptr<FunctionBase> fn;
 
 				template <typename T, typename... Args>
-				void push(EvalState& e, T&& val, Args&&... args) {
-					//push(e, std::forward<T>(val));				// first arg on the bottom
+				void push(EvalState& e, T&& val, Args&&... args) const {
 					push(e, std::forward<Args>(args)...);
 					push(e, std::forward<T>(val));					// first arg on the top
 				}
+
 				template <typename T>
-				void push(EvalState& e, T&& val) {
+				void push(EvalState& e, T&& val) const {
 					impl::push(e, type::Traits<T>::make(val, getGC(e)));
 				}
-				void push(EvalState& e, Value&& v);
+				void push(EvalState& e, Value&& v) const;
 
 			public:
 				Function(const std::shared_ptr<parse::ASTNode>& f);
 				Function(const NativeFn& f);
 
 				// Call the function using the arguments on the stack
-				int call(EvalState& e);
-				int operator()(EvalState& e);
+				int call(EvalState& e) const;
+				int operator()(EvalState& e) const;
 
 				// Call the function using the given arguments
 				template <typename... Args>
-				int call(EvalState& e, Args&&... args) {
+				int call(EvalState& e, Args&&... args) const {
 					push(e, std::forward<Args>(args)...);
 
 					return fn->call(e);
 				}
 				template <typename... Args>
-				int operator()(EvalState& e, Args&&... args) {
+				int operator()(EvalState& e, Args&&... args) const {
 					return call(e, std::forward<Args>(args)...);
 				}
 		};

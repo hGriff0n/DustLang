@@ -100,8 +100,8 @@ namespace dust {
 
 
 				// Temporary/Ungrouped Methods (may be expanded/grouped later)
-				// Checks if there is a converter between t1 and t2
-				bool convertible(size_t t1, size_t t2);
+				// Checks if there is a converter from type f to type t
+				bool convertible(size_t f, size_t t);
 
 				// Checks if t1 is a child of t2
 				bool isChildType(size_t t1, size_t t2);
@@ -109,6 +109,9 @@ namespace dust {
 				// Type "data" functions
 				std::string getName(size_t t);
 				size_t getId(std::string t);
+
+				// Temporary TDD method
+				void setMethods(size_t t, Table tbl);			// Set the specific type's method list
 		};
 	}
 

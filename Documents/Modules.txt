@@ -1,3 +1,7 @@
+Module system		## TODO: Specify
+	Each file is a unique module that must be manually imported through a require statement
+	I should add the possibility of importing some things by name (ala using std::string)
+
 require = {req_assign}?require {string}
 	req_assign = {var_id}: *
 
@@ -9,6 +13,8 @@ Require loads the file given by the string into a table
 	The table is then assigned to the var_id given in req_assign
 		If a req_assign is not given, the var_id is created from the file string
 		If a req_assign is not given, the table is assigned in the global scope
+			I don't think I can actually do this in the current grammar
+				I might be able to if I do the chaining parsers (the assignment parser could easily handle setting this)
 
 		Ex. g: require "graph"
 			require "graph"				## equivalent to "_G.graph: require "graph""

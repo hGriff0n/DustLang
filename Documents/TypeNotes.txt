@@ -1,150 +1,81 @@
 
 Dust Type System
 
-Shorthand
+Notes on Shorthand
 	Given types 'a' and 'b'
 		a < b indicates that a is a child of b					## These may end up becoming part of the language syntax/semantics
 		a = b indicates that a is the same type as b
 		a -> b indicates that a is convertible to b
 		[a, b] is the set of all types c, where a <= c and c <= b
+	For any variable 'v'
+		'd' is the dynamic type of the variable
+		's' is the static type of the variable
 
 Variables
-	Quick definitions
-		's' is the static type of the variable
-		't' is the type of the variable's value
-
 	Dust is a strongly typed language
 		The type of variables and values is of primary importance to the interpreter
 			However, the interpreter is very quick to implicitly convert values if necessary
-		Typing is primarily concerned with values, not variables
+		Typing is primarily concerned with values, not variables			## For now at least
 
 	By default, variables in dust can store values of any type
 		This is accomplished largely through the NIL type (the default type of all variables)
 			This is mirrored in the default value being nil (the only instance of the Nil type)
 			Nil acts as little more than a "vacancy" sign for the purposes of variable assignment
 
-	It is possible to "statically" type variables
+	It is possible to "statically" type variables							## Not implemented
 		Static typing works in two ways
-			By ensuring that the given variable can only hold values, where t <= s or t -> s
-				Implemented by having Variable and Value both maintain type_id fields
+			By ensuring that the given variable can only hold values of type t, where t <= s or t -> s
+				Variable and Value both have a type_id field to facilitate this runtime checking
 			By ensuring that the given variable holds a usable value (ie. not nil)
-				This is a side effect of nil being the only instance of Nil
+				Partially a side effect of nil being the only instance of Nil and Nil being a "parent" type
 
 		It is the second assurance that is the major point of dust static typing
-			There is no current push to use this typing information to perform code optimizations (the language is foremost dynamic)
+			There is no current push to use this typing information to perform code optimizations (the language is extremely dynamic at the moment)
 			Static typing variables (not in function declarations) could throw an error if the variable was uninitialized
 
 Inheritance and the Type Heirarchy
 	Dust uses singular inheritance for its type system
-		This is a side affect of developments with Common Type
-			There's also general concern about multiple dispatch
-		There's some possible concerns and problems when I get around to implementing custom types
-			The current syntax specification allows a type_list after the inheritance operator
-			Moreover, it certainly feels as if it should be legal (it's certainly has its uses)
+		One problem right now with how to specify interfaces
+			Dust is fairly duck-typed so it's not an issue code wise, but I would like the self-commenting aspects
 
-	Inheritance dispatch (For a type a)
-		A method is considered inherited if it's definition can only be found in a type b, where b > a
-			A method that is defined on the type is considered locally/immediately defined (b = a)
-				For the purposes of inheritance dispatch, locally defined methods are inherited
+	Inheritance dispatch
+		A method is considered inherited if it's definition can only be found in a type t, where t > d
+			A method that is defined on the type is considered locally/immediately defined (t = d)
+				However as a matter of implementation, locally defined methods are "inherited" (Custom types are implemented as tables)
 
-		Inheritance dispatch seeks to find the type b, b >= a, where the given method is locally defined
-			Dispatch is inherently recursive in this formulation (though it is implemented with an iterative loop)
+		Inheritance dispatch seeks to find the type t, t >= d, where the given method is locally defined
 			Dispatch results in NIL if the given method is not defined in [a, Object]
 
 Common Type and Operator dispatch
 	Operators are implemented as type-level metamethods
 		Thusly the semantics of operators can be defined (and modified) for individual types
-		However, there are several problems with implementing this facility in dust
-			Differentiating between left and right hand sides (for the purposes of code duplication)
-				How to define String._op+ for 3 + "b" and "b" + 3
-			Defining operators for different types
-				Define String._op+ to allow String + Int and String + String
-			Determining the correct operator to choose
-				Should "3 + 3.5" call Float._op+ or Int._op+
-		All of these concerns can, moreover, occur in relation to the others
+		Dust operators only work on the same type, so String._op+ will only be called with two strings
+		However, operators can be used between two items of different types if there is a converter, a way to convert from one to the another
+			So "\"Hello\" + 5" will first result in "5.String()" being called before String._op+() is evaluated
+			The process that determines which operator gets invoked (and which value gets converted) is "Common Type Resolution"
 
-	To resolve these issues, dust uses a conceptualization called "Common Type"
-		The key logic behind Common Type is the operators can really only work on two objects of the same type
-			For the operators that Dust allows to be overloaded, this holds relatively true
-			The goal of Common Type resolution is to find a type that both operands can take on
-				This can be through conversion or inheritance (having the same type is really a special case of inheritance)
-					Do note that converters cannot be inherited when determining Common Type
-				It should also be beneficial that the selected type defines an overload for the given operator
-					This case is only necessary for the sake of selecting a convertible type
-						This results in situations where a + b translates to type(a)._op+(a, b) and a - b translates to type(b)._op-(a, b)
-					Moreover, it is not necessary for Common Type to give the type where the operator is defined
-						This is an operation that is best handled through inheritance dispatch
+	Common Type Resolution (CTR)
+		The Common Type of two types a, b is a type t where one of the following holds true
+			a -> b or b -> a (Conversion standard)
+				This rule tries to get the closest to the intended action without losing information (This is tried first)
+				However if a -> b and b -> a, then CTR must pick one through precedence evaluation
+					Precedence calculation will be done through a first declared ordering
+						It might be done through a "least recently declared" ordering
+					Precedence is a relative figure (It's worthless to compare between different types)
+						Precedence is also the biggest reason why inherited converters are ignored by CTR
+				All types are implicitly convertible to Tables and this conversion has a higher precedence
+			a < t and b < t
+				t <= Object will always hold true as all custom types inherit from Object
+					This type also gets memorized to improve future lookup				## CTR results are memorized however
 
-		Common Type is also a transitive operation
-			It only considers the types of the two operands and the specific operator
-				It does not consider the location of the two operands
-				This means that 3 + "Hello" and "Hello" + 3 both call String._op+ without having to define multiple versions of String._op+
-			This resolves the 1st problem mentioned above
-				The restriction on same type operations also helps
-				
-		Converter Resolution
-			The idea for converter resolution is that if a defines a converter to b, than the intended meaning of a + b is likely type(b)._op+(a, b)
-				This is part of the logical backing behind Common Type
+		CTR is a transitive operation
+			It doesn't consider the location of the operands when working
+			So "3 + \"Hello\"" and "\"Hello\" + 3" both call String._op+()
 
-			However, there are some slight complications, especially if both types define converters to the other
-				To resolve this complication, converters have an implicit rating of precedence
-					If precedence(a->b) < precendence(b->a), then the intended meaning of a + b is interpereted as type(a)._op+(a, b)
-						precedence is a relative figure (it only exists in any comparable meaning among converters between two types)
-							ie. precedence(a->b) and precedence(c->d) have no useful comparison
-						Note that two converters cannot have the same precedence levels
-					
-					There are two ways of calculating precedence
-						First Definition or Rolling Precedence (Current usage)
-							The idea for this method is to select the converter that was defined first
-								Since methods can be redefined at will, this leads to a rolling precedence calculation (precedence levels may change as the program executes)
-							Problems
-								Rearranging "require" statements may cause converters to be defined in different orders
-									This can be slightly mitigated through "best practice" (define converters to and from two types in the same file)
-									It could be possible to enforce this practice (though difficult)
-								Decoupled types
-									Two types are convertible to the other but neither require's the other
-								Reassignment
-									Assigining a converter to itself (even if the definition doesn't change) will rearrange the precedence
-
-						First Declaration (Might end up using this)
-							This is a conceptualization of "forward declarations"
-							Could also offer more consistent behavior as compared to First Definition (no rolling precedence)
-
-					Precedence resolution is the biggest reason why converters are not inherited in common type situations
-						It's a computational minefield to select a converter, nevermind the problems involved in comparing precedence
-							eg. a->c exists, where b < c and d->a exists, where b < d. What is the intended meaning of a + b if a->b and b->a don't exist?
-							
-		Common Ancestor
-			This step is just a simple travel of the inheritance tree
-				The idea is to find a type that both objects are sub-types of (and are therefore "implicitly" convertible to)
-			This step always results in a type b, where b < Object, due to the nature of the type heirarchy
-			Current implementation is also to memoize this result for future lookup
-				This also reuses the key I have to create to perform the Converter Search
-
-		Common Type resoultion is implemented in "TypeSystem::com"
-			The procedure is realtively simple and straightforward
-				First check whether the two are the same type
-					This step's not entirely necessary, however it's a quick and simple optimization
-				Then check if there exists a converter between the two types (Converter Resolution)
-					This step will only return if the operator is defined in the converter's 'to' type
-					Note: converters must be immediately defined (ie. not inherited) to be selected
-				Finally return the common ancestor of the two types (Common Ancestor)
+		CTR does not consider whether a given type actually defines the desired method
 
 Converters
-	Relationship between Converters and Conversions
-		Conversions deal with extracting the raw data in the Value struct
-			This is particularly in relation to popping stack values and implementing API functions
-				Conversions are necessary to implement Converters, particularly for basic types
-			It's not readily possible to implement most dust types directly in C++ (for various reasons)
-				It could be possible to create structures that can mimic dust behaviors (particularly tables)
-
-		Converters deal with modifying the data and metadata of a dust Value
-			Converters are primarily for the benefit of dust code
-				However they do ensure, that conversions can interpret Value's in specific way
-			Converters are little more than special dust functions
-				Converters can be used by directly calling the function
-
 	Converters are a type-level metamethod (similar to operators)
 		A converter is defined in the from type and is named as the to type
-			ie. Int -> String would be defined as Int.String = ...
+			ie. Int -> String would be performed in the method Int.String()
 			The name being equal to the to type is used by the interpreter to signify that a -> b

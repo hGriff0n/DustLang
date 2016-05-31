@@ -209,7 +209,7 @@ namespace dust {
 		// Type Creation
 		struct ee_inherit : seq<seps, op_inherit, seps, type_id> {};
 		struct ee_type : seq<k_type, spaces, type_id, white, table, opt<ee_inherit>> {};
-		struct expr_type : sor<ee_type, expr_7> {};										// type[ ]*{type_id} *{table}( *<- *{type_id})?
+		struct expr_type : sor<ee_type, expr_7> {};										// type *{type_id} *{table}( *<- *{type_id})?
 
 		// Try-Catch
 		struct inline_expr : seq<plus<tail>, expr> {};
@@ -243,6 +243,7 @@ namespace dust {
 		struct arg : sor<k_self, var_id> {};
 		struct no_args : at<one<')'>> {};
 		struct arg_list : s_list<arg> {};
+		//struct ee_fdef : if_must<k_def, tail, opt<fn_name>, one<'('>, seps, sor<arg_list, no_args>, one<')'>> {};
 		struct ee_fdef : if_must<k_def, tail, fn_name, one<'('>, seps, sor<arg_list, no_args>, one<')'>> {};
 		struct expr_fdef : sor<seq<ee_fdef, opt<inline_expr>>, expr_cond> {};
 		//struct ee_lmb : if_must<one<'\'>, arg_list, k_inherit, opt<inline_expr>> {};

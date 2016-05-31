@@ -4,8 +4,8 @@
 namespace dust {
 	Optional::Optional() {}
 
-	Optional::Optional(EvalState& e) : valid{ true } {
-		if (!e.empty()) value = e.pop();
+	Optional::Optional(EvalState& e) : valid{ !e.empty() } {
+		if (valid) value = e.pop();
 	}
 
 	bool Optional::isValid() const {
@@ -13,8 +13,8 @@ namespace dust {
 	}
 
 	bool Optional::set(EvalState& e) {
-		copy(e);
-		if (valid) e.pop();
+		copy(e);								// Copy handles getting the optional value (ie. sets valid and value
+		if (valid) e.pop();						// Copy leaves the object on top of the stack so pop it if possible
 
 		return valid;
 	}
@@ -26,10 +26,8 @@ namespace dust {
 	}
 
 	bool Optional::copy(EvalState& e) {
-		if (valid = !e.empty())
-			value = e.at();
-		else
-			value.type_id = type::Traits<Nil>::id;
+		valid = !e.empty();
+		value = valid ? e.at() : impl::Value{0, 0};
 
 		return valid;
 	}

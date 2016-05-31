@@ -6,7 +6,7 @@
 namespace dust {
 	namespace impl {
 
-		Table::Table() : parent{ nullptr } {}
+		Table::Table() : Table{ nullptr } {}
 		Table::Table(Table* p) : parent{ p } {}
 
 		Value Table::getVal(const key_type& key) {
@@ -65,6 +65,7 @@ namespace dust {
 		}
 
 		Table::storage::iterator Table::iend() {
+			// Tables are guaranteed to have ints at the front of the map
 			return std::find_if_not(begin(), end(), [](auto e) {
 				return e.first.type_id == type::Traits<int>::id;
 			});

@@ -21,14 +21,16 @@ namespace dust {
 
 			// Internal storage of type methods
 			Table fields;
-			//impl::Value ref;
+			impl::Value ref;
+			//Table private;
+			//Table public;
 				
 			// Default values and typed/const variables ???
 
 			Type(std::string t, size_t s) : Type(t, s, -1) {}
-			Type(std::string t, size_t s, size_t p) : name{ t }, id{ s }, parent{ p }, fields{ new impl::Table{} } {}
+			Type(std::string t, size_t s, size_t p) : name{ t }, id{ s }, parent{ p }, fields{ new impl::Table{} }, ref{ 0, 0 } {}
 			Type(std::string t, size_t s, Type p) : Type(t, s, p.id) {}
-			Type(Type&& t) : name{ std::move(t.name) }, id{ t.id }, parent{ t.parent }, fields{ t.fields } {
+			Type(Type&& t) : name{ std::move(t.name) }, id{ t.id }, parent{ t.parent }, fields{ t.fields }, ref{ t.ref } {
 				t.fields = nullptr;
 			}
 

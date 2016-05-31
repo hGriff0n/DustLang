@@ -1,5 +1,6 @@
 How will functions work
 	Particularly members vs. free vs. operators
+		This is more of an attempt to generate a unified call syntax
 	My current idea
 		Try operators (due to the special behavior and typing requirements
 		Try member functions
@@ -17,30 +18,9 @@ I might have to reconsider how I'm implementing objects/values/type system
 		The remaining question is how do basic types (such as Int, Float, and String) interact with the object heirarchy
 			Their values are not stored in a table but in direct memory
 			It would be very useful to define some operators for Int and Float in Number
+			A custom type inheriting from String/Function/Table also needs to be handled (these basic types are referenc counted)
 		However there are still many aspects that need to be solved beforehand
-			How is table indexing to work if a reference to the initial table is needed
-				This is with the assumption that the indexed field may, itself, be a table that can be indexed
-				ie. 5.abs() should use the same framework as a.b.abs() and a.b().abs()
 			How is intra-table referencing supposed to work (this isn't as necessary for immediate implementations, but the framework is still important for the future)
-			The mechanisms for how functions will handle this reduction still need to be sorted out
+				## What do I even mean by this ???
 	
-How will I handle table indexing and assignment?
-	i.4: 3; print(i.4); i[a]: i.4() + 3;
-
-	The AST should end up something like this
-	assign{ ":", i, [] }
-	assign{ ":", index{ i, 4 }, 3 }
-	call{ print, index{ i, 4 } }
-	asign{ ":", index{ i, a }, call{ _op+, call{ _op(), index{ i, 4 } }, 3 }
-
-	The problem is how to maintain a reference so that a table's field can be assigned 
-		while not adversely affecting other aspects of program evaluation
-
-	I think the solution for this problem will be in _nindex and _index
-		However does this work for assignments as well as access
-
-There's still the problem of how to get every type to automatically convert to tables
-
 _op() has similar naming convention to binary operators but is not a binary operator
-
-What if a type inherits from String ???

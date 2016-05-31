@@ -7,7 +7,7 @@ namespace dust {
 
 	/*
 	 * Representation of an optional value (ie. possibly nil)
-	 * Mainly sugar for the user to implement functions
+	 * Mainly sugar for API users to implement some functions
 	 */
 	class Optional {
 		private:

@@ -16,8 +16,7 @@ namespace dust {
 		}
 
 		TypeVisitor& TypeVisitor::addOp(impl::Value op, impl::Value v, const std::string& fn) {
-			if (ts->type_id.count(fn) > 0)
-				ts->addConv(id, ts->type_id[fn]);
+			if (ts->type_id.count(fn)) ts->addConv(id, ts->type_id[fn]);
 
 			return addOp(op, v);
 		}
@@ -120,17 +119,10 @@ namespace dust {
 			
 			// Try for direct conversion
 			auto idx = key(l, r);
-			if (conv.count(idx) > 0) {								// If there is a defined conversion
-				auto convs = conv[idx];
+			if (conv.count(idx) > 0)								// If there is a defined conversion, give the highest precedence
+				return conv[idx][0];
 
-				if (findDef(convs[0], op) != NO_DEF)				// Test the highest precedence
-					return convs[0];
-
-				if (findDef(convs[1], op) != NO_DEF)				// Test the lowest precedence
-					return convs[1];
-			}
-
-			// Give common ancestor
+			// Otherwise, give a common ancestor
 			return siblings.count(idx) == 0 ? siblings[idx] = ancestor(l, r) : siblings[idx];
 		}
 
@@ -154,8 +146,16 @@ namespace dust {
 			return types[type_id[t]];
 		}
 
-		bool TypeSystem::convertible(size_t t1, size_t t2) {
-			return conv.count(key(t1, t2));
+		bool TypeSystem::convertible(size_t f, size_t t) {
+			auto conv_key = key(f, t);
+			bool has_conversion = conv.count(conv_key);
+
+			if (has_conversion) {
+				auto pair = conv[conv_key];
+				return pair[0] == t || pair[1] == t;
+			}
+
+			return false;
 		}
 
 		bool TypeSystem::isChildType(size_t t1, size_t t2) {
@@ -168,6 +168,12 @@ namespace dust {
 
 		size_t TypeSystem::getId(std::string t) {
 			return type_id[t];
+		}
+
+		// Temporary TDD method
+		void TypeSystem::setMethods(size_t t, Table tbl) {
+			types[t].fields = tbl;
+			tbl = nullptr;
 		}
 	}
 }

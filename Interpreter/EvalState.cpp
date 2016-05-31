@@ -27,7 +27,7 @@ namespace dust {
 		// Special conversion for Tables (needs to be simplified)
 		if (type == type::Traits<Table>::id) {
 			newScope();
-			push(1);
+			push(1);								// Set scp.1 = pop
 			swap();
 			set(SCOPE);
 			push(2);
@@ -39,6 +39,59 @@ namespace dust {
 		}
 
 		swap(idx, -1);								// Restore the stack positions
+	}
+
+	void EvalState::try_supplement(impl::Value& val, size_t type_id) {
+		auto method = type::Traits<std::string>::get(at(), gc);
+
+		if (method == "new") {
+			push([usernew{ type::Traits<Function>::get(val, gc) }, id{ type_id }](EvalState& e) {
+				// Create the object instance structure
+				Table typ = type::Traits<Table>::get(e.getTS().get(id).ref, e.getGC());
+				Table instance = new impl::Table{ typ };
+				e.copyInstance(instance, typ);
+
+				// Setup OOP structure and syntax
+				e.push(instance);
+				e.at().type_id = id;
+				e.at().object = true;
+				e.copy();
+				e.set(EvalState::SELF);
+				auto ret = e.pop();					// Get a reference to the object for returning
+
+				// Allow user code to modify the created object
+				usernew(e);
+
+				// TODO: Figure out a way to handle multiple returns from usernew
+					// I can't know the number of arguments either
+				e.pop();							// I'm assuming one return value for now
+				e.push(ret);
+
+				return 1;
+			});
+
+			val = pop();
+
+		} else if (method == "drop") {
+			push([userdrop{ type::Traits<Function>::get(val, gc) }, id{ type_id }](EvalState& e) {
+				e.enableObjectSyntax().get(EvalState::SELF);
+
+				// Run the user function
+				userdrop(e);
+
+				// Setup code for language drop
+				e.get(EvalState::SELF);
+				auto tbl = e.pop();
+				Table instance = type::Traits<Table>::get(tbl, e.getGC());
+
+				// destroy the table
+				// How to do that ???
+
+				return 0;
+			});
+
+			val = pop();
+		}
 	}
 
 	/*	THIS NEEDS A BETTER EXPLANATION
@@ -62,17 +115,20 @@ namespace dust {
 		tbl->hasKey(key) ? push(tbl->getVal(key)) : pushNil();
 	}
 
-	void EvalState::setTable(Table tbl, const impl::Value& key, const impl::Value& val) {
+	void EvalState::setTable(Table tbl, const impl::Value& key, const impl::Value& val, bool instance) {
 		if (!tbl) throw error::null_exception{ "tbl is null in setTable" };
 
+		// TODO: Implement Table::okayKey
 		if (!tbl->okayKey(key))
 			throw error::illegal_operation{ "Attempt to index a table with an invalid key" };
 
+		// TODO: Implement Table::okayValue
 		if (!tbl->okayValue(val))
 			throw error::illegal_operation{ "Attempt to store an invalid value in a table" };
 
 		auto& var = tbl->getVar(key);
 
+		var.is_member = instance;
 		try_decRef(var.val);
 		try_incRef(var.val = val);
 	}
@@ -142,6 +198,7 @@ namespace dust {
 		if (op.at(0) != '_' && op.at(1) != 'o') throw error::bad_api_call{ "Attempt to call EvalState::callOp on a non-operator" };
 		auto fn = type::Traits<std::string>::make(op, gc);
 
+		// Handle unary operators
 		if (op.at(2) == 'u') {
 			auto dis_t = ts.findDef(at().type_id, fn);
 
@@ -150,6 +207,7 @@ namespace dust {
 			push(ts.get(dis_t).fields->getVal(fn));
 			call(1);
 
+		// Handle binary operators
 		} else if (op.at(2) == 'p' && op.at(3) != '(') {
 			auto r = at(-2).type_id, l = at().type_id;
 			auto com_t = ts.com(l, r, fn);					// Find the common type of the two argments
@@ -167,7 +225,9 @@ namespace dust {
 			push(ts.get(dis_t).fields->getVal(fn));
 			call(2);
 
+		// Handle _op()
 		} else if (op.at(2) == 'p' && op.at(3) == '(') {
+			// TODO: Implement
 
 		} else
 			throw error::bad_api_call{ "Attemp to call EvalState::callOp on a non-operator" };
@@ -184,12 +244,11 @@ namespace dust {
 				return getTable(getScope(), self_key);
 
 			case SCOPE:
-				// No forced lookup
-				if (!lookup) {
 
-					// SCOPE.x (no filter)
-					// curr_scp not set
+				// We're not forcing lookup, so first look in the current scope
+				if (!lookup) {
 					auto scp = getScope();
+
 					if (scp->hasKey(at()))
 						tbl = scp;
 
@@ -201,25 +260,35 @@ namespace dust {
 					}
 				}
 
-				// SCOPE.x (filter)
+				// March up the scope tree until I find a definition
 				if (!tbl) tbl = findDef(getScope(), at(), lookup + 1);
 
 				break;
 			default:
-				// {idx}.x
+				// {idx}.field
 				if (is<Table>(idx))
 					tbl = pop<Table>(idx);
 
+				// {type}.method
 				else {
-					//throw error::dust_error{ "Attempt to get a field from a non-table value" };
-
-					// type({idx}).x
+					// Ensure self gets set if necessary
 					if (resolving_function) {
 						copy(idx);
 						set(SELF);
 					}
 
-					tbl = ts.get(pop(idx).type_id).fields;
+					tbl = ts.get(at(idx).type_id).fields;
+
+					//Prefer accessing members over statics
+						// Note: If I remove this check, then all members are private (even from type methods, so not a good solution) 
+					if (at(idx).object) {
+						Table tmp = type::Traits<Table>::get(at(idx), gc);
+						
+						// If the instance has the member, take it
+						if (tmp->hasKey(at())) tbl = tmp;
+					}
+					
+					pop(idx);
 				}
 
 				break;
@@ -230,7 +299,7 @@ namespace dust {
 		// stack: ..., {value}
 	}
 
-	void EvalState::set(int idx, int lookup) {
+	void EvalState::set(int idx, bool instance, int lookup) {
 		Table tbl = nullptr;
 		auto value = pop();
 
@@ -241,23 +310,38 @@ namespace dust {
 
 			case SCOPE:
 				tbl = findDef(getScope(), at(), lookup);
-
 				break;
+
 			default:
 				if (idx < 0) idx += 1;
 
+				// Table handling
 				if (is<Table>(idx)) {
 					tbl = pop<Table>(idx);
 
+					// Type table specific handling
+					if (tbl->hasKey(type::Traits<std::string>::make("__type", gc))) {
+						auto typ = (size_t)tbl->getVal(type::Traits<std::string>::make("__typid", gc)).val.i;
+						try_supplement(value, typ);
+					}
+
+				// OOP handling
+				} else if (at(idx).object) {
+					tbl = pop<Table>(idx);
+
+					if (!tbl->hasKey(at())) {
+						pop();
+						throw error::dust_error{ "Attempt to set static field of an object" };
+					}
+
 				} else {
-					// OOP handling ????
 					throw error::dust_error{ "Attempt to set a field of a non-table value" };
 				}
 
 				break;
 		}
 
-		setTable(tbl, pop(), value);
+		setTable(tbl, pop(), value, instance);
 
 		// stack: ..., {value}
 	}
@@ -333,6 +417,7 @@ namespace dust {
 	void EvalState::endScope() {
 		Table sav = nullptr;
 
+		// Delete curr_scp iff it's not the global scope
 		if (curr_scp != &global) {
 			for (auto pair : *curr_scp) {
 				try_decRef(pair.first);
@@ -366,6 +451,95 @@ namespace dust {
 		return gc;
 	}
 
+	void EvalState::completeDef(type::TypeSystem::TypeVisitor& typ) {
+		using namespace type;
+		using std::string;
+		
+		auto table = pop();
+		auto tbl = Traits<Table>::get(table, gc);
+
+
+		/*
+		 * Provide default implementations for language functions
+		 */
+
+		// New
+		static impl::Value new_fn;
+		push([id{ (size_t)typ }, type{ tbl }](EvalState& e) {
+			// Initialize type table (Just use a table for now)
+			Table obj = new impl::Table{ type };
+
+			// Copy over type table entries
+			e.copyInstance(obj, type);
+			e.push(obj);
+
+			// Ensure the type information is correct
+			e.at().type_id = id;
+			e.at().object = true;
+
+			return 1;
+		});
+		setTable(tbl, Traits<string>::make("new", gc), pop(), false);
+
+		// Drop
+		push([](EvalState& e) {
+			Table instance = e.pop<Table>();
+
+			// Decrement all references
+			return 0;
+		});
+		setTable(tbl, Traits<string>::make("drop", gc), pop(), false);
+
+		// Copy
+		push([](EvalState& e) {
+			e.enableObjectSyntax().get(EvalState::SELF);
+
+			size_t id = e.at().type_id;
+			Table orig = e.pop<Table>();
+			Table copy = new impl::Table{ orig->getPar() };
+
+			// Copy the instance over
+			e.copyInstance(copy, orig);
+			e.push(copy);
+			e.at().type_id = id;
+			e.at().object = true;
+
+			return 1;
+		});
+		setTable(tbl, Traits<string>::make("copy", gc), pop(), false);
+
+
+		/*
+		 * Set auto-defined fields
+		 */
+		setTable(tbl, Traits<string>::make("__type", gc), table, false);
+		setTable(tbl, Traits<string>::make("__typid", gc), Traits<size_t>::make(typ, gc), false);
+		setTable(tbl, Traits<string>::make("class", gc), Traits<string>::make(ts.getName(typ), gc), false);
+
+
+		/*
+		 * Associate the table to the relevant type
+		 */
+		try_incRef(const_cast<Type&>(ts.get(typ)).ref = table);												// Ensure the type table isn't collected
+		ts.setMethods(typ, tbl);
+	}
+
+	void EvalState::assignRef(type::Type& typ) {
+		copy();
+		try_incRef(typ.ref = pop());
+	}
+
+	void EvalState::copyInstance(Table t, Table f) {
+		// Copy over instance variables
+		for (auto entry : *f)
+			if (entry.second.is_member)
+				setTable(t, entry.first, entry.second.val, true);
+
+		// Copy other state
+	}
+
+
+	// Note: I'm going to be redoing these really soon
 
 	void initState(EvalState& e) {
 		initTypeSystem(e.ts);
@@ -717,9 +891,9 @@ namespace dust {
 
 
 		// Free functions
-		e.push("ttype");
+		e.push("typeof");						// Reflection entry point: typeof({obj}) returns a reflection object
 		e.push([](EvalState& e) {
-			e.push(e.pop().type_id);
+			e.pushNil();
 			return 1;
 		});
 		e.set(EvalState::SCOPE);

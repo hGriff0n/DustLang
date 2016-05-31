@@ -1,14 +1,7 @@
+[Nil]			## Object technically inherits from Nil, but this has no effect on evaluation. Logically they are sister types
   |-----------------------------------------------------|
 Object												   Nil
   |------------|-------|-------|--------|
  Number      String   Bool   Table   Function
   |------|
 Float   Int
-
-String < Object
-Number < Object
-Bool < Object
-Table < Object
-Function < Object
-Float < Number		(Float is a child of Number)
-Int < Number

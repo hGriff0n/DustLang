@@ -7,22 +7,9 @@ The definition for table (and type) would imply being able to create subtypes
 	Or should I change type to be "outside" of the expression grammar
 		This would probably entail a rewrite of block
 
-Determine how basic types will work with regards to inheritance (especially String, etc.)
-
 Improve the Table API
 	This is particularly important with regards to "appending" to the table (uses the next open int)
 	Possibly start to add in evaluation hooks
 	Add in more API functions
-	
-Changes
-	Changed entire EvalState api
-	get/set expect exact number of '.' in lookup
 
-Calling Functions
-	FunctionCall
-		e.setResolvingFunctionName();
-		fn->get(e);
-		e.setResolvingFunctionName();
-		e.call(##);
-	Function
-		e.enableObjectSyntax(self : args)
+Change 0 => false ???

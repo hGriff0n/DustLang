@@ -4,9 +4,9 @@
 #include "TypeSystem.h"
 
 namespace dust {
-	namespace type {
+	//type::Trait::get specializations
 
-		// Traits conversion specializations (Could I move these into TypeTraits.h ???)
+	namespace type {
 		template<> int Traits<int>::get(const impl::Value& v, impl::GC& gc) {
 			try {
 				if (v.type_id == Traits<double>::id)
@@ -88,7 +88,7 @@ namespace dust {
 
 		template<> Table Traits<Table>::get(const impl::Value& v, impl::GC& gc) {
 			try {
-				if (v.type_id == Traits<Table>::id)
+				if (v.type_id == Traits<Table>::id || v.object)					// If v is a Table or a custom-type
 					return gc.getTables().deref(v.val.i);
 			} catch (...) {}
 
@@ -110,6 +110,7 @@ namespace dust {
 
 	}
 
+	// Testing Suite Forward Declarations
 	namespace test {
 		template <class Stream>
 		class Tester;
@@ -128,6 +129,7 @@ namespace dust {
 			// Scoping
 			impl::Table global, *curr_scp;
 
+			// Evaluation Helpers
 			type::TypeSystem ts;
 			impl::GC gc;
 
@@ -135,6 +137,7 @@ namespace dust {
 			impl::Value self;
 			bool resolving_function = false;
 
+			// Get the current scope
 			Table getScope();
 
 		protected:
@@ -148,7 +151,10 @@ namespace dust {
 			void getTable(Table tbl, const impl::Value& key);
 
 			// Set tbl[key] = val
-			void setTable(Table tbl, const impl::Value& key, const impl::Value& val);
+			void setTable(Table tbl, const impl::Value& key, const impl::Value& val, bool instance);
+
+			// Supplement the static method if necessary (Temporary TDD method)
+			void try_supplement(impl::Value& val, size_t type_id);
 
 		public:
 			EvalState();
@@ -157,13 +163,18 @@ namespace dust {
 			void get(int idx, int lookup = 0);
 
 			// Set variable at {-2} to value at {-1} in {idx} (unless idx = SELF)
-			void set(int idx, int lookup = 0);
+			void set(int idx, bool instance = true, int lookup = 0);
 
 			// Call the function at {idx - 1} passing {idx} arguments
 			void call(int num_args);
 
 			// Call the operator (with type resolution)
 			void callOp(std::string op);
+
+			
+			/*
+			 * OOP Semantical Helpers
+			 */
 
 			// Ensure OOP structure exists/doesn't exist
 			EvalState& enableObjectSyntax();
@@ -172,23 +183,25 @@ namespace dust {
 			void setResolvingFunctionName();
 
 
-			// Variable flags (setters & getters)
-			//void markConst(const impl::Value& name);
-			//void markTyped(const impl::Value& name, size_t typ);
-			//bool isConst(const impl::Value& name);
-			//bool isTyped(const impl::Value& name);
-
-
-			// Scope Interaction
+			/*
+			 * Scope Interaction
+			 */
 			void newScope();				// Start a new scope with the current scope as parent
 			void endScope();				// Delete current scope (Cleans up memory)
 			void pushScope();				// Push scope on the stack (used in building tables)
 
 
+			/*
+			 * Helper Systems
+			 */
 			type::TypeSystem& getTS();
 			impl::GC& getGC();
 
-			template <typename T>
+
+			/*
+			 * Type Construction
+			 */
+			template <typename T>											// Add a member definition to a type
 			type::TypeSystem::TypeVisitor& addMember(type::TypeSystem::TypeVisitor& t, std::string op, T val) {
 				auto v = type::Traits<T>::make(val, gc);
 				auto fn = type::Traits<std::string>::make(op, gc);
@@ -198,6 +211,15 @@ namespace dust {
 
 				return t.addOp(fn, v, op);
 			}
+
+			void completeDef(type::TypeSystem::TypeVisitor& typ);			// Complete a custom type definition by providing language expected definitions for certain methods
+			void assignRef(type::Type& typ);								// Prevent the type table from being collected (Temporary TDD method)
+			void copyInstance(Table t, Table f);							// Copy Type table f into Instance Table t (Temporary TDD method)
+
+
+			/*
+			 * Friend functions
+			 */
 
 			// Pass the top element on the stack to the stream
 				// Handles non-printable values and string-special printing

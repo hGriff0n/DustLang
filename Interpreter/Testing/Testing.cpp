@@ -4,7 +4,7 @@
 
 namespace dust {
 	namespace test {
-		void runTests(EvalState& e, bool print_all) {
+		void runAllTests(EvalState& e, bool print_all) {
 			using dispatch_error = error::dispatch_error;
 
 			auto t = makeTester(e, std::cout, print_all);
@@ -35,8 +35,8 @@ namespace dust {
 				t.requireEval("3 + 3", 6);										// Testing that operators work
 				t.requireEval("\"The answer is \" + (6.3 ^ 2)",					// Testing that converters get selected
 					"The answer is 39.690000");
-				t.requireEval("\"4\" - 3", 1);									// Testing the converters selected based on the operator
 
+				t.requireException<dispatch_error>("\"4\" - 3");				// Testing that converter selection is consistant
 				t.requireException<dispatch_error>("3 + true");					// Testing that correct exceptions are produced
 			t.closeSubTest();
 
@@ -117,9 +117,39 @@ namespace dust {
 			t.closeSubTest();
 
 			// Testing type interactions
+				// TODO: Divide into subTests (probably won't as the Testing rewrite is next up)
 			t.initSubTest("Type System");
 				t.requireTrue("3 <- Int");										// Test that the type-check operator works
 				t.requireTrue("3 + 0.3 <- Float");
+
+				t.requireNoError("type NewType [ a: 0 ]");						// Test that custom types work properly
+				t.requireNoError("foo: NewType.new()");
+				t.requireTrue("foo <- NewType");
+
+				t.requireEval("foo.class", "NewType");							// Test that the type is created properly
+				t.requireTrue("foo.__type = NewType");
+					// Fails with pegtl::error <Can't find eolf>
+
+				t.requireTrue("foo.a = 0");										// Testing instance semantics
+				t.requireEval("foo.a: 3", 3);
+				t.requireEval("foo.a - NewType.a", 3);
+				t.requireTrue("foo.__type.a != foo.a");
+				t.requireException<error::dust_error>("foo._max: 3");
+
+				t.requireNoError("baz: foo.copy()");							// Testing default copy
+				t.requireEval("baz.a:+ 2", 5);
+				t.requireTrue("baz.a != foo.a");
+
+				t.requireNoError("def NewType.new(self, a)\n"					// Testing custom new 
+								 "	self.a: a or 0\n");
+				//t.requireNoError("type TestType [ a: 0 ]\n"
+					//"def TestType.new(self, a)\n"
+					//"	self.a: a or 0\n");
+				t.requireType("bar: NewType.new(5)", "NewType");
+				t.requireEval("bar.a", 5);
+
+				//t.eval("bar = foo.type.new()");
+				//t.requireTrue("bar <- NewType");								// Test typeof operations
 			t.closeSubTest();
 
 			// Testing parser with multilined input
@@ -380,13 +410,8 @@ namespace dust {
 				});
 				e.set(EvalState::SCOPE);
 
-				e.push("reduce");
+				e.push("sum");
 				e.push([](EvalState& e) {
-					/*
-					while (e.size() > 1)							// Simpler implementation
-						e.callOp("_op+");
-					*/
-
 					Optional sum{ e }, nxt;							// But I want to demonstrate Optional
 
 					while (nxt.copy(e)) {
@@ -496,6 +521,15 @@ namespace dust {
 
 					t.requireException<dispatch_error>("3.diverge()");		// Testing OOP interaction
 
+				t.closeSubTest();
+
+				t.initSubTest("Recursion");
+					t.requireType("def factorial(n)\n"
+								  "	if n = 0 return 1\n"
+								  "	n * factorial(n-1)", "Function");
+
+					t.requireEval("factorial(0)", 1);
+					t.requireEval("factorial(3)", 6);
 				t.closeSubTest();
 			t.closeSubTest();
 

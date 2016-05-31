@@ -10,9 +10,10 @@
 #include "Exceptions\runtime.h"
 
 namespace dust {
-	class EvalState;
+	class EvalState;				// This forward declaration is for Traits specialization
 	class Optional;
 
+	// type::Traits::make specializations for default types
 	namespace type {
 		// Can I move this specialization to EvalState.h?  NO (I don't think so)
 		template<> impl::Value Traits<std::string>::make(const std::string& s, impl::GC& gc) {
@@ -62,15 +63,24 @@ namespace dust {
 				void try_incRef(const impl::Value&);
 				void try_decRef(const impl::Value&);
 
+				// Set the minimum number of elements the stack must have. Returns the old minimum
 				size_t setMinSize(size_t new_min);
 
+				// Translate a pseudo-index into a real index
 				int normalize(int& idx);
+
+				// Check whether the passed index is valid for the current stack
 				bool invalidIndex(int idx);
 
+				// TODO: What is this for
 				std::vector<impl::Value>::iterator rbegin();
 
 			public:
 				CallStack(impl::GC&);
+
+				/*
+				 * Stack Interaction
+				 */
 
 				// Push values onto the stack
 				template <typename T>
@@ -89,8 +99,7 @@ namespace dust {
 				explicit operator T() {
 					return pop<T>(-1);
 				}
-
-
+				
 				// Pop values from the stack
 				template <typename T>
 				T pop(int idx = -1) {
@@ -107,13 +116,15 @@ namespace dust {
 					return at(idx).type_id == type::Traits<T>::id;
 				}
 
-				// Stack management
+
+				/*
+				 * Stack management
+				 */
 
 				// Copies the value at the given index
 				void copy(int idx = -1);
 
-				// Replaces the value at the given index with the top
-					// Stack size decreases by 1
+				// Replaces the value at the given index with the top. Shrinks the stack
 				void replace(int idx = -1);
 
 				// Resizes the stack to the given size
