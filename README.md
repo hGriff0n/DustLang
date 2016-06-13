@@ -27,7 +27,7 @@ which can then be used by other expressions or ignored.
 
 Dust also natively supports many programming paradigms, including OOP, imperative, and functional styles (Though currently the functional support is lacking).
 
-## Basic Syntax
+## Basic Syntax (needs work)
 
 Scoping in dust is performed similar to python, being dependent on explicit indentation (currently a '\t' is expected, see Issues #19).
 
@@ -98,34 +98,45 @@ Lastly, tables are also used to implement the user-defined type system, with som
 
 ### Functions
 
-What to mention:
-	Standard call syntax
-	Argument handling (any number without issue)
-	Multiple return statements
-	OOP resolution
-	Future metamethod work
+Naturally, dust also provides a way to define and call functions, albeit with a few neat features. Calling a function uses rather standard language syntax, the function
+name is followed by a pair of parentheses that surround the arguments to the function. A dust function can take any number of arguments to its call without any issue,
+to the calling code or the runtime, making some patterns really easy to express. To complement the multiple arguments, dust functions can also return multiple values
+without errors, albeit currently through an explicit "return" statement due to parsing problems (multiple return values from custom class methods do not maintain this
+error-free guarantee currently). Dust also supports a form of "unified-call syntax" for OOP method calling. A type method can be called by indexing the type table and
+passing the instance as the first argument or by calling the method through "indexing" the instance directly.
 
-Functions are very important to dust, both in implementation and in spirit.
-
-Function calling is fairly simple and largely unexciting. The only interesting thing is that dust functions naturally handle any number of arguments with
-no issues of stack corruption (excepting stack overflow of course)
-
-	Int.abs(3) = -3.abs()					## Demonstrating OOP syntax. Both sides call the same function Int.abs
-	max(1, 2, 3, 5)							## Max takes >1 arguments
 	give5(3)								## Gives 5 as expected. The 3 is evaluated, but unused
+	max(1, 2, 3, 5)							## Max takes >1 arguments
+	Int.abs(3) = -3.abs()					## Demonstrating OOP syntax. Both sides call the same function Int.abs
 
-OOP in dust is performed using the special argument, "self".
+Function definition uses "def" syntax, similar to Python. To take advantage of the unified-call syntax for a type function, simply add the "self" parameter as the first
+argument to the function. Resolution of this parameter gets handled at the call site to ensure that self is always the expected value.
+
+	def Float.ceil(self)
+		(Int)self + 1
+
+Operators in dust are also handled through dust functions, or "metamethods" due to their nature. So "3 + 3" translates to a call "Int._op+(3, 3)" due to the common type
+of 3 and 3 being an Int. Currently, dust only allows for the behavior of standard operators to be definable this way. However, the plan is to extend this behavior to many
+areas of the language, such as table indexing, etc. Indeed, some of this vision can be seen in the new, copy, and drop class methods that get automatically defined for
+custom types but retain the ability to be defined by the programmer later on.
 
 
 ## Type System
 
-What to mention:
-	Type Declaration
-		member/static split
-		default methods
-	Type Creation
-		Table backing structure
-		can't assign static fields from instance
-		can't create static fields from instance
+Dust is a strong, dynamically typed language, though the type system is a rather simple construction. Dust performs it's dynamic typing through the Object supertype,
+which all types inherit from, except for Nil. This type system can also be extended with custom classes. At an implementation level, classes are a pair of tables, one
+for the static type fields and another for the instance members. The way this split gets handled takes advantage of the required type creation syntax, the member table.
+All fields declared within the table are automatically classified as "instance-level" while any fields declared outside are "static". This distinction also prevents
+the addition of custom fields to instances at runtime.
 
-Naturally, dust provides the ability to define any number of custom types 
+	type NewType [ member: 3 ]				## member is an instance variable
+	
+	NewType.count: 0						## count is a static field
+
+	def NewType.new(self, member)			## New is a class metamethod (The language version sets up the structure and passes self to the function)
+		NewType.count:+ 1
+		self.member = member
+
+Dust supports a single inheritance object model, though there is no way to express/add "interfaces" (though due to dust's duck typing, this would just be sugar).
+
+## MORE TO COME

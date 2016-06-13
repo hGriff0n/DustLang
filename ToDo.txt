@@ -33,17 +33,16 @@ Timeline
 		See VagueToDo.txt
 
 	1 Framework/Documentation Update
-		Update the readme to show off recent additions
-			See if there's anything I left "for later"
 		Rewrite testing suite
 			Improve the interface
 			Add extra capabilities
+			Implement max in dust
 		Improve testing coverage
 			Ensure that no tests rely on un-proven behavior (if possible)
 		Determine future implementation roadmap
 			Look at what features still need to be implemented
 			Plan out implementation plan
-		Look for interesting libraries to include/use for implemtation
+		Look for interesting libraries to include/use for implementation
 		Start planning out the standard library
 		Bugfixes
 

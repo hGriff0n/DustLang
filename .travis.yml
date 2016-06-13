@@ -1,0 +1,18 @@
+language: cpp
+dist: trusty
+compiler:
+- clang
+- gcc
+os:
+- linux
+- osx
+#before_install:
+#before_script:
+#script:
+#after_success:
+#branches:
+#notifications:
+#  email: false
+env:
+  global:
+  - LANG="en_US.UTF-8"
