@@ -2,6 +2,8 @@
 #include <sstream>
 #include <iostream>
 
+#include "../libs/catch.hpp"
+
 namespace dust {
 	namespace test {
 		void runAllTests(EvalState& e, bool print_all) {
@@ -550,5 +552,38 @@ namespace dust {
 			return std::make_pair(ss.str(), !(nt - np));
 		}
 
+	}
+}
+
+// Apparently the second option is for tags ???
+	// Need to learn more
+TEST_CASE("EvalState Interface Tests", "[eval]") {
+	dust::EvalState e;
+
+	SECTION("Does Catch work?") {
+		REQUIRE(4 == 5);
+	}
+}
+
+TEST_CASE("Grammar Tests", "[pegtl]") {
+
+}
+
+static void parse(const std::string& code, dust::EvalState& e) {
+	dust::parse::AST parse_tree;
+	dust::parse::ScopeTracker scp;
+
+	pegtl::parse<dust::grammar, dust::action, dust::parse::control>(code, code, parse_tree, scp);
+	parse_tree.pop()->eval(e);
+}
+
+TEST_CASE("Dust Language Tests", "[dust]") {
+	dust::EvalState e;
+	initState(e);
+
+	SECTION("Literal Evaluation") {
+		parse("3", e);
+
+		REQUIRE(e.pop<int>() == 3);
 	}
 }

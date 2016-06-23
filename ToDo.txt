@@ -34,14 +34,25 @@ Timeline
 
 	1 Framework/Documentation Update
 		Rewrite testing suite
-			Improve the interface
-			Add extra capabilities
-			Implement max in dust
+			Convert over to using catch (producing junit results)
+				Either use the console entirely or don't print anything
+					Figure out how to send junit output to a file
+				Get junit-viewer from npm to view the results
+			Convert the Testing.h to providing helper methods for implementing the tests
+				Parse function given a string and EvalState&
+				Parse function given a string to produce AST
+			Possibly add in a command arg to control running tests
+			Add Catch in as a submodule to the git repo
+				Possibly move to using the submodule single file header instead of including it in the project (to keep catch up to date)
+		Start developing end user API
+			Wrap EvalState/AST/ScopeTracker into one class
+				Realize I don't have to make all EvalState methods available (I can put more intrusive methods there)
 		Improve testing coverage
 			Ensure that no tests rely on un-proven behavior (if possible)
 		Determine future implementation roadmap
 			Look at what features still need to be implemented
 			Plan out implementation plan
+			Write tests for the features
 		Look for interesting libraries to include/use for implementation
 		Start planning out the standard library
 		Bugfixes

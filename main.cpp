@@ -1,13 +1,14 @@
 #include "Interpreter\Control.h"
-#include "Interpreter\Testing\Testing.h"
 
 #include <iostream>
 #include <pegtl/analyze.hh>
 
-#define p(x) std::cout << (x)
-#define ps(x) p(x) << " :: "
-#define pl(x) p(x) << "\n"
-#define nl() pl("")
+// Automated Testing Framework
+#define CATCH_CONFIG_RUNNER
+#ifdef CATCH_CONFIG_RUNNER
+#include "Interpreter\libs\catch.hpp"
+#include "Interpreter\Testing\Testing.h"
+#endif
 
 
 // Other Stuff and Pipe Dreams
@@ -18,7 +19,7 @@
 
 using namespace dust;
 
-// Wrapper around std::getline that waits for [ENTER] to be hit twice before accepting input (allows multiline repl testing)
+// Wrapper around std::getline that waits for [ENTER] to be hit twice before accepting input (to simplify multiline repl testing)
 template <class istream>
 istream& getmultiline(istream& in, std::string& s) {
 	std::getline(in, s);
@@ -34,25 +35,48 @@ istream& getmultiline(istream& in, std::string& s) {
 	return in;
 }
 
-constexpr bool show_tests = false;
-
 int main(int argc, const char* argv[]) {
+	/*
+	 * Analyze the grammar for errors using pegtl's provided functionality
+	 *   I'm unsure if this works currently
+	 */
 	std::cout << "Analyzing `dust::grammar`.....\n";
 	pegtl::analyze<grammar>();
 	std::cout << std::endl;
 
+
+#ifdef CATCH_CONFIG_RUNNER
+	/*
+	 * Run Catch testing in declared order
+	 *  Outputs to junit format (Use junit-viewer to "view" the results)
+	 */
+
+	// Uncomment to start debugging when an exception is thrown
+	//auto res = Catch::Session().run(9, new char*[9]{ "DustTests", "--order", "decl", "-r", "junit", "-e", "-b", "--use-colour", "yes" });
+
+	// Uncomment to ouput to a junit xml file
+		// Is this only printing because I'm not specifying a place to print to?
+	//auto res = Catch::Session().run(5, new char*[5]{ "DustTests", "--order", "decl", "-r", "junit" });
+
+	// Uncomment to show all tests
+	//auto res = Catch::Session().run(6, new char*[6]{ "DustTests", "--order", "decl", "-s", "--use-colour", "yes" });
+
+	// Uncomment if not using one of the other testing runs
+	auto res = Catch::Session().run(5, new char*[5]{ "DustTests", "--order", "decl", "--use-colour", "yes" });
+
+	std::cout << "\nAutomated testing found " << res << " errors\n\n";
+#endif
+
+
+	/*
+	 * Setup and start the main evaluation loop
+	 */
+	EvalState e;
 	parse::AST parse_tree;
 	std::string input;
 
-	EvalState e;
-
 	initState(e);
-	test::runAllTests(e, show_tests);
-
-	// Main repl loop
 	std::cout << "\n> ";
-
-	// repl loop
 	while (getmultiline(std::cin, input) && input != "exit") {
 
 		// Run the garbage collector
@@ -118,6 +142,7 @@ int main(int argc, const char* argv[]) {
 			}
 		}
 
+		// Reset for the next line
 		parse_tree.clear();
 		std::cout << "\n> ";
 	}
