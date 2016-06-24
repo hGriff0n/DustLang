@@ -35,6 +35,12 @@ istream& getmultiline(istream& in, std::string& s) {
 	return in;
 }
 
+// Find the path to the given dust file
+	// Currently only ensures that the file has the '.dst' extension
+std::string&& findDustFile(const std::string& file) {
+	return "Dust\\" + file + ((file.size() < 5 || file.compare(file.length() - 4, 4, ".dst")) ? ".dst" : "");
+}
+
 int main(int argc, const char* argv[]) {
 	/*
 	 * Analyze the grammar for errors using pegtl's provided functionality
@@ -45,18 +51,17 @@ int main(int argc, const char* argv[]) {
 	std::cout << std::endl;
 
 
-#ifdef CATCH_CONFIG_RUNNER
 	/*
-	 * Run Catch testing in declared order
-	 *  Outputs to junit format (Use junit-viewer to "view" the results)
+	 * Run CATCH automated testing
+	 *  Various execution formats are available by commenting and uncommenting the specific sections
 	 */
-
+#ifdef CATCH_CONFIG_RUNNER
 	// Uncomment to start debugging when an exception is thrown
 	//auto res = Catch::Session().run(9, new char*[9]{ "DustTests", "--order", "decl", "-r", "junit", "-e", "-b", "--use-colour", "yes" });
 
-	// Uncomment to ouput to a junit xml file
-		// Is this only printing because I'm not specifying a place to print to?
-	//auto res = Catch::Session().run(5, new char*[5]{ "DustTests", "--order", "decl", "-r", "junit" });
+	// Uncomment to ouput to a junit formatted html
+	//auto res = Catch::Session().run(7, new char*[7]{ "DustTests", "--order", "decl", "-r", "junit", "-o", "DustTests.xml" });
+	//system("junit-viewer --results=DustTests.xml --save=DustTest.html && del DustTests.xml");
 
 	// Uncomment to show all tests
 	//auto res = Catch::Session().run(6, new char*[6]{ "DustTests", "--order", "decl", "-s", "--use-colour", "yes" });
@@ -64,7 +69,7 @@ int main(int argc, const char* argv[]) {
 	// Uncomment if not using one of the other testing runs
 	auto res = Catch::Session().run(5, new char*[5]{ "DustTests", "--order", "decl", "--use-colour", "yes" });
 
-	std::cout << "\nAutomated testing found " << res << " errors\n\n";
+	std::cout << "\nAutomated testing complete....\n" << res << " errors were found\n\n";
 #endif
 
 
@@ -93,8 +98,7 @@ int main(int argc, const char* argv[]) {
 
 		// Run file (basic implementation)
 		} else if (input.substr(0, 2) == ":r") {
-			std::string file = "Dust\\" + input.substr(3);
-			if (file.size() < 5 || file.compare(file.length() - 4, 4, ".dst")) file += ".dst";				// Append .dst if not provided
+			auto file = findDustFile(input.substr(3));
 
 			std::cout << " Running file \"" << file << "\"\n";
 
@@ -111,8 +115,7 @@ int main(int argc, const char* argv[]) {
 
 		// Show file (basic implementation)
 		} else if (input.substr(0, 2) == ":l") {
-			std::string file = "Dust\\" + input.substr(3);
-			if (file.size() < 5 || file.compare(file.length() - 4, 4, ".dst")) file += ".dst";				// Append .dst if not provided
+			auto file = findDustFile(input.substr(3));
 
 			try {
 				std::cout << " Reading file \"" << file << "\"\n\n" << pegtl::internal::file_reader{ file }.read() << "\n";
