@@ -54,75 +54,8 @@ namespace dust {
 		template<> const std::string name<pegtl::parse_error>::is = "pegtl_error";
 	}
 
+	/*
 	namespace __test__ {
-
-		/*
-		 * Class that actually performs testing evaluation, etc.
-		 */
-		template <class Stream>
-		class Tester {
-			private:
-				parse::AST tree;
-				std::function<void(EvalState&)> reset;
-
-				static const int TESTING_WEIGHT = 30;
-				static const std::function<void(EvalState&)> DEFAULT_RESET;
-
-
-				Stream& displayTestHeader(const std::string& code) {
-					s << buffer << "[|] Running Test " << std::setw(5) << num_tests;
-
-					if (code.size() > TESTING_WEIGHT - 8)
-						return s << "input=\"" + parse::escape(code) + "\"\n" << buffer << "\t    Testing ";
-					else
-						return s << std::setw(TESTING_WEIGHT) << ("input=\"" + code + "\"") << " Testing ";
-				}
-
-				// Construct and evaluate the AST for the given code segment
-				EvalState& evaluate(const std::string& code) {
-					parse::ScopeTracker scp{};
-					pegtl::parse<grammar, action, parse::control>(code, code, tree, scp);
-					return tree.pop()->eval(e);
-				}
-
-				// Print the pass/fail message and update num_pass
-				Stream& _printMsg(bool pass) {
-					s << (pass ? console::green : console::red) << buffer << "[" << (pass ? "O" : "X") << "]";
-					return s;
-				}
-
-				Stream& printMsg(bool pass) {
-					return _printMsg(pass) << (pass ? "Passed Test " : " Failed Test");
-				}
-
-				// Clean up internal state
-				void exitTest(bool success) {
-					if (print_all) s << std::endl;
-
-					num_pass += success;
-					++num_tests;
-					
-					tree.clear();
-					reset(e);
-				}
-
-			protected:
-				std::string buffer;
-				EvalState& e;
-				Stream& s;
-				int num_tests = 0, num_pass = 0;
-				bool print_all;
-
-			public:
-				Tester(EvalState& e, Stream& s, const std::string& buf, bool print_all) : e{ e }, s{ s }, buffer{ buf }, reset{ DEFAULT_RESET }, print_all{ print_all } {
-					s << std::setiosflags(std::ios::left);
-				}
-
-				// Execute the given code
-				virtual void eval(const std::string& code) {
-					evaluate(code);
-				}
-
 				// After executing the given code, the stack has the given number of elements
 				virtual void requireSize(const std::string& code, size_t siz) {
 					bool success{};
@@ -257,10 +190,6 @@ namespace dust {
 
 		};
 
-		/*
-		 * Class for organizing a multi-tiered testing system, with sub-tests
-		 * Create this class in order to run tests (or call makeTester)
-		 */
 		template <class Stream>
 		class TestOrganizer : public Tester<Stream> {
 			static std::vector<std::pair<std::string, bool>> default_reviews;
@@ -379,6 +308,7 @@ namespace dust {
 		template <class Stream> const std::function<void(EvalState&)> Tester<Stream>::DEFAULT_RESET = [](EvalState& e) { e.clear(); };
 
 	}
+	*/
 
 	namespace test {
 

@@ -54,83 +54,207 @@ static void run(EvalState& e, const string& code) {
 }
 
 static string typeof(EvalState& e) {
-	return "";
+	return e.getTS().getName(e.at().type_id);
 }
 
 
 TEST_CASE("Literal Parsing") {
-	/*
-	Int, Float, String, Bool, Table, Lambdas
-	*/
+	EvalState e;
+	initState(e);
+	
+	SECTION("Simple Literals") {
+		run(e, "3");
+		REQUIRE(typeof(e) == "Int");
+		REQUIRE((int)e == 3);
+
+		run(e, "3.3");
+		REQUIRE(typeof(e) == "Float");
+		REQUIRE((double)e == 3.3);
+
+		run(e, "\"Hello\"");
+		REQUIRE(typeof(e) == "String");
+		REQUIRE((string)e == "Hello");
+
+		run(e, "true");
+		REQUIRE(typeof(e) == "Bool");
+		REQUIRE((bool)e);
+
+		run(e, "false");
+		REQUIRE(typeof(e) == "Bool");
+		REQUIRE_FALSE((bool)e);
+
+		run(e, "nil");
+		REQUIRE(typeof(e) == "Nil");
+		e.pop();
+
+		run(e, "[]");
+		REQUIRE(typeof(e) == "Table");
+		e.pop();
+
+		run(e, "[ 1 2 ]");
+		REQUIRE(typeof(e) == "Table");
+		e.pop();
+
+		run(e, "[ a: 1 2 ]");
+		REQUIRE(typeof(e) == "Table");
+		e.pop();
+	}
+
+	SECTION("Lambdas", "[!mayfail]") {
+		run(e, "\\x -> x");
+		REQUIRE(typeof(e) == "Function");
+		e.pop();
+
+		// TODO: Add more lambda tests
+	}
 }
 
 // Note: Move ternary tests here if I use them in any intervening tests
 TEST_CASE("Operator Evaluation") {
-	/*
-	All operators
-	Binary operators
-	Operator resolution
-	*/
+	EvalState e;
+	initState(e);
+
+	SECTION("Built-in Operators") {
+
+	}
+
+	SECTION("Binary Operators") {
+
+	}
+
+	SECTION("Operator Resolution") {
+
+	}
 }
 
 TEST_CASE("Tables") {
-	/**/
+	EvalState e;
+	initState(e);
 }
 
 TEST_CASE("Variable Assignment") {
-	/*
-	Compound Assignment
-	*/
+	EvalState e;
+	initState(e);
+
+	SECTION("Assignment Basics") {
+
+	}
+
+	SECTION("Compound Assignment") {
+
+	}
 }
 
 TEST_CASE("Advanced Parsing") {
-	/*
-	Comments
-	Multiline Input
-	Scoping <- Assignment, etc.
-	*/
+	EvalState e;
+	initState(e);
+
+	SECTION("Comments") {
+
+	}
+
+	SECTION("Multiline Input") {
+
+	}
+
+	// Assignment, etc.
+	SECTION("Scopes") {
+
+	}
 }
 
 TEST_CASE("Exceptions") {
-	/**/
+	EvalState e;
+	initState(e);
 }
 
 TEST_CASE("Control Flow Constructions") {
-	/*
-	While
-	Do-While
-	For
-	If
-	Try-Catch
-	*/
+	EvalState e;
+	initState(e);
+
+	SECTION("While Loop") {
+
+	}
+
+	SECTION("Do-While Loop") {
+
+	}
+
+	SECTION("For Loop") {
+
+	}
+
+	SECTION("If Statement") {
+
+	}
+
+	SECTION("Try-Catch Block") {
+
+	}
 }
 
 // TODO: Figure out what should go in here
 TEST_CASE("Type System Basics") {
-	/*
-	type check operator
-	type meta-values
-	*/
+	EvalState e;
+	initState(e);
+
+	SECTION("Type Checking") {
+
+	}
+
+	SECTION("Meta-values") {
+
+	}
 }
 
 TEST_CASE("Functions") {
-	/*
-	Calling Free and OOP
-	First-Class Values
-	"def"-syntax
-	Multiple Returns
-	Recursion
-	*/
+	EvalState e;
+	initState(e);
+
+	SECTION("Calling Functions") {
+
+	}
+
+	SECTION("Functions as First-Class Values") {
+
+	}
+
+	SECTION("\"def\"-syntax") {
+
+	}
+
+	SECTION("Multiple Return Values") {
+
+	}
+
+	SECTION("Recursion", "[!mayfail]") {
+
+	}
 }
 
 TEST_CASE("User-defined Types") {
-	/*
-	w/ Default type-methods
-	w/ Custom type-methods
-	w/ Static members
-	Inheritance
-		Inheritance from standard types ???
-	*/
+	EvalState e;
+	initState(e);
+
+	SECTION("Definition Syntax") {
+
+	}
+
+	SECTION("Using default type-methods") {
+
+	}
+
+	SECTION("Using custom type-methods") {
+
+	}
+
+	SECTION("Types with static members") {
+
+	}
+
+	SECTION("Inheritance") {
+
+	}
 }
 
 
@@ -140,9 +264,16 @@ TEST_CASE("User-defined Types") {
 
 
 TEST_CASE("Tricky Evaluations") {
-	/*
-	Possibly ambiguous parses
-	Ternary construction
-	TODO: Add
-	*/
+	EvalState e;
+	initState(e);
+
+	SECTION("Ambiguous Parses", "[!mayfail]") {
+
+	}
+
+	SECTION("Ternary Statement") {
+
+	}
+	
+	// TODO: Add
 }

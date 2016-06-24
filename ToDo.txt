@@ -37,14 +37,13 @@ Timeline
 			Convert all tests over to CATCH
 				Rewrite to only use proven behavior in each test
 				Improve testing coverage of the language
+				Add capability to stop testing if run fails
 				Add in testing coverage of the language backing structures (Not necessary though)
 					Need to have a way to gate these tests though
 			Convert the Testing.h to providing helper methods for implementing the tests
-				Parse function given a string and EvalState&
-				Parse function given a string to produce AST
-			Possibly add in a command arg to control running tests
-			Possibly add Catch as a submodule to the git repo
-				Possibly move to using the submodule single file header instead of including it in the project (to keep catch up to date)
+				Or just remove it entirely if possible
+			Possibly add in a command line argument to control running tests
+			Move to using the single file from the submodule instead of my copied version
 		Start developing end user API
 			Wrap EvalState/AST/ScopeTracker into one class
 				Realize I don't have to make all EvalState methods available (I can put more intrusive methods there)
@@ -102,25 +101,26 @@ Timeline
 	5 Ranges and stl update
 		Implement a conception of generators
 			Need to be general for any amount of state
-				## Note: Apparently, I've already done some work on this
+				## Note: Apparently, I've already done some work on this <- What did I mean with this ???
 			Get for loops to accept generators
 		Create ranges as syntactical sugar for basic arithmetic generators
 			Try to create more complex generators if possible
 		Create iterator methods for tables and move table for-each to use them
 		
 	6 Type/Table metamethods
-		Implement okayKey and okayValue for scopes (string-only keys)
-			These methods are how "3: 3" will be prevented in the global scope and allowed in tables
+		Implement okayKey and okayValue metamethods
+			Implement string-only okayKey for scopes
+				These methods are how "3: 3" will be prevented in the global scope and allowed in tables
 		Allow for okayKey and okayValue to be set in client code
 		Convert for loop completely to the generator idiom
-			Implement "iterator" metamethod for tables
+			Change iterator table method to __iterator metamethod
 
 	7 Lambdas and Table Comprehensions
 
 	8 Developer API work
 		Streamline and Lockdown the public interface
 		Improve parsing error messages
-		Improve the dsl
+		Improve the dsl <- What ???
 		Update to "3.0.0"
 
 	9 Reflection
