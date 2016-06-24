@@ -54,7 +54,7 @@ namespace dust {
 		template<> const std::string name<pegtl::parse_error>::is = "pegtl_error";
 	}
 
-	namespace test {
+	namespace __test__ {
 
 		/*
 		 * Class that actually performs testing evaluation, etc.
@@ -377,6 +377,10 @@ namespace dust {
 
 		template <class Stream> std::vector<std::pair<std::string, bool>> TestOrganizer<Stream>::default_reviews = std::vector<std::pair<std::string, bool>>{};
 		template <class Stream> const std::function<void(EvalState&)> Tester<Stream>::DEFAULT_RESET = [](EvalState& e) { e.clear(); };
+
+	}
+
+	namespace test {
 
 	}
 }
