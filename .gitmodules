@@ -2,3 +2,6 @@
 [submodule "Interpreter/libs/PEGTL"]
 	path = Interpreter/libs/PEGTL
 	url = https://github.com/ColinH/PEGTL.git
+[submodule "Interpreter/libs/Catch"]
+	path = Interpreter/libs/Catch
+	url = https://github.com/philsquared/Catch
