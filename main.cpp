@@ -67,6 +67,9 @@ int main(int argc, const char* argv[]) {
 	// Uncomment to show all tests
 	//auto res = Catch::Session().run(6, new char*[6]{ "DustTests", "--order", "decl", "-s", "--use-colour", "yes" });
 
+	// Uncomment to run tests on language backing structures
+	//auto res = Catch::Session().run(6, new char*[6]{ "DustTests", "--order", "decl", "--use-colour", "yes", "back" });
+
 	// Uncomment if not using one of the other testing runs
 	auto res = Catch::Session().run(5, new char*[5]{ "DustTests", "--order", "decl", "--use-colour", "yes" });
 

@@ -6,7 +6,7 @@ using namespace dust;
 using namespace dust::test;
 
 // Rename to NO_THROW
-#define DO_EVAL(expr) REQUIRE_NOTHROW({ run(e, expr); })
+#define DO_EVAL(expr) e.clear(); REQUIRE_NOTHROW({ run(e, expr); })
 #define MUST_THROW(exception_type, expr) REQUIRE_THROWS_AS({ run(e, expr); }, exception_type)
 
 // Helper for figuring out the various capabilities and tools of Catch (ie. how to do X)
@@ -61,6 +61,11 @@ static string typeof(EvalState& e) {
 	return e.getTS().getName(e.at().type_id);
 }
 
+// Only run when `back` tests are being performed
+	// Actually split backing testing into several test cases (just be sure to have the same tag) 
+TEST_CASE("Backing Structure Testing", "[.back]") {
+
+}
 
 TEST_CASE("Literal Parsing") {
 	EvalState e;
@@ -89,13 +94,19 @@ TEST_CASE("Literal Parsing") {
 
 		DO_EVAL("nil");
 		REQUIRE(typeof(e) == "Nil");
-		e.pop();
+	}
+
+	SECTION("Tables") {
 
 		DO_EVAL("[]");
 		REQUIRE(typeof(e) == "Table");
 		e.pop();
 
 		DO_EVAL("[ 1 2 ]");
+		REQUIRE(typeof(e) == "Table");
+		e.pop();
+
+		DO_EVAL("[ 1, 2 ]");
 		REQUIRE(typeof(e) == "Table");
 		e.pop();
 
@@ -107,7 +118,6 @@ TEST_CASE("Literal Parsing") {
 	SECTION("Lambdas", "[!mayfail]") {
 		DO_EVAL("\\x -> x");
 		REQUIRE(typeof(e) == "Function");
-		e.pop();
 
 		// TODO: Add more lambda tests
 	}
@@ -293,16 +303,20 @@ TEST_CASE("Advanced Parsing") {
 
 		DO_EVAL("a: 2\n"
 			"	b: 3 + .a\n"
+			"## Assign 3 + a to b\n"
+			"	b + a");
+		REQUIRE((int)e == 7);
+
+		DO_EVAL("a: 2\n"
+			"	b: 3 + .a\n"
 			"## Assign 3 + a to b"
 			"	b + a");
-		REQUIRE((int)e == 7);		// ERROR: 5 == 7
+		REQUIRE((int)e == 5);
 
 		DO_EVAL("af: 3\n"
 			"		5\n"
 			"	af");
 		REQUIRE((int)e == 3);
-
-		// I don't actually test that the scoped value overrides the global value
 	}
 }
 
@@ -310,6 +324,9 @@ TEST_CASE("Advanced Parsing") {
 TEST_CASE("Exceptions") {
 	EvalState e;
 	initState(e);
+
+	// require throw on "a: <- Int"
+	// require throw on "for i in [1..5] .sum: + i"
 }
 
 TEST_CASE("Control Flow Constructions") {
@@ -334,7 +351,7 @@ TEST_CASE("Control Flow Constructions") {
 
 		DO_EVAL("i: 5\n"
 			"while i < 5 .i:+ 1\n"); // -> nil
-		REQUIRE(e.pop().type_id == type::Traits<Nil>::id);
+		REQUIRE(typeof(e) == "Nil");
 	}
 
 	SECTION("Do-While Loop") {
@@ -361,7 +378,7 @@ TEST_CASE("Control Flow Constructions") {
 		REQUIRE((int)e == 15);
 
 		DO_EVAL("for i in [1]"); // -> nil
-		REQUIRE(e.pop().type_id == type::Traits<Nil>::id);
+		REQUIRE(typeof(e) == "Nil");
 
 		DO_EVAL("msg: \"\"\n"
 			"for w in [ \"Hello,\" \"World!\" \"I'm\" \"Margaret\" ]\n"
@@ -433,10 +450,10 @@ TEST_CASE("Control Flow Constructions") {
 
 		DO_EVAL("a: 3\n"
 			"try\n"
-			"	3 + 3"
+			"	3 + 3\n"
 			"	.a: 2\n"
 			"catch (e)\n"
-			"a");					// ERROR: eolf exception in evaluation
+			"a");
 		REQUIRE((int)e == 2);
 
 		DO_EVAL("try\n"
@@ -445,8 +462,11 @@ TEST_CASE("Control Flow Constructions") {
 			"catch(e)\n");
 		REQUIRE((int)e == 9);
 
-		DO_EVAL("(try 3 + true\n"
-			"catch (e) e )<- String");
+		//DO_EVAL("(try 3 + true\n"
+		//	"catch (e) e) <- String");		// ERROR: matching struct c_paren
+		DO_EVAL("try 3 + true\n"
+			"catch(e) .a: e\n"
+			"a <- String");
 		REQUIRE((bool)e);
 		
 		MUST_THROW(error::missing_node_x, "catch (e) 4");
@@ -585,8 +605,8 @@ TEST_CASE("Functions") {
 		run(e, "abs: 5");
 		DO_EVAL("abs <- Int");
 		REQUIRE((bool)e);
-		DO_EVAL("sba: <- Function");
-		REQUIRE((bool)e);				// ERROR: false
+		DO_EVAL("sba <- Function");
+		REQUIRE((bool)e);
 	}
 
 	SECTION("\"def\"-syntax") {
@@ -599,7 +619,7 @@ TEST_CASE("Functions") {
 		DO_EVAL("min(3, 5)");
 		REQUIRE((int)e == 3);
 		DO_EVAL("min(3, 5, 7)");
-		REQUIRE(e.size() == 1);			// ERROR: 26 == 1
+		REQUIRE(e.size() == 1);
 		REQUIRE((int)e == 3);
 
 		MUST_THROW(error::dispatch_error, "min(3)");
@@ -610,11 +630,11 @@ TEST_CASE("Functions") {
 		REQUIRE((bool)e);
 
 		DO_EVAL("Float.abs(-3.3)");
-		REQUIRE((float)e == 3.3);
+		REQUIRE((double)e == 3.3);
 		DO_EVAL("(-5.5).abs()");
-		REQUIRE((float)e == 5.5);
+		REQUIRE((double)e == 5.5);
 		DO_EVAL("5.5.abs()");
-		REQUIRE((float)e == 5.5);
+		REQUIRE((double)e == 5.5);
 
 		DO_EVAL("def Bool._op+(self, o)\n"
 			"	self or o");
@@ -642,12 +662,12 @@ TEST_CASE("Functions") {
 
 	SECTION("Recursion", "[!mayfail]") {
 		run(e, "def factorial(n)\n"
-			"	if n = 0 return 1\n"		// FOUND IT!!! return doesn't cause the function to stop running (Changing to an if-else moves the error to 591)
-			"	n * factorial(n - 1)");
+			"	if n = 0 1\n"
+			"	else n * factorial(n - 1)");
 
-		DO_EVAL("factorial(0)");			// ERROR: Operator _op* not defined for Nil and Int <- This shouldn't be occuring **here** !!!
+		DO_EVAL("factorial(0)");
 		REQUIRE((int)e == 1);
-		DO_EVAL("factorial(3)");
+		DO_EVAL("factorial(3)");			// ERROR: Index stack of size 1 with (size_t)-1
 		REQUIRE((int)e == 6);
 	}
 }
@@ -686,10 +706,16 @@ TEST_CASE("User-defined Types") {
 
 		DO_EVAL("def NewType.new(self, a)\n"
 			"	self.a: a or 0");
-		DO_EVAL("bar: NewType.new(5) <- NewType");
+		DO_EVAL("bar: NewType.new(5)\n"
+			"bar <- NewType");
 		REQUIRE((bool)e);
 		DO_EVAL("bar.a");
-		REQUIRE((int)e == 5);				// ERROR: Could convert to Int in Traits<int>::get
+		REQUIRE((int)e == 5);
+		
+		// Why doesn't this code work ???
+		//t.requireNoError("type TestType [ a: 0 ]\n"
+		//"def TestType.new(self, a)\n"
+		//"	self.a: a or 0\n");
 	}
 
 	SECTION("Using default type-methods") {

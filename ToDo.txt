@@ -16,16 +16,12 @@ Timeline
 		Redo how get/set exceptions are handled										## What do I even mean by this ???
 		Parser Issues
 			Unsure about behavior of action<c_paren> for empty parentheses
-			Errors need to be better
-				"for i in [1..5] .sum: + i" throws an "Attempt to evaluate an empty block" at runtime
-					The error is the ": +" (I don't know what gets parsed though)
 		Type System
 			Consider changing operator resolution handling (especially for "=")
 				Currently "[3] = 3" evaluates to true
 				Consider adding "meta-data" (such as com_t when calling other operators ???)
 			Determine the behavior for when new/drop are user-defined as non-functions
 				Implement the fix to EvalState::completeDef to prevent exceptions
-			Figure out why the commented code on Testing:146 doesn't work
 			Fix Stack bloat for when "usernew" returns multiple values
 				Force the last line of new to be self (How?)
 				Set a member of e to the number of returned values (Possbile)
@@ -35,14 +31,13 @@ Timeline
 	1 Framework/Documentation Update
 		Rewrite testing suite
 			Convert all tests over to CATCH
-				Get all old tests to pass
 				Improve testing coverage of the language (breadth and depth)
-				Add in testing coverage of the language backing structures (Not necessary though)
-					Need to have a way to gate these tests though
-			Convert the Testing.h to providing helper methods for implementing the tests
-				Or just remove it entirely if possible
+					Move around tests to ensure they're in the correct spots
+				Consider adding in unit tests of language backing structures
+				Expand custom macro coverage
 			Possibly add in a command line argument to control running tests
 			Move to using the single file from the submodule instead of my copied version
+			Add comments to each test
 		Determine future implementation roadmap
 			Look at what features still need to be implemented
 			Plan out implementation plan
@@ -50,6 +45,8 @@ Timeline
 		Look for interesting libraries to include/use for implementation
 		Start planning out the standard library
 		Bugfixes
+			Have return exit a function
+			Stop stack errors in factorial recursion
 
 	2 System Rewrite (Ground Up)
 		Plan out the entire system on paper
@@ -91,7 +88,7 @@ Timeline
 		Release "2.0.0"
 
 	4 Improving Functions
-		Get factorial to work properly
+		Get Lambdas into the language
 		Make table arguments "copy-on-write"
 			Really just ensure that all "gets" get forwarded to the passed table
 
