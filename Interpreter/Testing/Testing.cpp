@@ -8,6 +8,7 @@ using namespace dust::test;
 // Rename to NO_THROW
 #define DO_EVAL(expr) e.clear(); REQUIRE_NOTHROW({ run(e, expr); })
 #define MUST_THROW(exception_type, expr) REQUIRE_THROWS_AS({ run(e, expr); }, exception_type)
+#define MAY_THROW(expr) CHECK_THROWS({ run(e, expr); })
 
 // Helper for figuring out the various capabilities and tools of Catch (ie. how to do X)
 TEST_CASE("CATCH Capability Testing", "[.]") {
@@ -100,19 +101,15 @@ TEST_CASE("Literal Parsing") {
 
 		DO_EVAL("[]");
 		REQUIRE(typeof(e) == "Table");
-		e.pop();
 
 		DO_EVAL("[ 1 2 ]");
 		REQUIRE(typeof(e) == "Table");
-		e.pop();
 
 		DO_EVAL("[ 1, 2 ]");
-		REQUIRE(typeof(e) == "Table");
-		e.pop();
+		REQUIRE(typeof(e) == "Table");		// Error: Nil
 
 		DO_EVAL("[ a: 1 2 ]");
 		REQUIRE(typeof(e) == "Table");
-		e.pop();
 	}
 
 	SECTION("Lambdas", "[!mayfail]") {
@@ -129,14 +126,61 @@ TEST_CASE("Operator Evaluation") {
 	initState(e);
 
 	SECTION("Unary Operators") {
+		DO_EVAL("!true");
+		REQUIRE_FALSE((bool)e);
 
+		DO_EVAL("!false");
+		REQUIRE((bool)e);
+
+		DO_EVAL("-3");
+		REQUIRE((int)e == -3);
+
+		DO_EVAL("-3.3");
+		REQUIRE((double)e == -3.3);
 	}
 
 	SECTION("Binary Operators") {
+		DO_EVAL("3 ^ 2");
+		REQUIRE((int)e == 9);
 
+		DO_EVAL("3.3 ^ 2");
+		REQUIRE((double)e == Approx(10.89));
+
+		DO_EVAL("3 * 2");
+		REQUIRE((int)e == 6);
+
+		DO_EVAL("5 / 2");
+		REQUIRE((double)e == 2.5);
+
+		DO_EVAL("\"Hello,\" + \" World!\"");
+		REQUIRE((string)e == "Hello, World!");
+
+		DO_EVAL("3 - 4");
+		REQUIRE((int)e == -1);
+
+		DO_EVAL("7 % 4");
+		REQUIRE((int)e == 3);
 	}
 
 	SECTION("Boolean Operators") {
+		DO_EVAL("\"a\" = \"b\"");
+		REQUIRE_FALSE((bool)e);
+
+		DO_EVAL("3 != 4");
+		REQUIRE((bool)e);
+
+		DO_EVAL("3.3 < 4.4");
+		REQUIRE((bool)e);
+
+		DO_EVAL("5 > 3");
+		REQUIRE((bool)e);
+
+		DO_EVAL("4 <= 4");
+		REQUIRE((bool)e);
+
+		DO_EVAL("5.3 >= 5.4");
+		REQUIRE_FALSE((bool)e);
+
 		DO_EVAL("true and false");
 		REQUIRE_FALSE((bool)e);
 
@@ -151,9 +195,16 @@ TEST_CASE("Operator Evaluation") {
 	}
 
 	SECTION("Operator Resolution") {
+		DO_EVAL("3 * 2.5");
+		REQUIRE(typeof(e) == "Float");
+		REQUIRE((double)e == 7.5);
 
+		DO_EVAL("\"The Number \" + 3");
+		REQUIRE(typeof(e) == "String");
+		REQUIRE((string)e == "The Number 3");
 	}
 
+	// TODO: Later
 	SECTION("Operator Precedence") {
 
 	}
@@ -164,7 +215,23 @@ TEST_CASE("Variable Assignment") {
 	initState(e);
 
 	SECTION("Assignment Basics") {
+		DO_EVAL("a: 3");
+		REQUIRE((int)e == 3);
 
+		DO_EVAL("a");
+		REQUIRE((int)e == 3);
+
+		DO_EVAL("b: a");
+		REQUIRE((int)e == 3);
+
+		DO_EVAL("(a: 2) + b");
+		REQUIRE((int)e == 5);
+
+		DO_EVAL("a, b: b, a");
+		REQUIRE((int)e == 2);
+
+		DO_EVAL("a");
+		REQUIRE((int)e == 3);
 	}
 
 	SECTION("Compound Assignment") {
@@ -184,21 +251,28 @@ TEST_CASE("Variable Assignment") {
 		DO_EVAL("b = 2");
 		REQUIRE((bool)e);
 
-		run(e, "a, b: 5, 2");
+		run(e, "a: 15");
 
-		DO_EVAL("a, b:* 2, 0");
-		REQUIRE((int)e == 0);
-		DO_EVAL("a = 10 and b = 0");
-		REQUIRE((bool)e);
-
-		DO_EVAL("a:= (b: 3) * 2 + 2 ^ 2");
+		DO_EVAL("a:= b * (b: 3) + b ^ 2");
 		REQUIRE((bool)e);
 		DO_EVAL("a and b = 3");
 		REQUIRE((bool)e);
 	}
 
 	SECTION("Boolean Shortcircuiting") {
+		run(e, "a: true");
 
+		DO_EVAL("false and (a: 5)");
+		REQUIRE_FALSE((bool)e);
+
+		DO_EVAL("a");
+		REQUIRE((bool)e);
+
+		DO_EVAL("true or (a: 3)");
+		REQUIRE((bool)e);
+
+		DO_EVAL("a");
+		REQUIRE((bool)e);
 	}
 }
 
@@ -223,8 +297,6 @@ TEST_CASE("Tables") {
 		REQUIRE((int)e == 2);
 		DO_EVAL("a.a"); // -> "[ a: 3, b: 2 ]"
 		REQUIRE((string)e == "[ a: 3, b: 2 ]");
-
-		// I don't test multiple expressions or commas
 	}
 
 	SECTION("Operators") {
@@ -264,7 +336,14 @@ TEST_CASE("Advanced Parsing") {
 	initState(e);
 
 	SECTION("Comments") {
+		DO_EVAL("## This is a comment");
+		REQUIRE(typeof(e) == "Nil");
 
+		DO_EVAL("3## And a comment");
+		REQUIRE((int)e == 3);
+
+		DO_EVAL("");
+		REQUIRE(typeof(e) == "Nil");
 	}
 
 	SECTION("Multiline Input") {
@@ -325,8 +404,15 @@ TEST_CASE("Exceptions") {
 	EvalState e;
 	initState(e);
 
-	// require throw on "a: <- Int"
-	// require throw on "for i in [1..5] .sum: + i"
+	SECTION("Exceptions") {
+		MUST_THROW(error::dispatch_error, "-\"3\"");
+		MAY_THROW("!1");
+
+		MUST_THROW(pegtl::parse_error, "false and a: 5");
+
+		MUST_THROW(pegtl::parse_error, "a: <- Int");				// Error: No exception thrown
+		MUST_THROW(pegtl::parse_error, "for i in [ 1 2 3 4 5 ] .sum: + i");
+	}
 }
 
 TEST_CASE("Control Flow Constructions") {
@@ -473,7 +559,7 @@ TEST_CASE("Control Flow Constructions") {
 	}
 }
 
-// TODO: Figure out what should go in here
+// TODO: Later
 TEST_CASE("Type System Basics") {
 	EvalState e;
 	initState(e);
@@ -481,6 +567,7 @@ TEST_CASE("Type System Basics") {
 	SECTION("Type Checking") {
 		DO_EVAL("3 <- Int");
 		REQUIRE((bool)e);
+
 		DO_EVAL("3 + 0.3 <- Float");
 		REQUIRE((bool)e);
 	}
@@ -679,6 +766,17 @@ TEST_CASE("User-defined Types") {
 	// TODO: Distribute these tests among the sections
 	SECTION("Definition Syntax") {
 		DO_EVAL("type NewType [ a: 0 ]");
+		DO_EVAL("def NewType.new(self, a)\n"
+			"	self.a: a or 0");
+
+		DO_EVAL("type TestType [ b: 0 ]\n"
+			"def TestType.new(self, b)\n"
+			"	self.b: b and b * 2 or 3");
+	}
+
+	SECTION("Using default type-methods") {
+		run(e, "type NewType [ a: 0 ]");
+
 		DO_EVAL("foo: NewType.new()");
 		DO_EVAL("foo <- NewType");
 		REQUIRE((bool)e);
@@ -697,41 +795,65 @@ TEST_CASE("User-defined Types") {
 		DO_EVAL("foo.__type.a != foo.a");
 		REQUIRE((bool)e);
 		MUST_THROW(error::dust_error, "foo._max: 3");
-		
+
 		DO_EVAL("baz: foo.copy()");
 		DO_EVAL("baz.a:+ 2");
 		REQUIRE((int)e == 5);
 		DO_EVAL("baz.a != foo.a");
 		REQUIRE((bool)e);
-
-		DO_EVAL("def NewType.new(self, a)\n"
-			"	self.a: a or 0");
-		DO_EVAL("bar: NewType.new(5)\n"
-			"bar <- NewType");
-		REQUIRE((bool)e);
-		DO_EVAL("bar.a");
-		REQUIRE((int)e == 5);
-		
-		// Why doesn't this code work ???
-		//t.requireNoError("type TestType [ a: 0 ]\n"
-		//"def TestType.new(self, a)\n"
-		//"	self.a: a or 0\n");
-	}
-
-	SECTION("Using default type-methods") {
-
 	}
 
 	SECTION("Using custom type-methods") {
+		run(e, "type NewType [ a: 0 ]");
+		run(e, "def NewType.new(self, a)\n"
+			"	self.a: a or 0");
 
+		DO_EVAL("foo: NewType.new(5)");
+		REQUIRE(typeof(e) == "NewType");
+
+		DO_EVAL("foo <- NewType");
+		REQUIRE((bool)e);
+
+		DO_EVAL("foo.a");
+		REQUIRE((int)e == 5);
 	}
 
-	SECTION("Types with static members") {
+	SECTION("Types with Static Members") {
+		run(e, "type NewType [ a: 0 ]");
 
+		DO_EVAL("NewType.count: 0");
+		REQUIRE((int)e == 0);
+
+		run(e, "def NewType.new(self, a)\n"
+			"	NewType.count:+ 1\n"
+			"	self.a: a or 0\n");
+
+		DO_EVAL("foo: NewType.new(3)");
+		DO_EVAL("NewType.count");
+		REQUIRE((int)e == 1);
+
+		MUST_THROW(error::dust_error, "foo.count: 5");
 	}
 
+	// TODO: Add tests for inheritance with custom new/etc.
 	SECTION("Inheritance") {
+		run(e, "type NewType [ a: 0 ]");
+		run(e, "def NewType.inc(self)\n"
+			"	self.a:+ 1");
 
+		DO_EVAL("type Derived [ b: 1 ] <- NewType");
+		DO_EVAL("bar: Derived.new()");
+		REQUIRE(typeof(e) == "Derived");
+
+		DO_EVAL("bar.a");
+		REQUIRE((int)e == 0);		// Error: Can't convert to Int
+		DO_EVAL("bar.b");
+		REQUIRE((int)e == 1);
+
+		DO_EVAL("bar.inc()");
+		REQUIRE((int)e == 1);
+		DO_EVAL("bar.a");
+		REQUIRE((int)e == 1);
 	}
 }
 
@@ -761,12 +883,6 @@ TEST_CASE("Tricky Evaluations") {
 
 		DO_EVAL("3 +-3");
 		REQUIRE((int)e == 0);
-
-		run(e, "a: 2");
-		DO_EVAL("(a: 3) + 3 * a");
-		REQUIRE((int)e == 12);
-		DO_EVAL("a = 3");
-		REQUIRE((bool)e);
 	}
 
 	SECTION("Ternary Statement") {
@@ -776,13 +892,6 @@ TEST_CASE("Tricky Evaluations") {
 		REQUIRE((bool)e);
 		DO_EVAL("!c and 4 or 5");
 		REQUIRE((int)e == 4);
-
-		// This is testing boolean shortcircuitting
-		MUST_THROW(pegtl::parse_error, "false and a: 5");
-		DO_EVAL("false and (a: 5)");
-		REQUIRE_FALSE((bool)e);
-		DO_EVAL("a = true");
-		REQUIRE((bool)e);
 
 		DO_EVAL("a: b or 5");
 		REQUIRE((int)e == 3);

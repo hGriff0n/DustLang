@@ -38,7 +38,7 @@ istream& getmultiline(istream& in, std::string& s) {
 // Find the path to the given dust file
 	// Currently only ensures that the file has the '.dst' extension
 std::string&& findDustFile(const std::string& file) {
-	return "Dust\\" + file + ((file.size() < 5 || file.compare(file.length() - 4, 4, ".dst")) ? ".dst" : "");
+	return std::move("Dust\\" + file + ((file.size() < 5 || file.compare(file.length() - 4, 4, ".dst")) ? ".dst" : ""));
 }
 
 int main(int argc, const char* argv[]) {

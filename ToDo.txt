@@ -31,8 +31,6 @@ Timeline
 	1 Framework/Documentation Update
 		Rewrite testing suite
 			Convert all tests over to CATCH
-				Improve testing coverage of the language (breadth and depth)
-					Move around tests to ensure they're in the correct spots
 				Consider adding in unit tests of language backing structures
 				Expand custom macro coverage
 			Possibly add in a command line argument to control running tests

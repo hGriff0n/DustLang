@@ -8,8 +8,6 @@
 #include "..\Exceptions\parsing.h"
 
 namespace dust {
-
 	namespace test {
-
 	}
 }

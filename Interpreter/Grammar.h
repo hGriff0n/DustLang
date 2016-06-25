@@ -103,7 +103,6 @@ namespace dust {
 		/*
 		 * Metamethods
 		 */
-
 		struct m_not : key_string("_ou!");
 		struct m_neg : key_string("_ou-");
 		struct m_exp : key_string("_op^");
