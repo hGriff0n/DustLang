@@ -235,8 +235,10 @@ TEST_CASE("Tables") {
 	}
 
 	SECTION("Advanced") {
+		run(e, "a, b: [ 1 2 3 2 5 5 4 ], [ 1 3 ]");
+
 		DO_EVAL("a[b[2]]");
-		REQUIRE((int)e == 3);			// ERROR: Couldn't convert to Int in Traits<int>::get
+		REQUIRE((int)e == 3);
 		DO_EVAL("a[b[2] * 2]");
 		REQUIRE((int)e == 5);
 	}
@@ -383,8 +385,10 @@ TEST_CASE("Control Flow Constructions") {
 	}
 
 	SECTION("If Statement") {
+		run(e, "i: 5");
+
 		DO_EVAL("if i 3");
-		REQUIRE((int)e == 3);		// ERROR: Couldn't convert to Int in Traits<int>::get
+		REQUIRE((int)e == 3);
 		DO_EVAL("if i = 3 6");
 		REQUIRE_FALSE((bool)e);
 		DO_EVAL("if i = 3 6\n"
@@ -470,10 +474,47 @@ TEST_CASE("Functions") {
 	EvalState e;
 	initState(e);
 
-	DO_EVAL("abs <- Function");
+	e.push("abs");
+	e.push([](EvalState& e) {
+		auto x = (int)e;
+		e.push(x > 0 ? x : -x);
+		return 1;
+	});
+	e.set(EvalState::SCOPE);
+
+	e.addMember(e.getTS().getType("Int"), "abs", [](EvalState& e) {
+		e.enableObjectSyntax().get(EvalState::SELF);
+
+		auto x = (int)e;
+		e.push(x > 0 ? x : -x);
+		return 1;
+	});
+
+	e.push("add");
+	e.push([](EvalState& e) {
+		e.push((int)e + (int)e);
+		return 1;
+	});
+	e.set(EvalState::SCOPE);
+
+	e.push("bound");
+	e.push([](EvalState& e) {
+		auto d = (double)e;
+		e.push((int)std::floor(d));
+		e.push((int)std::ceil(d));
+		return 2;
+	});
+	e.set(EvalState::SCOPE);
+
+	e.push("give5");
+	e.push([](EvalState& e) {
+		e.push(5);
+		return 1;
+	});
+	e.set(EvalState::SCOPE);
 
 	SECTION("Calling Functions") {
-		DO_EVAL("abs(1)");			// ERROR: Attempt to call a non-function
+		DO_EVAL("abs(1)");
 		REQUIRE((int)e == 1);
 		DO_EVAL("abs(-1)");
 		REQUIRE((int)e == 1);
@@ -490,6 +531,24 @@ TEST_CASE("Functions") {
 		REQUIRE((int)e == 5);
 
 		MUST_THROW(error::runtime_error, "add(2)");
+
+		e.push("max");
+		e.push([](EvalState& e) {
+			Optional max{ e }, opt;							// Max may have a value, opt guaranteed to be nil
+
+			while (opt.set(e)) {							// For each optional argument, try to beat max
+				e.push(max);
+				e.push(opt);
+				e.callOp("_op>");							// Run opt > max
+
+				if ((bool)e) max.set(opt);
+			}
+
+			e.push(max);
+			return 1;
+		});
+		e.set(EvalState::SCOPE);
+
 		DO_EVAL("max(3, 5)");
 		REQUIRE((int)e == 5);
 		DO_EVAL("max(3)");
@@ -506,7 +565,7 @@ TEST_CASE("Functions") {
 		REQUIRE((int)e == 1);
 		DO_EVAL("(5 * -2).abs()");
 		REQUIRE((int)e == 10);
-		DO_EVAL("int.abs(a - 3)");
+		DO_EVAL("Int.abs(a - 3)");
 		REQUIRE((int)e == 4);
 
 		MUST_THROW(error::dispatch_error, "\"Hello\".abs()");
@@ -515,7 +574,7 @@ TEST_CASE("Functions") {
 	SECTION("Functions as First-Class Values") {
 		run(e, "sba: abs");
 		DO_EVAL("sba <- Function");
-		REQUIRE((bool)e);			// ERROR: false
+		REQUIRE((bool)e);
 		DO_EVAL("sba(-3) = abs(3)");
 		REQUIRE((bool)e);
 
@@ -527,7 +586,7 @@ TEST_CASE("Functions") {
 		DO_EVAL("abs <- Int");
 		REQUIRE((bool)e);
 		DO_EVAL("sba: <- Function");
-		REQUIRE((bool)e);
+		REQUIRE((bool)e);				// ERROR: false
 	}
 
 	SECTION("\"def\"-syntax") {
@@ -540,7 +599,7 @@ TEST_CASE("Functions") {
 		DO_EVAL("min(3, 5)");
 		REQUIRE((int)e == 3);
 		DO_EVAL("min(3, 5, 7)");
-		REQUIRE(e.size() == 1);			// ERROR: 51 == 1
+		REQUIRE(e.size() == 1);			// ERROR: 26 == 1
 		REQUIRE((int)e == 3);
 
 		MUST_THROW(error::dispatch_error, "min(3)");
@@ -573,7 +632,7 @@ TEST_CASE("Functions") {
 	}
 
 	SECTION("Multiple Return Values") {
-		DO_EVAL("a, b: bound(3.3)");			// ERROR: Attempt to call a non-function
+		DO_EVAL("a, b: bound(3.3)");
 		REQUIRE((int)e == 4);
 		DO_EVAL("a + b");
 		REQUIRE((int)e == 7);
@@ -627,10 +686,10 @@ TEST_CASE("User-defined Types") {
 
 		DO_EVAL("def NewType.new(self, a)\n"
 			"	self.a: a or 0");
-		DO_EVAL("bar: NewType.new(5) <- NewType");		// ERROR: No function present
+		DO_EVAL("bar: NewType.new(5) <- NewType");
 		REQUIRE((bool)e);
 		DO_EVAL("bar.a");
-		REQUIRE((int)e == 5);
+		REQUIRE((int)e == 5);				// ERROR: Could convert to Int in Traits<int>::get
 	}
 
 	SECTION("Using default type-methods") {
@@ -685,6 +744,8 @@ TEST_CASE("Tricky Evaluations") {
 	}
 
 	SECTION("Ternary Statement") {
+		run(e, "a, b: true, 3");
+
 		DO_EVAL("true and false or true");
 		REQUIRE((bool)e);
 		DO_EVAL("!c and 4 or 5");
@@ -695,7 +756,7 @@ TEST_CASE("Tricky Evaluations") {
 		DO_EVAL("false and (a: 5)");
 		REQUIRE_FALSE((bool)e);
 		DO_EVAL("a = true");
-		REQUIRE((bool)e);				// ERROR: false
+		REQUIRE((bool)e);
 
 		DO_EVAL("a: b or 5");
 		REQUIRE((int)e == 3);
