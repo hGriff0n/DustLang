@@ -60,14 +60,15 @@ int main(int argc, const char* argv[]) {
 	//auto res = Catch::Session().run(9, new char*[9]{ "DustTests", "--order", "decl", "-r", "junit", "-e", "-b", "--use-colour", "yes" });
 
 	// Uncomment to ouput to a junit formatted html
+		// This doesn't do a good job of explaining what failed
 	//auto res = Catch::Session().run(7, new char*[7]{ "DustTests", "--order", "decl", "-r", "junit", "-o", "DustTests.xml" });
 	//system("junit-viewer --results=DustTests.xml --save=DustTest.html && del DustTests.xml");
 
 	// Uncomment to show all tests
-	auto res = Catch::Session().run(6, new char*[6]{ "DustTests", "--order", "decl", "-s", "--use-colour", "yes" });
+	//auto res = Catch::Session().run(6, new char*[6]{ "DustTests", "--order", "decl", "-s", "--use-colour", "yes" });
 
 	// Uncomment if not using one of the other testing runs
-	//auto res = Catch::Session().run(5, new char*[5]{ "DustTests", "--order", "decl", "--use-colour", "yes" });
+	auto res = Catch::Session().run(5, new char*[5]{ "DustTests", "--order", "decl", "--use-colour", "yes" });
 
 	std::cout << "\nAutomated testing complete....\n\t" << res << " errors were found\n\n";
 #endif

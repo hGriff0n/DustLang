@@ -35,18 +35,14 @@ Timeline
 	1 Framework/Documentation Update
 		Rewrite testing suite
 			Convert all tests over to CATCH
-				Rewrite to only use proven behavior in each test
-				Improve testing coverage of the language
-				Add capability to stop testing if run fails
+				Get all old tests to pass
+				Improve testing coverage of the language (breadth and depth)
 				Add in testing coverage of the language backing structures (Not necessary though)
 					Need to have a way to gate these tests though
 			Convert the Testing.h to providing helper methods for implementing the tests
 				Or just remove it entirely if possible
 			Possibly add in a command line argument to control running tests
 			Move to using the single file from the submodule instead of my copied version
-		Start developing end user API
-			Wrap EvalState/AST/ScopeTracker into one class
-				Realize I don't have to make all EvalState methods available (I can put more intrusive methods there)
 		Determine future implementation roadmap
 			Look at what features still need to be implemented
 			Plan out implementation plan
@@ -57,6 +53,7 @@ Timeline
 
 	2 System Rewrite (Ground Up)
 		Plan out the entire system on paper
+			Focus on developing a consistent and minimal end-user api
 		Improve the grammar and parsing												## Look to "lua53_parse.h" for hints ???
 			Rewrite the grammar from the ground up (focus on speed and simplicity)
 				Look into using multiple tailored parsers in a chaining fashion
