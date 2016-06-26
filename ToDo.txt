@@ -13,6 +13,7 @@ Timeline
 			Handling of non-printable values, specifically tables and nil
 				Currently have to require_true of a comparison
 				Could add in non-printable functions
+			Add in unit tests of implementation structures
 		Redo how get/set exceptions are handled										## What do I even mean by this ???
 		Parser Issues
 			Unsure about behavior of action<c_paren> for empty parentheses
@@ -29,18 +30,14 @@ Timeline
 		See VagueToDo.txt
 
 	1 Framework/Documentation Update
-		Rewrite testing suite
-			Convert all tests over to CATCH
-				Consider adding in unit tests of language backing structures
-				Expand custom macro coverage
-			Possibly add in a command line argument to control running tests
-			Move to using the single file from the submodule instead of my copied version
-			Add comments to each test
+		Get Travis integration working
+			This means I need to make a CMake/make file
 		Determine future implementation roadmap
 			Look at what features still need to be implemented
-			Plan out implementation plan
+			Write out implementation plan
 			Write tests for the features
 		Look for interesting libraries to include/use for implementation
+			Move to using the single file from the submodule instead of my copied version
 		Start planning out the standard library
 		Bugfixes
 			Have return exit a function

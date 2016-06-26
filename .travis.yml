@@ -2,10 +2,7 @@ language: cpp
 dist: trusty
 compiler:
 - clang
-- gcc
-os:
-- linux
-- osx
+
 #before_install:
 #before_script:
 #script:
