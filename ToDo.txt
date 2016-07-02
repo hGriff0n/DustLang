@@ -25,13 +25,16 @@ Timeline
 		See VagueToDo.txt
 
 	1 Framework/Documentation Update
-		Look for interesting libraries to include/use for implementation
-			Move to using the single file from the submodule instead of my copied version
-		Start planning out the standard library
 		Bugfixes
 			Have return exit a function
-				i'm currently treating return as a way of allowing multiple returns in the grammar (not as an actual break)
+				return is matched by ee_ret
+					no action for ee_ret
+					there needs to be a way to "back" out of a function
+				add break statement using the same backing structure
+					define the semantics for break
+					look into adding continue
 			Stop stack errors in factorial recursion
+				i think this is a problem with setting the stack's min size
 			Minimize test errors
 		Get Travis integration working
 			This means I need to make a CMake/make file

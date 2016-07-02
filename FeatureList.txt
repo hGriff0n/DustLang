@@ -28,3 +28,4 @@ Possibilities:
 	'self' for functions
 	slice syntax
 	string interpolation
+	multithreading

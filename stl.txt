@@ -1,0 +1,34 @@
+document for planning out the standard library organization
+
+io module
+fs module
+net module
+math module
+	rand module
+regex module
+debug module
+gui module
+
+containers ?
+env ?
+fmt ?
+os ?
+time ?
+std ?
+alg ?
+util ?
+serial ?
+json ?
+csv ?
+parser ?
+database ?
+zip ?
+crypto ?
+docopt ?
+async ?
+html ?
+internationalization/locale ?
+audio ?
+table ?
+string ?
+functional ?

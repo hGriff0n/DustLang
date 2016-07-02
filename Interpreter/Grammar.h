@@ -8,6 +8,7 @@
 namespace dust {
 	namespace parse {
 		using namespace pegtl;
+
 		using AST = Stack<std::shared_ptr<ASTNode>>;
 		using eps = success;
 
@@ -20,12 +21,13 @@ namespace dust {
 		struct unless : if_then_else<at<Rule>, failure, any> {};		// Actually gets used
 		template <typename Cond, typename Then>
 		struct if_then : if_then_else<Cond, Then, eps> {};
+		template <typename... Args>
+		struct plus : pegtl::plus<Args...> {};												// For some reason, VS2015 was complaining about plus being 'ambiguous'
 
 
 		// Forward Declarations
 		struct expr;		struct expr_0;		struct expr_x;
 		struct keywords;	struct expr_7;		struct metamethods;
-
 
 		/*
 		 * Whitespace declarations
@@ -246,7 +248,6 @@ namespace dust {
 		struct ee_fdef : if_must<k_def, tail, fn_name, one<'('>, seps, sor<arg_list, no_args>, one<')'>> {};
 		struct expr_fdef : sor<seq<ee_fdef, opt<inline_expr>>, expr_cond> {};
 		//struct ee_lmb : if_must<one<'\'>, arg_list, k_inherit, opt<inline_expr>> {};
-		//struct ee_ret : if_must<k_return, expr_list> {};
 
 		// Collector Tags
 		struct expr_x : expr_fdef {};

@@ -7,7 +7,7 @@
 #include "../Exceptions/runtime.h"
 
 #define CATCH_CONFIG_RUNNER
-#include "../libs/catch.hpp"
+#include "catch.hpp"
 
 using namespace std;
 using namespace dust;
