@@ -10,17 +10,12 @@ Notes
 Timeline
 	0 Bugfixes / Improvements
 		Improvements to the Testing suite
-			Handling of non-printable values, specifically tables and nil
-				Currently have to require_true of a comparison
-				Could add in non-printable functions
+			Figure out ways of testing non-printable/non-C++ values
 			Add in unit tests of implementation structures
 		Redo how get/set exceptions are handled										## What do I even mean by this ???
 		Parser Issues
 			Unsure about behavior of action<c_paren> for empty parentheses
 		Type System
-			Consider changing operator resolution handling (especially for "=")
-				Currently "[3] = 3" evaluates to true
-				Consider adding "meta-data" (such as com_t when calling other operators ???)
 			Determine the behavior for when new/drop are user-defined as non-functions
 				Implement the fix to EvalState::completeDef to prevent exceptions
 			Fix Stack bloat for when "usernew" returns multiple values
@@ -30,22 +25,20 @@ Timeline
 		See VagueToDo.txt
 
 	1 Framework/Documentation Update
-		Get Travis integration working
-			This means I need to make a CMake/make file
-		Determine future implementation roadmap
-			Look at what features still need to be implemented
-			Write out implementation plan
-			Write tests for the features
 		Look for interesting libraries to include/use for implementation
 			Move to using the single file from the submodule instead of my copied version
 		Start planning out the standard library
 		Bugfixes
 			Have return exit a function
+				i'm currently treating return as a way of allowing multiple returns in the grammar (not as an actual break)
 			Stop stack errors in factorial recursion
+			Minimize test errors
+		Get Travis integration working
+			This means I need to make a CMake/make file
 
-	2 System Rewrite (Ground Up)
+	2 Ground Up Rewrite
 		Plan out the entire system on paper
-			Focus on developing a consistent and minimal end-user api
+			Focus on developing a consistent and minimal development api
 		Improve the grammar and parsing												## Look to "lua53_parse.h" for hints ???
 			Rewrite the grammar from the ground up (focus on speed and simplicity)
 				Look into using multiple tailored parsers in a chaining fashion
@@ -72,50 +65,77 @@ Timeline
 		Implement a basic C-side module loading system
 			Work on the syntax/semantics for the dust side
 
-	3 Standard Library
-		Small Language Updates and Bugfixes
-			Specify the behavior for inheriting from primitive types (ie. string)
-		Add "standard library" functions and classes
-		Ensure that "built-in" types have the expected class methods and fields
-			ie. "Int.new() = 0" should evaluate to true
-		Ensure the readme is up-to-date
-			Consider starting work on the github wiki
-		Release "2.0.0"
+	3 Improving Functions
+		write tests for this section
+		add lambdas to the grammar
+		make table arguments "copy-on-write" (or something similar)
+		add in argument syntax (with default values, etc.)
 
-	4 Improving Functions
-		Get Lambdas into the language
-		Make table arguments "copy-on-write"
-			Really just ensure that all "gets" get forwarded to the passed table
+	4 Standard Library
+		write tests for this section
+		get modules and "require" working
+		get metamethod resolution and calling to work for all metamethods
+			first specify the list of all metamethods and their contexts
+			implement _okayKey and _okayValue for scopes
+		start writing the standard library
+			ensure that "built-in" types have all class methods and fields (ie. Int.new())
+				this includes all metamethods (though they won't actually work yet)
+			build up 'io', ... libraries
+		ensure the readme is up-to-date
+		small updates and bugfixes
 
-	5 Ranges and stl update
-		Implement a conception of generators
-			Need to be general for any amount of state
-				## Note: Apparently, I've already done some work on this <- What did I mean with this ???
-			Get for loops to accept generators
-		Create ranges as syntactical sugar for basic arithmetic generators
-			Try to create more complex generators if possible
-		Create iterator methods for tables and move table for-each to use them
-		
-	6 Type/Table metamethods
-		Implement okayKey and okayValue metamethods
-			Implement string-only okayKey for scopes
-				These methods are how "3: 3" will be prevented in the global scope and allowed in tables
-		Allow for okayKey and okayValue to be set in client code
-		Convert for loop completely to the generator idiom
-			Change iterator table method to __iterator metamethod
+	5 For Loop updates
+		write tests for this section
+		implement the generator idiom
+			need to be general for any amount of state (apparently I've done some work on this ???)
+			change for loops to run on generators
+			add "_iterator" method to tables (really a metamethod)
+		get ranges to work as syntactical sugar for basic arithmetic generators
+			try to create more complex ones if possible
+		get ranges to work in the context of tables (ie. [1..5])
+			try to make this lazy if possible
 
-	7 Lambdas and Table Comprehensions
+	6 Table improvements
+		write tests for this section
+		implement the splat operator for creating and deconstructing a table into its elements
+			change how the Assign node works to account for this change
+		implement set comprehensions for creating tables
+			try to generalize this to create tables
 
-	8 Developer API work
-		Streamline and Lockdown the public interface
-		Improve parsing error messages
-		Improve the dsl <- What ???
-		Update to "3.0.0"
+	7 Variable Completion
+		write tests for this section
+		add in 'let' bindings to the variable handling
+			add in requisite exceptions and handling
+		add in syntax for performing static typing to variables
+		update function arguments to handle these capabilities
 
-	9 Reflection
-		Determine Reflection framework
-		Implement typeof to provide type level reflection
-		Create functions to run/load code from dust
+	8 Language updates
+		write tests for this section
+		add in a conception of interfaces/traits to dust		## just to allow simple method definitions
+			## syntax: trait <Trait> for <Type> ???
+		continue work on the stl and update to reflect additions
+			TODO: add in new libraries
+		start work on dust's c++ interface and api
+			improve parsing errors
+
+	9 Closures and Reflection 
+		investigate adding closures to dust (what would be most acceptable)
+			implement closures for lambdas
+		investigate adding reflection to the language
+			implement 'typeof' method
+			create functions to run dust code from dust
+		write tests once i've decided what to implement
+
+	10 Language Finalization
+		continue work on stl libraries and ensure they are up to date
+			start benchmarking implementations
+			refine tests to ensure correctness
+		finalize initial developer api
+		release 2.0.0
+
+	11 Documentation
+		create langage manual
+		create stl manual
 
 Notes (In case I forget some of my decisions)
 	3 + e: 4	=> (3 + e): 4		/> (3 + (e: 4))		// Too difficult to modify the grammar. I can't find anywhere that I expected it

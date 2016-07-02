@@ -1,0 +1,30 @@
+Need to Implement
+	Functions
+		lambdas
+		beefed-up arguments
+		copy-on-write tables
+		closures
+	Tables
+		splat operator
+		set comprehensions
+	Language
+		metamethods
+		api
+		standard library
+		modules
+		interfaces / type composition
+	Variables
+		'let' declarations
+		static typing
+	For Loop
+		Generator idiom in for loops
+		ranges
+
+Possibilities:
+	Structure reordering (<this> if <that> instead of if <that> <this>)
+	Statement seperator
+	Currying
+	Pattern Matching/Algebraic Data Types
+	'self' for functions
+	slice syntax
+	string interpolation

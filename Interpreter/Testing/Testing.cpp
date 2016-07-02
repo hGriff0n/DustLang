@@ -1,4 +1,10 @@
 #include "Testing.h"
+#include "../Control.h"
+
+#include "../Exceptions/dust.h"
+#include "../Exceptions/logic.h"
+#include "../Exceptions/parsing.h"
+#include "../Exceptions/runtime.h"
 
 #define CATCH_CONFIG_RUNNER
 #include "../libs/catch.hpp"
@@ -813,6 +819,15 @@ TEST_CASE("Functions") {
 		REQUIRE((int)e == 1);
 		NO_THROW("factorial(3)");			// ERROR: Index stack of size 1 with (size_t)-1
 		REQUIRE((int)e == 6);
+	}
+
+	SECTION("Lambdas", "[!mayfail]") {
+		run(e, "id: \\x -> x");
+		NO_THROW("id(3)");
+		REQUIRE((int)e == 3);
+
+		NO_THROW("(\\x -> x + 2)(3)");
+		REQUIRE((int)e == 5);
 	}
 }
 

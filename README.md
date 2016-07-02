@@ -133,7 +133,7 @@ the addition of custom fields to instances at runtime.
 
 	def NewType.new(self, member)			## New is a class metamethod (The language version sets up the structure and passes self to the function)
 		NewType.count:+ 1
-		self.member = member
+		self.member: member					## self.member is initialized to 3 in the default new method
 
 Dust supports a single inheritance object model, though there is no way to express/add "interfaces" (though due to dust's duck typing, this would just be sugar).
 
