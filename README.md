@@ -4,6 +4,8 @@ Dust is the working title for a multi-paradigm, expression-based, interpreted pr
 programming languages are designed and implemented by growing and nurturing the small seed that has sat in my mind for a couple of years into a fully-featured language. It is not intended to be a
 "research" endeavor that seeks to try out new paradigms and implementations. Indeed, many of dust's features are cobbled together from many different languages (ie. C++, Lua, Haskell, Python).
 
+Note: As of 8/3/2016 I have stopped active development on Dust. There may be some updates in the future as the desire strikes me, but development is otherwise frozen. In starting this project, I set out to learn how languages and interpreters are developed and implemented and I have accomplished that goal for a long time. All that is left for me to do with this project is the slight tweaking and improvements that would be necessary to make this language perfect. However, since I see no future for the language in public use and I have begun to dislike some of my design decisions (type system too simplistic, hacky implementation, etc), the cost of continual working on this project outweighs the desire and time to continue it. So after some deliberation, I've decided to say goodbye for now.
+
 #### [Implementation](https://github.com/hGriff0n/DustLang/tree/master/Interpreter)
 Dust is built using the [PEGTL](https://github.com/ColinH/PEGTL) library to implement its parsing algorithm. Many thanks to ColinH for both creating an intuitive and efficient parsing library, and for providing excellent documentation.
 
